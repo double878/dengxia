@@ -1,0 +1,14 @@
+# 统一行尾：文本文件在仓库与工作区一律使用 LF，避免 Windows 检出后出现整文件差异
+* text=auto eol=lf
+
+# 二进制文件不做行尾转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+*.zip binary
