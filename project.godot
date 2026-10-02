@@ -1,0 +1,22 @@
+; Engine configuration file.
+; 《灯下》项目配置 —— 由项目指定创建人维护（见 AGENTS.md「共享工程与工具」）。
+; 其他成员请勿各自新建或替换本文件；修改前先读 TECH_DESIGN.md 第 1 节。
+
+config_version=5
+
+[application]
+
+config/name="灯下"
+config/description="华州皮影《白蛇传》皮影戏演出与回放 Demo"
+run/main_scene="res://scenes/game_flow.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
