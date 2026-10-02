@@ -6,10 +6,16 @@
 - 若文档与用户本轮明确要求冲突，以用户本轮要求为准；若 `PRD.md` 与 `TECH_DESIGN.md` 冲突，先指出冲突及其影响，再按用户要求或现有可验证行为处理，不自行扩大范围。
 - 先定位已有实现和依赖。能复用项目代码、Godot 内置能力或已采用的库时优先复用；只有现有能力无法满足需求时才新增实现或依赖。
 
+## 共享工程与工具
+
+- Godot 工程由项目指定的创建人初始化一次，并将 `project.godot`、导出预设和必要的项目配置提交到仓库；其他成员从仓库获取后直接使用同一工程。所有成员保持 `TECH_DESIGN.md` 规定的 Godot 4.7.2 Standard 版本，不各自新建或替换工程。
+- 分支名使用连字符格式，例如 `feat-lamp-oil`、`fix-replay-pause`；分支名不使用斜杠。
+- 统一使用 `godot.exe` 调用 Godot；若本机未将它加入 `PATH`，使用同一版本 `godot.exe` 的完整路径，并在本次任务的所有命令中保持一致。不要改用其他版本或自行拼写不同的验证流程。每轮门禁以 `TECH_DESIGN.md` 的命令为准：资源导入、无头启动冒烟和 Windows 导出三项都要执行。
+
 ## Git 协作
 
 - 开工前先运行 `git status --short`。若有未提交改动，先确认归属和处理方式，不覆盖或丢弃他人的工作。
-- 新任务只建一次个人分支：`git fetch origin`，再从最新主干执行 `git switch -c <分支名> origin/main`。继续已有分支时，切回该分支，运行 `git fetch origin` 和 `git merge origin/main`；如有冲突，解决并验证后再开发。无需每次开工都新建分支。
+- 新任务只建一次个人分支：`git fetch origin`，再从最新主干执行 `git switch -c <分支名> origin/main`。分支名遵循上面的连字符格式。继续已有分支时，切回该分支，运行 `git fetch origin` 和 `git merge origin/main`；如有冲突，解决并验证后再开发。无需每次开工都新建分支。
 - 完成功能并验证后，检查 `git diff` 与 `git status`，只暂存本次任务的文件，再按任务要求提交、推送个人分支并创建 PR。避免用 `git add -A` 混入无关改动；一个功能通常只创建一个 PR。
 
 ## 实现规则
