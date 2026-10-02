@@ -6,7 +6,8 @@
 .import/
 .android/
 
-# 导出产物
+# 导出产物（TECH_DESIGN.md 的门禁导出到 builds/dengxia.exe）
+builds/
 build/
 export/
 exported/
