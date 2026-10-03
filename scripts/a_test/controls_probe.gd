@@ -17,6 +17,10 @@ const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
 const STAGE_W: float = 1920.0
 const STAGE_H: float = 1080.0
 
+## 由测试场景注入：第一关数据，用于校验时长与段落。
+var clock: MusicClock = null
+var stage_def: StageDef = null
+
 var _harness: ControlsHarness = null
 var _failures: Array[String] = []
 
@@ -42,6 +46,7 @@ func run() -> int:
 	_check_conflict()
 	_reset()
 	_check_bounds_stress()
+	_check_music_clock()
 	print("")
 	print("实测结论：%s" % ("全部符合预期" if _failures.is_empty()
 		else "%d 项不符合预期" % _failures.size()))
@@ -242,6 +247,21 @@ func _check_bounds_stress() -> void:
 		"双手角停在上限 (%.4f, %.4f)" % [l, r])
 	_harness.controller.end_drag()
 	_press({})
+
+
+## 真实窗口里的音乐时钟实测：确认时钟真的由音频播放位置驱动（而不是悄悄退化成自由计时），
+## 并确认暂停会同时冻结时钟、恢复后沿同一时间轴继续、不跳变。
+## 听感（是否真的听见鼓点）无法由本探针证明，必须人工听。
+func _check_music_clock() -> void:
+	print("")
+	print("[7] 音乐时钟：真实时间测量由测试场景在 _process 中逐帧驱动（见 clock_check.gd）")
+	if stage_def == null:
+		print("  SKIP 未注入关卡数据，跳过本段")
+		return
+	_expect(stage_def.duration_ms == 35000, "第一关时长为 35000 ms（实际 %d）" % stage_def.duration_ms)
+	var problems: Array[String] = stage_def.validate()
+	_expect(problems.is_empty(), "第一关数据校验通过%s"
+		% ("" if problems.is_empty() else "：" + str(problems)))
 
 
 func _events_have(events: Array[Dictionary], kind: String) -> bool:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/a/puppet_state.gd" id="1_puppet_state"]
 [ext_resource type="Script" path="res://scripts/a/puppet_controller.gd" id="2_puppet_controller"]
@@ -7,6 +7,9 @@
 [ext_resource type="Script" path="res://scripts/a_test/controls_test_scene.gd" id="5_test_scene"]
 [ext_resource type="Script" path="res://scripts/a_test/frame_clock.gd" id="6_frame_clock"]
 [ext_resource type="Script" path="res://scripts/a_test/input_reader.gd" id="7_input_reader"]
+[ext_resource type="Script" path="res://scripts/a/music_clock.gd" id="8_music_clock"]
+[ext_resource type="Script" path="res://scripts/a/stage_def.gd" id="9_stage_def"]
+[ext_resource type="Script" path="res://scripts/a_test/metronome.gd" id="10_metronome"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.05, 0.05, 0.07, 0.85)
@@ -72,7 +75,7 @@ theme_override_font_sizes/bold_font_size = 19
 offset_left = 738.0
 offset_top = 48.0
 offset_right = 1452.0
-offset_bottom = 1030.0
+offset_bottom = 528.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -80,7 +83,25 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 offset_left = 12.0
 offset_top = 10.0
 offset_right = 702.0
-offset_bottom = 972.0
+offset_bottom = 470.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 17
+theme_override_font_sizes/bold_font_size = 19
+
+[node name="ClockPanel" type="Panel" parent="Hud"]
+offset_left = 738.0
+offset_top = 540.0
+offset_right = 1452.0
+offset_bottom = 1030.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="ClockLabel" type="RichTextLabel" parent="Hud/ClockPanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 702.0
+offset_bottom = 470.0
 mouse_filter = 2
 bbcode_enabled = true
 theme_override_font_sizes/normal_font_size = 17
