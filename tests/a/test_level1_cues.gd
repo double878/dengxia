@@ -79,6 +79,10 @@ func run_all() -> Dictionary:
 	_test_08_event_contract(t)
 	_test_09_unchosen_cues_remain_pending(t)
 	_test_10_no_leak_of_beat_or_score(t)
+	_test_11_held_hand_enters_target_range(t)
+	_test_12_same_direction_move_hits(t)
+	_test_13_early_action_can_be_retried_on_beat(t)
+	_test_14_release_applies_final_reach(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
 		"failures": t.failures}
 
@@ -364,3 +368,80 @@ func _test_10_no_leak_of_beat_or_score(t: ATestBase) -> void:
 	t.check(CueHintScript.kind_for_action(CueScript.ACTION_MOVE_LEFT)
 		== CueHintScript.KIND_MOVE, "横向移动应映射为移动线索")
 	t.finish("线索只表达「做什么」，不含评分、容差或精确拍号")
+
+
+func _test_11_held_hand_enters_target_range(t: ATestBase) -> void:
+	t.begin("11 按住抬手键进入目标角度时命中")
+	var b: CueTestBench = _bench()
+	b.advance_to(8600)
+	b.advance(12, {"left_raise": true})
+	var outcome: Dictionary = b.performance.get_outcome("l1_c3_hand_raise")
+	t.check_in_range(b.state().hand_angle.x, 0.5, 0.6, "左手已抬到目标角度")
+	t.check_eq(bool(outcome.get("hit", false)), true,
+		"进入角度范围时应命中，不必松键或反复按键")
+	t.check_in_range(float(outcome.get("time_ms", -1)), 8600, 8750,
+		"判定应发生在角度到位的时刻")
+	t.check_eq(_count_for_cue(b.judge_log, "cue_hit", "l1_c3_hand_raise"), 1,
+		"持续按键只产生一次命中")
+	t.finish("持续按键跨入目标角度时只判定一次")
+
+
+func _test_12_same_direction_move_hits(t: ATestBase) -> void:
+	t.begin("12 已面向左时再次左移到目标范围仍能命中")
+	var b: CueTestBench = _bench()
+	b.begin_drag()
+	b.drag(Vector2(-30.0, 0.0), 10)
+	b.end_drag()
+	b.advance(30)
+	t.check_approx(b.state().facing, -1.0, 0.001, "已完成向左转身")
+	b.performance.setup(b.stage_def.cues, b.clock, b.controller.puppets)
+	b.advance_to(4800)
+	b.begin_drag()
+	b.drag(Vector2(-30.0, 0.0), 10)
+	b.end_drag()
+	var outcome: Dictionary = b.performance.get_outcome("l1_c2_move_left")
+	t.check(b.state().stage_pos.x < 0.35, "实际已向左移动到目标区")
+	t.check_eq(bool(outcome.get("hit", false)), true,
+		"同向继续移动应按位置变化判定，不能依赖新转身事件")
+	t.check_eq(_count_for_cue(b.judge_log, "cue_hit", "l1_c2_move_left"), 1,
+		"同一次拖动只命中一次")
+	t.finish("再次同向移动能命中且不逐帧评分")
+
+
+func _test_13_early_action_can_be_retried_on_beat(t: ATestBase) -> void:
+	t.begin("13 提前做错后重新抬手，拍点内可命中并保留失误事件")
+	var b: CueTestBench = _bench()
+	b.advance_to(1000)
+	b.advance(12, {"left_raise": true})
+	var early: Dictionary = b.performance.get_outcome("l1_c3_hand_raise")
+	t.check_eq(bool(early.get("hit", true)), false, "提前做应记为错拍")
+	b.controller.set_input_map({"left_lower": true})
+	b.advance(12)
+	b.controller.set_input_map({})
+	b.advance_to(8600)
+	b.advance(12, {"left_raise": true})
+	var retried: Dictionary = b.performance.get_outcome("l1_c3_hand_raise")
+	t.check_eq(bool(retried.get("hit", false)), true, "重新进入目标范围应在拍点内命中")
+	t.check(_has_cue_event(b.judge_log, "cue_miss", "l1_c3_hand_raise"),
+		"原错拍事件应留在事件流中")
+	t.check_eq(_count_for_cue(b.judge_log, "cue_hit", "l1_c3_hand_raise"), 1,
+		"后续命中只记录一次")
+	t.finish("提前错拍不会永久锁死 cue，原失误事件仍可录制")
+
+
+func _test_14_release_applies_final_reach(t: ATestBase) -> void:
+	t.begin("14 松开鼠标当帧的末段位移进入目标区仍判到位")
+	var b: CueTestBench = _bench()
+	b.advance_to(14900)
+	b.begin_drag()
+	b.drag(Vector2(50.0, 0.0), 3)
+	t.check(b.state().stage_pos.x > 0.53, "松开前已移出中位范围")
+	b.advance_to(14980)
+	b.controller.drag_to(Vector2(-120.0, 0.0))
+	b.controller.end_drag()
+	b.advance(1)
+	var outcome: Dictionary = b.performance.get_outcome("l1_c5_reach_center")
+	t.check_in_range(b.state().stage_pos.x, 0.47, 0.53, "松开当帧位置已进入目标区")
+	t.check_eq(bool(outcome.get("hit", false)), true,
+		"drag_end 不能抢先关闭拖动判定")
+	t.finish("末段位移在松开当帧仍参与到位判定")
