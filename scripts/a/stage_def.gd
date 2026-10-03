@@ -43,8 +43,9 @@ static func make_level1() -> StageDef:
 
 ## 第一关关键动作表。落点全部取整拍，方便与重音对齐核对。
 ## 每条都在落点前 1 s 有可读线索（hint_lead_ms），满足「落点前获得提示数据」。
+## segment 字段指向所在段落名，供按段汇总合拍度与低合拍补救使用。
 static func make_level1_cues(def: StageDef) -> Array:
-	return [
+	var cues: Array = [
 		# 第 2 拍：先蹲下（stance 落到接近 1.0），为第 4 拍的站起做准备
 		CueScript.make("l1_c0_crouch", def.beat_ms(2), CueScript.ACTION_CROUCH, 0,
 			{"key": "stance", "min": 0.85, "max": 1.0}, 250, "crouch"),
@@ -65,6 +66,19 @@ static func make_level1_cues(def: StageDef) -> Array:
 		CueScript.make("l1_c5_reach_center", def.beat_ms(24), CueScript.ACTION_REACH, 0,
 			{"key": "x", "min": 0.47, "max": 0.53}, 250, "reach_center"),
 	]
+	# 标注所属段落
+	var segment_of: Dictionary = {
+		"l1_c0_crouch": "起势",
+		"l1_c1_stand": "起身",
+		"l1_c2_move_left": "移步",
+		"l1_c3_hand_raise": "抬手",
+		"l1_c4_move_right": "移步",
+		"l1_c5_reach_center": "收势",
+	}
+	for cue in cues:
+		var cue_id: String = str(cue.get("cue_id", ""))
+		cue["segment"] = str(segment_of.get(cue_id, ""))
+	return cues
 
 
 func beat_duration_ms() -> float:

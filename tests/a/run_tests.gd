@@ -7,6 +7,7 @@ extends SceneTree
 const TestPuppetControlsScript := preload("res://tests/a/test_puppet_controls.gd")
 const TestMusicClockScript := preload("res://tests/a/test_music_clock.gd")
 const TestLevel1CuesScript := preload("res://tests/a/test_level1_cues.gd")
+const TestRemedyScript := preload("res://tests/a/test_remedy.gd")
 
 
 func _initialize() -> void:
@@ -40,6 +41,14 @@ func _initialize() -> void:
 	total_passed += int(cues_result["passed"])
 	total_failed += int(cues_result["failed"])
 	exit_code = maxi(exit_code, int(cues_result["exit_code"]))
+
+	print("")
+	print("---- 切片 4：8 秒补救与结束 ----")
+	var remedy: TestRemedy = TestRemedyScript.new()
+	var remedy_result: Dictionary = remedy.run_all()
+	total_passed += int(remedy_result["passed"])
+	total_failed += int(remedy_result["failed"])
+	exit_code = maxi(exit_code, int(remedy_result["exit_code"]))
 
 	print("")
 	print("========================================")

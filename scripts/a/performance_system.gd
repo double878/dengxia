@@ -67,10 +67,16 @@ func validate() -> Array[String]:
 
 ## 每帧一次。必须在状态已更新（PuppetController.tick）之后调用。
 ## 传入本帧从控制器取走的事件；连续姿态由同帧 PuppetState 的前后值判定。
+##
+## 事件元素必须是 Dictionary：记录层或测试台可能传入空槽、null 或其他类型，
+## 直接 `e.get()` 会抛 `Invalid call. Nonexistent function 'get' in base 'Nil'`
+## 把整帧判定打断（错误只进日志，演出会静默带病继续）。入口先判类型，坏元素跳过。
 func update(song_time_ms: int, controller_events: Array) -> void:
 	_emit_hints(song_time_ms)
 	var drag_ended: bool = false
 	for e in controller_events:
+		if not (e is Dictionary):
+			continue
 		match str(e.get("kind", "")):
 			"drag_begin":
 				_drag_generation += 1
@@ -89,8 +95,79 @@ func update(song_time_ms: int, controller_events: Array) -> void:
 		_dragging = false
 
 
+## 检测「漏做」的关键动作：落点 + 容差已过，玩家始终没有做出对应动作。
+## 必须每帧调用（或至少在每个落点窗口关闭后调用一次），否则漏做不会被记录。
+## 由 RemedySystem 消费这些结果来开补救窗口，本系统只如实记录。
+func detect_misses(song_time_ms: int) -> void:
+	for cue in cues:
+		var cue_id: String = str(cue.get("cue_id", ""))
+		if _outcomes.has(cue_id):
+			continue
+		if song_time_ms <= CueScript.window_end_ms(cue):
+			continue
+		var action: String = str(cue.get("action", ""))
+		_outcomes[cue_id] = {
+			"cue_id": cue_id,
+			"action": action,
+			"beat_time_ms": int(cue.get("beat_time_ms", 0)),
+			"tolerance_ms": int(cue.get("tolerance_ms", 0)),
+			"time_ms": song_time_ms,
+			"offset_ms": song_time_ms - int(cue.get("beat_time_ms", 0)),
+			"metric": NAN,
+			"hit": false,
+			"missed_outright": true,      ## 与「错拍做了」区分：这次是完全没做
+		}
+		_emit(song_time_ms, "cue_miss", int(cue.get("target_object", 0)), cue_id, {
+			"action": action,
+			"offset_ms": song_time_ms - int(cue.get("beat_time_ms", 0)),
+			"tolerance_ms": int(cue.get("tolerance_ms", 0)),
+			"metric": NAN,
+			"reason": "missed_outright",
+		})
+
+
 func get_outcome(cue_id: String) -> Dictionary:
 	return _outcomes.get(cue_id, {})
+
+
+## 供补救系统判断：漏做的关键动作清单（不含「错拍做了」的）。
+func missed_outright_cue_ids() -> Array[String]:
+	var out: Array[String] = []
+	for cue_id in _outcomes:
+		var outcome: Dictionary = _outcomes[cue_id]
+		if bool(outcome.get("missed_outright", false)):
+			out.append(str(cue_id))
+	return out
+
+
+## 按段汇总合拍度：仅用已判定的落点，返回 0.0-1.0；无已判定落点时返回 -1.0。
+func segment_score(segment_name: String) -> float:
+	var total: int = 0
+	var hits: int = 0
+	for cue in cues:
+		if str(cue.get("segment", "")) != segment_name:
+			continue
+		var cue_id: String = str(cue.get("cue_id", ""))
+		var outcome: Dictionary = _outcomes.get(cue_id, {})
+		if outcome.is_empty():
+			continue
+		total += 1
+		if bool(outcome.get("hit", false)):
+			hits += 1
+	if total == 0:
+		return -1.0
+	return float(hits) / float(total)
+
+
+## 段内已判定落点数，供补救系统套用「近期合拍度」阈值时避免样本过少。
+func segment_graded_count(segment_name: String) -> int:
+	var total: int = 0
+	for cue in cues:
+		if str(cue.get("segment", "")) != segment_name:
+			continue
+		if _outcomes.has(str(cue.get("cue_id", ""))):
+			total += 1
+	return total
 
 
 func get_outcomes() -> Array:
@@ -114,6 +191,14 @@ func take_events() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	out.assign(_events)
 	_events.clear()
+	return out
+
+
+## 只读地看当前待取事件，不改动队列。`take_events()` 是「取走即清空」，
+## 断言「本帧确实产出了事件」若用 take 会影响后续读取，因此另开一个只读入口。
+func get_events_for_test() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	out.assign(_events)
 	return out
 
 
@@ -198,7 +283,7 @@ func _evaluate_reach(song_time_ms: int) -> void:
 		if str(cue.get("action", "")) != CueScript.ACTION_REACH:
 			continue
 		var cue_id: String = str(cue.get("cue_id", ""))
-		if not _can_attempt(cue, song_time_ms):
+		if not _can_attempt(cue):
 			continue
 		var range: Dictionary = cue.get("target_range", {})
 		var metric: float = _metric_value(str(range.get("key", "")), int(cue.get("target_object", 0)))
@@ -215,11 +300,17 @@ func _evaluate_reach(song_time_ms: int) -> void:
 
 
 ## 站蹲沿用控制器的到位事件；手和位移读状态跨越，避免方向事件早于到位时刻。
+##
+## `pose_stance` 必须真的带 `stance` 读数：缺字段或空 payload 时若按 0.0 默认值判定，
+## 一个畸形事件就会被当成一次真实的「站起」，甚至会凭它关掉正在开的补救窗口。
+## 宁可不判定，也不接受一个没有读数的动作事件。
 func _match_event(event: Dictionary) -> Dictionary:
 	var kind: String = str(event.get("kind", ""))
 	var payload: Dictionary = event.get("payload", {})
 	match kind:
 		"pose_stance":
+			if not payload.has("stance"):
+				return {}
 			var stance: float = float(payload.get("stance", 0.0))
 			return {"actions": [CueScript.ACTION_STAND_UP, CueScript.ACTION_CROUCH],
 				"metric": stance}
@@ -234,7 +325,7 @@ func _register_action(song_time_ms: int, match_result: Dictionary, object_id: in
 	var metric: float = match_result["metric"]
 	for cue in cues:
 		var cue_id: String = str(cue.get("cue_id", ""))
-		if not _can_attempt(cue, song_time_ms):
+		if not _can_attempt(cue):
 			continue
 		if int(cue.get("target_object", 0)) != object_id:
 			continue
@@ -263,23 +354,29 @@ func _register_action(song_time_ms: int, match_result: Dictionary, object_id: in
 		_resolve(cue, song_time_ms, expected, metric)
 
 
-func _can_attempt(cue: Dictionary, song_time_ms: int) -> bool:
+## 这个 Cue 现在还能不能被判定。
+##
+## 判定只发生在容差窗内：窗内做出动作记命中，窗外做出同一动作记未命中。
+## 一旦判成命中就定案；判成未命中则**仍可再次判定**，否则 8 秒补救永远无法成功
+## （PRD 第 5.2.3 节：窗口内补做对应动作即算补救成功）。重复判定的次数由
+## `_register_action` 的「一次拖动同一 Cue 只判一次」去重键限制，不靠本函数。
+func _can_attempt(cue: Dictionary) -> bool:
 	var cue_id: String = str(cue.get("cue_id", ""))
 	if not _outcomes.has(cue_id):
 		return true
-	var previous: Dictionary = _outcomes[cue_id]
-	return not bool(previous.get("hit", false)) \
-		and int(previous.get("time_ms", 0)) < CueScript.window_start_ms(cue) \
-		and song_time_ms >= CueScript.window_start_ms(cue) \
-		and song_time_ms <= CueScript.window_end_ms(cue)
+	return not bool(_outcomes[cue_id].get("hit", false))
 
 
 ## 落点是否落在判定窗内。窗内记命中，窗外仍记未命中——动作照常发生。
+## `hit` 一旦为 false 就再也不会翻成 true：补救补的是「把动作做出来」，
+## 不是把已经错过的落点改判成命中，原失误永远留在结果与记录里（PRD 第 5.2.3 节）。
 func _resolve(cue: Dictionary, song_time_ms: int, action: String, metric: float) -> void:
 	var cue_id: String = str(cue.get("cue_id", ""))
 	var beat_ms: int = int(cue.get("beat_time_ms", 0))
 	var tolerance: int = int(cue.get("tolerance_ms", 0))
 	var offset: int = song_time_ms - beat_ms
+	var hit: bool = absi(offset) <= tolerance
+	var previous: Dictionary = _outcomes.get(cue_id, {})
 	var outcome: Dictionary = {
 		"cue_id": cue_id,
 		"action": action,
@@ -288,8 +385,12 @@ func _resolve(cue: Dictionary, song_time_ms: int, action: String, metric: float)
 		"time_ms": song_time_ms,
 		"offset_ms": offset,
 		"metric": metric,
-		"hit": absi(offset) <= tolerance,
+		"hit": hit,
 	}
+	if not hit:
+		## 落点过后才把动作做出来 = 补救尝试；原失误已记录，补救不抹去它。
+		outcome["remedy_attempt"] = song_time_ms > CueScript.window_end_ms(cue) \
+			and not previous.is_empty()
 	_outcomes[cue_id] = outcome
 	_emit(song_time_ms, "cue_hit" if outcome["hit"] else "cue_miss",
 		int(cue.get("target_object", 0)), cue_id, {
