@@ -6,6 +6,8 @@ class_name StageDef
 ## 本切片只落「时长 + BPM + 段落地基」；关键动作 Cue 列表属切片 3，届时填写，
 ## 读取器与校验器现在就把 Cue 纳入结构，避免切片 3 再改契约。
 
+const CueScript := preload("res://scripts/a/cue.gd")
+
 const LEVEL1_DURATION_MS: int = 35000     ## PRD 第 6 节：第一关固定 35 秒（不延长）
 const LEVEL1_BPM: float = 96.0            ## PRD 第 10 节：原型 BPM 初始考虑 90-100
 const LEVEL1_ID: int = 1
@@ -19,6 +21,8 @@ var cues: Array = []                      ## 关键动作列表，结构见 make
 
 
 ## 第一关数据。段落按拍数编排（TECH_DESIGN.md 2.1：关卡数据按拍数、以毫秒存储）。
+## 关键动作覆盖 PRD 第 6 节对第一关的最低要求：站起、横向移动、抬手，
+## 以及至少一次落在重音上的关键动作（重音每 4 拍一次，落点序号都是 4 的倍数）。
 static func make_level1() -> StageDef:
 	var def := StageDef.new()
 	def.id = LEVEL1_ID
@@ -33,8 +37,34 @@ static func make_level1() -> StageDef:
 		{"name": "抬手", "start_ms": def.beat_ms(34), "end_ms": def.beat_ms(46)},
 		{"name": "收势", "start_ms": def.beat_ms(46), "end_ms": def.duration_ms},
 	]
-	def.cues = []
+	def.cues = make_level1_cues(def)
 	return def
+
+
+## 第一关关键动作表。落点全部取整拍，方便与重音对齐核对。
+## 每条都在落点前 1 s 有可读线索（hint_lead_ms），满足「落点前获得提示数据」。
+static func make_level1_cues(def: StageDef) -> Array:
+	return [
+		# 第 2 拍：先蹲下（stance 落到接近 1.0），为第 4 拍的站起做准备
+		CueScript.make("l1_c0_crouch", def.beat_ms(2), CueScript.ACTION_CROUCH, 0,
+			{"key": "stance", "min": 0.85, "max": 1.0}, 250, "crouch"),
+		# 重音（第 4 拍）：站起。stance 0.0 = 完全站立，因此「站起」的到位范围是接近 0，
+		# 而不是 0.7-1.0（那是蹲下方向，写成后者会让蹲到底反而被判成站起）。
+		CueScript.make("l1_c1_stand", def.beat_ms(4), CueScript.ACTION_STAND_UP, 0,
+			{"key": "stance", "min": 0.0, "max": 0.05}, 250, "stand_up"),
+		# 第 8 拍：向左横向移动（默认站位 x=0.5 不算「已到位」，必须真的左移）
+		CueScript.make("l1_c2_move_left", def.beat_ms(8), CueScript.ACTION_MOVE_LEFT, 0,
+			{"key": "x", "min": 0.0, "max": 0.35}, 250, "move_left"),
+		# 第 14 拍：抬手
+		CueScript.make("l1_c3_hand_raise", def.beat_ms(14), CueScript.ACTION_HAND_RAISE, 0,
+			{"key": "angle", "min": 0.5, "max": 0.6}, 250, "hand_raise"),
+		# 重音（第 20 拍）：向右横向移动
+		CueScript.make("l1_c4_move_right", def.beat_ms(20), CueScript.ACTION_MOVE_RIGHT, 0,
+			{"key": "x", "min": 0.65, "max": 1.0}, 250, "move_right"),
+		# 重音（第 24 拍）：移动到中位到位
+		CueScript.make("l1_c5_reach_center", def.beat_ms(24), CueScript.ACTION_REACH, 0,
+			{"key": "x", "min": 0.47, "max": 0.53}, 250, "reach_center"),
+	]
 
 
 func beat_duration_ms() -> float:
@@ -47,20 +77,6 @@ func beat_ms(beat_index: int) -> int:
 
 func total_beats() -> int:
 	return int(floor(float(duration_ms) / beat_duration_ms()))
-
-
-## 关键动作条目工厂。字段依 TECH_DESIGN.md 2.2 的 Cue 行。
-static func make_cue(cue_id: String, beat_time_ms: int, action: String, target_object: int,
-		target_range: Dictionary, tolerance_ms: int, demo_action: String) -> Dictionary:
-	return {
-		"cue_id": cue_id,
-		"beat_time_ms": beat_time_ms,
-		"action": action,
-		"target_object": target_object,
-		"target_range": target_range,
-		"tolerance_ms": tolerance_ms,
-		"demo_action": demo_action,
-	}
 
 
 ## 校验关卡数据。返回问题列表；空列表表示通过。
@@ -100,9 +116,12 @@ func validate() -> Array[String]:
 		if seen.has(cue_id):
 			problems.append("stage %d: cue_id 重复「%s」" % [id, cue_id])
 		seen[cue_id] = true
+		for p in CueScript.validate(cue):
+			problems.append("stage %d: %s" % [id, p])
 		var beat_time_ms: int = int(cue.get("beat_time_ms", -1))
 		if beat_time_ms < 0 or beat_time_ms > duration_ms:
 			problems.append("stage %d cue「%s」落点 %d 不在关卡时长内" % [id, cue_id, beat_time_ms])
-		if int(cue.get("tolerance_ms", 0)) <= 0:
-			problems.append("stage %d cue「%s」缺少有效判定容差" % [id, cue_id])
+		# 前四关重要落点必须给补救留出可见时间（TECH_DESIGN.md 2.2）
+		if CueScript.hint_time_ms(cue) >= beat_time_ms and beat_time_ms > 0:
+			problems.append("stage %d cue「%s」的线索时间不早于落点" % [id, cue_id])
 	return problems

@@ -6,6 +6,7 @@ extends SceneTree
 
 const TestPuppetControlsScript := preload("res://tests/a/test_puppet_controls.gd")
 const TestMusicClockScript := preload("res://tests/a/test_music_clock.gd")
+const TestLevel1CuesScript := preload("res://tests/a/test_level1_cues.gd")
 
 
 func _initialize() -> void:
@@ -31,6 +32,14 @@ func _initialize() -> void:
 	total_passed += int(music_result["passed"])
 	total_failed += int(music_result["failed"])
 	exit_code = maxi(exit_code, int(music_result["exit_code"]))
+
+	print("")
+	print("---- 切片 3：第一关关键动作判定 ----")
+	var cues: TestLevel1Cues = TestLevel1CuesScript.new()
+	var cues_result: Dictionary = cues.run_all()
+	total_passed += int(cues_result["passed"])
+	total_failed += int(cues_result["failed"])
+	exit_code = maxi(exit_code, int(cues_result["exit_code"]))
 
 	print("")
 	print("========================================")

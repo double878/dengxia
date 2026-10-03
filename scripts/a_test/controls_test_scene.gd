@@ -13,10 +13,13 @@ extends Node2D
 const ControlsHarnessScript := preload("res://scripts/a_test/controls_harness.gd")
 const PlaceholderPuppetScript := preload("res://scripts/a_test/placeholder_puppet.gd")
 const ControlsProbeScript := preload("res://scripts/a_test/controls_probe.gd")
+const CueProbeScript := preload("res://scripts/a_test/cue_probe.gd")
 const ClockCheckScript := preload("res://scripts/a_test/clock_check.gd")
 const MusicClockScript := preload("res://scripts/a/music_clock.gd")
 const MetronomeScript := preload("res://scripts/a_test/metronome.gd")
 const StageDefScript := preload("res://scripts/a/stage_def.gd")
+const PerformanceSystemScript := preload("res://scripts/a/performance_system.gd")
+const CueScript := preload("res://scripts/a/cue.gd")
 
 const STAGE_ORIGIN: Vector2 = Vector2(0.0, 150.0)
 const STAGE_SIZE: Vector2 = Vector2(1920.0, 640.0)
@@ -34,6 +37,7 @@ const SEEK_STEP_MS: int = 5000
 
 @onready var _puppet: PlaceholderPuppet = $Puppet
 @onready var _state_label: RichTextLabel = $Hud/StatePanel/StateLabel
+@onready var _cue_label: RichTextLabel = $Hud/CuePanel/CueLabel
 @onready var _clock_label: RichTextLabel = $Hud/ClockPanel/ClockLabel
 @onready var _event_label: RichTextLabel = $Hud/EventPanel/EventLabel
 @onready var _hud_hint: Label = $Hud/HintLabel
@@ -42,6 +46,7 @@ var _harness: ControlsHarness = null
 var _clock: MusicClock = null
 var _metronome: Metronome = null
 var _stage_def: StageDef = null
+var _performance: PerformanceSystem = null
 var _paused: bool = false
 var _metronome_enabled: bool = true
 var _last_crossing_ms: int = -1
@@ -77,6 +82,8 @@ func _ready() -> void:
 
 	_harness = ControlsHarnessScript.new(3)
 	_harness.controller.clock = _clock
+	_performance = PerformanceSystemScript.new()
+	_performance.setup(_stage_def.cues, _clock, _harness.controller.puppets)
 	var puppet_state: PuppetState = _harness.controller.get_controlled()
 	_puppet.puppet_state = puppet_state
 	_puppet.stage_origin = STAGE_ORIGIN
@@ -103,6 +110,8 @@ func _process(delta: float) -> void:
 		_crossing_count += 1
 		_last_crossing_ms = _clock.get_song_time_ms()
 	_harness.advance(delta)
+	# 判定在操控状态更新之后运行：先有状态，再有判定
+	_performance.update(_clock.get_song_time_ms(), _harness.take_frame_events())
 	_refresh_hud()
 
 
@@ -192,6 +201,9 @@ func _run_probe_and_quit() -> void:
 	# 探针可能把时钟留在暂停态，时钟实测需要它恢复运行
 	if _clock.is_paused():
 		_clock.resume()
+	# 关键动作判定的图形实测（同步、确定性，复用探针模式）
+	var cue_probe := CueProbeScript.new()
+	_probe_failures += cue_probe.run()
 	_clock_check = ClockCheckScript.new()
 	_clock_check.start(_clock)
 
@@ -237,16 +249,86 @@ func _refresh_hud() -> void:
 		and absf(state.hand_angle.y) <= 0.6 + 1e-6))
 	_state_label.text = "\n".join(lines)
 	_refresh_clock_panel()
+	_refresh_cue_panel()
 
 	var events: Array[Dictionary] = _harness.controller.take_events()
 	var event_lines: Array[String] = []
-	event_lines.append("[b]TimedEvent 流（取走即清空）[/b]")
+	event_lines.append("[b]TimedEvent 流（操控 + 判定，取走即清空）[/b]")
 	if events.is_empty():
-		event_lines.append("[color=#888]（无新事件）[/color]")
+		event_lines.append("[color=#888]（无新操控事件）[/color]")
 	else:
 		for e in events:
 			event_lines.append(_format_event(e))
+	for e in _performance.take_events():
+		event_lines.append("[color=#9df]%s[/color]" % _format_event(e))
 	_event_label.text = "\n".join(event_lines)
+
+
+## 关键动作面板：当前生效的线索、下一个落点倒计时、每条关键动作的判定结果。
+func _refresh_cue_panel() -> void:
+	var song_ms: int = _clock.get_song_time_ms()
+	var lines: Array[String] = []
+	lines.append("[b]第一关关键动作判定[/b]")
+	lines.append("待判定 %d / 共 %d 条" % [_performance.pending_count(), _stage_def.cues.size()])
+	lines.append("")
+
+	# 当前可感知的线索（落点前 1 s 出现），以及最近的未判定落点
+	var active_hints: Array[String] = []
+	var next_cue: Dictionary = {}
+	var next_delta: int = 1 << 30
+	for cue in _stage_def.cues:
+		var cue_id: String = str(cue["cue_id"])
+		if _performance.has_outcome(cue_id):
+			continue
+		if song_ms >= CueScript.hint_time_ms(cue):
+			active_hints.append("%s（%s）" % [_action_label(str(cue["action"])), cue_id])
+		var delta: int = int(cue["beat_time_ms"]) - song_ms
+		if delta > 0 and delta < next_delta:
+			next_delta = delta
+			next_cue = cue
+	lines.append("当前线索：%s" % ("、".join(active_hints) if not active_hints.is_empty() else "（无）"))
+	if not next_cue.is_empty():
+		lines.append("下一个落点：%s  还有 %d ms" % [str(next_cue["cue_id"]), next_delta])
+	else:
+		lines.append("下一个落点：（本关已无未判定落点）")
+	lines.append("")
+	lines.append("[b]判定结果[/b]")
+	var graded: int = 0
+	for cue in _stage_def.cues:
+		var cue_id: String = str(cue["cue_id"])
+		if not _performance.has_outcome(cue_id):
+			continue
+		graded += 1
+		var o: Dictionary = _performance.get_outcome(cue_id)
+		var mark: String = "[color=#6f6]命中[/color]" if bool(o["hit"]) else "[color=#f96]未命中[/color]"
+		lines.append("  %-20s %-6s offset=%+5d ms" % [cue_id, mark, int(o["offset_ms"])])
+	if graded == 0:
+		lines.append("  [color=#888]（尚无判定结果）[/color]")
+	lines.append("")
+	lines.append("[b]说明[/b]")
+	lines.append("判定的是「姿势到位/状态切换」的瞬间，")
+	lines.append("平移本身不逐帧评分；容差 ±250 ms 为可配置原型值。")
+	lines.append("错拍动作照常发生，只记为未命中。")
+	_cue_label.text = "\n".join(lines)
+
+
+func _action_label(action: String) -> String:
+	match action:
+		CueScript.ACTION_STAND_UP:
+			return "站起"
+		CueScript.ACTION_CROUCH:
+			return "蹲下"
+		CueScript.ACTION_HAND_RAISE:
+			return "抬手"
+		CueScript.ACTION_HAND_LOWER:
+			return "落手"
+		CueScript.ACTION_MOVE_LEFT:
+			return "向左移动"
+		CueScript.ACTION_MOVE_RIGHT:
+			return "向右移动"
+		CueScript.ACTION_REACH:
+			return "移动到目标位"
+	return action
 
 
 func _refresh_clock_panel() -> void:

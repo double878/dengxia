@@ -7,6 +7,7 @@ class_name TestMusicClock
 const ATestBaseScript := preload("res://tests/a/a_test_base.gd")
 const MusicClockScript := preload("res://scripts/a/music_clock.gd")
 const StageDefScript := preload("res://scripts/a/stage_def.gd")
+const CueScript := preload("res://scripts/a/cue.gd")
 const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
 const FrameClockScript := preload("res://scripts/a_test/frame_clock.gd")
 
@@ -168,7 +169,7 @@ func _test_07_stage_def_level1(t: ATestBase) -> void:
 	t.check_approx(def.bpm, 96.0, 1e-9, "BPM 应为 96（PRD 第 10 节的 90-100 区间内）")
 	t.check_eq(def.total_beats(), 56, "35 秒 @96 BPM 应为 56 拍")
 	t.check(def.segments.size() >= 4, "应至少划分 4 个段落，实际 %d" % def.segments.size())
-	t.check_eq(def.cues.size(), 0, "关键动作列表属切片 3，本片应仍为空")
+	t.check_eq(def.cues.size(), 6, "第一关应有 6 条关键动作（切片 3 已填写）")
 	var problems: Array[String] = def.validate()
 	t.check_eq(problems.size(), 0, "第一关数据应通过校验：%s" % str(problems))
 	t.finish("35 秒 / 56 拍 / 五段连续覆盖，校验通过")
@@ -187,8 +188,8 @@ func _test_08_validate_catches_errors(t: ATestBase) -> void:
 
 	var dup: StageDef = StageDefScript.make_level1()
 	dup.cues = [
-		StageDefScript.make_cue("cue_rise", 5000, "stand", 0, {}, 250, "stand_up"),
-		StageDefScript.make_cue("cue_rise", 8000, "stand", 0, {}, 250, "stand_up"),
+		CueScript.make("cue_rise", 5000, CueScript.ACTION_STAND_UP, 0, {}, 250, "stand_up"),
+		CueScript.make("cue_rise", 8000, CueScript.ACTION_STAND_UP, 0, {}, 250, "stand_up"),
 	]
 	var dup_problems: Array[String] = dup.validate()
 	var dup_found: bool = false
@@ -198,7 +199,8 @@ func _test_08_validate_catches_errors(t: ATestBase) -> void:
 	t.check(dup_found, "应报出 cue_id 重复：%s" % str(dup_problems))
 
 	var out_of_range: StageDef = StageDefScript.make_level1()
-	out_of_range.cues = [StageDefScript.make_cue("cue_late", 40000, "stand", 0, {}, 250, "stand_up")]
+	out_of_range.cues = [CueScript.make("cue_late", 40000, CueScript.ACTION_STAND_UP, 0,
+		{}, 250, "stand_up")]
 	var range_found: bool = false
 	for p in out_of_range.validate():
 		if p.find("不在关卡时长内") >= 0:

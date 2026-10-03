@@ -18,6 +18,7 @@ var paused: bool = false
 
 var _accumulator: float = 0.0
 var _step_count: int = 0
+var _frame_events: Array[Dictionary] = []
 
 
 func _init(puppet_count: int = 3) -> void:
@@ -30,11 +31,13 @@ func _init(puppet_count: int = 3) -> void:
 
 
 ## 固定步长推进。累积器上限防止长时间卡帧后出现「追帧风暴」。
-func advance(frame_delta: float) -> void:
+## 返回本帧实际推进的步数；产生的事件保留在 _frame_events 中供判定系统消费。
+func advance(frame_delta: float) -> int:
 	if paused:
-		return
+		return 0
 	_accumulator += maxf(frame_delta, 0.0)
 	var steps: int = 0
+	_frame_events.clear()
 	while _accumulator >= FIXED_DELTA and steps < MAX_STEPS_PER_FRAME:
 		_accumulator -= FIXED_DELTA
 		steps += 1
@@ -42,8 +45,18 @@ func advance(frame_delta: float) -> void:
 		input_reader.poll_keys()
 		clock.advance(FIXED_DELTA)
 		controller.tick(FIXED_DELTA)
+		_frame_events.append_array(controller.take_events())
 	if steps >= MAX_STEPS_PER_FRAME:
 		_accumulator = 0.0
+	return steps
+
+
+## 取走本帧由 advance() 产生、尚未被判定系统消费的控制器事件。
+func take_frame_events() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	out.assign(_frame_events)
+	_frame_events.clear()
+	return out
 
 
 ## 直接步进固定数量的 tick，供测试精确控制帧数。

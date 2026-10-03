@@ -57,7 +57,7 @@ text = "占位提示"
 offset_left = 12.0
 offset_top = 48.0
 offset_right = 726.0
-offset_bottom = 1030.0
+offset_bottom = 590.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
@@ -65,11 +65,29 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 offset_left = 12.0
 offset_top = 10.0
 offset_right = 702.0
-offset_bottom = 972.0
+offset_bottom = 532.0
 mouse_filter = 2
 bbcode_enabled = true
 theme_override_font_sizes/normal_font_size = 17
 theme_override_font_sizes/bold_font_size = 19
+
+[node name="CuePanel" type="Panel" parent="Hud"]
+offset_left = 12.0
+offset_top = 600.0
+offset_right = 726.0
+offset_bottom = 1030.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="CueLabel" type="RichTextLabel" parent="Hud/CuePanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 702.0
+offset_bottom = 412.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 16
+theme_override_font_sizes/bold_font_size = 18
 
 [node name="EventPanel" type="Panel" parent="Hud"]
 offset_left = 738.0

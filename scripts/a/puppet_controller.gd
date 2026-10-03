@@ -194,11 +194,12 @@ func _apply_drag(controlled: PuppetState) -> void:
 	controlled.stance = clampf(
 		controlled.stance + dpx.y / STAGE_PIXEL_SIZE.y,
 		PuppetStateScript.STANCE_MIN, PuppetStateScript.STANCE_MAX)
-	var stance_changed: bool = not is_equal_approx(before_stance, controlled.stance)
-	if stance_changed and not _stance_moving:
-		_stance_moving = true
-		_stance_last_emitted = before_stance
-		_emit(KIND_POSE_STANCE, controlled.puppet_id, {"stance": controlled.stance})
+	if not is_equal_approx(before_stance, controlled.stance):
+		if not _stance_moving:
+			_stance_moving = true
+			_emit(KIND_POSE_STANCE, controlled.puppet_id, {"stance": controlled.stance})
+		# 记下本帧已上报的值，停稳时才不会把同一帧的值重复发一次
+		_stance_last_emitted = controlled.stance
 
 	if absf(dpx.x) > FACING_DEADZONE_PX:
 		_facing_target = 1.0 if dpx.x > 0.0 else -1.0
