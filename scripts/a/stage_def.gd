@@ -31,11 +31,12 @@ static func make_level1() -> StageDef:
 	def.track_path = ""
 	# 段落连续覆盖整关、单调递增且不重复（TECH_DESIGN.md 2.2 的校验要求）
 	def.segments = [
-		{"name": "起势", "start_ms": def.beat_ms(0), "end_ms": def.beat_ms(8)},
-		{"name": "起身", "start_ms": def.beat_ms(8), "end_ms": def.beat_ms(20)},
-		{"name": "移步", "start_ms": def.beat_ms(20), "end_ms": def.beat_ms(34)},
-		{"name": "抬手", "start_ms": def.beat_ms(34), "end_ms": def.beat_ms(46)},
-		{"name": "收势", "start_ms": def.beat_ms(46), "end_ms": def.duration_ms},
+		{"name": "起势", "start_ms": def.beat_ms(0), "end_ms": def.beat_ms(3)},
+		{"name": "起身", "start_ms": def.beat_ms(3), "end_ms": def.beat_ms(7)},
+		{"name": "移步", "start_ms": def.beat_ms(7), "end_ms": def.beat_ms(13)},
+		{"name": "抬手", "start_ms": def.beat_ms(13), "end_ms": def.beat_ms(17)},
+		{"name": "回行", "start_ms": def.beat_ms(17), "end_ms": def.beat_ms(23)},
+		{"name": "收势", "start_ms": def.beat_ms(23), "end_ms": def.duration_ms},
 	]
 	def.cues = make_level1_cues(def)
 	return def
@@ -72,7 +73,7 @@ static func make_level1_cues(def: StageDef) -> Array:
 		"l1_c1_stand": "起身",
 		"l1_c2_move_left": "移步",
 		"l1_c3_hand_raise": "抬手",
-		"l1_c4_move_right": "移步",
+		"l1_c4_move_right": "回行",
 		"l1_c5_reach_center": "收势",
 	}
 	for cue in cues:

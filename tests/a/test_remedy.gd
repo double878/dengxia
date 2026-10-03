@@ -390,35 +390,68 @@ func _test_10_single_demo_and_separate_records(t: ATestBase) -> void:
 
 ## 合拍度跌破警戒线时同样触发补救（PRD 第 5.1、5.2.1 节）。
 ##
-## 需要额外一条落点才能把这条路径与「漏做」路径分开：漏做路径会为段内每条漏做的
-## cue 开窗，而低合拍补救开的是段内「既未判定、也未开窗」的下一个落点。没有这条
-## 额外落点时，低合拍检查会因为段内已无可用落点而静默跳过，本路径就永远不被执行。
-## 额外落点也是合理的演出调度：本段已经整段失准，师父示范接下来该做的动作。
+## 低合拍补救要求「段内已判定数 >= min_graded（2）且合拍度跌破警戒线」，
+## 然后开在段内「既未判定、也未开窗」的下一个落点上。
 ##
-## 触发靠一次方向相反的拖动：玩家向左移动，会在移步段里留下「未命中」的判定，
-## 使该段合拍度跌到 0.0；同时这一刻向后「扫」到的落点也不再剩下可示范的对象。
+## 这条约束决定了段落必须能同时容纳**三条**关键动作，缺一不可：
+## 前两条要已经被判定（才够 min_graded 且把合拍度压到 0.0），
+## 第三条必须还没判定、也还没开窗，才有可示范的对象。每段只有一两条 Cue 时，
+## 「已判定两条」与「还剩一条没判定」无法同时成立，本路径就不可达——
+## 这正是段落划分与补救选择之间的关系。
+##
+## 本测试要同时满足三件事，缺一不可：
+##   1. 目标段里有两条落点**都已经判定**（才够 min_graded，且合拍度压到 0.0）；
+##   2. 段里还有第三条落点**既未判定、也没开窗**，才有可示范的对象；
+##   3. 那条待示范的落点必须与用于判负的动作**不同**（这里是落手 vs 抬手），
+##      否则手停在目标带里，落点会立刻被顺手判掉，就没有对象了。
+##
+## 第一关真实数据里「移步」段只有一条落点，所以本测试把抬手落点也划进移步段，
+## 再补一条同段的落手落点作为待示范对象。过程：
+##   向左拖跨过左移目标带（左移落点判负）→ 提前按住抬手键（抬手落点判负）
+##   → 移步段判定数到 2、合拍度 0.0 → 低合拍窗口开在还没做的那条落手上
+##   → 玩家在窗口内落手补做即关窗，而原来的错判仍留在记录里。
 func _test_11_low_sync_triggers_remedy(t: ATestBase) -> void:
 	t.begin("11 低合拍：段内合拍度跌破警戒线也触发补救，理由与漏做分开")
 	var def: StageDef = StageDefScript.make_level1()
-	var next_cue: Dictionary = CueScript.make("l1_c_slide", def.beat_ms(18),
-		CueScript.ACTION_MOVE_LEFT, 0, {"key": "x", "min": 0.0, "max": 0.35}, 250, "move_left")
+	# 把原本落在「抬手」段的抬手落点划进「移步」段（移步段 5000-10625 ms 覆盖它）
+	for cue in def.cues:
+		if str(cue["cue_id"]) == "l1_c3_hand_raise":
+			cue["segment"] = "移步"
+	# 再补一条同段的落手落点，作为低合拍要示范的「还没做的动作」。
+	# 取落手而不是抬手：原抬手落点被判负后手一直停在抬到位，若示范再取抬手，
+	# 手已经在目标带里，落点会立刻被判掉，就没有可示范的对象了。
+	var next_cue: Dictionary = CueScript.make("l1_c_slide", def.beat_ms(16),
+		CueScript.ACTION_HAND_LOWER, 0, {"key": "angle", "min": -0.6, "max": -0.5}, 250, "hand_lower")
 	next_cue["segment"] = "移步"
 	def.cues.append(next_cue)
 	t.check_eq(def.validate().size(), 0, "追加落点后的数据应通过校验")
 
 	var b: DirectorTestBench = _bench(def)
-	# 只漏做蹲下与站起，让这两条先各自开出「漏做」窗口
-	b.advance_to(STAND_BEAT_MS + 260)
-	t.check_eq(b.director.remedy.records.size(), 2,
-		"此时应有蹲下、站起两条漏做记录（实际 %d）" % b.director.remedy.records.size())
+	t.check_eq(b.director.performance.segment_graded_count("移步"), 0,
+		"开局移步段还没有判定")
 
-	# 向左拖动：移步段的判定全部未命中，合拍度跌破警戒线
+	# 向左拖出左移目标带（0.0-0.35）：左移落点被判负
+	b.advance_to(2750)
 	b.begin_drag()
-	b.drag(Vector2(-110.0, 0.0), 5)
+	b.drag(Vector2(-250.0, 0.0), 8)
 	b.end_drag()
 	b.advance(5)
+	t.check(b.director.performance.has_outcome("l1_c2_move_left"),
+		"左移落点应已被判负（实际 x=%.4f）" % b.state().stage_pos.x)
+	# 提前按住抬手键（早于原抬手落点的判定窗），使该落点被判负；随后松开，
+	# 否则按键状态会一直保持、把待示范的那条抬手也顺手做掉。
+	b.advance_to(def.beat_ms(14) - 1000)
+	b.advance(20, {"left_raise": true})
+	# 松开并把手下落到示范目标带之外：这样待示范的落手落点才保持未判定
+	b.controller.set_input_map({"left_lower": true})
+	b.advance(30)
+	b.controller.set_input_map({})
+	b.advance(5)
+	t.check(b.director.performance.has_outcome("l1_c3_hand_raise"),
+		"原抬手落点应已被判负（实际 hand_angle.x=%.4f）" % b.state().hand_angle.x)
 	t.check_eq(b.director.performance.segment_graded_count("移步") >= 2, true,
-		"移步段应已有至少两条判定供合拍度汇总")
+		"左移与抬手判负后移步段应已有至少两条判定（实际 %d）"
+			% b.director.performance.segment_graded_count("移步"))
 	t.check_eq(b.director.performance.segment_score("移步") < b.director.remedy.sync_threshold,
 		true, "移步段合拍度应已跌破警戒线（实际 %.3f）"
 			% b.director.performance.segment_score("移步"))
@@ -436,6 +469,8 @@ func _test_11_low_sync_triggers_remedy(t: ATestBase) -> void:
 		var low_event: Dictionary = low_sync_events[0]
 		low_sync_id = str(low_event["cue_id"])
 		t.check(not low_sync_id.is_empty(), "低合拍窗口应挂在一条具体落点上")
+		t.check_eq(low_sync_id, "l1_c_slide",
+			"低合拍示范应指向段内还没做过、也没开窗的那条落点")
 		t.check(b.director.remedy.is_open(low_sync_id), "该低合拍窗口应开着")
 		t.check(not b.director.performance.has_outcome(low_sync_id),
 			"低合拍示范应指向段内还没做过的落点「%s」" % low_sync_id)
@@ -443,16 +478,13 @@ func _test_11_low_sync_triggers_remedy(t: ATestBase) -> void:
 	var before_more: int = _count_low_sync_opens(b)
 	b.advance(30)
 	t.check_eq(_count_low_sync_opens(b), before_more, "低合拍补救每段只开一次，不反复刷窗口")
-	# 窗口内按示范补做该落点要求的动作，低合拍窗口应关闭，而原失误仍保留。
-	# 方向必须跟着示范走：示范指向段内尚未做过的落点，玩家照做才算补救成功。
+	# 窗口内按示范补做该落点要求的动作（把手下落到目标带），低合拍窗口应关闭
 	var demo_action: String = str(b.find_cue(low_sync_id).get("action", ""))
-	var drag_sign: float = -1.0 if demo_action == CueScript.ACTION_MOVE_LEFT else 1.0
-	b.begin_drag()
-	b.drag(Vector2(520.0 * drag_sign, 0.0), 25)
-	b.end_drag()
+	t.check_eq(demo_action, CueScript.ACTION_HAND_LOWER, "示范动作应是落手")
+	b.advance(40, {"left_lower": true})
 	t.check(b.director.performance.has_outcome(low_sync_id),
-		"补做后该落点应产生新的判定（示范动作 %s，实际 x=%.4f）"
-			% [demo_action, b.state().stage_pos.x])
+		"补做后该落点应产生新的判定（示范动作 %s，实际 hand_angle.x=%.4f）"
+			% [demo_action, b.state().hand_angle.x])
 	t.check(not b.director.remedy.is_open(low_sync_id),
 		"补做示范动作 %s 后低合拍窗口应关闭" % demo_action)
 	var success: Dictionary = {}

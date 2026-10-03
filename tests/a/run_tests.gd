@@ -9,6 +9,7 @@ const TestMusicClockScript := preload("res://tests/a/test_music_clock.gd")
 const TestLevel1CuesScript := preload("res://tests/a/test_level1_cues.gd")
 const TestRemedyScript := preload("res://tests/a/test_remedy.gd")
 const TestLampScript := preload("res://tests/a/test_lamp.gd")
+const TestLevel1RuntimeScript := preload("res://tests/a/test_level1_runtime.gd")
 
 
 func _initialize() -> void:
@@ -58,6 +59,14 @@ func _initialize() -> void:
 	total_passed += int(lamp_result["passed"])
 	total_failed += int(lamp_result["failed"])
 	exit_code = maxi(exit_code, int(lamp_result["exit_code"]))
+
+	print("")
+	print("---- 切片 6：第一关 A 侧运行编排 ----")
+	var runtime := TestLevel1RuntimeScript.new()
+	var runtime_result: Dictionary = runtime.run_all()
+	total_passed += int(runtime_result["passed"])
+	total_failed += int(runtime_result["failed"])
+	exit_code = maxi(exit_code, int(runtime_result["exit_code"]))
 
 	print("")
 	print("========================================")

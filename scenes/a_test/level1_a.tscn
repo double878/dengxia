@@ -1,0 +1,123 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/a_test/level1_a_scene.gd" id="1_scene"]
+[ext_resource type="Script" path="res://scripts/a_test/placeholder_puppet.gd" id="2_puppet"]
+[ext_resource type="Script" path="res://scripts/a_test/placeholder_lamp.gd" id="3_lamp"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.05, 0.05, 0.07, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.45, 0.25, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Level1AScene" type="Node2D"]
+script = ExtResource("1_scene")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 2
+color = Color(0.07, 0.06, 0.08, 1)
+
+[node name="StageFloor" type="ColorRect" parent="."]
+offset_left = 0.0
+offset_top = 120.0
+offset_right = 1920.0
+offset_bottom = 790.0
+mouse_filter = 2
+color = Color(0.14, 0.12, 0.11, 1)
+
+[node name="Puppet" type="Node2D" parent="."]
+script = ExtResource("2_puppet")
+
+[node name="Lamp" type="Node2D" parent="."]
+script = ExtResource("3_lamp")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="HintLabel" type="Label" parent="Hud"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 1908.0
+offset_bottom = 40.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 22
+text = "第一关 A 侧运行场景"
+
+[node name="StatePanel" type="Panel" parent="Hud"]
+offset_left = 12.0
+offset_top = 48.0
+offset_right = 464.0
+offset_bottom = 366.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="StateLabel" type="RichTextLabel" parent="Hud/StatePanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 440.0
+offset_bottom = 306.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 20
+theme_override_font_sizes/bold_font_size = 22
+
+[node name="CuePanel" type="Panel" parent="Hud"]
+offset_left = 12.0
+offset_top = 376.0
+offset_right = 464.0
+offset_bottom = 1030.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="CueLabel" type="RichTextLabel" parent="Hud/CuePanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 440.0
+offset_bottom = 642.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 20
+theme_override_font_sizes/bold_font_size = 22
+
+[node name="EventPanel" type="Panel" parent="Hud"]
+offset_left = 1480.0
+offset_top = 48.0
+offset_right = 1908.0
+offset_bottom = 690.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="EventLabel" type="RichTextLabel" parent="Hud/EventPanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 416.0
+offset_bottom = 632.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 18
+theme_override_font_sizes/bold_font_size = 20
+
+[node name="ClockPanel" type="Panel" parent="Hud"]
+offset_left = 1480.0
+offset_top = 710.0
+offset_right = 1908.0
+offset_bottom = 1030.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="ClockLabel" type="RichTextLabel" parent="Hud/ClockPanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 416.0
+offset_bottom = 300.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 20
+theme_override_font_sizes/bold_font_size = 22
