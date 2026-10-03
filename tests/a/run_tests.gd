@@ -8,6 +8,7 @@ const TestPuppetControlsScript := preload("res://tests/a/test_puppet_controls.gd
 const TestMusicClockScript := preload("res://tests/a/test_music_clock.gd")
 const TestLevel1CuesScript := preload("res://tests/a/test_level1_cues.gd")
 const TestRemedyScript := preload("res://tests/a/test_remedy.gd")
+const TestLampScript := preload("res://tests/a/test_lamp.gd")
 
 
 func _initialize() -> void:
@@ -49,6 +50,14 @@ func _initialize() -> void:
 	total_passed += int(remedy_result["passed"])
 	total_failed += int(remedy_result["failed"])
 	exit_code = maxi(exit_code, int(remedy_result["exit_code"]))
+
+	print("")
+	print("---- 切片 5：油灯状态与油量控制 ----")
+	var lamp: TestLamp = TestLampScript.new()
+	var lamp_result: Dictionary = lamp.run_all()
+	total_passed += int(lamp_result["passed"])
+	total_failed += int(lamp_result["failed"])
+	exit_code = maxi(exit_code, int(lamp_result["exit_code"]))
 
 	print("")
 	print("========================================")
