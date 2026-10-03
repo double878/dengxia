@@ -138,6 +138,13 @@ func _shutdown_and_quit(exit_code: int) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _paused:
+		if event is InputEventKey:
+			var resume_key := event as InputEventKey
+			if resume_key.pressed and not resume_key.echo and resume_key.keycode == KEY_SPACE:
+				_set_paused(false)
+				get_viewport().set_input_as_handled()
+		return
 	if event is InputEventKey:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo:
@@ -167,7 +174,7 @@ func _notification(what: int) -> void:
 
 func _set_paused(value: bool) -> void:
 	_paused = value
-	_harness.paused = value
+	_harness.set_paused(value)
 	if value:
 		_clock.pause()
 	else:

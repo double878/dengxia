@@ -58,6 +58,8 @@ func run_all() -> Dictionary:
 	_test_09_all_continuous_values_bounded(t)
 	_test_10_event_contract(t)
 	_test_11_state_changes_before_events(t)
+	_test_12_release_keeps_pending_drag(t)
+	_test_13_paused_input_is_ignored(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
 		"failures": t.failures}
 
@@ -405,6 +407,53 @@ func _test_11_state_changes_before_events(t: ATestBase) -> void:
 		t.check_approx(motion_angle, state.hand_angle.x, 1e-9,
 			"hand_motion 载荷应等于同帧的 hand_angle")
 	t.finish("同帧内 PuppetState 已是新值，事件载荷与之一致")
+
+
+func _test_12_release_keeps_pending_drag(t: ATestBase) -> void:
+	t.begin("12 鼠标移动后同帧松开仍结算拖动")
+	var harness: ControlsHarness = _new_harness()
+	var state: PuppetState = harness.controller.get_controlled()
+	var x_before: float = state.stage_pos.x
+	var stance_before: float = state.stance
+	t.check(harness.controller.begin_drag(0, _chest_tag_px(state)), "应命中胸签")
+	harness.controller.drag_to(Vector2(192.0, 108.0))
+	harness.controller.end_drag()
+	t.check_approx(state.stage_pos.x, x_before + 0.1, 1e-6,
+		"松开前积累的横向位移不能丢失")
+	t.check_approx(state.stance, stance_before + 0.1, 1e-6,
+		"松开前积累的站蹲位移不能丢失")
+	t.check(not harness.controller.is_dragging(), "松开后应退出拖动")
+	t.check(_has_kind(harness.controller.take_events(), "drag_end"), "应记录拖动结束")
+	t.finish("同一帧内的最后一次移动在松开时结算")
+
+
+func _test_13_paused_input_is_ignored(t: ATestBase) -> void:
+	t.begin("13 暂停期间的拖动不产生动作或事件")
+	var harness: ControlsHarness = _new_harness()
+	var state: PuppetState = harness.controller.get_controlled()
+	var down := InputEventMouseButton.new()
+	down.button_index = MOUSE_BUTTON_LEFT
+	down.pressed = true
+	down.position = _chest_tag_px(state)
+	t.check(harness.input_reader.handle_event(down), "暂停前应能开始拖动")
+	harness.controller.take_events()
+	harness.set_paused(true)
+	t.check(not harness.input_reader.is_drag_active(), "暂停时应结束当前拖动")
+	harness.controller.take_events()
+	var x_before: float = state.stage_pos.x
+	var motion := InputEventMouseMotion.new()
+	motion.relative = Vector2(384.0, 108.0)
+	t.check(not harness.input_reader.handle_event(motion), "暂停时应忽略鼠标移动")
+	t.check(not harness.input_reader.handle_event(down), "暂停时应忽略重新按下")
+	harness.advance(1.0 / 60.0)
+	t.check_approx(state.stage_pos.x, x_before, 1e-9, "暂停中位置应不变")
+	t.check_eq(harness.controller.take_events().size(), 0, "暂停中不应新增操控事件")
+	harness.set_paused(false)
+	t.check(harness.input_reader.handle_event(down), "恢复后应能重新拖动")
+	harness.input_reader.handle_event(motion)
+	harness.advance(1.0 / 60.0)
+	t.check(state.stage_pos.x > x_before, "恢复后新输入应正常生效")
+	t.finish("暂停输入被丢弃，恢复后只处理新输入")
 
 
 func _has_kind(events: Array[Dictionary], kind: String) -> bool:

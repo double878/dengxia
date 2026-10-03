@@ -65,11 +65,16 @@ func step_scripted(steps: int = 1) -> void:
 
 
 func set_paused(value: bool) -> void:
+	if paused == value:
+		return
+	if value:
+		input_reader.set_enabled(false)
 	paused = value
 	if value:
 		clock.pause()
 	else:
 		clock.resume()
+		input_reader.set_enabled(true)
 
 
 func get_step_count() -> int:

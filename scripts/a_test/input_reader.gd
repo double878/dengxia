@@ -10,6 +10,7 @@ const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
 
 var controller: PuppetController = null
 var scale_factor: float = 1.0  ## 虚拟画布像素 / 虚拟舞台像素；画布尺寸与舞台一致时为 1.0
+var enabled: bool = true
 
 var _drag_active: bool = false
 
@@ -18,9 +19,17 @@ func set_controller(value: PuppetController) -> void:
 	controller = value
 
 
+func set_enabled(value: bool) -> void:
+	if enabled == value:
+		return
+	if not value:
+		release_drag()
+	enabled = value
+
+
 ## 每帧读取键盘状态并写入控制器的输入快照。
 func poll_keys() -> void:
-	if controller == null:
+	if controller == null or not enabled:
 		return
 	var shift: bool = Input.is_key_pressed(KEY_SHIFT)
 	controller.set_input_map({
@@ -35,7 +44,7 @@ func poll_keys() -> void:
 
 ## 处理一个鼠标事件。返回 true 表示该事件被本读取器消费。
 func handle_event(event: InputEvent) -> bool:
-	if controller == null:
+	if controller == null or not enabled:
 		return false
 	if event is InputEventMouseButton:
 		var button := event as InputEventMouseButton

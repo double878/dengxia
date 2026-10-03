@@ -137,6 +137,10 @@ func end_drag() -> void:
 	if not _drag_active:
 		return
 	var who: int = _drag_puppet_id
+	var target: PuppetState = get_puppet(who)
+	if target != null:
+		_apply_drag(target)
+		_settle_stance(target)
 	_drag_active = false
 	_drag_puppet_id = -1
 	_drag_accum_px = Vector2.ZERO
