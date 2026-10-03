@@ -43,7 +43,6 @@ func _ready() -> void:
 	_puppet.stage_origin = Vector2.ZERO
 	_puppet.stage_size = PuppetController.STAGE_PIXEL_SIZE
 	_lamp.lamp = _harness.runtime.lamp_controller.lamp
-	_lamp.anchor = Vector2(1280.0, 900.0)
 	_hint_label.text = "第一关 · 拖动胸签 · A/D/W/S 操控双手 · Q/E 调灯 · 滚轮推拉 · 空格暂停 · Esc 退出"
 	if OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG):
 		_probe_mode = true
