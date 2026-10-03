@@ -66,6 +66,7 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	_harness.input_reader.handle_event(event)
 	if not (event is InputEventKey):
 		return
 	var key := event as InputEventKey

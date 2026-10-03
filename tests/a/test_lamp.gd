@@ -3,12 +3,13 @@ class_name TestLamp
 ## 切片 5 的行为测试：油灯的 LampState、输入连续性、灯油消耗、flame_feedback 与事件契约。
 ##
 ## 断言的都是外部行为与数据契约（状态读数、事件内容、时间来源），
-## 不直接戳私有变量；30 条对应任务书列出的 30 条验收点。
+## 不直接戳私有变量；基础 30 条覆盖任务书验收点，另含 4 条回归测试。
 
 const ATestBaseScript := preload("res://tests/a/a_test_base.gd")
 const BenchScript := preload("res://tests/a/lamp_test_bench.gd")
 const LampStateScript := preload("res://scripts/a/lamp_state.gd")
 const LampControllerScript := preload("res://scripts/a/lamp_controller.gd")
+const LampInputReaderScript := preload("res://scripts/a_test/lamp_input_reader.gd")
 
 ## 输入键名：与 LampController.set_input_map 的约定一致
 const KEY_DIST_UP: String = "distance_increase"
@@ -53,6 +54,10 @@ func run_all() -> Dictionary:
 	_test_28_finished_stops_oil(t)
 	_test_29_event_time_from_music_clock(t)
 	_test_30_receiver_parses_event(t)
+	_test_31_fire_does_not_raise_feedback_on_miss(t)
+	_test_32_backwards_time_rebases_oil_consumption(t)
+	_test_33_malformed_feedback_is_ignored(t)
+	_test_34_lamp_input_mapping_uses_prd_controls(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
 		"failures": t.failures}
 
@@ -520,3 +525,74 @@ func _test_30_receiver_parses_event(t: ATestBase) -> void:
 			ok = true
 	t.check(ok, "接收端应能解析出一条完整的 lamp_state_changed")
 	t.finish("模拟接收端成功解析完整 LampState 事件")
+
+
+func _test_31_fire_does_not_raise_feedback_on_miss(t: ATestBase) -> void:
+	t.begin("31 cue_fire 与错拍结果同时到达时反馈应下降")
+	var b: LampTestBench = _bench()
+	var before: float = b.state().flame_feedback
+	b.feed_performance([
+		{"kind": "cue_fire", "cue_id": "l1_c1_stand", "time_ms": 2500,
+			"object_id": 0, "payload": {"kind": "cue_fire"}},
+		{"kind": "cue_miss", "cue_id": "l1_c1_stand", "time_ms": 2500,
+			"object_id": 0, "payload": {"kind": "cue_miss"}},
+	])
+	t.check(b.state().flame_feedback < before,
+		"错拍动作虽然发生，但最终反馈应低于 %.4f（实际 %.4f）" %
+			[before, b.state().flame_feedback])
+	t.finish("cue_fire 不再被当作命中反馈")
+
+
+func _test_32_backwards_time_rebases_oil_consumption(t: ATestBase) -> void:
+	t.begin("32 歌曲时间倒退后重新前进仍能继续扣油")
+	var b: LampTestBench = _bench()
+	b.hold_input(5000)
+	var before_rewind: float = b.state().oil
+	b.set_song_ms(1000)
+	b.tick()
+	b.set_song_ms(2000)
+	b.tick()
+	var expected: float = LampControllerScript.clamp_unit(
+		before_rewind - LampControllerScript.OIL_CONSUME_PER_S)
+	t.check_approx(b.state().oil, expected, 0.000001,
+		"倒退后从新基准前进 1 秒应扣油（期望 %.6f，实际 %.6f）" %
+			[expected, b.state().oil])
+	t.finish("倒退只丢弃倒退区间，后续歌曲时间仍正常消耗")
+
+
+func _test_33_malformed_feedback_is_ignored(t: ATestBase) -> void:
+	t.begin("33 缺字段或非法字段的反馈事件不应改变状态")
+	var b: LampTestBench = _bench()
+	var before: float = b.state().flame_feedback
+	b.feed_performance([
+		{"kind": "cue_hit"},
+		{"kind": "cue_hit", "cue_id": "x", "payload": {}},
+		{"kind": "cue_hit", "cue_id": true, "time_ms": "bad",
+			"payload": {"kind": "cue_hit"}},
+	])
+	t.check_eq(b.state().flame_feedback, before,
+		"畸形 cue_hit 不应伪造命中反馈")
+	t.finish("畸形反馈事件被安全忽略")
+
+
+func _test_34_lamp_input_mapping_uses_prd_controls(t: ATestBase) -> void:
+	t.begin("34 测试入口显示并使用 PRD 的油灯控制约定")
+	var b: LampTestBench = _bench()
+	var reader: LampInputReader = LampInputReaderScript.new()
+	reader.set_lamp(b.lamp)
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed = true
+	reader.handle_event(wheel)
+	reader.poll_keys()
+	t.check(b.lamp.get_input_map()[KEY_DIST_UP], "滚轮上事件应转成灯距增加输入")
+	b.tick()
+	t.check(b.state().distance > 0.5, "滚轮上事件应实际推进 distance")
+	t.check_eq(LampInputReaderScript.KEY_EXPOSURE_DECREASE, KEY_Q,
+		"Q 应降低显露度")
+	t.check_eq(LampInputReaderScript.KEY_EXPOSURE_INCREASE, KEY_E,
+		"E 应增加显露度")
+	var description: String = LampInputReaderScript.describe_keys()
+	t.check(description.contains("滚轮"), "键位说明应显示滚轮灯距控制")
+	t.check(description.contains("Q/E"), "键位说明应显示 Q/E 显露度控制")
+	t.finish("测试入口键位与 PRD 一致")

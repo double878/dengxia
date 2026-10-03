@@ -48,7 +48,7 @@ const INPUT_KEYS: Array[String] = [
 ]
 
 ## 提高火焰反馈的事件类型
-const FEEDBACK_UP_KINDS: Array[String] = ["cue_fire", "cue_hit", "remedy_success"]
+const FEEDBACK_UP_KINDS: Array[String] = ["cue_hit", "remedy_success"]
 ## 降低火焰反馈的事件类型
 const FEEDBACK_DOWN_KINDS: Array[String] = ["cue_miss", "remedy_timeout", "remedy_failed"]
 
@@ -201,6 +201,10 @@ func _apply_input(delta: float) -> void:
 ## 歌曲时间倒退（delta < 0）按 0 计，油量不回升。
 func _consume_oil(now_ms: int) -> void:
 	var elapsed_ms: int = now_ms - _oil_song_ms
+	if elapsed_ms < 0:
+		# 丢弃倒退区间，但把基准移到新的歌曲时间，保证后续前进仍能扣油。
+		_oil_song_ms = now_ms
+		return
 	if elapsed_ms <= 0:
 		return
 	_oil_song_ms = now_ms
@@ -222,13 +226,17 @@ func _apply_feedback(now_ms: int, performance_events: Array) -> void:
 		var down: bool = FEEDBACK_DOWN_KINDS.has(kind)
 		if not up and not down:
 			continue
-		var raw_payload: Variant = event.get("payload", {})
-		var payload: Dictionary = raw_payload if raw_payload is Dictionary else {}
-		var cue_id: String = str(event.get("cue_id", ""))
+		# 表现结果必须是完整的 TimedEvent。缺字段的事件不能伪造一次命中/错拍。
+		if not event.has("cue_id") or typeof(event["cue_id"]) != TYPE_STRING:
+			continue
+		if not event.has("time_ms") or typeof(event["time_ms"]) != TYPE_INT:
+			continue
+		if not event.has("payload") or not (event["payload"] is Dictionary):
+			continue
+		var cue_id: String = event["cue_id"]
 		if cue_id.is_empty():
-			cue_id = str(payload.get("cue_id", ""))
-		var raw_stamp: Variant = event.get("time_ms", now_ms)
-		var stamp_ms: int = int(raw_stamp) if (raw_stamp is int or raw_stamp is float) else now_ms
+			continue
+		var stamp_ms: int = event["time_ms"]
 		# 去重键含 cue_id 与事件时间：同一事件被重复喂入时只生效一次，
 		# 但不同时刻的合法事件仍各自生效。
 		var key: String = "%s|%s|%d" % [kind, cue_id, stamp_ms]
