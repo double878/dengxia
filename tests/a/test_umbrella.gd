@@ -16,9 +16,10 @@ const LampStateScript := preload("res://scripts/a/lamp_state.gd")
 const PlaceholderPuppetScript := preload("res://scripts/a_test/placeholder_puppet.gd")
 
 ## 许仙站位与举伞角：与 StageDef.make_level1 的开演布景一致
-## （他举满 π，因此白素贞抬到「抬手」到位区间上段时两手恰好齐平）。
+## （他举到 90°（打伞位）持伞；90° 同时是第一关的手角上限，所以白素贞抬到顶就是
+## 这个姿势，两手恰好齐平）。
 const XUXIAN_X: float = 0.13
-const XUXIAN_RAISE: float = PI
+const XUXIAN_RAISE: float = PI * 0.5
 ## 白素贞接伞时的站位：0.16 落在接伞容差（0.13 ± 0.06）内。
 const BORROW_X: float = 0.16
 ## 舞台最左侧可达区域内的位置（UmbrellaController.LEFT_EDGE_X = 0.05）。
@@ -97,6 +98,9 @@ func _test_only_level1(t: ATestBase) -> void:
 
 func _test_starts_in_xuxian_hand(t: ATestBase) -> void:
 	t.begin("开场：许仙右手举起持伞")
+	# 本文件假定的举伞角必须与关卡数据一致，否则这条流程测试会在数据改动后静默失真。
+	t.check_approx(XUXIAN_RAISE, StageDefScript.LEVEL1_HAND_MAX_RAD, 1e-9,
+		"举伞角应与第一关数据（90° 打伞位）一致")
 	var puppets: Array = _puppets()
 	var controller: UmbrellaController = _controller(1, puppets)
 	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.XUXIAN_ID,

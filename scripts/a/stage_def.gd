@@ -15,6 +15,7 @@ class_name StageDef
 ## 35 / 45 / 50 / 55 秒。
 
 const CueScript := preload("res://scripts/a/cue.gd")
+const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 
 const LEVEL1_DURATION_MS: int = 35000     ## PRD 第 6 节：第一关固定 35 秒（不延长）
 const LEVEL2_DURATION_MS: int = 45000     ## 第二关「双人」
@@ -23,17 +24,36 @@ const LEVEL4_DURATION_MS: int = 55000     ## 第四关「显隐」
 const LEVEL1_BPM: float = 96.0            ## PRD 第 10 节：原型 BPM 初始考虑 90-100
 const LEVEL1_ID: int = 1
 const LAST_TUTORIAL_LEVEL: int = 4        ## 1–4 关为教学关（前四关可出现教学图标）
-## 「抬手」到位的角度区间（弧度）。手角以「手臂自然垂下」为 0、π 为举过头顶，
-## 因此 135°～180° 就是「手举到顶」这一档姿势。
-const LEVEL1_HAND_RAISE_MIN_RAD: float = PI * 0.75
-const LEVEL1_HAND_RAISE_MAX_RAD: float = PI
+## —— 手角口径与两档「抬手」到位区间（弧度）——
+## 手角以「手臂自然垂下」为 0、π/2 为水平前伸、π 为举过头顶（见 PuppetState）。
+##
+## 「举过头顶」档：第 2~4 关的抬手落点（举桨 / 采仙草 / 举杯）用它。
+## 名字里刻意不带关卡号——它被 L2/L3/L4 共用；L1 的抬手是下面的「打伞位」，不是举过头顶。
+const HAND_OVERHEAD_MIN_RAD: float = PI * 0.75   ## 135°
+const HAND_OVERHEAD_MAX_RAD: float = PI          ## 180°
 ## 「落手」到位区间：接近自然垂下。
 const HAND_LOWER_MIN_RAD: float = 0.0
 const HAND_LOWER_MAX_RAD: float = 0.35
 
+## —— 第一关「打伞位」——
+## 用户 2026-10-04 定案：打伞时手臂抬到 90° 即可，不必举过头顶。于是许仙开局举伞 90°，
+## 白素贞也只需抬到 90° 接伞。90° = 手臂水平前伸：伞杆从手向上撑起，伞面罩在头顶。
+const LEVEL1_HAND_MAX_RAD: float = PI * 0.5      ## 90°，同时是第一关的手角上限
+## 第一关抬手（打伞位）的到位区间。下界取 75° 不是随手定的：
+## 它必须**完整包住接伞的对齐窗口**，否则会出现「拍点算抬手到位、伞却不换手」的错配。
+## 对齐窗口 = 两手手高差 ≤ 0.04（≈±7.6°）∩ 本关 90° 上限 = 82.4°~90° ⊂ [75°, 90°]。
+const LEVEL1_UMBRELLA_RAISE_MIN_RAD: float = PI * 75.0 / 180.0
+const LEVEL1_UMBRELLA_RAISE_MAX_RAD: float = LEVEL1_HAND_MAX_RAD
+
 var id: int = LEVEL1_ID
 var duration_ms: int = LEVEL1_DURATION_MS
 var bpm: float = LEVEL1_BPM
+## 本折的手角上限（弧度）。默认 = PuppetState.HAND_ANGLE_MAX（180°，举过头顶）。
+## 第一关收到 90°：这一折的姿势只有「打伞位」，手臂不需要举过头顶。除了姿势本身，
+## 收上限还有一个手感上的作用——它让「抬到 90°」变成一个**能停住的位置**：
+## 按住抬手键到顶就是 90°，玩家不必掐角度、也不会扫过头（见 LEVEL1_HAND_MAX_RAD）。
+## 由 Level1Runtime.setup 交给 PuppetController.hand_angle_max。
+var hand_angle_max_rad: float = PI
 var track_path: String = ""               ## 正式锣鼓主音轨；B 未交付时保持为空
 ## 本折的戏名与戏单文案（PRD 第 3、5.1 节：演前戏单说明段落顺序、出场角色与表演目标，
 ## 不含逐键操作与精确拍号）。显示端只读，不参与判定。
@@ -46,7 +66,7 @@ var summary: String = ""                  ## 戏单简介
 ##   "on_stage": [int]                 在场的影人编号（不在列表里的未登场，画面不出现）
 ##   "hung": {int: int}                影人编号 -> 挂钩槽位
 ##   "positions": {int: [float, float]} 接地点归一化 x/y
-##   "hand_angles": {int: [float, float]} 左右手角（弧度）
+##   "hand_angles": {int: [float, float]} 左右手角（弧度，不得超过 hand_angle_max_rad）
 ##   "distance" / "exposure" / "oil": float  灯的初值
 var initial: Dictionary = {}
 var segments: Array = []                  ## [{name: String, start_ms: int, end_ms: int}]
@@ -82,13 +102,15 @@ static func make_level1() -> StageDef:
 	def.title = "第一折 · 入手"
 	def.roles = ["白素贞", "许仙"]
 	def.summary = "许仙立在湖边，右手举伞相候。白素贞走到他身旁、左手抬到与他右手齐平即接过伞，持伞走到最左边，再折回原处把伞还回许仙右手。本折学握胸签与双手。"
-	# 许仙（1 号）右手**举满 π**（=180°，举过头顶）持伞——流程表「开场：许仙固定站位，
-	# 右手举起持伞」。这个角度由对齐条件反推得到，不是美术偏好：
-	# 白素贞的左手要抬进 [135°, 180°] 才算「抬手」到位，换成手高就是 [0.468, 0.980]；
-	# 而接伞要求两手手高之差 ≤ 0.04（UmbrellaController.HAND_HEIGHT_TOLERANCE）。
-	# 若许仙只举到 135°（手高 0.468），白素贞必须把角度掐在 135°~151° 这一小段才对齐，
-	# 继续抬到顶反而更接不到；举满 π（手高 0.980）时，她只要抬到 168° 以上就一定接得到，
-	# 与「抬手到位」这条落点自然重合。
+	# 本折的手角上限收到 90°（打伞位）。这一折没有「举过头顶」的姿势，收上限同时解决手感：
+	# 「抬到 90°」于是变成一个能停住的位置——按住 A 到顶就是 90°，不必掐角度、不会扫过头。
+	def.hand_angle_max_rad = LEVEL1_HAND_MAX_RAD
+	# 许仙（1 号）右手举到 **90°**（水平前伸）持伞——流程表「开场：许仙固定站位，
+	# 右手举起持伞」，角度按用户 2026-10-04 定案由 180° 改为 90°。
+	# 这个角度与对齐条件自洽：白素贞要抬进 [75°, 90°] 才算「抬手」到位（见上面的常量），
+	# 而接伞要求两手手高差 ≤ 0.04（UmbrellaController.HAND_HEIGHT_TOLERANCE，换算 ≈±7.6°），
+	# 两者叠加后「抬手到位」的区间完整包住对齐窗口（82.4°~90°），
+	# 所以她抬手到位就一定能接住伞，不会出现「拍点算到位、伞却不换手」。
 	# 白素贞（0 号）左手自然垂下；她要自己把左手抬起来才会接伞。
 	# 两个挂钩仍由许仙、小青占满，第一关因此不会产生挂起/取回事件（见交接文档第 7 节）。
 	def.initial = {
@@ -96,7 +118,7 @@ static func make_level1() -> StageDef:
 		"on_stage": [0, 1, 2],
 		"hung": {1: 0, 2: 1},
 		"positions": {0: [0.50, 0.5], 1: [0.13, 0.5], 2: [0.86, 0.5]},
-		"hand_angles": {0: [0.0, 0.0], 1: [1.20, PI], 2: [0.10, 1.20]},
+		"hand_angles": {0: [0.0, 0.0], 1: [1.20, LEVEL1_HAND_MAX_RAD], 2: [0.10, 1.20]},
 		"distance": 0.5, "exposure": 1.0, "oil": 1.0,
 	}
 	# 段落连续覆盖整关、单调递增且不重复（TECH_DESIGN.md 2.2 的校验要求）
@@ -119,7 +141,7 @@ static func make_level1() -> StageDef:
 ## 本条流程里的位置关系（许仙固定在 x=0.13，接伞容差 ±0.06 → 接伞区 0.07~0.19，
 ## 舞台最左侧可达区域的右边界 x=0.05，均见 UmbrellaController）：
 ##   游湖（第 8 拍）  白素贞在 x=0.5 向左走，学会用胸签横移
-##   借伞（第 14 拍） 左手抬到 135°~180°，与许仙举着的右手齐平
+##   借伞（第 14 拍） 左手抬到 90°（打伞位），与许仙举着的右手齐平
 ##   接伞（第 16 拍） 走到许仙身旁 0.07~0.19 且手高齐平 → 伞转到白素贞左手
 ##   还伞（第 20/24 拍）先持伞到过左端（x≤0.05），再从左侧回到接伞位置才自动还伞
 ##   同舟（第 28 拍） 放下已空的左手收势
@@ -135,9 +157,12 @@ static func make_level1_cues(def: StageDef) -> Array:
 		# 第 8 拍：向左走向许仙（他从 x=0.13 起就站在那里，右手一直举着）
 		CueScript.make("l1_c2_move_left", def.beat_ms(8), CueScript.ACTION_MOVE_LEFT, 0,
 			{"key": "x", "min": 0.0, "max": 0.35}, 250, "move_left"),
-		# 第 14 拍：抬起左手，与许仙右手齐平（手角 0 = 自然垂下，π = 举过头顶）
+		# 第 14 拍：把左手抬到打伞位（90°），与许仙举着的右手齐平。
+		# 到位区间见 LEVEL1_UMBRELLA_RAISE_*：它完整包住接伞的对齐窗口（82.4°~90°），
+		# 因此「抬手」这条落点成立时伞一定也在同一帧换手。
 		CueScript.make("l1_c3_hand_raise", def.beat_ms(14), CueScript.ACTION_HAND_RAISE, 0,
-			{"key": "angle", "min": LEVEL1_HAND_RAISE_MIN_RAD, "max": LEVEL1_HAND_RAISE_MAX_RAD},
+			{"key": "angle", "min": LEVEL1_UMBRELLA_RAISE_MIN_RAD,
+				"max": LEVEL1_UMBRELLA_RAISE_MAX_RAD},
 			250, "hand_raise"),
 		# 重音（第 16 拍）：伞在**对齐条件成立**的那一刻换手。落点在这里接棒：
 		# 玩家提前对齐、或补救时重新对齐，都由这一条如实记下偏移（早/晚各一次判定机会）。
@@ -233,7 +258,7 @@ static func make_level2_cues(def: StageDef) -> Array:
 			{"key": "x", "min": 0.0, "max": 0.45}, 250, "move_left"),
 		# 第 34 拍：抬手（举桨）
 		CueScript.make("l2_c4_hand_raise", def.beat_ms(34), CueScript.ACTION_HAND_RAISE, -1,
-			{"key": "angle", "min": LEVEL1_HAND_RAISE_MIN_RAD, "max": LEVEL1_HAND_RAISE_MAX_RAD},
+			{"key": "angle", "min": HAND_OVERHEAD_MIN_RAD, "max": HAND_OVERHEAD_MAX_RAD},
 			250, "hand_raise"),
 		# 重音（第 42 拍）：回到白素贞身旁，组成同框画面
 		CueScript.make("l2_c5_reach_pair", def.beat_ms(42), CueScript.ACTION_REACH, -1,
@@ -299,7 +324,7 @@ static func make_level3_cues(def: StageDef) -> Array:
 			{"key": "distance", "min": 0.80, "max": 1.0}, 250, "lamp_near"),
 		# 第 28 拍：抬手采仙草
 		CueScript.make("l3_c2_hand_raise", def.beat_ms(28), CueScript.ACTION_HAND_RAISE, -1,
-			{"key": "angle", "min": LEVEL1_HAND_RAISE_MIN_RAD, "max": LEVEL1_HAND_RAISE_MAX_RAD},
+			{"key": "angle", "min": HAND_OVERHEAD_MIN_RAD, "max": HAND_OVERHEAD_MAX_RAD},
 			250, "hand_raise"),
 		# 第 38 拍：云雾再起，灯又推远、影子收小
 		CueScript.make("l3_c3_lamp_far", def.beat_ms(38), CueScript.ACTION_LAMP_DISTANCE, -1,
@@ -376,7 +401,7 @@ static func make_level4_cues(def: StageDef) -> Array:
 			{"key": "exposure", "min": 0.75, "max": 0.90}, 250, "exposure_up"),
 		# 第 32 拍：抬手（举杯痛饮）
 		CueScript.make("l4_c3_hand_raise", def.beat_ms(32), CueScript.ACTION_HAND_RAISE, -1,
-			{"key": "angle", "min": LEVEL1_HAND_RAISE_MIN_RAD, "max": LEVEL1_HAND_RAISE_MAX_RAD},
+			{"key": "angle", "min": HAND_OVERHEAD_MIN_RAD, "max": HAND_OVERHEAD_MAX_RAD},
 			250, "hand_raise"),
 		# 重音（第 42 拍）：完整亮相
 		CueScript.make("l4_c4_exposure_full", def.beat_ms(42), CueScript.ACTION_LAMP_EXPOSURE, -1,
@@ -489,4 +514,19 @@ func validate() -> Array[String]:
 		used_slots[slot] = true
 		if not on_stage.is_empty() and not on_stage.has(int(puppet_id)):
 			problems.append("stage %d 开演布景：挂起的影人 %d 不在场" % [id, int(puppet_id)])
+	# 本折的手角上限必须落在 PuppetState 的硬边界内，且开演布景不能超出它。
+	# 布景由显示端直接写进 PuppetState（不经控制器），所以这里必须查：
+	# 否则一个「上限 90°、布景却摆 180°」的关卡会让操控手感与开演姿势自相矛盾。
+	if hand_angle_max_rad < PuppetStateScript.HAND_ANGLE_MIN \
+			or hand_angle_max_rad > PuppetStateScript.HAND_ANGLE_MAX:
+		problems.append("stage %d: hand_angle_max_rad 越界：%s（合法 %s ~ %s）"
+			% [id, str(hand_angle_max_rad), str(PuppetStateScript.HAND_ANGLE_MIN),
+				str(PuppetStateScript.HAND_ANGLE_MAX)])
+	for puppet_id in initial.get("hand_angles", {}).keys():
+		var angles: Array = initial["hand_angles"][puppet_id]
+		for hand_index in angles.size():
+			var angle: float = float(angles[hand_index])
+			if angle > hand_angle_max_rad + 1e-9:
+				problems.append("stage %d 开演布景：影人 %d 的手角 %s 超过本折上限 %s"
+					% [id, int(puppet_id), str(angle), str(hand_angle_max_rad)])
 	return problems

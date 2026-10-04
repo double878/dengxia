@@ -38,6 +38,10 @@ func setup(p_clock: MusicClock, p_stage_id: int = 1) -> bool:
 	puppet_controller = PuppetControllerScript.new()
 	puppet_controller.clock = clock
 	puppet_controller.setup(3)
+	# 本折的手角上限（第一关是 90° 的打伞位，其余关是 180°）。它约束玩家操控时能抬到
+	# 多高；开演布景里的手角由显示端直接写进 PuppetState，合法性由 StageDef.validate 保证
+	# （布景不得超过本折上限），所以这里只需把「本折规则」交给控制器。
+	puppet_controller.hand_angle_max = stage_def.hand_angle_max_rad
 	# 油灯必须先建：判定系统要拿它的 LampState 读灯位/倾灯类落点的读数。
 	lamp_controller = LampControllerScript.new()
 	lamp_controller.clock = clock

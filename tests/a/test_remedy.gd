@@ -105,9 +105,9 @@ func _test_01b_all_hits_no_remedy(t: ATestBase) -> void:
 	b.drag_to_x(0.34, 16.0)
 	b.end_drag()
 
-	# 抬手（落点 8750，到位区间 135°~180°）：4.5 rad/s 下抬到顶约需 0.7 s，
-	# 因此从 8250 ms 起按住 80 步。抬起来之后**一直举着**——接伞要求左手与许仙右手齐平
-	# （许仙举满 π，见 StageDef.make_level1），中途放手就接不到伞。
+	# 抬手（落点 8750，第一关的到位区间 75°~90°）：4.5 rad/s 下抬到本关上界（90°）约需
+	# 0.35 s，因此从 8250 ms 起按住 80 步。按到头会停在上界 90°（StageDef.LEVEL1_HAND_MAX_RAD），
+	# 与许仙举着的右手齐平；**一直举着**——中途放手就接不到伞。
 	b.advance_to(8250)
 	b.hold_left_raise(80)
 

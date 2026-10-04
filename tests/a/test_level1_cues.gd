@@ -10,6 +10,8 @@ const BenchScript := preload("res://tests/a/cue_test_bench.gd")
 const StageDefScript := preload("res://scripts/a/stage_def.gd")
 const CueScript := preload("res://scripts/a/cue.gd")
 const CueHintScript := preload("res://scripts/a/cue_hint.gd")
+## 第一关抬手落点的到位区间必须包住接伞的对齐窗口，两侧读数都取自它，故在这里对表。
+const UmbrellaControllerScript := preload("res://scripts/a/umbrella_controller.gd")
 
 const CROUCH_STEP_PX: float = 120.0
 const CROUCH_STEPS: int = 12            ## 12 x 120/1080 ≈ 1.33，足以蹲到底并被截断
@@ -83,6 +85,7 @@ func run_all() -> Dictionary:
 	_test_12_same_direction_move_hits(t)
 	_test_13_early_action_can_be_retried_on_beat(t)
 	_test_14_release_applies_final_reach(t)
+	_test_15_level1_uses_90_degree_umbrella_pose(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
 		"failures": t.failures}
 
@@ -399,14 +402,23 @@ func _test_10_no_leak_of_beat_or_score(t: ATestBase) -> void:
 func _test_11_held_hand_enters_target_range(t: ATestBase) -> void:
 	t.begin("11 按住抬手键进入目标角度时命中")
 	var b: CueTestBench = _bench()
-	# 手角以「自然垂下」为 0、π 为举过头顶，抬手到位区间是 135°～180°。
-	# 抬手速度 4.5 rad/s，从 0 抬到 135°（≈2.356 rad）约需 0.52 s，
-	# 因此要在落点前约 530 ms 开始按住，让「跨入目标角度」正好落在判定窗内。
+	# 手角以「自然垂下」为 0、π/2 为水平前伸。第一关的抬手是「打伞位」：
+	# 到位区间 75°~90°，且 90° 就是本关的手角上限（抬到顶即到位）。
+	# 抬手速度 4.5 rad/s，从 0 抬到 75°（≈1.309 rad）约需 0.29 s，
+	# 因此要在落点前约 300 ms 开始按住，让「跨入目标角度」正好落在判定窗内。
 	b.advance_to(8300)
 	b.advance(60, {"left_raise": true})
 	var outcome: Dictionary = b.performance.get_outcome("l1_c3_hand_raise")
-	t.check_in_range(b.state().hand_angle.x, StageDef.LEVEL1_HAND_RAISE_MIN_RAD,
-		StageDef.LEVEL1_HAND_RAISE_MAX_RAD, "左手已抬到目标角度（举过头顶）")
+	# 手角存在 Vector2（float32）里：把上界 π/2 写进去、再读回来会大 4e-8，
+	# 所以这里用判定侧同一个容差来断言（见 CueScript.CONDITION_EPSILON）。
+	t.check_in_range(b.state().hand_angle.x, StageDef.LEVEL1_UMBRELLA_RAISE_MIN_RAD,
+		StageDef.LEVEL1_UMBRELLA_RAISE_MAX_RAD + CueScript.CONDITION_EPSILON,
+		"左手已抬到打伞位（水平前伸，停在本关上界也算）")
+	# 停在上界必须仍算「到位」：玩家按住 A 到顶恰好停在本关上界，
+	# 若边界比较不含表示误差，这一姿态会被判成「不在区间内」。
+	t.check(CueScript.condition_met(b.find_cue("l1_c3_hand_raise"),
+		CueScript.ACTION_HAND_RAISE, b.state().hand_angle.x),
+		"停在 90°（本关上界）应算抬手到位，否则按住到顶反而判不到位")
 	t.check_eq(bool(outcome.get("hit", false)), true,
 		"进入角度范围时应命中，不必松键或反复按键")
 	t.check_in_range(float(outcome.get("time_ms", -1)), 8500, 9000,
@@ -479,3 +491,43 @@ func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.check_eq(bool(outcome.get("hit", false)), true,
 		"drag_end 不能抢先关闭拖动判定")
 	t.finish("末段位移在松开当帧仍参与到位判定")
+
+
+## 第一关「打伞位」：许仙举 90°、本关手角上限也是 90°（用户 2026-10-04 定案），
+## 而且「抬手」落点的到位区间必须**完整包住接伞的对齐窗口**。
+##
+## 这条不变量是关键：接伞要求「两手手高差 ≤ 容差」，抬手落点又要求「角度在某区间内」，
+## 两者若错配，玩家就会遇到「拍点算抬手到位、伞却不换手」。这里用数值扫描反推对齐窗口
+## （而不是把公式再抄一遍），再要求它落在落点区间之内。
+func _test_15_level1_uses_90_degree_umbrella_pose(t: ATestBase) -> void:
+	t.begin("15 第一关打伞位：许仙举 90°，抬手落点包住接伞对齐窗口")
+	var def: StageDef = StageDefScript.make_level1()
+	t.check_approx(def.hand_angle_max_rad, StageDef.LEVEL1_HAND_MAX_RAD, 1e-9,
+		"第一关的手角上限应是 90°（打伞位）")
+	t.check_approx(def.hand_angle_max_rad, PI * 0.5, 1e-9, "90° 即 π/2")
+	var angles: Array = def.initial["hand_angles"][UmbrellaControllerScript.XUXIAN_ID]
+	t.check_approx(float(angles[1]), StageDef.LEVEL1_HAND_MAX_RAD, 1e-9,
+		"许仙开局右手应举在 90°（水平前伸）持伞")
+
+	var cue: Dictionary = _find(def, "l1_c3_hand_raise")
+	t.check(not cue.is_empty(), "应存在抬手落点 l1_c3_hand_raise")
+	var range: Dictionary = cue.get("target_range", {})
+	var reference: float = UmbrellaController.hand_height(StageDef.LEVEL1_HAND_MAX_RAD, 0.0)
+	var tolerance: float = UmbrellaControllerScript.HAND_HEIGHT_TOLERANCE
+	var step: float = 0.0025
+	var window_min: float = INF
+	var window_max: float = -INF
+	var angle: float = 0.0
+	while angle <= def.hand_angle_max_rad + step * 0.5:
+		if absf(UmbrellaController.hand_height(angle, 0.0) - reference) <= tolerance:
+			window_min = minf(window_min, angle)
+			window_max = maxf(window_max, angle)
+		angle += step
+	t.check(window_min < INF,
+		"本关上限之内应存在与许仙右手齐平的角度（容差 %.3f）" % tolerance)
+	t.check(window_min >= float(range.get("min", 0.0)) - 1e-9
+			and window_max <= float(range.get("max", PI)) + 1e-9,
+		"抬手到位区间 %.4f~%.4f 应包住对齐窗口 %.4f~%.4f（否则会出现「算到位、不换手」）"
+			% [float(range.get("min", 0.0)), float(range.get("max", PI)),
+				window_min, window_max])
+	t.finish("打伞位 90°：抬手到位与接伞对齐落在同一段角度里")

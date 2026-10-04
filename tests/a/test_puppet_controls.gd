@@ -66,8 +66,40 @@ func run_all() -> Dictionary:
 	_test_14_hook_and_take_back(t)
 	_test_15_head_swap(t)
 	_test_16_hook_hint_speaks_from_availability(t)
+	_test_17_hand_angle_cap_follows_level(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
 		"failures": t.failures}
+
+
+## 手角上限可被关卡收小（第一关的「打伞位」= 90°）。这不是姿势偏好，是手感：
+## 上限收到 90° 之后，「抬到 90°」就变成一个**能停住的位置**——按住抬手键到顶即 90°，
+## 玩家不必掐角度、也不会扫过头（否则停在 90° 只有约 30 ms 的窗口）。
+## 上限只压缩上界，下限（收手 −90°）不受影响；调回 180° 后仍能举过头顶。
+func _test_17_hand_angle_cap_follows_level(t: ATestBase) -> void:
+	t.begin("17 手角上限可被关卡收小（打伞位 90°），下限不受影响")
+	var harness: ControlsHarness = _new_harness()
+	var state: PuppetState = harness.controller.get_controlled()
+	var umbrella_pose: float = PI * 0.5        ## 第一关的打伞位
+	harness.controller.hand_angle_max = umbrella_pose
+	_press(harness, {"both_raise": true})
+	_step(harness, 60)
+	t.check_approx(state.hand_angle.x, umbrella_pose, 1e-6,
+		"左手应停在本折上限 90°，而不是继续举到 180°")
+	t.check_approx(state.hand_angle.y, umbrella_pose, 1e-6, "右手同样停在本折上限")
+
+	_press(harness, {"both_lower": true})
+	_step(harness, 120)
+	t.check_approx(state.hand_angle.x, PuppetStateScript.HAND_ANGLE_MIN, 1e-6,
+		"下限（收手 −90°）不受上限影响")
+	t.check_approx(state.hand_angle.y, PuppetStateScript.HAND_ANGLE_MIN, 1e-6, "右手同此")
+
+	# 调回硬边界（相当于换到第 2~4 关）：抬到顶仍是 180°
+	harness.controller.hand_angle_max = PuppetStateScript.HAND_ANGLE_MAX
+	_press(harness, {"both_raise": true})
+	_step(harness, 90)
+	t.check_approx(state.hand_angle.x, PuppetStateScript.HAND_ANGLE_MAX, 1e-6,
+		"上限调回 180° 后双手仍能举过头顶")
+	t.finish("上限随关卡可调，抬落手感与下限不变")
 
 
 ## 六个头（三个影人 + 头架三个槽位）排好序，用来断言「各出现恰好一次」。

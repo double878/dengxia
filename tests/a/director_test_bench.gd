@@ -53,6 +53,11 @@ func _init(custom_stage_def: StageDef = null) -> void:
 	controller = PuppetController.new()
 	controller.clock = clock
 	controller.setup(3)
+	# 手角上界按本关数据收（第一关是 90° 打伞位）。**这条不能漏**：测试台若允许手举到
+	# 180°，而布景里许仙只有 90°，两手永远不齐平，接伞与整条借伞还伞流程都跑不通
+	# ——实测就是这个原因让「前半场五条落点全部命中」的端到端走查失败。
+	# 真实游戏走 Level1Runtime.setup 的同一处接线。
+	controller.hand_angle_max = stage_def.hand_angle_max_rad
 	apply_initial_puppets()
 	lamp_controller = LampController.new()
 	lamp_controller.clock = clock

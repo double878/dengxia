@@ -89,6 +89,15 @@ static func window_start_ms(cue: Dictionary) -> int:
 	return int(cue.get("beat_time_ms", 0)) - maxi(int(cue.get("tolerance_ms", 0)), 0)
 
 
+## 区间边界的浮点容差。**不是**把判定放宽，而是补状态本身的表示误差：
+## 连续量存在 `PuppetState` / `LampState` 里，影人字段是 `Vector2`（分量 float32），
+## 于是「把关卡上界 π/2 写进手角、再读回来」会得到比 π/2 大 4.4e-8 的值。
+## 按严格 `<=` 比较时，第一关「按住 A 抬到 90°（本关上界）就到位」这条落点
+## **永远判不成立**——这正是 2026-10-04 加 90° 打伞位时实测到的。
+## 取 1e-5（≈0.0006°，或幕布宽度的十万分之一）：只吸收表示误差，不会把「差一点」判成到位。
+const CONDITION_EPSILON: float = 1.0e-5
+
+
 ## 判定某条 Cue 的判定条件是否满足（不含时间）。
 ## 连续量读数由调用方给出，避免本类依赖 PuppetState。
 static func condition_met(cue: Dictionary, action: String, metric_value: float) -> bool:
@@ -100,8 +109,8 @@ static func condition_met(cue: Dictionary, action: String, metric_value: float) 
 	var key: String = str(range.get("key", ""))
 	if key.is_empty():
 		return true
-	return metric_value >= float(range.get("min", -INF)) \
-		and metric_value <= float(range.get("max", INF))
+	return metric_value >= float(range.get("min", -INF)) - CONDITION_EPSILON \
+		and metric_value <= float(range.get("max", INF)) + CONDITION_EPSILON
 
 
 ## 校验一条 Cue。返回问题列表；空列表表示通过。
