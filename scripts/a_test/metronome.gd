@@ -12,7 +12,7 @@ class_name Metronome
 ## 每 accent_every 拍加重音，其余轻音，便于人耳确认拍点。
 ##
 ## 补救冻结期间另有一路慢鼓（RemedySlowPlayer）：主音轨此时是真的暂停了
-## （解冻后必须从同一拍点续上，否则拍点会漂），所以「鼓点变成 0.1 倍速」由这条
+## （解冻后必须从同一拍点续上，否则拍点会漂），所以「鼓点变成 0.5 倍速」由这条
 ## 独立音路表达，而不是去改主音轨的播放位置。
 
 const SAMPLE_RATE_FALLBACK: float = 44100.0
@@ -20,8 +20,10 @@ const NOTES: Array[float] = [220.0, 247.0, 294.0, 330.0, 294.0, 247.0, 196.0, 22
 ## 总音量增益。合成音轨的峰值本来就偏低，若不提升，实际听起来会以为「没有音乐」。
 const MASTER_GAIN: float = 1.45
 const PEAK_LIMIT: float = 0.92
-## 补救冻结期间的慢放倍率：0.1 倍速，玩家一听就知道「现在不是正常演出时间」。
-const REMEDY_SLOW_FACTOR: float = 0.1
+## 补救冻结期间的慢放倍率：0.5 倍速，玩家一听就知道「现在不是正常演出时间」。
+## 取 0.5 而不是更慢的值：0.1 倍速下鼓点几乎拖成一条低频嗡声，玩家反而听不出
+## 「这是同一段锣鼓在放慢」，而 0.5 倍速既明显慢于正常演出、又仍保留原始节奏轮廓。
+const REMEDY_SLOW_FACTOR: float = 0.5
 ## 慢鼓的循环长度（拍）。4 拍一段既听得出是锣鼓，又不会一路跑出曲子末尾。
 const SLOW_LOOP_BEATS: int = 4
 
@@ -175,7 +177,7 @@ func _push_slow() -> void:
 
 ## 补救冻结期间的慢鼓：同一套合成内容，但内容时间只按 REMEDY_SLOW_FACTOR 前进，
 ## 并在一小段（SLOW_LOOP_BEATS 拍）里循环，避免内容跑出曲子末尾。
-## 0.1 倍速下声音明显「拖慢」，是玩家判断「现在正在补救」的主要听觉线索。
+## 0.5 倍速下声音明显「拖慢」，是玩家判断「现在正在补救」的主要听觉线索。
 func sample_at_slow(real_s: float) -> float:
 	var beat_s: float = 60.0 / maxf(clock.bpm if clock != null else StageDef.LEVEL1_BPM, 1.0)
 	var loop_s: float = beat_s * float(SLOW_LOOP_BEATS)
