@@ -138,9 +138,46 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.check(float(edge_band["min"]) > float(take_band["max"]),
 		"最右端目标带（≥%.2f）应完全在交接窗口（≤%.2f）右侧"
 			% [float(edge_band["min"]), float(take_band["max"])])
+	# 下界必须与控制器的「已到过右端」阈值**完全一致**：若落点带的下界更低
+	# （这里曾写 0.94，而控制器要求 ≥0.95，差 0.01 = 19 px），玩家停在两者之间时
+	# 会出现最坏的错配——「走到最右端」这条拍点判命中，但控制器没记下「到过右端」，
+	# 走回去还伞永远不触发。实测模拟正常手速玩家时正好停在 0.94 上踩到了。
+	t.check_approx(float(edge_band["min"]), UmbrellaControllerScript.RIGHT_EDGE_X, 1e-9,
+		"最右端目标带下界应等于控制器的 RIGHT_EDGE_X")
 	# 两次交接共用同一个窗口：还伞遵循与接伞相同的判据
 	t.check_approx(float(_find(def, "l1_c6_return_umbrella")["target_range"]["min"]),
 		float(take_band["min"]), 1e-9, "还伞目标带应与接伞同一段窗口")
+
+	# —— 长距离移动的时间预算（2026-10-04 实测教训，用户报「根本来不及向右走」）——
+	# 两次「走到一端」各要走约 0.65 个舞台宽 ≈ 1250 画布像素（拖动 1:1 映射），
+	# 按正常拖速 450~600 px/s 需 2~2.8 s，再加反应时间。原来这两条一律按原地动作处理：
+	# 线索只提前 1 s、拍间只留 2.5 s——玩家看到提示就只剩 1 s，实测走不到。
+	# 因此这里把「拍间间隔」与「线索提前量」两条都钉住：任何一条被改小都会被拦下。
+	for pair in [["l1_c4_take_umbrella", "l1_c5_move_to_edge"],
+			["l1_c5_move_to_edge", "l1_c6_return_umbrella"]]:
+		var gap: int = int(_find(def, pair[1])["beat_time_ms"]) \
+			- int(_find(def, pair[0])["beat_time_ms"])
+		var lead: int = int(_find(def, pair[1])["hint_lead_ms"])
+		t.check(gap >= StageDef.MOVE_BUDGET_MS,
+			"「%s」→「%s」的拍间间隔 %d ms 应 ≥ 移动预算 %d ms（要走 0.65 个舞台宽）"
+				% [pair[0], pair[1], gap, StageDef.MOVE_BUDGET_MS])
+		t.check(lead >= StageDef.MOVE_BUDGET_MS,
+			"「%s」是长距离移动，线索提前量 %d ms 应 ≥ 移动预算 %d ms"
+				% [pair[1], lead, StageDef.MOVE_BUDGET_MS])
+	# 原地动作仍按 1 s 提前：不要被顺手改成 3 s（提前量过大等于上一拍刚做完就提示下一步）
+	for cue_id in ["l1_c0_crouch", "l1_c1_stand", "l1_c3_hand_raise",
+			"l1_c4_take_umbrella", "l1_c7_hand_lower"]:
+		t.check_eq(int(_find(def, cue_id)["hint_lead_ms"]), CueScript.DEFAULT_HINT_LEAD_MS,
+			"「%s」是原地动作，线索提前量应保持默认 1 s" % cue_id)
+	# 交接类落点（接伞 / 还伞）的 `target_object` 必须与**交接事件上报的 `object_id`**一致：
+	# 事件上报的是「接手的那个人」（接伞记白素贞、还伞记许仙，见 `UmbrellaController._emit`），
+	# 而判定里 `_register_action` 会拿 `target_object != object_id` 直接跳过这条 cue。
+	# 还伞这条曾被写成 0（白素贞），于是**永远判不到**：玩家把伞还回去也拿不到命中，
+	# 窗一过就被判「完全没做」并开出补救窗口——实测踩到过，且当时被误归因成测试台时序问题。
+	t.check_eq(int(_find(def, "l1_c4_take_umbrella")["target_object"]),
+		UmbrellaControllerScript.BAISUZHEN_ID, "接伞落点的 target_object 应为接手的白素贞")
+	t.check_eq(int(_find(def, "l1_c6_return_umbrella")["target_object"]),
+		UmbrellaControllerScript.XUXIAN_ID, "还伞落点的 target_object 应为接手的许仙")
 	t.finish("8 条关键动作覆盖蹲下/站起/左右移动/抬手/接伞/还伞，含重音落点，全部在时长内")
 
 
@@ -478,11 +515,11 @@ func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.begin("14 松开鼠标当帧的末段位移进入目标区仍判到位")
 	var b: CueTestBench = _bench()
 	t.check(_find(b.stage_def, "l1_c5_move_to_edge").size() > 0,
-		"本折的「走到最右端」落点存在（第 20 拍）")
-	# 「走到最右端」的目标带是 x ∈ [0.94, 1.0]，落点 12500、判定窗 12250~12750。
+		"本折的「走到最右端」落点存在（第 22 拍）")
+	# 「走到最右端」的目标带是 x ∈ [0.95, 1.0]，落点 13750、判定窗 13500~14000。
 	# 先把白素贞拖到目标带左侧，再在松开当帧用一次大位移跨进目标带——
 	# 验证 drag_end 不会抢先关掉到位判定（末段位移必须仍按「进入目标区」计）。
-	b.advance_to(12300)
+	b.advance_to(13550)
 	b.begin_drag()
 	b.drag(Vector2(440.0, 0.0), 1)
 	t.check(b.state().stage_pos.x < 0.94, "松开前还在目标带左侧：x=%.4f" % b.state().stage_pos.x)

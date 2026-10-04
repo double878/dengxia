@@ -37,15 +37,40 @@ const HAND_OVERHEAD_MAX_RAD: float = PI          ## 180°
 const LEVEL1_XUXIAN_X: float = 0.13
 ## 「走到最右端」落点的目标带。必须与交接窗口不重叠，否则「走到最右端」这一步会先经过
 ## 交接窗口、被还伞判定抢走伞（还伞要求已到过右端，顺序一颠倒这一趟就白走）。
-const LEVEL1_RIGHT_EDGE_MIN: float = 0.94
+##
+## 下界**直接取控制器的 `RIGHT_EDGE_X`**，不另写一个数：控制器置起「已到过右端」标记
+## 的条件是 `x ≥ RIGHT_EDGE_X`。若落点带的下界写得比它低（这里曾写 0.94，差 0.01 = 19 px），
+## 玩家停在 0.94~0.95 之间时会出现最坏的一种错配：**「走到最右端」这条拍点判命中，
+## 但控制器没记下「到过右端」，走回去时还伞永远不触发**——玩家照着提示做却卡住。
+## 实测模拟正常手速玩家时正好停在 0.94 上，就这样踩到了。
+const LEVEL1_RIGHT_EDGE_MIN: float = UmbrellaController.RIGHT_EDGE_X
 const LEVEL1_RIGHT_EDGE_MAX: float = 1.0
 ## 「走向许仙」落点的目标带：只要确实向左走过一段就成立，具体停在哪儿交给交接窗口。
 const LEVEL1_APPROACH_MIN: float = 0.0
 const LEVEL1_APPROACH_MAX: float = 0.35
+## 长距离移动落点的线索提前量（毫秒）。两条「走到一端」的落点各要走 0.65 个舞台宽
+## （约 1250 画布像素，拖动 1:1 映射），按正常拖速 450~600 px/s 需 2~2.8 s 再加反应时间。
+## 原地动作仍用 CueScript.DEFAULT_HINT_LEAD_MS（1 s）。
+const LEVEL1_MOVE_HINT_LEAD_MS: int = MOVE_BUDGET_MS
+## 「走到最右端」的落点。接伞（第 16 拍）到它之间隔 6 拍 = 3.75 s，
+## 留给玩家「看到线索 → 反应 → 拖完 0.65 个舞台宽」的完整预算；
+## 还伞（第 28 拍）与它同样隔 3.75 s（回程方向相反、距离相同）。
+const LEVEL1_EDGE_BEAT: int = 22
+## 还伞落点。第 28 拍：走到最右端后 3.75 s 走回交接窗口。
+const LEVEL1_RETURN_BEAT: int = 28
+## 放手收势落点。第 30 拍（还伞后 2 拍 = 1.25 s，原地动作）。
+const LEVEL1_LOWER_BEAT: int = 30
 
 ## 「落手」到位区间：接近自然垂下。
 const HAND_LOWER_MIN_RAD: float = 0.0
 const HAND_LOWER_MAX_RAD: float = 0.35
+
+## 长距离移动落点的最小时间预算（毫秒）。判据是**画面上要走多远**，不是"给了几拍"：
+## 两次「走到一端」各要走约 0.65 个舞台宽 = 1250 画布像素（拖动是 1:1 映射，
+## `dpx.x / STAGE_PIXEL_SIZE.x`），按正常拖速 450~600 px/s 需 2~2.8 s，再加 0.3~0.5 s 反应。
+## 因此：长距离移动落点之间、以及它的线索提前量，都必须 ≥ 这个值。
+## 由 `tests/a/test_level1_cues.gd` 的结构断言钉住（原地动作不受影响，仍按 1 s 提前）。
+const MOVE_BUDGET_MS: int = 3000
 
 ## —— 第一关「打伞位」——
 ## 用户 2026-10-04 定案：打伞时手臂抬到 90° 即可，不必举过头顶。于是许仙开局举伞 90°，
@@ -133,30 +158,40 @@ static func make_level1() -> StageDef:
 		"hand_angles": {0: [0.0, 0.0], 1: [1.20, LEVEL1_HAND_MAX_RAD], 2: [0.10, 1.20]},
 		"distance": 0.5, "exposure": 1.0, "oil": 1.0,
 	}
-	# 段落连续覆盖整关、单调递增且不重复（TECH_DESIGN.md 2.2 的校验要求）
+	# 段落连续覆盖整关、单调递增且不重复（TECH_DESIGN.md 2.2 的校验要求）。
+	# 「还伞」段由 22–28 拍延到 22–32 拍：这一段包含走到最右端（第 22 拍）、走回还伞
+	# （第 28 拍）与放手收势（第 30 拍）三件事，本身就是一次完整的往返。
 	def.segments = [
 		{"name": "出峨眉", "start_ms": def.beat_ms(0), "end_ms": def.beat_ms(3)},
 		{"name": "化人形", "start_ms": def.beat_ms(3), "end_ms": def.beat_ms(7)},
 		{"name": "游湖", "start_ms": def.beat_ms(7), "end_ms": def.beat_ms(12)},
 		{"name": "借伞", "start_ms": def.beat_ms(12), "end_ms": def.beat_ms(22)},
-		{"name": "还伞", "start_ms": def.beat_ms(22), "end_ms": def.beat_ms(28)},
-		{"name": "同舟", "start_ms": def.beat_ms(28), "end_ms": def.duration_ms},
+		{"name": "还伞", "start_ms": def.beat_ms(22), "end_ms": def.beat_ms(32)},
+		{"name": "同舟", "start_ms": def.beat_ms(32), "end_ms": def.duration_ms},
 	]
 	def.cues = make_level1_cues(def)
 	return def
 
 
 ## 第一关关键动作表。落点全部取整拍，方便与重音对齐核对。
-## 每条都在落点前 1 s 有可读线索（hint_lead_ms），满足「落点前获得提示数据」。
+## 每条都在落点**前**有可读线索（hint_lead_ms），满足「落点前获得提示数据」。
+##
+## 提示提前量按动作**需要多少时间**分两档（用户 2026-10-04 定案）：
+##   原地动作（蹲下 / 站起 / 抬手 / 接伞 / 放手）→ 1 s。抬一下手、按一下键就能到位。
+##   长距离移动（向左走 / 走到最右端 / 走回还伞）→ 3 s。
+## 起因：这两段移动各要走 0.65 个舞台宽（约 1250 画布像素，拖动是 1:1 映射），
+## 正常拖速 450~600 px/s 下需要 2~2.8 s，再加反应时间。原来一律按 1 s 给，
+## 玩家只在最后 1 秒才看到提示，实测「根本来不及向右走」。
+##
 ## segment 字段指向所在段落名，供按段汇总合拍度与低合拍补救使用。
 ##
 ## 本条流程里的位置关系（用户 2026-10-04 修订：接伞判**两只手的距离**，还伞流程镜像到右侧）：
 ##   游湖（第 8 拍）  白素贞在 x=0.5 向左走，学会用胸签横移
 ##   借伞（第 14 拍） 左手抬到 90°（打伞位），与许仙举着的右手齐平
 ##   接伞（第 16 拍） 走进交接窗口（两只手相接的那一段）+ 手高齐平 → 伞转到白素贞左手
-##   向右走（第 20 拍）接到伞后立刻向右走，走到舞台最右端（x≥0.95）
-##   还伞（第 24 拍） 转身走回（拖动方向一变自动翻面），走回交接窗口就把伞还回许仙右手
-##   同舟（第 28 拍） 放下已空的左手收势
+##   向右走（第 22 拍）接到伞后立刻向右走，走到舞台最右端（x≥0.95）
+##   还伞（第 28 拍） 转身走回（拖动方向一变自动翻面），走回交接窗口就把伞还回许仙右手
+##   同舟（第 30 拍） 放下已空的左手收势
 static func make_level1_cues(def: StageDef) -> Array:
 	# 交接窗口（白素贞接地点 x）：与 UmbrellaController 的判据同一处来源，
 	# 因此「拍点说该到位了」与「控制器真的换手」不会漂开。
@@ -169,9 +204,13 @@ static func make_level1_cues(def: StageDef) -> Array:
 		# 而不是 0.7-1.0（那是蹲下方向，写成后者会让蹲到底反而被判成站起）。
 		CueScript.make("l1_c1_stand", def.beat_ms(4), CueScript.ACTION_STAND_UP, 0,
 			{"key": "stance", "min": 0.0, "max": 0.05}, 250, "stand_up"),
-		# 第 8 拍：向左走向许仙（他从 x=0.13 起就站在那里，右手一直举着）
+		# 第 8 拍：向左走向许仙（他从 x=0.13 起就站在那里，右手一直举着）。
+		# 这一条虽是移动，但只需走 0.15 个舞台宽；仍按移动档给 3 s 提前量，
+		# 让「移动 = 3 s」这条规则只有一条、不必按距离分档（线索早出现无害：
+		# 提示一次只显示最靠前的那条未完成落点，前面的没做完就不会轮到它）。
 		CueScript.make("l1_c2_move_left", def.beat_ms(8), CueScript.ACTION_MOVE_LEFT, 0,
-			{"key": "x", "min": LEVEL1_APPROACH_MIN, "max": LEVEL1_APPROACH_MAX}, 250, "move_left"),
+			{"key": "x", "min": LEVEL1_APPROACH_MIN, "max": LEVEL1_APPROACH_MAX}, 250,
+			"move_left", LEVEL1_MOVE_HINT_LEAD_MS),
 		# 第 14 拍：把左手抬到打伞位（90°），与许仙举着的右手齐平。
 		# 到位区间见 LEVEL1_UMBRELLA_RAISE_*：它完整包住接伞的手高窗口（82.4°~90°），
 		# 因此「抬手」这条落点成立时手高就已经齐平。
@@ -184,27 +223,45 @@ static func make_level1_cues(def: StageDef) -> Array:
 		# 更不必穿过他。落点在这里接棒：玩家提前走进窗口、或补救时再走进去，
 		# 都由这一条如实记下偏移。物理上的伞早在两手相接时就换手了
 		# （PRD 第 5.1 节：动作照常发生），本落点只判拍。
-		CueScript.make("l1_c4_take_umbrella", def.beat_ms(16), CueScript.ACTION_UMBRELLA_TAKE, 0,
+		CueScript.make("l1_c4_take_umbrella", def.beat_ms(16), CueScript.ACTION_UMBRELLA_TAKE,
+			UmbrellaController.BAISUZHEN_ID,   # 事件上报「接手的人」；写错会被判定直接跳过
 			{"key": "x", "min": join.x, "max": join.y}, 250, "umbrella_take"),
-		# 重音（第 20 拍）：接到伞后立刻向右走，走到舞台最右侧的可达区域（x=1 是右边界）。
-		# 目标带 [0.94, 1.0]：**必须与交接窗口（0.176~0.296）不重叠**，否则「走到最右端」
+		# 重音（第 22 拍）：接到伞后向右走，走到舞台最右侧的可达区域（x=1 是右边界）。
+		# 目标带 [0.95, 1.0]：**必须与交接窗口（0.176~0.296）不重叠**，否则「走到最右端」
 		# 这一步会先经过交接窗口、被还伞判定抢走伞（还伞要求已到过右端，顺序一颠倒
 		# 这一趟就白走了）。右端与交接窗口之间的间隙就是给玩家的缓冲。
+		#
+		# 落点是**第 22 拍**（不是第 20 拍）：接伞落点在第 16 拍，中间留 6 拍 = 3.75 s。
+		# 这一趟要走 0.65 个舞台宽 ≈ 1250 画布像素，正常拖速下需要 2~2.8 s 再加反应时间。
+		# 原来按第 20 拍只给 2.5 s（且线索提前量只有 1 s，等于看到提示就只剩 1 s），
+		# 实测玩家根本走不到——用户 2026-10-04 报的就是这条。
 		#
 		# `cue_id` 必须与第 8 拍的 `l1_c2_move_left` **不同**（动作也相反）：
 		# 两条是两次独立的漏做机会。补救系统按 `cue_id` 去重（同一 cue 不能重复触发
 		# 自己的窗口），共用一个 id 会让这一条漏做开出两个窗口——实测就是这样多出
 		# 第 9 个 remedy_open 的。
-		CueScript.make("l1_c5_move_to_edge", def.beat_ms(20), CueScript.ACTION_MOVE_RIGHT, 0,
-			{"key": "x", "min": LEVEL1_RIGHT_EDGE_MIN, "max": LEVEL1_RIGHT_EDGE_MAX},
-			250, "move_right"),
-		# 重音（第 24 拍）：转身向左走回许仙身旁（影人只有正反两面，拖动方向一变
+		CueScript.make("l1_c5_move_to_edge", def.beat_ms(LEVEL1_EDGE_BEAT),
+			CueScript.ACTION_MOVE_RIGHT, 0,
+			{"key": "x", "min": LEVEL1_RIGHT_EDGE_MIN, "max": LEVEL1_RIGHT_EDGE_MAX}, 250,
+			"move_right", LEVEL1_MOVE_HINT_LEAD_MS),
+		# 重音（第 28 拍）：转身向左走回许仙身旁（影人只有正反两面，拖动方向一变
 		# 就自动翻面，不另开一条「转身」落点），走回交接窗口就把伞还回他右手。
 		# 目标带与接伞同一段窗口：**还伞遵循同样的判据**（用户定案）。
-		CueScript.make("l1_c6_return_umbrella", def.beat_ms(24), CueScript.ACTION_UMBRELLA_RETURN, 0,
-			{"key": "x", "min": join.x, "max": join.y}, 250, "umbrella_return"),
-		# 第 26 拍：放下已经空掉的左手收势（不要求重新抬手，也不要求转身）
-		CueScript.make("l1_c7_hand_lower", def.beat_ms(26), CueScript.ACTION_HAND_LOWER, 0,
+		# 同样留 6 拍 = 3.75 s 走回程（0.65 个舞台宽），因此与「走到最右端」隔 3.75 s。
+		#
+		# ⚠️ `target_object` 必须是**许仙**，不是白素贞：交接事件上报的 `object_id` 是
+		# 「接手的那个人」（见 UmbrellaController._emit 与交接文档 §5）——接伞记白素贞、
+		# 还伞记许仙。判定时 `_register_action` 会拿 `target_object != object_id` 直接跳过，
+		# 所以这里写 0 会让这条落点**永远判不到**：玩家把伞还回去也拿不到命中，
+		# 窗一过就被判「完全没做」并开出补救窗口。实测踩到过（原先误记成「测试台的时序问题」）。
+		CueScript.make("l1_c6_return_umbrella", def.beat_ms(LEVEL1_RETURN_BEAT),
+			CueScript.ACTION_UMBRELLA_RETURN, UmbrellaController.XUXIAN_ID,
+			{"key": "x", "min": join.x, "max": join.y}, 250,
+			"umbrella_return", LEVEL1_MOVE_HINT_LEAD_MS),
+		# 第 30 拍：放下已经空掉的左手收势（不要求重新抬手，也不要求转身）。
+		# 原地动作，线索仍按默认 1 s 提前。
+		CueScript.make("l1_c7_hand_lower", def.beat_ms(LEVEL1_LOWER_BEAT),
+			CueScript.ACTION_HAND_LOWER, 0,
 			{"key": "angle", "min": HAND_LOWER_MIN_RAD, "max": HAND_LOWER_MAX_RAD}, 250, "hand_lower"),
 	]
 	# 标注所属段落
@@ -214,7 +271,10 @@ static func make_level1_cues(def: StageDef) -> Array:
 		"l1_c2_move_left": "游湖",
 		"l1_c3_hand_raise": "借伞",
 		"l1_c4_take_umbrella": "借伞",
-		"l1_c5_move_to_edge": "借伞",
+		# 「走到最右端」归「还伞」段：它落在第 22 拍，正是还伞段的起点（段界口径是
+		# `start ≤ t < end`，见 test_level1_runtime 的段落归属校验）。语义上也如此——
+		# 还伞段本来就是「拿着伞走一趟、再走回来还给他」的完整往返。
+		"l1_c5_move_to_edge": "还伞",
 		"l1_c6_return_umbrella": "还伞",
 		"l1_c7_hand_lower": "还伞",
 	}
