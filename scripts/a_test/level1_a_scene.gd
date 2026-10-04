@@ -549,9 +549,25 @@ func _draw_spare_head(centre: Vector2, head_id: int) -> void:
 			draw_rect(Rect2(centre.x - 24.0, centre.y - 24.0, 48.0, 10.0), accent)
 
 
-## 第一关的伞（借伞还伞流程）。只读 `UmbrellaController` 的归属与位置：
-##   持有者       → 伞挂在谁的手上（`position` 已经是那只手在幕布上的位置）
-##   递伞过渡中   → 位置在两只手之间移动，画面上就是「一只手把伞递出去」
+## 某个影人的显示节点（下标即影人编号，与 `_refresh_ui` 的取法一致）。
+## 不在场（未登场）或编号越界时返回 null，调用方据此不画——道具跟着人走，人不在就不画。
+func _puppet_view(puppet_id: int) -> PlaceholderPuppet:
+	if puppet_id < 0 or puppet_id >= _puppet_views.size():
+		return null
+	var view: PlaceholderPuppet = _puppet_views[puppet_id]
+	return view if view.visible else null
+
+
+## 第一关的伞（借伞还伞流程）。**落点由显示端决定**：画在持伞那只手画出来的手腕上
+## （`PlaceholderPuppet.hand_screen_position`），所以伞永远握在手上，而且影子随灯距缩放时
+## 手和伞一起变大变小。递伞过渡期间，从原来那只手的手腕移到新手的手腕，比例取 A 的
+## `umbrella.handoff_blend()`（已缓入缓出），画面上就是「一只手把伞递出去」。
+##
+## 为什么不读 `UmbrellaController.position`：那是 A 内部的相对口径（归一化「幕布」坐标，
+## 手高按 A 自己的肩高/臂长公式算），与影人显示端画出来的手臂比例不是同一套坐标系。
+## 2026-10-04 实测：拿它换算像素，许仙举伞时伞被画到幕布底部（y≈668 px），
+## 而他自己画出的右手在 267 px 高处——这就是「开局伞不在许仙手上」的原因。
+##
 ## 别的关卡 `umbrella` 为 null，这里直接不画。
 func _draw_umbrella() -> void:
 	if _harness == null:
@@ -559,10 +575,15 @@ func _draw_umbrella() -> void:
 	var umbrella: UmbrellaController = _harness.runtime.director.umbrella
 	if umbrella == null:
 		return
-	# 道具不该画到幕布之外：位置来自手位，手位已在合法区间，这里再夹一次以防越界。
-	var at := Vector2(
-		CLOTH.position.x + clampf(umbrella.position.x, 0.0, 1.0) * CLOTH.size.x,
-		CLOTH.position.y + clampf(umbrella.position.y, 0.0, 1.0) * CLOTH.size.y)
+	var holder: PlaceholderPuppet = _puppet_view(umbrella.holder_id_of())
+	if holder == null:
+		return
+	var at: Vector2 = holder.hand_screen_position(umbrella.holder_hand_of())
+	if umbrella.handing_off:
+		var previous: PlaceholderPuppet = _puppet_view(umbrella.handoff_from_id())
+		if previous != null:
+			at = previous.hand_screen_position(umbrella.handoff_from_hand()) \
+				.lerp(at, umbrella.handoff_blend())
 	var wood := Color("#8a5a2b")
 	var paper := Color(0.87, 0.79, 0.62, 0.92)
 	var edge := Color("#3a2a18")

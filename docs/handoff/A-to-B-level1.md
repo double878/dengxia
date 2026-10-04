@@ -180,7 +180,7 @@ if CueHint.is_visible(hint, clock.get_song_time_ms()):
 
 **新增落点的目标范围**：`target_range.key` 除原有的 `stance`/`hand`/`angle`/`facing`/`x`/`y` 外，新增 `distance`、`exposure`（灯的连续量，取自 `LampState`）与 `slot`（换头/挂起的架位）。`hook`/`take_back`/`head_swap` 三类**不带目标范围**（任意一次挂起/取回/换头都算做到）；它们的 `cue_hint` 里 `target_object` 是**解析后的具体影人编号**，不会是 `-1`。
 
-## 6.2 第一关的伞：B 怎么画（**2026-10-04 新增**）
+## 6.2 第一关的伞：B 怎么画（**2026-10-04 新增，同日改为「显示端按手腕画」**）
 
 伞的运行状态由 `UmbrellaController`（`scripts/a/umbrella_controller.gd`）持有，**B 只读**。
 取法：`runtime.director.umbrella` —— **其它关卡这里是 `null`**，
@@ -188,23 +188,47 @@ if CueHint.is_visible(hint, clock.get_song_time_ms()):
 
 | 读什么 | 单位 | 含义 |
 | --- | --- | --- |
-| `umbrella.position` | `Vector2`，各分量 0–1 | 伞在幕布上的归一化位置。**已经算好是「持伞那只手」的位置**，B 直接按幕布矩形换算成像素即可 |
 | `umbrella.holder_id_of()` | `int` | 当前持伞的影人编号（`0` 白素贞 / `1` 许仙） |
 | `umbrella.holder_hand_of()` | `String` | 持伞的手：`"left"` / `"right"` |
+| `umbrella.handing_off` | `bool` | 是否正在做递伞过渡（一只手把伞递给另一只手） |
+| `umbrella.handoff_from_id()` | `int` | 过渡的**起点**是哪只手的主人；`handing_off` 为 false 时无意义 |
+| `umbrella.handoff_from_hand()` | `String` | 过渡起点的那只手 |
+| `umbrella.handoff_blend()` | `float` 0–1 | 过渡进度（**已缓入缓出**）：`0` = 还在原来那只手上、`1` = 已到新手上 |
 | `umbrella.borrow_position()` | `float` | 本次实际接伞时的接地点 x（还伞要回到这里） |
 | `umbrella.has_reached_left_edge()` | `bool` | 本次持伞期间是否已到过舞台最左侧 |
-| `umbrella.handing_off` | `bool` | 是否正在做递伞过渡（`position` 正在两只手之间移动） |
-| `umbrella.hand_position(puppet_id, hand)` | `Vector2` | 某个影人某只手的幕布位置；B 若要自己画别的手部道具可以用 |
+| `umbrella.position` | `Vector2`，各分量 0–1 | **A 内部口径，不要用它换算像素**（见下） |
 
-**B 不要自己算手高。** 高度口径在 `UmbrellaController.hand_height(手角, 站蹲)`（静态函数）：
-手高 = 肩高 − 手臂竖直投影，`0` rad 垂下 → 0.38、`π` 举过头顶 → 0.98。
-许仙开场就举满 `π` 持伞，所以第一帧伞就画在他右手高度上。
+**伞画在哪，由显示端决定：画在你（显示端）画出的那只手腕上。**
+
+```gdscript
+# 每帧（在你画完影人之后，位置取你自己画手时用的那个腕点）
+var holder := puppets[umbrella.holder_id_of()]        # 或你自己的影人视图节点
+var at: Vector2 = 该影人 hand=umbrella.holder_hand_of() 那只手的腕点像素位置
+if umbrella.handing_off:
+    var from: Vector2 = puppets[umbrella.handoff_from_id()] 的
+        hand=umbrella.handoff_from_hand() 那只手的腕点
+    at = from.lerp(at, umbrella.handoff_blend())      # 画面上就是「一只手把伞递出去」
+```
+
+**为什么 A 不给像素位置（2026-10-04 修）。** 原先 `umbrella.position` 号称「已经算好是
+持伞那只手的位置」，但那是 A 自己的一套归一化口径（肩高 0.68、臂长 0.30，且没有灯距缩放），
+与影人显示端画出来的手臂比例（肩在接地点上方 0.80 身高、整条手臂 0.31 身高）**不是同一套数**；
+显示端还要把它按幕布矩形换算，而影人是按整块画布换算，于是坐标系也不一致。实测结果：
+许仙开局举伞时伞被画在幕布底部 `y≈668`，而他自己的右手在 `267` 高处——**「开局伞不在许仙手上」**。
+现在 A 只回答「归谁、哪只手、有没有正在递」，落点由画手的那一方给，天然对齐；
+灯距推拉让影子变大变小时，手和伞也一起缩放。参考实现：
+`level1_a_scene._draw_umbrella()` + `placeholder_puppet.hand_screen_position()`。
+
+**先落地（推荐）**：正式影人素材的手臂比例与占位不同，因此**不要**照抄占位的那几个比例常数，
+照抄会把这次的坑换个地方再踩一遍——你只要「伞画在我画的那只手上」这一条。
 
 **三件事 B 不要做：**
 
 1. **不要自己判「接伞/还伞的条件成不成立」。** 位置容差（接伞 ±0.06、还伞 ±0.03）、
    手高容差（±0.04）、「已到过左端」、以及「还伞之后必须先离开接伞区才能再接一次」
-   全在 A 侧；B 照 `position` 画就行。
+   全在 A 侧；A 会在成条件的那一刻给出 `handing_off` 与归属变化，你照它画就行。
+   （`UmbrellaController.hand_height()` / `hand_position()` 是 A 判「两只手是否齐平」用的
+   内部口径，**别拿去换算像素**。）
 2. **不要把伞画在幕布前那一层。** 幕后看到的是影人背面，伞在背面那一侧；
    参考实现（`level1_a_scene._draw_umbrella`）把它画在挂钩与签手**之前**，免得压住持伞的人。
 3. **不要按 `cue_id` 认伞事件。** `umbrella_take` / `umbrella_return` 的 `cue_id` 是

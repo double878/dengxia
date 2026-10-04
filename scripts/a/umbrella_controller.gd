@@ -8,6 +8,11 @@ class_name UmbrellaController
 ##   - 交接发生时产出 `umbrella_take` / `umbrella_return` 事件，交给
 ##     PerformanceSystem 按拍点判定（与抬手/挂起/换头走同一条判定路径）。
 ##
+## 伞**画在哪**不归本控制器管：本控制器只说「伞现在归谁、握在哪只手、有没有正在递」。
+## 位置读数（`position` / `hand_position`）是 A 内部的相对口径，与影人显示端画出来的
+## 手臂比例不是同一套坐标系，显示端不要拿它换算像素——要把伞画在手上，请用显示端自己
+## 画出的手腕（`PlaceholderPuppet.hand_screen_position()`）。理由与实测见 A→B 交接文档 6.2 节。
+##
 ## 对照流程表：
 ##   开场      许仙固定站位、右手举起持伞；玩家控制白素贞。
 ##   接伞      白素贞走到许仙身旁、左手与许仙右手等高且在容差内 → 伞自动转到白素贞左手。
@@ -74,13 +79,17 @@ var _holder_hand: String = XUXIAN_HAND
 var _borrow_x: float = 0.0
 ## 本次持伞期间是否已经到达过舞台最左侧的可达区域。
 var _reached_left_edge: bool = false
-## 伞在幕布上的归一化位置（B 只读；递伞过程中位于两只手之间）。
+## 伞在幕布上的归一化位置（A 内部口径；**显示端不要拿它换算像素**，见 `hand_position()`）。
 var position: Vector2 = Vector2.ZERO
 ## 正在做递伞过渡。
 var handing_off: bool = false
 ## 交接发生那一帧伞的位置。过渡期间伞从这里、以递减的偏移趋向当前手位。
 var _handoff_from: Vector2 = Vector2.ZERO
 var _handoff_progress: float = 1.0
+## 递伞过渡的**起点是哪只手**（交出去的那一方）。显示端按它把伞从那只手的手腕
+## 送到新手的手腕上；不在过渡中时这两个字段没有意义（`handing_off` 为 false）。
+var _handoff_from_id: int = -1
+var _handoff_from_hand: String = ""
 
 ## 两个落点的「本轮是否已经上报过」。它们的意义是**同一次交接只报一次**：
 ## 白素贞一直站在对齐位置上时，若不设这个门，每帧都会再报一次接伞；
@@ -109,6 +118,8 @@ func setup(p_stage_def: StageDef, p_puppets: Array) -> bool:
 	_reached_left_edge = false
 	handing_off = false
 	_handoff_progress = 1.0
+	_handoff_from_id = -1
+	_handoff_from_hand = ""
 	stage_id = p_stage_def.id if p_stage_def != null else -1
 	puppets = p_puppets
 	if not is_enabled():
@@ -175,7 +186,12 @@ static func hand_height(hand_angle: float, stance: float) -> float:
 	return HAND_ANCHOR_Y - drop - STANCE_DROP * clampf(stance, 0.0, 1.0)
 
 
-## 某个影人某只手的幕布位置（归一化）。B 用它把伞画在手边。
+## 某个影人某只手的相对位置（A 内部口径：判定「两只手是否齐平」与递伞过渡用它）。
+##
+## ⚠️ 它**不是**显示端的坐标系。手高按 A 自己的肩高/臂长口径算，与影人显示端画出来的
+## 手臂比例不是同一套，也没有灯距缩放。显示端要把道具画在手上，请用显示端自己的
+## `PlaceholderPuppet.hand_screen_position()`；拿这个值去换算像素会错位
+## ——2026-10-04 实测把伞画到了幕布底部（A→B 交接文档 6.2 节）。
 func hand_position(puppet_id: int, hand: String) -> Vector2:
 	var state: PuppetState = _puppet(puppet_id)
 	if state == null:
@@ -184,7 +200,8 @@ func hand_position(puppet_id: int, hand: String) -> Vector2:
 	return Vector2(state.stage_pos.x, hand_height(angle, state.stance))
 
 
-## 伞此刻挂在哪只手上。递伞过渡中仍指向目标手：伞是「正往那只手去」。
+## 伞此刻挂在哪只手上（A 内部口径，同 `hand_position`）。
+## 递伞过渡中仍指向目标手：伞是「正往那只手去」。
 func holder_hand_position() -> Vector2:
 	return hand_position(_holder_id, _holder_hand)
 
@@ -207,6 +224,24 @@ func borrow_position() -> float:
 
 func has_reached_left_edge() -> bool:
 	return _reached_left_edge
+
+
+## —— 递伞过渡的只读读数（给显示端画「一只手把伞递给另一只手」）——
+## 过渡中：伞从 `handoff_from_id/handoff_from_hand` 那只手，移到当前 `holder_id_of()/
+## holder_hand_of()` 那只手；走到哪一段取 `handoff_blend()`。
+## 不在过渡中（`handing_off` 为 false）时显示端只需按当前持伞人的手位画，不必读这三个。
+func handoff_from_id() -> int:
+	return _handoff_from_id
+
+
+func handoff_from_hand() -> String:
+	return _handoff_from_hand
+
+
+## 过渡进度（0 = 还在原来那只手上，1 = 已到新手上），已做缓入缓出。
+## 显示端在两手腕之间按这个比例插值即可，不必自己再缓动一次。
+func handoff_blend() -> float:
+	return _ease(_handoff_progress)
 
 
 func has_event(kind: String) -> bool:
@@ -242,11 +277,14 @@ func _try_take(song_time_ms: int) -> void:
 		_must_leave_zone = false
 	if not _hands_aligned():
 		return
+	var previous_id: int = _holder_id
+	var previous_hand: String = _holder_hand
 	_borrow_x = _puppet_x(BAISUZHEN_ID)
 	_holder_id = BAISUZHEN_ID
 	_holder_hand = BAISUZHEN_HAND
 	_reached_left_edge = false
-	_begin_handoff(position, hand_position(BAISUZHEN_ID, BAISUZHEN_HAND))
+	_begin_handoff(position, hand_position(BAISUZHEN_ID, BAISUZHEN_HAND),
+		previous_id, previous_hand)
 	if not _take_reported:
 		_emit(song_time_ms, KIND_TAKE, BAISUZHEN_ID, _baisuzhen_x())
 		_take_reported = true
@@ -290,10 +328,13 @@ func _try_return(song_time_ms: int) -> void:
 		return
 	if x - _previous_x <= DIRECTION_EPSILON:
 		return
+	var previous_id: int = _holder_id
+	var previous_hand: String = _holder_hand
 	_holder_id = XUXIAN_ID
 	_holder_hand = XUXIAN_HAND
 	_reached_left_edge = false
-	_begin_handoff(position, hand_position(XUXIAN_ID, XUXIAN_HAND))
+	_begin_handoff(position, hand_position(XUXIAN_ID, XUXIAN_HAND),
+		previous_id, previous_hand)
 	_must_leave_zone = true
 	if not _return_reported:
 		_emit(song_time_ms, KIND_RETURN, XUXIAN_ID, x)
@@ -341,8 +382,14 @@ func _follow_hand() -> void:
 
 
 ## 递伞过渡：手位不同时用短暂过渡衔接，不是瞬间跳过去。
-## `_handoff_from` 是交接发生那一帧伞的位置，进度走完后 `_follow_hand()` 直接跟手。
-func _begin_handoff(start: Vector2, live: Vector2) -> void:
+## `start` 是交接发生那一帧伞的位置（A 内部口径，只用来判断两只手差得远不远）；
+## `previous_id` / `previous_hand` 是伞**原来**在哪只手上——显示端靠它把手腕上的伞
+## 从那只手送到新的那只手（A 不给绝对坐标，见 A→B 交接文档 6.2 节）。
+## 两只手本来就重合时不做过渡，`handing_off` 保持 false，显示端按新持伞人直接落位。
+func _begin_handoff(start: Vector2, live: Vector2, previous_id: int,
+		previous_hand: String) -> void:
+	_handoff_from_id = previous_id
+	_handoff_from_hand = previous_hand
 	if start.distance_to(live) < 0.0005:
 		position = live
 		handing_off = false

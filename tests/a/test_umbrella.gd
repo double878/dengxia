@@ -11,6 +11,9 @@ const ATestBaseScript := preload("res://tests/a/a_test_base.gd")
 const StageDefScript := preload("res://scripts/a/stage_def.gd")
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 const UmbrellaControllerScript := preload("res://scripts/a/umbrella_controller.gd")
+const LampStateScript := preload("res://scripts/a/lamp_state.gd")
+## 伞的落点由显示端算（A 不给绝对坐标），所以这里要连显示端的影人一起验证。
+const PlaceholderPuppetScript := preload("res://scripts/a_test/placeholder_puppet.gd")
 
 ## 许仙站位与举伞角：与 StageDef.make_level1 的开演布景一致
 ## （他举满 π，因此白素贞抬到「抬手」到位区间上段时两手恰好齐平）。
@@ -55,6 +58,7 @@ func run_all() -> Dictionary:
 	var t: ATestBase = ATestBaseScript.new()
 	_test_only_level1(t)
 	_test_starts_in_xuxian_hand(t)
+	_test_drawn_at_holder_wrist(t)
 	_test_take_requires_alignment(t)
 	_test_misaligned_take_does_not_transfer(t)
 	_test_umbrella_follows_lowered_hand(t)
@@ -104,6 +108,50 @@ func _test_starts_in_xuxian_hand(t: ATestBase) -> void:
 		UmbrellaController.hand_height(XUXIAN_RAISE, 0.0), 0.0001,
 		"伞应画在许仙右手的高度上")
 	t.finish("伞随开演布景挂在许仙右手")
+
+
+## 伞画在「持伞那只手」上——落点由显示端按**它自己画出的手腕**算，A 不给绝对坐标
+## （A→B 交接文档 6.2 节）。
+##
+## 这条断言防的是 2026-10-04 实测的那个错：显示端曾按 A 的手高公式（归一化「幕布」坐标）
+## 换算像素，许仙举伞那一帧伞被画在幕布底部 y≈668，而他自己画出的右手在 267 高处。
+## 这里独立复算一遍**显示端**的几何链（不调用显示端的求解函数），再额外钉一条性质：
+## 落点必须随灯距（影子尺寸）一起变化——旧写法读不到灯距，这条会失败。
+func _test_drawn_at_holder_wrist(t: ATestBase) -> void:
+	t.begin("伞落在持伞那只手画出的手腕上")
+	var view: PlaceholderPuppet = PlaceholderPuppetScript.new()
+	view.stage_origin = Vector2.ZERO
+	view.stage_size = Vector2(1920.0, 1080.0)
+	view.lamp_state = LampStateScript.new()   # 灯距取默认 0.5
+	var xuxian: PuppetState = _puppets()[UmbrellaControllerScript.XUXIAN_ID]
+	view.puppet_state = xuxian
+	var at: Vector2 = view.hand_screen_position(UmbrellaControllerScript.XUXIAN_HAND)
+
+	# 独立复算：身高 = 站高 × 灯距倍率；肩在接地点上方 SHOULDER_RATIO 个身高、再横移半个身宽；
+	# 手臂从肩起往手角方向走 (上臂 + 下臂) 个身高（右手屏幕角 = π/2 − 手角）。
+	var scale: float = lerpf(PlaceholderPuppetScript.SHADOW_SCALE_MIN,
+		PlaceholderPuppetScript.SHADOW_SCALE_MAX, view.lamp_state.distance)
+	var height: float = view.figure_height * scale
+	var half_w: float = height * PlaceholderPuppetScript.HALF_W_RATIO
+	var shoulder := Vector2(xuxian.stage_pos.x * 1920.0 + half_w,
+		xuxian.stage_pos.y * 1080.0 - height * PlaceholderPuppetScript.SHOULDER_RATIO)
+	var arm: float = height * (PlaceholderPuppetScript.UPPER_ARM_RATIO
+		+ PlaceholderPuppetScript.LOWER_ARM_RATIO)
+	var screen_angle: float = PI * 0.5 - xuxian.hand_angle.y
+	var expected: Vector2 = shoulder + Vector2(cos(screen_angle), sin(screen_angle)) * arm
+	t.check(at.distance_to(expected) < 1.0,
+		"伞应落在许仙右手腕上（实际 %s，期望 %s）" % [str(at), str(expected)])
+
+	# 另一条独立的性质：落点跟着影子的尺寸走。灯推近 → 影子放大 → 手（和手上的伞）一起抬高；
+	# 旧写法（按 A 的归一化手高换算像素）根本读不到灯距，这条它会失败。
+	view.lamp_state.distance = 0.0
+	var far_lamp: Vector2 = view.hand_screen_position(UmbrellaControllerScript.XUXIAN_HAND)
+	view.lamp_state.distance = 1.0
+	var near_lamp: Vector2 = view.hand_screen_position(UmbrellaControllerScript.XUXIAN_HAND)
+	t.check(near_lamp.y < far_lamp.y - 20.0,
+		"灯推近时伞应随影子一起抬高（实际 %.1f → %.1f）" % [far_lamp.y, near_lamp.y])
+	view.free()
+	t.finish("伞的落点来自影人自己画出的手腕")
 
 
 func _test_take_requires_alignment(t: ATestBase) -> void:
