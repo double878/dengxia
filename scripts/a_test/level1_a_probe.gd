@@ -16,6 +16,14 @@ func run(harness: Object) -> int:
 	_expect(harness.runtime != null, "Level1Runtime 已建立")
 	_expect(harness.runtime.stage_def.duration_ms == 35000, "第一关时长为 35000 ms")
 	_expect(harness.runtime.stage_def.cues.size() == 6, "关键动作数量为 6")
+
+	# 第一关开局：三个影人同时在场，另两个分别挂在两个挂钩上（PRD 第 4.2 节），
+	# 于是两个挂钩槽从第一帧起就被占满。这决定了本关「空格 = 挂起」不可能成功，
+	# HUD 因此不显示那条提示（见 level1_a_scene.hook_hint_text）。
+	# 若日后改布景让出空槽，这两条会失败，提醒同步提示文案与测试。
+	var controller: PuppetController = harness.runtime.puppet_controller
+	_expect(controller.find_free_hook_slot() == -1, "第一关开局两个挂钩槽都被布景占满")
+	_expect(not controller.call("hook_current"), "本关不接受挂起当前影人")
 	var start_events: Array = []
 	start_events.append_array(harness.take_events())
 	_expect(_count_kind(start_events, "stage_start") == 1, "收到 stage_start")

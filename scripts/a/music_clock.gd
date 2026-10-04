@@ -21,6 +21,11 @@ class_name MusicClock
 
 const DEFAULT_BPM: float = 96.0
 const POSITION_EPSILON_S: float = 1.0e-6
+## 音频播放位置连续多久没有前进，就判定为「音频线程没在吃数据」（声卡缺失、
+## 被独占、缓冲停摆），并降级为自由计时。
+## 取 0.6 s：远大于正常的混音抖动与首次填充缓冲的时间，又短到不至于让玩家
+## 看到一整套冻结的画面。降级只影响时间来源，不改变任何判定规则。
+const AUDIO_STALL_TIMEOUT_S: float = 0.6
 
 var player: AudioStreamPlayer = null   ## 主音轨播放器；为 null 时退化为自由计时
 var bpm: float = DEFAULT_BPM
@@ -32,6 +37,7 @@ var _free_s: float = 0.0               ## 歌曲时间累计（有音轨时由�
 var _position_s: float = 0.0           ## 上一次读到的播放位置
 var _last_beat_index: int = -1
 var _latency_s: float = 0.0
+var _stall_s: float = 0.0                ## 音频位置停止前进的累计时长，用于判定停摆
 
 
 ## 设置主音轨播放器与 BPM。本方法不启动播放；随后必须调用 start() 才会进入音频时钟模式。
@@ -45,6 +51,7 @@ func set_player(value: AudioStreamPlayer, track_bpm: float = DEFAULT_BPM) -> voi
 func start(song_start_ms: int = 0) -> void:
 	_paused = false
 	_last_beat_index = -1
+	_stall_s = 0.0
 	_latency_s = maxf(AudioServer.get_output_latency(), 0.0)
 	var start_s: float = float(maxi(song_start_ms, 0)) / 1000.0
 	var position_now: float = 0.0
@@ -71,6 +78,18 @@ func update(delta: float) -> bool:
 		var advanced: float = position_now - _position_s
 		if advanced > POSITION_EPSILON_S:
 			_free_s += advanced
+			_stall_s = 0.0
+		else:
+			# 播放器自称在播、播放位置却不前进：音频线程没有在消费数据。
+			# 这种情况下继续读播放位置会把歌曲时间永久冻住，而判定、补救、关卡结束
+			# 全都读这一个数——玩家看到的就是一整场静止不动的画面。
+			# 因此超时后改用自由计时，让演出照常推进，并明确报警。
+			_stall_s += maxf(delta, 0.0)
+			if audio_stall_reached(_stall_s):
+				_active = false
+				_stall_s = 0.0
+				push_warning("MusicClock：音频播放位置已 %.2f s 没有前进，判定为音频停摆，改用自由计时（本轮演出不会冻结）" % AUDIO_STALL_TIMEOUT_S)
+				_free_s += maxf(delta, 0.0)
 		_position_s = position_now
 	else:
 		# 没有音轨、播放器未真正播放、或音轨已结束：退化为自由计时。
@@ -78,6 +97,7 @@ func update(delta: float) -> bool:
 		# 避免音频设备缺失时把时钟冻死；is_audio_driven() 会让消费者看出当前不是音频驱动。
 		# 不从播放位置重新起算，保证降级瞬间读数连续、不倒退。
 		_active = false
+		_stall_s = 0.0
 		_free_s += maxf(delta, 0.0)
 	return _detect_beat_crossing()
 
@@ -100,6 +120,14 @@ func resume() -> void:
 	if player != null:
 		_position_s = maxf(float(_pause_song_ms) / 1000.0 + _latency_s, 0.0)
 		player.stream_paused = false
+
+
+## 音频播放位置停摆是否已到判定阈值。
+## 抽成静态函数有两个理由：一是让「看门狗真的会在阈值处触发」这件事能被无头测试
+## 直接证明，而不是只写在注释里；二是 `player.playing == true` 却位置不动的场景
+## 在无头环境造不出来，把判定与「读声卡」分开后至少这一半是可验证的。
+static func audio_stall_reached(stall_s: float) -> bool:
+	return stall_s >= AUDIO_STALL_TIMEOUT_S
 
 
 func is_paused() -> bool:

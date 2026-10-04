@@ -9,7 +9,8 @@ class_name LampInputReader
 ## 测试场景键位映射（不写入任何公共 InputMap）：
 ##   鼠标滚轮上 / 下   灯距 distance 增加 / 减少
 ##   Q / E             显露度 exposure 降低 / 增加
-## 暂停键由测试场景自己处理（与操控场景一致：空格）。
+## 暂停键由测试场景自己处理（统一用 ESC）；空格在任何场景里都不是暂停键，
+## PRD 第 4.1 节把空格定为「挂起/取回影人」。
 
 const KEY_EXPOSURE_DECREASE: Key = KEY_Q
 const KEY_EXPOSURE_INCREASE: Key = KEY_E
@@ -59,4 +60,4 @@ func poll_keys() -> void:
 
 ## 键位说明，供 HUD 显示。只有一处定义，避免文档与实现漂移。
 static func describe_keys() -> String:
-	return "滚轮=灯距增减     Q/E=显露度减/增    空格=暂停/继续    F=命中演示    G=错拍演示"
+	return "滚轮=灯距增减     Q/E=显露度减/增     ESC=暂停/继续"

@@ -1,113 +1,245 @@
 extends Node2D
 class_name PlaceholderPuppet
-## 占位影人：只用简单几何图形表现 PuppetState，不依赖 B 的美术。
-## 它同时充当「模拟 B 的显示端」：只读 PuppetState，从不写。
+## 占位影人（幕后视角）：从背后看过去的皮革躯体，带关节、连到签手的三根竹签。
+## 只读 PuppetState / LampState，从不写——它同时充当「模拟 B 的显示端」。
+##
+## ⚠️ 这是**占位表现**，不是定案：正式影人素材属 B（TECH_DESIGN.md 第 3.2 节）。
+## 这里的几何只求三件事在画面上看得懂：
+## 1. 这是皮影戏的影人，不是普通剪影——所以有关节铆钉与竹签；
+## 2. 滚轮推拉灯会让影子的**尺寸**同步变化（PRD 第 4.3 节）；
+## 3. Q/E 倾灯改变影子的**显露程度**，低显露时只剩一点轮廓（同上）。
 
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
 
-## 由测试场景注入的舞台渲染区域，与 STAGE_PIXEL_SIZE 保持同一坐标系
-@export var stage_origin: Vector2 = Vector2(0.0, 120.0)
-@export var stage_size: Vector2 = Vector2(1920.0, 800.0)
-
-const HEAD_RADIUS: float = 34.0
-const TORSO_WIDTH: float = 78.0
-const TORSO_HEIGHT: float = 132.0
-const ARM_LENGTH: float = 116.0
-const ARM_WIDTH: float = 16.0
-const CHEST_TAG_RADIUS: float = 34.0
+## 由场景注入的舞台渲染区域。必须与 PuppetController.STAGE_PIXEL_SIZE 同一坐标系，
+## 这样「看到的胸签」与「拖得到的区域」才是同一个位置。
+@export var stage_origin: Vector2 = Vector2.ZERO
+@export var stage_size: Vector2 = Vector2(1920.0, 1080.0)
+## 站立时从接地点到头顶的像素高度
+@export var figure_height: float = 230.0
+## 三根竹签汇到的手部位置（示意图「你的手边 · 手与三根签」）
+@export var hand_anchor: Vector2 = Vector2(960.0, 852.0)
+## 画面上画出的胸签热区。前四关允许出现操作图标（PRD 第 3、8 节）。
+@export var show_chest_tag: bool = false
 
 var puppet_state: PuppetState = null
+var lamp_state: LampState = null
 
+## 灯的推拉把全场影子一起缩放，不能只缩放单个影人（PRD 第 4.3 节）
+const SHADOW_SCALE_MIN: float = 0.78
+const SHADOW_SCALE_MAX: float = 1.36
+## 显露程度的下限仍留一点轮廓：最暗时关键对象仍要可辨认（PRD 第 8 节）
+const EXPOSURE_ALPHA_MIN: float = 0.20
 
-## 归一化舞台坐标（0-1）→ 屏幕像素。y=0 在舞台最深处（画面上方），y=1 最靠幕布（画面下方）。
-func stage_to_screen(normalized: Vector2) -> Vector2:
-	return Vector2(
-		stage_origin.x + normalized.x * stage_size.x,
-		stage_origin.y + normalized.y * stage_size.y)
+const LEATHER: Color = Color(0.27, 0.18, 0.11)
+const RIM: Color = Color(0.85, 0.62, 0.30)
+const JOINT: Color = Color(0.92, 0.75, 0.40)
+const STICK: Color = Color(0.78, 0.58, 0.30)
+
+## 六个头（三个初始头 + 三个备用头）各自的头饰形状与点缀色。
+## 换头必须能在画面上看出来，所以外形而非仅仅是颜色发生变化。
+const HEAD_SHAPES: Array[String] = ["bun_high", "bun_twin", "cap_flat",
+	"bun_high", "bun_twin", "cap_flat"]
+const HEAD_ACCENTS: Array[Color] = [
+	Color(0.86, 0.24, 0.24), Color(0.22, 0.55, 0.62), Color(0.86, 0.62, 0.20),
+	Color(0.62, 0.26, 0.62), Color(0.26, 0.66, 0.38), Color(0.36, 0.40, 0.72),
+]
 
 
 func _process(_delta: float) -> void:
 	queue_redraw()
 
 
+## 归一化舞台坐标（0-1）→ 屏幕像素。y=0 在幕布最深处（画面上方），y=1 最靠玩家。
+func stage_to_screen(normalized: Vector2) -> Vector2:
+	return Vector2(
+		stage_origin.x + normalized.x * stage_size.x,
+		stage_origin.y + normalized.y * stage_size.y)
+
+
+## 胸签中心的屏幕位置。与 PuppetController.begin_drag 使用同一公式，
+## 保证「看到的圆圈」就是「拖得到的区域」。
+func chest_tag_screen() -> Vector2:
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	return Vector2(ground.x,
+		ground.y - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5)
+
+
+## 滚轮推拉灯 → 全场影子同步缩放的倍率
+func shadow_scale() -> float:
+	if lamp_state == null:
+		return 1.0
+	return lerpf(SHADOW_SCALE_MIN, SHADOW_SCALE_MAX,
+		clampf(lamp_state.distance, 0.0, 1.0))
+
+
+## Q/E 倾灯 → 影子显露程度
+func exposure_alpha() -> float:
+	if lamp_state == null:
+		return 1.0
+	return lerpf(EXPOSURE_ALPHA_MIN, 1.0, clampf(lamp_state.exposure, 0.0, 1.0))
+
+
 func _draw() -> void:
 	if puppet_state == null:
 		return
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var alpha: float = exposure_alpha()
+	var height: float = figure_height * shadow_scale() \
+		* (1.0 - 0.32 * clampf(puppet_state.stance, 0.0, 1.0))
 
-	# 接地点标记：确认影人「站在」哪个归一化位置
-	draw_line(ground - Vector2(46.0, 0.0), ground + Vector2(46.0, 0.0),
-		Color(0.25, 0.25, 0.30, 0.9), 3.0)
+	_draw_contact_shadow(ground, height, alpha)
+	if puppet_state.hook_slot != PuppetStateScript.HOOK_SLOT_NONE:
+		_draw_hook_marker(ground, height, alpha)
+	_draw_figure(ground, height, alpha)
+	if puppet_state.is_controlled:
+		_draw_sticks(ground, height, alpha)
+	if show_chest_tag or puppet_state.is_controlled:
+		_draw_chest_tag()
 
-	# 站蹲：躯干顶部离地高度随 stance 下降；同时身体略微下沉
-	var top_y: float = ground.y - TORSO_HEIGHT * (1.0 - 0.45 * puppet_state.stance)
-	var half_w: float = TORSO_WIDTH * 0.5
 
-	# 转身：facing 用横向挤压与朝向楔形表现，便于肉眼确认「渐进」而非瞬间翻面
-	var squeeze: float = 1.0 - 0.55 * puppet_state.turn_progress
-	var drawn_half_w: float = maxf(half_w * squeeze, 4.0)
-	var facing_sign: float = signf(puppet_state.facing)
+## 接地点的一小片暗影：让人看出影子是「落在幕布上」的，尺寸随灯距同步变化。
+func _draw_contact_shadow(ground: Vector2, height: float, alpha: float) -> void:
+	var rx: float = height * 0.30
+	var ry: float = height * 0.055
+	var segments: int = 24
+	var points := PackedVector2Array()
+	var colors := PackedColorArray()
+	points.append(ground)
+	colors.append(Color(0.05, 0.04, 0.03, alpha * 0.45))
+	for i in segments + 1:
+		var angle: float = TAU * float(i) / float(segments)
+		points.append(ground + Vector2(cos(angle) * rx, sin(angle) * ry))
+		colors.append(Color(0.05, 0.04, 0.03, 0.0))
+	draw_polygon(points, colors)
 
-	var body_color := Color(0.62, 0.34, 0.28).lerp(Color(0.30, 0.45, 0.40),
-		(puppet_state.facing + 1.0) * 0.5)
+
+## 挂起标记：挂在挂钩上的影人不再受控，用一个钩环示意（PRD 第 4.2 节）。
+func _draw_hook_marker(ground: Vector2, height: float, alpha: float) -> void:
+	var top := Vector2(ground.x, ground.y - height * 1.06)
+	draw_arc(top + Vector2(0.0, height * 0.05), height * 0.07, 0.0, PI, 20,
+		Color(0.85, 0.66, 0.32, alpha), 4.0)
+	draw_line(top + Vector2(0.0, height * 0.12), top + Vector2(0.0, height * 0.2),
+		Color(0.85, 0.66, 0.32, alpha), 4.0)
+
+
+func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
+	var state := puppet_state
+	var squeeze: float = 1.0 - 0.50 * clampf(state.turn_progress, 0.0, 1.0)
+	var facing_sign: float = signf(state.facing)
+	if is_zero_approx(facing_sign):
+		facing_sign = 1.0
+
+	var body := Color(LEATHER.r, LEATHER.g, LEATHER.b, alpha)
+	var rim := Color(RIM.r, RIM.g, RIM.b, alpha * 0.75)
+	var joint := Color(JOINT.r, JOINT.g, JOINT.b, alpha)
+
+	var hip := Vector2(ground.x, ground.y - height * 0.44)
+	var shoulder := Vector2(ground.x, ground.y - height * 0.80)
+	var half_w: float = maxf(height * 0.105 * squeeze, 3.0)
+
+	# 腿：髋 → 膝 → 脚。蹲下时膝盖外张、重心下沉（stance 越大越蹲）
+	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0))
+	for side in [-1.0, 1.0]:
+		var knee := Vector2(hip.x + side * knee_out, ground.y - height * 0.22)
+		var foot := Vector2(ground.x + side * half_w * 0.95, ground.y)
+		draw_line(hip, knee, body, height * 0.048)
+		draw_line(knee, foot, body, height * 0.044)
+		draw_circle(knee, height * 0.021, joint)
+
+	# 躯干
 	var torso := PackedVector2Array([
-		Vector2(ground.x - drawn_half_w, top_y),
-		Vector2(ground.x + drawn_half_w, top_y),
-		Vector2(ground.x + drawn_half_w * 0.78, ground.y),
-		Vector2(ground.x - drawn_half_w * 0.78, ground.y),
+		Vector2(hip.x - half_w * 0.82, hip.y),
+		Vector2(shoulder.x - half_w, shoulder.y),
+		Vector2(shoulder.x + half_w, shoulder.y),
+		Vector2(hip.x + half_w * 0.82, hip.y),
 	])
-	draw_colored_polygon(torso, body_color)
-	draw_polyline(torso + PackedVector2Array([torso[0]]), Color(0.12, 0.09, 0.07), 3.0)
+	draw_colored_polygon(torso, body)
+	draw_polyline(torso + PackedVector2Array([torso[0]]), rim, 2.0)
 
-	# 双肩枢轴与两条手臂：角度直接来自 hand_angle
-	var shoulder_y: float = top_y + 22.0
-	var left_shoulder := Vector2(ground.x - drawn_half_w, shoulder_y)
-	var right_shoulder := Vector2(ground.x + drawn_half_w, shoulder_y)
-	_draw_arm(left_shoulder, puppet_state.hand_angle.x, false, Color(0.85, 0.72, 0.35))
-	_draw_arm(right_shoulder, puppet_state.hand_angle.y, true, Color(0.85, 0.72, 0.35))
+	# 双臂：肩 → 肘 → 腕。角度直接来自 hand_angle，抬起为正
+	_left_wrist = _draw_arm(Vector2(shoulder.x - half_w, shoulder.y),
+		state.hand_angle.x, false, height, body, joint)
+	_right_wrist = _draw_arm(Vector2(shoulder.x + half_w, shoulder.y),
+		state.hand_angle.y, true, height, body, joint)
 
 	# 头：位置随转身左右偏移，形成「翻脸」方向的直接可见证据
 	var head_center := Vector2(
-		ground.x + facing_sign * 22.0 * puppet_state.turn_progress,
-		top_y - HEAD_RADIUS * 0.6)
-	draw_circle(head_center, HEAD_RADIUS, Color(0.94, 0.88, 0.74))
-	draw_arc(head_center, HEAD_RADIUS, 0.0, TAU, 40, Color(0.15, 0.12, 0.10))
-
-	# 鼻尖楔形指出朝向
-	if absf(puppet_state.facing) > 0.05:
-		var nose := PackedVector2Array([
-			head_center + Vector2(facing_sign * HEAD_RADIUS * 0.9, -6.0),
-			head_center + Vector2(facing_sign * HEAD_RADIUS * 1.6 * puppet_state.turn_progress, 14.0),
-			head_center + Vector2(facing_sign * HEAD_RADIUS * 0.9, 14.0),
-		])
-		draw_colored_polygon(nose, Color(0.15, 0.12, 0.10))
-
-	# 胸签：与 PuppetController.begin_drag 的命中热区使用同一位置公式，
-	# 保证「看到的圆圈」就是「能拖到的热区」。
-	var tag_center := Vector2(ground.x,
-		ground.y - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5)
-	draw_circle(tag_center, PuppetControllerScript.CHEST_TAG_RADIUS_PX,
-		Color(0.85, 0.25, 0.55, 0.35))
-	draw_arc(tag_center, PuppetControllerScript.CHEST_TAG_RADIUS_PX,
-		0.0, TAU, 40, Color(0.95, 0.45, 0.75), 3.0)
-	draw_circle(tag_center, 6.0, Color(0.98, 0.75, 0.88))
-
-	# 受控高亮与挂起标记
-	if puppet_state.is_controlled:
-		draw_arc(ground, 54.0, PI, TAU, 24, Color(0.40, 0.95, 0.65), 4.0)
-	if puppet_state.hook_slot != PuppetStateScript.HOOK_SLOT_NONE:
-		draw_string(ThemeDB.fallback_font, ground + Vector2(-40.0, -8.0),
-			"HOOK %d" % puppet_state.hook_slot, HORIZONTAL_ALIGNMENT_LEFT, -1, 20,
-			Color(0.95, 0.85, 0.45))
+		shoulder.x + facing_sign * height * 0.07 * state.turn_progress,
+		shoulder.y - height * 0.115)
+	var head_r: float = height * 0.105
+	_draw_head(head_center, head_r, facing_sign, state.turn_progress, body, rim, alpha)
 
 
-func _draw_arm(shoulder: Vector2, angle: float, right_side: bool, color: Color) -> void:
+func _draw_arm(shoulder: Vector2, angle: float, right_side: bool,
+		height: float, body: Color, joint: Color) -> Vector2:
 	# 技术中性位：手臂斜向外下方；正角度为抬起方向
 	var base_angle: float = (PI * 0.62) if right_side else (PI - PI * 0.62)
 	var dir := Vector2(cos(base_angle), sin(base_angle))
 	dir = dir.rotated(-angle * (1.0 if right_side else -1.0))
-	var tip: Vector2 = shoulder + dir * ARM_LENGTH
-	draw_line(shoulder, tip, Color(0.12, 0.09, 0.07), ARM_WIDTH + 6.0)
-	draw_line(shoulder, tip, color, ARM_WIDTH)
-	draw_circle(tip, ARM_WIDTH * 0.85, Color(0.98, 0.92, 0.80))
+	var upper: float = height * 0.16
+	var lower: float = height * 0.15
+	var elbow: Vector2 = shoulder + dir * upper
+	var wrist: Vector2 = elbow + dir * lower
+	draw_line(shoulder, elbow, body, height * 0.042)
+	draw_line(elbow, wrist, body, height * 0.038)
+	draw_circle(elbow, height * 0.020, joint)
+	draw_circle(wrist, height * 0.024, Color(0.93, 0.86, 0.70, joint.a))
+	return wrist
+
+
+## 本帧画出的两只手腕位置，供竹签连线取点。
+var _left_wrist: Vector2 = Vector2.ZERO
+var _right_wrist: Vector2 = Vector2.ZERO
+
+
+func _draw_head(centre: Vector2, radius: float, facing_sign: float,
+		turn_progress: float, body: Color, rim: Color, alpha: float) -> void:
+	draw_circle(centre, radius, body)
+	draw_arc(centre, radius, 0.0, TAU, 32, rim, 2.0)
+
+	var head_id: int = puppet_state.head_id
+	var index: int = head_id if head_id >= 0 else 0
+	if index >= HEAD_SHAPES.size():
+		index = index % HEAD_SHAPES.size()
+	var accent: Color = HEAD_ACCENTS[index]
+	accent.a = alpha
+
+	# 头饰外形按 head_id 变化——换头因此改变的是轮廓，不只是颜色
+	match HEAD_SHAPES[index]:
+		"bun_high":
+			draw_circle(centre + Vector2(0.0, -radius * 1.35), radius * 0.42, accent)
+		"bun_twin":
+			draw_circle(centre + Vector2(-radius * 0.85, -radius * 0.85), radius * 0.34, accent)
+			draw_circle(centre + Vector2(radius * 0.85, -radius * 0.85), radius * 0.34, accent)
+		_:
+			draw_rect(Rect2(centre.x - radius * 1.15, centre.y - radius * 1.15,
+				radius * 2.30, radius * 0.46), accent)
+
+	# 鼻尖楔形指出朝向
+	if absf(facing_sign) > 0.05 and turn_progress > 0.05:
+		var nose := PackedVector2Array([
+			centre + Vector2(facing_sign * radius * 0.85, -radius * 0.18),
+			centre + Vector2(facing_sign * radius * 1.55 * turn_progress, radius * 0.42),
+			centre + Vector2(facing_sign * radius * 0.85, radius * 0.42),
+		])
+		draw_colored_polygon(nose, body)
+
+
+## 三根竹签：一根连胸签、两根连手，全部汇到签手的手部。
+## 这是「借签操演」在画面上唯一的直接证据（PRD 第 4 节）。
+func _draw_sticks(ground: Vector2, height: float, alpha: float) -> void:
+	var color := Color(STICK.r, STICK.g, STICK.b, alpha * 0.95)
+	var chest: Vector2 = Vector2(ground.x, ground.y - height * 0.62)
+	draw_line(chest, hand_anchor, color, 4.0)
+	draw_line(_left_wrist, hand_anchor, color, 3.0)
+	draw_line(_right_wrist, hand_anchor, color, 3.0)
+
+
+## 胸签热区的可视化。前四关允许出现融入画面的操作图标（PRD 第 3、8 节）。
+func _draw_chest_tag() -> void:
+	var centre: Vector2 = chest_tag_screen()
+	draw_arc(centre, PuppetControllerScript.CHEST_TAG_RADIUS_PX, 0.0, TAU, 40,
+		Color(0.95, 0.55, 0.20, 0.75), 3.0)
+	draw_circle(centre, 7.0, Color(0.99, 0.80, 0.42, 0.95))

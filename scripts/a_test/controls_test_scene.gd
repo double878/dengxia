@@ -33,8 +33,6 @@ const CANVAS_SIZE: Vector2 = Vector2(1920.0, 1080.0)
 ## 验证者留下可复现的图形环境证据。正常游玩时不带此参数。
 const PROBE_FLAG: String = "a_controls_probe"
 
-const SEEK_STEP_MS: int = 5000
-
 @onready var _puppet: PlaceholderPuppet = $Puppet
 @onready var _state_label: RichTextLabel = $Hud/StatePanel/StateLabel
 @onready var _cue_label: RichTextLabel = $Hud/CuePanel/CueLabel
@@ -90,7 +88,7 @@ func _ready() -> void:
 	_puppet.stage_size = STAGE_SIZE
 	_hud_hint.text = "拖动胸签 = 横向移动 / 纵向站蹲 / 沿移动方向转身    " \
 		+ "A=抬左手 D=抬右手 Shift+A=落左手 Shift+D=落右手 W=双手抬 S=双手落    " \
-		+ "空格=暂停/继续（音频+歌曲时间+判定一起冻结）  R=跳到 +5 s  M=临时节拍音开关"
+		+ "空格=挂起/取回影人（PRD 第 4.1 节）    ESC=暂停/继续"
 
 	if OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG):
 		_run_probe_and_quit()
@@ -150,28 +148,19 @@ func _input(event: InputEvent) -> void:
 	if _paused:
 		if event is InputEventKey:
 			var resume_key := event as InputEventKey
-			if resume_key.pressed and not resume_key.echo and resume_key.keycode == KEY_SPACE:
+			if resume_key.pressed and not resume_key.echo and resume_key.keycode == KEY_ESCAPE:
 				_set_paused(false)
 				get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo:
-			match key.keycode:
-				KEY_SPACE:
-					_set_paused(not _paused)
-					get_viewport().set_input_as_handled()
-					return
-				KEY_R:
-					# 跳到 +5 s，用来确认换位置后仍沿同一时间轴继续
-					_clock.seek_ms(_clock.get_song_time_ms() + SEEK_STEP_MS)
-					_metronome.reset()
-					get_viewport().set_input_as_handled()
-					return
-				KEY_M:
-					_metronome_enabled = not _metronome_enabled
-					get_viewport().set_input_as_handled()
-					return
+			# 暂停统一用 ESC：空格在任何场景里都不再是暂停键（PRD 第 4.1 节把
+			# 空格定为「挂起/取回影人」，两处含义冲突会让人误判第一关的行为）。
+			if key.keycode == KEY_ESCAPE:
+				_set_paused(not _paused)
+				get_viewport().set_input_as_handled()
+				return
 	_harness.input_reader.handle_event(event)
 
 
@@ -359,7 +348,7 @@ func _refresh_clock_panel() -> void:
 	lines.append("此处用 A 测试目录内的合成节拍音提供音频位置，")
 	lines.append("不引用素材文件、不改 B 的正式音频目录。")
 	lines.append("")
-	lines.append("暂停验证：按空格后，音频、歌曲时间、")
+	lines.append("暂停验证：按 ESC 后，音频、歌曲时间、")
 	lines.append("拍序号与操控判定应一起冻结，")
 	lines.append("再按一次应沿同一时间轴继续、不跳变。")
 	_clock_label.text = "\n".join(lines)

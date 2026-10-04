@@ -13,8 +13,18 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [display]
 
+; 画布基准分辨率：场景里的版面常量都按 1920x1080 写，这里是它们的设计坐标系。
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+; 实际开窗尺寸。必须在这里（建窗时）定好，不能等场景 _ready 再改：
+; Windows + HiDPI 下运行期改窗口尺寸会让渲染提交阶段陷入 resize 反馈环
+; （主线程跑满一个核、窗口无响应、关不掉进程）。2026-10-04 实测本机为
+; 2880x1920 @200% 缩放，改动窗口尺寸的运行期版本约 20% 概率卡死。
+window/size/window_width_override=1280
+window/size/window_height_override=720
+; 把 1920x1080 的画布等比缩放到实际窗口，保持 16:9 不裁切、不变形。
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 
 [rendering]
 

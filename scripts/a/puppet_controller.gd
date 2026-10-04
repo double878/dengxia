@@ -26,6 +26,15 @@ const KIND_FACING_TURN: String = "facing_turn"
 const KIND_HAND_MOTION: String = "hand_motion"
 const KIND_DRAG_BEGIN: String = "drag_begin"
 const KIND_DRAG_END: String = "drag_end"
+const KIND_HOOK: String = "puppet_hook"
+const KIND_TAKE_BACK: String = "puppet_take_back"
+const KIND_HEAD_SWAP: String = "head_swap"
+
+## 头架上的备用头槽位数。按键 1/2/3 与 0/1/2 一一对应（PRD 第 4.1、4.2 节）。
+const HEAD_RACK_SLOTS: int = 3
+
+## 挂钩槽位数（PRD 第 4.2 节：两个可见挂钩）。
+const HOOK_SLOTS: int = 2
 
 ## 鸭子类型时钟：只需提供 get_song_time_ms() -> int。
 ## 切片 1 用 FrameClock / TestClock，切片 2 起换成 MusicClock，本控制器不改。
@@ -33,6 +42,9 @@ var clock: Object = null
 
 var puppets: Array = []                  ## Array[PuppetState]，下标即 puppet_id
 var controlled_id: int = -1              ## 当前唯一受控影人；-1 表示无人受控
+## 头架上每个槽位当前放着哪个头。与 puppets 的 head_id 合起来，
+## 六个头各出现恰好一次（不变量 2），换头因此只是「交换」而不是复制。
+var rack_heads: Array = []
 
 var _events: Array[Dictionary] = []      ## 待取走的事件队列
 var _input_map: Dictionary = {}          ## 本帧生效的输入快照
@@ -79,6 +91,10 @@ func setup(puppet_count: int = 3) -> void:
 		puppets.append(state)
 	controlled_id = 0
 	puppets[0].is_controlled = true
+	# 头架三个槽位放余下的三个头，保证「六个头各出现恰好一次」从开局就成立
+	rack_heads.clear()
+	for slot in HEAD_RACK_SLOTS:
+		rack_heads.append(puppet_count + slot)
 
 
 func get_puppet(puppet_id: int) -> PuppetState:
@@ -89,7 +105,83 @@ func get_puppet(puppet_id: int) -> PuppetState:
 
 
 func get_controlled() -> PuppetState:
+	if controlled_id == -1:
+		return null
 	return get_puppet(controlled_id)
+
+
+## 找一个空闲的挂钩槽位；返回 -1 表示两个槽都被占着。
+##
+## 之所以做成公开方法，是为了让 HUD 能按**实际可用性**提示玩家：挂钩满的时候
+## 仍然写着「空格 = 挂起这个影人」，就是说了做不到（第一关开局两个影人分别挂在
+## 两个钩上，正是这种情况）。提示与挂起判定共用这一处查找，不会各自漂移。
+func find_free_hook_slot() -> int:
+	for candidate in HOOK_SLOTS:
+		var occupied: bool = false
+		for puppet in puppets:
+			if puppet.hook_slot == candidate:
+				occupied = true
+				break
+		if not occupied:
+			return candidate
+	return -1
+
+
+func hook_current() -> bool:
+	var state: PuppetState = get_controlled()
+	if state == null:
+		return false
+	var slot: int = find_free_hook_slot()
+	if slot == -1:
+		return false
+	end_drag()
+	state.hook_slot = slot
+	state.is_controlled = false
+	controlled_id = -1
+	set_input_map({})
+	_emit(KIND_HOOK, state.puppet_id, {"hook_slot": slot})
+	return true
+
+
+func take_back(puppet_id: int) -> bool:
+	if controlled_id != -1 or puppet_id < 0 or puppet_id >= puppets.size():
+		return false
+	var state: PuppetState = puppets[puppet_id]
+	if state.hook_slot == PuppetStateScript.HOOK_SLOT_NONE:
+		return false
+	var old_slot: int = state.hook_slot
+	state.hook_slot = PuppetStateScript.HOOK_SLOT_NONE
+	state.is_controlled = true
+	controlled_id = puppet_id
+	_emit(KIND_TAKE_BACK, puppet_id, {"hook_slot": old_slot})
+	return true
+
+
+## 与备用头架第 slot 个位置交换头部（slot 0/1/2 对应按键 1/2/3）。
+## PRD 第 4.2 节：换头只作用于当前受控影人；换下的头留在原位置，
+## 因此这里做的是**交换**——六个头合起来仍然各出现恰好一次，不会复制头部道具。
+func swap_head(slot: int, puppet_id: int = -1) -> bool:
+	if rack_heads.is_empty() or slot < 0 or slot >= rack_heads.size():
+		return false
+	var target: PuppetState = get_controlled() if puppet_id == -1 else get_puppet(puppet_id)
+	if target == null:
+		return false
+	var incoming: int = rack_heads[slot]
+	if incoming == PuppetStateScript.HEAD_ID_NONE:
+		return false
+	var outgoing: int = target.head_id
+	target.head_id = incoming
+	rack_heads[slot] = outgoing
+	_emit(KIND_HEAD_SWAP, target.puppet_id,
+		{"slot": slot, "head_from": outgoing, "head_to": incoming})
+	return true
+
+
+## 头架槽位当前放着的头，供显示端画备用头架。
+func head_on_rack(slot: int) -> int:
+	if slot < 0 or slot >= rack_heads.size():
+		return PuppetStateScript.HEAD_ID_NONE
+	return int(rack_heads[slot])
 
 
 ## 每帧一次的唯一步进入口。

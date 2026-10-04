@@ -1,6 +1,6 @@
 extends RefCounted
 class_name TestPuppetControls
-## 切片 1 的行为测试：11 条，覆盖数据契约、边界、冲突与事件时序。
+## 切片 1 的行为测试：16 条，覆盖数据契约、边界、冲突、事件时序与挂起/换头。
 ## 通过 controls_harness 复用测试场景同一段步进逻辑，因此这里通过的行为
 ## 就是图形场景里玩家会触发的行为。
 
@@ -8,6 +8,9 @@ const ATestBaseScript := preload("res://tests/a/a_test_base.gd")
 const HarnessScript := preload("res://scripts/a_test/controls_harness.gd")
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
+## HUD 的空格提示文案是呈现层规则，但它决定玩家「看到的能力」，
+## 所以要能被无头测试直接断言——因此从场景脚本里取那个静态纯函数。
+const Level1ASceneScript := preload("res://scripts/a_test/level1_a_scene.gd")
 
 const STAGE_W: float = 1920.0
 const STAGE_H: float = 1080.0
@@ -60,8 +63,68 @@ func run_all() -> Dictionary:
 	_test_11_state_changes_before_events(t)
 	_test_12_release_keeps_pending_drag(t)
 	_test_13_paused_input_is_ignored(t)
+	_test_14_hook_and_take_back(t)
+	_test_15_head_swap(t)
+	_test_16_hook_hint_speaks_from_availability(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
 		"failures": t.failures}
+
+
+## 六个头（三个影人 + 头架三个槽位）排好序，用来断言「各出现恰好一次」。
+func _all_heads(controller: PuppetController) -> Array:
+	var heads: Array = []
+	for puppet in controller.puppets:
+		heads.append(puppet.head_id)
+	for slot in controller.rack_heads.size():
+		heads.append(controller.head_on_rack(slot))
+	heads.sort()
+	return heads
+
+
+func _test_15_head_swap(t: ATestBase) -> void:
+	t.begin("15 换头是交换而非复制，六个头仍各出现恰好一次")
+	var harness: ControlsHarness = _new_harness()
+	var controller: PuppetController = harness.controller
+	t.check(controller.has_method("swap_head"), "控制器应支持换头")
+	if not controller.has_method("swap_head"):
+		t.finish("换头接口尚未实现")
+		return
+	t.check_eq(controller.rack_heads.size(), 3, "头架应有三个备用头槽位")
+	var state: PuppetState = controller.get_controlled()
+	var head_before: int = state.head_id
+	var rack_before: int = controller.head_on_rack(1)
+	t.check(controller.call("swap_head", 1), "按 2 应与头架第二个位置换头")
+	t.check_eq(state.head_id, rack_before, "影人戴上架上的那个头")
+	t.check_eq(controller.head_on_rack(1), head_before, "换下的头留在原位置")
+	t.check_eq(_all_heads(controller), [0, 1, 2, 3, 4, 5],
+		"六个头仍然各出现恰好一次")
+	# PRD 第 4.2 节：换头只作用于当前受控影人
+	t.check(controller.call("hook_current"), "先把影人挂起")
+	t.check(not controller.call("swap_head", 0), "无人受控时换头不生效")
+	t.check(not controller.call("swap_head", 9), "越界的头架槽位应被拒绝")
+	t.finish("换头不复制头部道具，也不影响已挂起的影人")
+
+
+func _test_14_hook_and_take_back(t: ATestBase) -> void:
+	t.begin("14 空格挂起和取回保持影人姿势")
+	var harness: ControlsHarness = _new_harness()
+	var controller: PuppetController = harness.controller
+	t.check(controller.has_method("hook_current"), "控制器应支持挂起")
+	t.check(controller.has_method("take_back"), "控制器应支持取回")
+	if not controller.has_method("hook_current") or not controller.has_method("take_back"):
+		t.finish("挂起和取回接口尚未实现")
+		return
+	var state: PuppetState = controller.get_controlled()
+	state.hand_angle = Vector2(0.48, -0.21)
+	var before: Vector2 = state.hand_angle
+	t.check(controller.call("hook_current"), "空格应挂起当前影人")
+	t.check_eq(controller.controlled_id, -1, "挂起后无人受控")
+	t.check_eq(state.hook_slot, 0, "影人占用第一个挂钩")
+	t.check(controller.call("take_back", 0), "选中后空格应取回")
+	t.check_eq(controller.controlled_id, 0, "取回后重新受控")
+	t.check_eq(state.hook_slot, -1, "挂钩已释放")
+	t.check_eq(state.hand_angle, before, "挂起前姿势保持不变")
+	t.finish("挂起和取回保留姿势及唯一受控状态")
 
 
 func _test_01_initial_state(t: ATestBase) -> void:
@@ -454,6 +517,44 @@ func _test_13_paused_input_is_ignored(t: ATestBase) -> void:
 	harness.advance(1.0 / 60.0)
 	t.check(state.stage_pos.x > x_before, "恢复后新输入应正常生效")
 	t.finish("暂停输入被丢弃，恢复后只处理新输入")
+
+
+## 16 空格提示必须与「真的能不能挂起」一致。
+##
+## 背景：第一关开局三个影人同时在场，其中两个分别挂在两个挂钩上（PRD 第 4.2 节），
+## 于是两个挂钩槽从第一帧起就是满的，`hook_current()` 永远找不到空位。原来的 HUD
+## 只按「有没有人受控」判断，仍然写着「空格 = 挂起这个影人」——说了做不到，玩家按下去
+## 什么都不会发生，只会以为按键坏了。这里把「按可用性说话」这条规则钉住。
+func _test_16_hook_hint_speaks_from_availability(t: ATestBase) -> void:
+	t.begin("16 空格提示按挂钩的实际可用性说话")
+	var harness: ControlsHarness = _new_harness()
+	var controller: PuppetController = harness.controller
+	t.check(controller.has_method("find_free_hook_slot"), "控制器应能报告空闲挂钩槽位")
+	if not controller.has_method("find_free_hook_slot"):
+		t.finish("空闲槽位查询尚未实现")
+		return
+
+	# 空场：有槽可用，提示可以挂起
+	t.check_eq(controller.find_free_hook_slot(), 0, "空场时第一个挂钩可用")
+	t.check_eq(Level1ASceneScript.hook_hint_text(controller, -1), "空格 = 挂起这个影人",
+		"有空槽时才提示可以挂起")
+
+	# 挂起 0 号之后：受控为空，提示取回
+	t.check(controller.call("hook_current"), "挂起受控影人")
+	t.check_eq(Level1ASceneScript.hook_hint_text(controller, 0), "空格 = 取回 1 号影人",
+		"选中挂起的影人时提示取回")
+	t.check_eq(Level1ASceneScript.hook_hint_text(controller, -1),
+		"点手边的签选中挂起的影人，再按空格取回", "没选中时提示先选中")
+	t.check(controller.call("take_back", 0), "取回影人")
+
+	# 第一关开局布景：0 号受控，另两个影人占满两个挂钩 —— 此时挂起不可能成功
+	controller.puppets[1].hook_slot = 0
+	controller.puppets[2].hook_slot = 1
+	t.check_eq(controller.find_free_hook_slot(), -1, "两个挂钩都被占满时没有空槽")
+	t.check(not controller.call("hook_current"), "没有空槽时按空格挂不起影人")
+	t.check_eq(Level1ASceneScript.hook_hint_text(controller, -1), "",
+		"挂不起来时不再显示「空格 = 挂起」，不承诺做不到的操作")
+	t.finish("提示与挂钩可用性一致")
 
 
 func _has_kind(events: Array[Dictionary], kind: String) -> bool:

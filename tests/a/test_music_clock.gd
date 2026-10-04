@@ -36,6 +36,7 @@ func run_all() -> Dictionary:
 	_test_08_validate_catches_errors(t)
 	_test_09_controller_uses_music_clock(t)
 	_test_10_no_track_falls_back(t)
+	_test_11_audio_stall_watchdog_threshold(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
 		"failures": t.failures}
 
@@ -259,3 +260,22 @@ func _test_10_no_track_falls_back(t: ATestBase) -> void:
 	t.check_eq(clock.get_song_time_ms(), 900, "退回后应继续推进")
 	player.free()
 	t.finish("缺播放器/未真正播放/音轨被移除三种情况都明确降级且可被 HUD 辨出")
+
+
+## 真实故障的回归测试：**播放器自称在播、播放位置却一直不前进**（声卡缺失、被独占、
+## 缓冲停摆）。旧实现只认 `player.playing == false` 才降级，于是歌曲时间被永久冻住——
+## 而判定、补救、关卡结束全读这一个数，玩家看到的就是一整场静止不动的画面。
+##
+## 证明边界（如实说明）：`player.playing == true` 且位置不动这个状态在无头环境里造不出来
+## （播放器不在场景树里连 `play()` 都会报错），所以这里只能确定性地证明「看门狗恰在阈值处
+## 触发」这一半。另一半依赖真机声卡场景，无法在无头模式证明——因此也把「时钟一旦降级
+## 会在 HUD 上显式写出」做进了第一关场景，让下次再遇到时能被一眼认出来。
+func _test_11_audio_stall_watchdog_threshold(t: ATestBase) -> void:
+	t.begin("11 音频停摆看门狗恰在阈值处触发")
+	var timeout_s: float = MusicClockScript.AUDIO_STALL_TIMEOUT_S
+	t.check(timeout_s > 0.0, "停摆判定阈值应为正数（实际 %s）" % str(timeout_s))
+	t.check(not MusicClockScript.audio_stall_reached(0.0), "刚起步时不得判定为停摆")
+	t.check(not MusicClockScript.audio_stall_reached(timeout_s * 0.5), "半程不得提前触发")
+	t.check(not MusicClockScript.audio_stall_reached(timeout_s - 0.01), "差一点到阈值时不得触发")
+	t.check(MusicClockScript.audio_stall_reached(timeout_s), "到达阈值必须触发，否则时钟会被永久冻住")
+	t.finish("停摆判定既不提前触发、也不会永不触发")

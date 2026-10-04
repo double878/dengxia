@@ -10,6 +10,7 @@ const TestLevel1CuesScript := preload("res://tests/a/test_level1_cues.gd")
 const TestRemedyScript := preload("res://tests/a/test_remedy.gd")
 const TestLampScript := preload("res://tests/a/test_lamp.gd")
 const TestLevel1RuntimeScript := preload("res://tests/a/test_level1_runtime.gd")
+const TestLevel1AudioScript := preload("res://tests/a/test_level1_audio.gd")
 
 
 func _initialize() -> void:
@@ -67,6 +68,14 @@ func _initialize() -> void:
 	total_passed += int(runtime_result["passed"])
 	total_failed += int(runtime_result["failed"])
 	exit_code = maxi(exit_code, int(runtime_result["exit_code"]))
+
+	print("")
+	print("---- 第一关临时音轨 ----")
+	var audio := TestLevel1AudioScript.new()
+	var audio_result: Dictionary = audio.run_all()
+	total_passed += int(audio_result["passed"])
+	total_failed += int(audio_result["failed"])
+	exit_code = maxi(exit_code, int(audio_result["exit_code"]))
 
 	print("")
 	print("========================================")

@@ -42,8 +42,6 @@ var _frame_events: Array[Dictionary] = []   ## 本帧原始事件（接收端解
 var _probe_mode: bool = false
 var _probe_failures: int = 0
 var _shutting_down: bool = false
-var _hit_sequence: int = 0
-var _miss_sequence: int = 0
 
 
 func _ready() -> void:
@@ -73,21 +71,9 @@ func _input(event: InputEvent) -> void:
 	if not key.pressed or key.echo:
 		return
 	match key.keycode:
-		KEY_SPACE:
+		KEY_ESCAPE:
 			_set_paused(not _paused)
 			get_viewport().set_input_as_handled()
-		KEY_F:
-			# 命中演示：只驱动 flame_feedback，不推进歌曲时间
-			_hit_sequence += 1
-			_harness.inject_performance_event("cue_hit", "demo_hit_%d" % _hit_sequence)
-			get_viewport().set_input_as_handled()
-		KEY_G:
-			# 错拍演示
-			_miss_sequence += 1
-			_harness.inject_performance_event("cue_miss", "demo_miss_%d" % _miss_sequence)
-			get_viewport().set_input_as_handled()
-		KEY_ESCAPE:
-			_shutdown_and_quit(0)
 
 
 func _notification(what: int) -> void:
@@ -173,7 +159,7 @@ func _refresh_clock_panel() -> void:
 			else "[color=#f66]本机不可用[/color]",
 		"" if _harness.metronome_enabled else "（已关闭）"])
 	lines.append("")
-	lines.append("暂停验证：按空格后歌曲时间、灯油、")
+	lines.append("暂停验证：按 ESC 后歌曲时间、灯油、")
 	lines.append("火焰反馈与输入判定应一起冻结；")
 	lines.append("再按一次应沿同一时间轴继续、不跳变。")
 	lines.append("")
