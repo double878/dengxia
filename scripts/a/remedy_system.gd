@@ -3,13 +3,14 @@ class_name RemedySystem
 ## 8 秒补救（PRD 第 5.2 节）。
 ##
 ## 规则（逐条对应 PRD，写在这里便于对照）：
-## 1. 错过关键动作落点，或合拍度跌破警戒线 → 出现示范手与警告；
-## 2. 从触发时起给 8 秒；
-## 3. 窗口内补做对应动作即算补救成功，示范与警告结束；
-## 4. 8 秒到期仍未完成 → 记录这次未完成，提示结束，**演出继续，不暂停、不重播、不失败**；
+## 1. 错过关键动作落点，或合拍度跌破警戒线 → 出现示范手与警告，同时**冻结歌曲时间轴**；
+## 2. 从触发时起给 8 秒，**按真实时间计**——此时歌曲时间已经停住，用歌曲时间根本走不到头；
+## 3. 窗口内补做对应动作即算补救成功，示范与警告结束，时间轴恢复 1 倍速；
+## 4. 8 秒到期仍未完成 → 记录这次未完成，提示结束，演出照常继续，不重播、不失败；
 ## 5. 同一 cue_id 不能反复触发或重置自己的窗口；不同错误可各自触发；
 ##    同屏一次只展示一个当前示范，所有失误各自保留记录；
-##    窗口永远不延长关卡固定时间，关卡结束时未到期的窗口随演出结束（close_reason = "stage_end"）。
+##    只要还有窗口开着就继续冻结，全部结束才恢复；关卡的**歌曲时间**一分不少，
+##    因此 35 秒的固定时长不被补救吃掉（真实耗时会相应变长）。
 ##
 ## 输出事件（登记在 docs/superpowers/plans/2026-10-03-level1-a.md 第 1.3 节）：
 ##   remedy_open    {action, demo_action, reason, duration_ms, remaining_ms, target_range}
@@ -66,7 +67,9 @@ func get_cue(cue_id: String) -> Dictionary:
 
 
 ## 触发补救。同一 cue_id 已有窗口时**拒绝重复触发**，原窗口与剩余时间不受影响。
-func open(cue_id: String, reason: String, song_time_ms: int) -> bool:
+## song_time_ms 与 real_time_ms 都必须来自同一次读数：前者用于判断「补做发生在开窗之后」，
+## 后者用于 8 秒倒计时——窗口一开歌曲时间就冻结了，只能用真实时间计时。
+func open(cue_id: String, reason: String, song_time_ms: int, real_time_ms: int) -> bool:
 	if windows.has(cue_id):
 		return false
 	var cue: Dictionary = get_cue(cue_id)
@@ -79,8 +82,9 @@ func open(cue_id: String, reason: String, song_time_ms: int) -> bool:
 		"action": str(cue.get("action", "")),
 		"demo_action": str(cue.get("demo_action", cue.get("action", ""))),
 		"target_object": int(cue.get("target_object", 0)),
-		"started_ms": song_time_ms,
-		"deadline_ms": song_time_ms + window_ms,
+		"started_ms": real_time_ms,              ## 真实时间：8 秒窗口按它计
+		"deadline_ms": real_time_ms + window_ms,
+		"started_song_ms": song_time_ms,         ## 歌曲时间：用于判断「补做在开窗之后」
 		"target_range": cue.get("target_range", {}).duplicate(true),
 		"missed": true,                  ## 原失误保留；成功也不清除
 		"closed": false,
@@ -95,20 +99,28 @@ func open(cue_id: String, reason: String, song_time_ms: int) -> bool:
 		"duration_ms": window_ms,
 		"remaining_ms": window_ms,
 		"target_range": window["target_range"],
+		"real_time_ms": real_time_ms,
 	})
-	_select_demo(song_time_ms)
+	_select_demo(song_time_ms, real_time_ms)
 	return true
 
 
 ## 每帧一次，在判定系统 detect_misses() 之后调用。
 ## 负责：为新的漏做/低合拍开窗、结算窗口内的补做、处理超时与关卡结束。
-func update(song_time_ms: int, performance: PerformanceSystem, stage_end: bool) -> void:
-	_open_for_new_errors(song_time_ms, performance)
-	_resolve_windows(song_time_ms, performance, stage_end)
+func update(song_time_ms: int, real_time_ms: int, performance: PerformanceSystem,
+		stage_end: bool) -> void:
+	_open_for_new_errors(song_time_ms, real_time_ms, performance)
+	_resolve_windows(song_time_ms, real_time_ms, performance, stage_end)
 
 
 func is_open(cue_id: String) -> bool:
 	return windows.has(cue_id)
+
+
+## 是否还有未关闭的窗口。关卡导演据此决定要不要冻结歌曲时间轴。
+## windows 只装未关闭的窗口（关闭即 erase），因此非空即代表还有窗口开着。
+func has_open_windows() -> bool:
+	return not windows.is_empty()
 
 
 func get_window(cue_id: String) -> Dictionary:
@@ -130,22 +142,23 @@ func take_events() -> Array[Dictionary]:
 	return out
 
 
-## 剩余时间（毫秒）。窗口不存在时返回 0。
-func remaining_ms(cue_id: String, song_time_ms: int) -> int:
+## 剩余时间（毫秒），按真实时间算。窗口不存在时返回 0。
+func remaining_ms(cue_id: String, real_time_ms: int) -> int:
 	var window: Dictionary = windows.get(cue_id, {})
 	if window.is_empty():
 		return 0
-	return maxi(int(window["deadline_ms"]) - song_time_ms, 0)
+	return maxi(int(window["deadline_ms"]) - real_time_ms, 0)
 
 
 ## 为「新出现的错误」开窗：漏做的关键动作，以及跌破警戒线的段。
-func _open_for_new_errors(song_time_ms: int, performance: PerformanceSystem) -> void:
+func _open_for_new_errors(song_time_ms: int, real_time_ms: int,
+		performance: PerformanceSystem) -> void:
 	for cue_id in performance.missed_outright_cue_ids():
 		if windows.has(cue_id):
 			continue                      ## 同一错误不能反复触发
 		if _already_recorded(cue_id):
 			continue
-		open(cue_id, REASON_MISSED, song_time_ms)
+		open(cue_id, REASON_MISSED, song_time_ms, real_time_ms)
 
 	# 合拍度跌破警戒线：每段只触发一次，避免同一段反复刷窗口
 	for segment_name in _segments_with_graded_cues(performance):
@@ -160,24 +173,25 @@ func _open_for_new_errors(song_time_ms: int, performance: PerformanceSystem) -> 
 		var cue_id: String = _first_open_cue_in_segment(segment_name, performance)
 		if cue_id.is_empty():
 			continue                      ## 本段没有既未判定、也未开窗的落点
-		open(cue_id, REASON_LOW_SYNC, song_time_ms)
+		open(cue_id, REASON_LOW_SYNC, song_time_ms, real_time_ms)
 
 
 ## 结算所有窗口：补做成功、超时、随关卡结束。
-func _resolve_windows(song_time_ms: int, performance: PerformanceSystem, stage_end: bool) -> void:
+func _resolve_windows(song_time_ms: int, real_time_ms: int, performance: PerformanceSystem,
+		stage_end: bool) -> void:
 	for cue_id in windows.keys():
 		var window: Dictionary = windows[cue_id]
 		if bool(window["closed"]):
 			continue
 		if _remedy_completed(window, performance):
-			_close(cue_id, CLOSE_SUCCESS, song_time_ms)
+			_close(cue_id, CLOSE_SUCCESS, song_time_ms, real_time_ms)
 			continue
 		if stage_end:
-			# 关卡结束：未到期的窗口随演出结束，不延长关卡（PRD 第 5.2.5 节）
-			_close(cue_id, CLOSE_STAGE_END, song_time_ms)
+			# 关卡结束：未到期的窗口随演出结束（PRD 第 5.2.5 节）
+			_close(cue_id, CLOSE_STAGE_END, song_time_ms, real_time_ms)
 			continue
-		if song_time_ms >= int(window["deadline_ms"]):
-			_close(cue_id, CLOSE_TIMEOUT, song_time_ms)
+		if real_time_ms >= int(window["deadline_ms"]):
+			_close(cue_id, CLOSE_TIMEOUT, song_time_ms, real_time_ms)
 
 
 ## 补救是否已完成：窗口开启之后，玩家**真的做出了**这条 cue 要求的动作。
@@ -186,6 +200,9 @@ func _resolve_windows(song_time_ms: int, performance: PerformanceSystem, stage_e
 ## 而「补做」是一次新的判定、时间戳必然晚于窗口开启时刻；两者因此可区分，
 ## 不会把开窗前的旧成绩当成补救成功。`hit` 是否转正与本函数无关：
 ## 补救成功补的是「把动作做出来」，原失误仍留在结果与记录里。
+##
+## 比较用**歌曲时间**而不是真实时间：补做必然发生在开窗之后，而开窗那一刻歌曲时间就冻结了，
+## 因此补做时的歌曲时间恰好等于 `started_song_ms`，`>=` 成立；开窗前做过的动作则更小。
 func _remedy_completed(window: Dictionary, performance: PerformanceSystem) -> bool:
 	var cue_id: String = str(window["cue_id"])
 	var outcome: Dictionary = performance.get_outcome(cue_id)
@@ -193,15 +210,15 @@ func _remedy_completed(window: Dictionary, performance: PerformanceSystem) -> bo
 		return false
 	if bool(outcome.get("missed_outright", false)):
 		return false                  ## 还停留在「完全没做」的漏做结果上
-	return int(outcome.get("time_ms", 0)) >= int(window["started_ms"])
+	return int(outcome.get("time_ms", 0)) >= int(window["started_song_ms"])
 
 
-func _close(cue_id: String, reason: String, song_time_ms: int) -> void:
+func _close(cue_id: String, reason: String, song_time_ms: int, real_time_ms: int) -> void:
 	var window: Dictionary = windows[cue_id]
 	window["closed"] = true
 	window["close_reason"] = reason
-	window["closed_ms"] = song_time_ms
-	var elapsed: int = song_time_ms - int(window["started_ms"])
+	window["closed_ms"] = real_time_ms
+	var elapsed: int = real_time_ms - int(window["started_ms"])
 	match reason:
 		CLOSE_SUCCESS:
 			_emit(song_time_ms, "remedy_success", int(window["target_object"]), cue_id, {
@@ -224,11 +241,12 @@ func _close(cue_id: String, reason: String, song_time_ms: int) -> void:
 	if current_demo_cue_id == cue_id:
 		current_demo_cue_id = ""
 		_emit(song_time_ms, "remedy_hide", int(window["target_object"]), cue_id, {})
-	_select_demo(song_time_ms)
+	_select_demo(song_time_ms, real_time_ms)
 
 
 ## 同屏只展示一个当前示范：选剩余时间最短的窗口（最紧急的先提示）。
-func _select_demo(song_time_ms: int) -> void:
+## remaining_ms 按真实时间报，因为窗口一开歌曲时间就冻结了。
+func _select_demo(song_time_ms: int, real_time_ms: int) -> void:
 	var best_id: String = ""
 	var best_deadline: int = 1 << 62
 	for cue_id in windows.keys():
@@ -249,7 +267,7 @@ func _select_demo(song_time_ms: int) -> void:
 		_emit(song_time_ms, "remedy_show", int(chosen["target_object"]), best_id, {
 			"action": str(chosen["action"]),
 			"demo_action": str(chosen["demo_action"]),
-			"remaining_ms": maxi(int(chosen["deadline_ms"]) - song_time_ms, 0),
+			"remaining_ms": maxi(int(chosen["deadline_ms"]) - real_time_ms, 0),
 		})
 
 

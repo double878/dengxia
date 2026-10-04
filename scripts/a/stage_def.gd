@@ -11,6 +11,10 @@ const CueScript := preload("res://scripts/a/cue.gd")
 const LEVEL1_DURATION_MS: int = 35000     ## PRD 第 6 节：第一关固定 35 秒（不延长）
 const LEVEL1_BPM: float = 96.0            ## PRD 第 10 节：原型 BPM 初始考虑 90-100
 const LEVEL1_ID: int = 1
+## 「抬手」到位的角度区间（弧度）。手角以「手臂自然垂下」为 0、π 为举过头顶，
+## 因此 135°～180° 就是「手举到顶」这一档姿势。
+const LEVEL1_HAND_RAISE_MIN_RAD: float = PI * 0.75
+const LEVEL1_HAND_RAISE_MAX_RAD: float = PI
 
 var id: int = LEVEL1_ID
 var duration_ms: int = LEVEL1_DURATION_MS
@@ -57,9 +61,10 @@ static func make_level1_cues(def: StageDef) -> Array:
 		# 第 8 拍：向左横向移动（默认站位 x=0.5 不算「已到位」，必须真的左移）
 		CueScript.make("l1_c2_move_left", def.beat_ms(8), CueScript.ACTION_MOVE_LEFT, 0,
 			{"key": "x", "min": 0.0, "max": 0.35}, 250, "move_left"),
-		# 第 14 拍：抬手
+		# 第 14 拍：抬手（手角 0 = 自然垂下，π = 举过头顶）
 		CueScript.make("l1_c3_hand_raise", def.beat_ms(14), CueScript.ACTION_HAND_RAISE, 0,
-			{"key": "angle", "min": 0.5, "max": 0.6}, 250, "hand_raise"),
+			{"key": "angle", "min": LEVEL1_HAND_RAISE_MIN_RAD, "max": LEVEL1_HAND_RAISE_MAX_RAD},
+			250, "hand_raise"),
 		# 重音（第 20 拍）：向右横向移动
 		CueScript.make("l1_c4_move_right", def.beat_ms(20), CueScript.ACTION_MOVE_RIGHT, 0,
 			{"key": "x", "min": 0.65, "max": 1.0}, 250, "move_right"),

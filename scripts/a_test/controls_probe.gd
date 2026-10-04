@@ -108,48 +108,54 @@ func _check_chest_tag_hit_test() -> void:
 
 func _check_drag_horizontal_and_turn() -> void:
 	print("")
-	print("[2] 横向拖动 + 沿移动方向渐进转身（向右 100px/帧，含 0.25 s 过渡）")
+	print("[2] 横向拖动 + 沿移动方向快速翻面（正/反两面二值，过渡 0.1 s）")
 	_harness.controller.begin_drag(0, _chest_tag_px())
 	var x0: float = _state().stage_pos.x
-	var facing_samples: Array[String] = []
-	var saw_intermediate: bool = false
-	var frames_to_full: int = -1
-	for i in 20:
-		_harness.controller.drag_to(Vector2(100.0, 0.0))
-		_step(1)
-		var s: PuppetState = _state()
-		if i < 6:
-			facing_samples.append("%.3f" % s.facing)
-		if s.facing > 0.02 and s.facing < 0.98:
-			saw_intermediate = true
-		if frames_to_full < 0 and is_equal_approx(s.facing, 1.0):
-			frames_to_full = i + 1
-	_expect(_state().stage_pos.x > x0, "stage_pos.x 增大：%.4f -> %.4f" % [x0, _state().stage_pos.x])
-	_expect(saw_intermediate, "facing 经过 0 与 +1 之间的中间值（渐进，不是瞬间翻面）：%s ..."
-		% ", ".join(facing_samples))
-	_expect(frames_to_full == 15, "转身过渡为 0.25 s：第 %d 帧到达 +1.0（期望 15 帧 @60Hz）"
-		% frames_to_full)
-	_expect(is_equal_approx(_state().facing, 1.0), "到达 +1.0（实际 %.4f）" % _state().facing)
-	_expect(is_equal_approx(_state().turn_progress, absf(_state().facing)),
-		"turn_progress = |facing| = %.4f" % _state().turn_progress)
-
-	var x_after_right: float = _state().stage_pos.x
-	_harness.controller.end_drag()
-	_step(20)
-	_expect(is_equal_approx(_state().stage_pos.x, x_after_right),
-		"松开后停在新位置：%.4f" % _state().stage_pos.x)
-
-	# 反向：向左拖动应渐进取向 -1.0
-	_harness.controller.begin_drag(0, _chest_tag_px())
-	var facing_before_left: float = _state().facing
+	# 开局是正面。第一帧向左拖：翻面已经开始，但还没换面——这正是「不能瞬间翻面」
+	_expect(_state().facing == PuppetState.FACING_FRONT, "开局为正面朝外")
 	_harness.controller.drag_to(Vector2(-100.0, 0.0))
 	_step(1)
-	_expect(_state().facing < facing_before_left,
-		"向左拖动后 facing 开始下降：%.4f -> %.4f" % [facing_before_left, _state().facing])
-	for _i in 40:
-		_harness.controller.drag_to(Vector2(-300.0, 0.0))
+	_expect(_state().facing == PuppetState.FACING_FRONT,
+		"翻面第一帧仍在正面（有过渡，不是瞬间翻面）")
+	_expect(_state().turn_progress < 1.0,
+		"翻面已开始：turn_progress = %.4f" % _state().turn_progress)
+
+	var progress_samples: Array[String] = ["%.3f" % _state().turn_progress]
+	var swap_frames: int = 1
+	while _state().facing == PuppetState.FACING_FRONT and swap_frames < 20:
+		_harness.controller.drag_to(Vector2(-100.0, 0.0))
 		_step(1)
-	_expect(is_equal_approx(_state().facing, -1.0), "继续向左到达 -1.0（实际 %.4f）" % _state().facing)
+		swap_frames += 1
+		progress_samples.append("%.3f" % _state().turn_progress)
+	_expect(_state().facing == PuppetState.FACING_BACK, "向左拖动后应翻到反面")
+	_expect(swap_frames <= 8, "换面应发生在 0.1 秒之内（实际第 %d 帧）" % swap_frames)
+
+	var total_frames: int = swap_frames
+	while _state().turn_progress < 1.0 and total_frames < 20:
+		_harness.controller.drag_to(Vector2(-100.0, 0.0))
+		_step(1)
+		total_frames += 1
+	_expect(is_equal_approx(_state().turn_progress, 1.0) and total_frames <= 8,
+		"整个翻面 %d 帧完成（期望 ≤ 8 帧 = 0.1 s）；进度序列 %s"
+			% [total_frames, ", ".join(progress_samples)])
+	_expect(_state().stage_pos.x < x0, "stage_pos.x 减小：%.4f -> %.4f" % [x0, _state().stage_pos.x])
+
+	var x_after_left: float = _state().stage_pos.x
+	_harness.controller.end_drag()
+	_step(20)
+	_expect(is_equal_approx(_state().stage_pos.x, x_after_left),
+		"松开后停在新位置：%.4f" % _state().stage_pos.x)
+
+	# 反向：向右拖动应翻回正面，第一帧同样仍停在反面
+	_harness.controller.begin_drag(0, _chest_tag_px())
+	_harness.controller.drag_to(Vector2(300.0, 0.0))
+	_step(1)
+	_expect(_state().facing == PuppetState.FACING_BACK, "反向的第一帧仍停在反面（有过渡）")
+	for _i in 10:
+		_harness.controller.drag_to(Vector2(300.0, 0.0))
+		_step(1)
+	_expect(_state().facing == PuppetState.FACING_FRONT,
+		"向右拖动后翻回正面（实际 %.1f）" % _state().facing)
 	_harness.controller.end_drag()
 
 
@@ -237,14 +243,17 @@ func _check_bounds_stress() -> void:
 		c = s.stance
 		l = s.hand_angle.x
 		r = s.hand_angle.y
-		if x > 1.0 or x < 0.0 or c > 1.0 or c < 0.0 or absf(l) > 0.6 + 1e-6 or absf(r) > 0.6 + 1e-6:
+		if x > 1.0 or x < 0.0 or c > 1.0 or c < 0.0 \
+				or l < PuppetState.HAND_ANGLE_MIN - 1e-6 or l > PuppetState.HAND_ANGLE_MAX + 1e-6 \
+				or r < PuppetState.HAND_ANGLE_MIN - 1e-6 or r > PuppetState.HAND_ANGLE_MAX + 1e-6:
 			oob = "x=%.6f stance=%.6f hand=(%.6f,%.6f)" % [x, c, l, r]
 			break
 	_expect(oob == "", "240 帧后无越界%s" % ("" if oob == "" else "：" + oob))
 	_expect(is_equal_approx(x, 1.0), "横向停在右边界 x = %.4f" % x)
 	_expect(is_equal_approx(c, 1.0), "站蹲停在完全蹲下 stance = %.4f" % c)
-	_expect(is_equal_approx(l, 0.6) and is_equal_approx(r, 0.6),
-		"双手角停在上限 (%.4f, %.4f)" % [l, r])
+	_expect(is_equal_approx(l, PuppetState.HAND_ANGLE_MAX)
+		and is_equal_approx(r, PuppetState.HAND_ANGLE_MAX),
+		"双手角停在上限 180° = %.4f rad (%.4f, %.4f)" % [PuppetState.HAND_ANGLE_MAX, l, r])
 	_harness.controller.end_drag()
 	_press({})
 

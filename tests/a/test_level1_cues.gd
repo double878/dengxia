@@ -373,14 +373,18 @@ func _test_10_no_leak_of_beat_or_score(t: ATestBase) -> void:
 func _test_11_held_hand_enters_target_range(t: ATestBase) -> void:
 	t.begin("11 按住抬手键进入目标角度时命中")
 	var b: CueTestBench = _bench()
-	b.advance_to(8600)
-	b.advance(12, {"left_raise": true})
+	# 手角以「自然垂下」为 0、π 为举过头顶，抬手到位区间是 135°～180°。
+	# 抬手速度 4.5 rad/s，从 0 抬到 135°（≈2.356 rad）约需 0.52 s，
+	# 因此要在落点前约 530 ms 开始按住，让「跨入目标角度」正好落在判定窗内。
+	b.advance_to(8300)
+	b.advance(60, {"left_raise": true})
 	var outcome: Dictionary = b.performance.get_outcome("l1_c3_hand_raise")
-	t.check_in_range(b.state().hand_angle.x, 0.5, 0.6, "左手已抬到目标角度")
+	t.check_in_range(b.state().hand_angle.x, StageDef.LEVEL1_HAND_RAISE_MIN_RAD,
+		StageDef.LEVEL1_HAND_RAISE_MAX_RAD, "左手已抬到目标角度（举过头顶）")
 	t.check_eq(bool(outcome.get("hit", false)), true,
 		"进入角度范围时应命中，不必松键或反复按键")
-	t.check_in_range(float(outcome.get("time_ms", -1)), 8600, 8750,
-		"判定应发生在角度到位的时刻")
+	t.check_in_range(float(outcome.get("time_ms", -1)), 8500, 9000,
+		"判定应发生在角度到位的时刻、且落在落点容差窗内")
 	t.check_eq(_count_for_cue(b.judge_log, "cue_hit", "l1_c3_hand_raise"), 1,
 		"持续按键只产生一次命中")
 	t.finish("持续按键跨入目标角度时只判定一次")
@@ -412,14 +416,14 @@ func _test_13_early_action_can_be_retried_on_beat(t: ATestBase) -> void:
 	t.begin("13 提前做错后重新抬手，拍点内可命中并保留失误事件")
 	var b: CueTestBench = _bench()
 	b.advance_to(1000)
-	b.advance(12, {"left_raise": true})
+	b.advance(60, {"left_raise": true})          # 提前把手举到顶：错拍
 	var early: Dictionary = b.performance.get_outcome("l1_c3_hand_raise")
 	t.check_eq(bool(early.get("hit", true)), false, "提前做应记为错拍")
 	b.controller.set_input_map({"left_lower": true})
-	b.advance(12)
+	b.advance(60)                                 # 放下来，退出目标角度
 	b.controller.set_input_map({})
-	b.advance_to(8600)
-	b.advance(12, {"left_raise": true})
+	b.advance_to(8300)
+	b.advance(60, {"left_raise": true})          # 在判定窗内重新举到顶
 	var retried: Dictionary = b.performance.get_outcome("l1_c3_hand_raise")
 	t.check_eq(bool(retried.get("hit", false)), true, "重新进入目标范围应在拍点内命中")
 	t.check(_has_cue_event(b.judge_log, "cue_miss", "l1_c3_hand_raise"),

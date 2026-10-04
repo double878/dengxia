@@ -34,10 +34,22 @@ func _new_run() -> Dictionary:
 	return {"clock": clock, "runtime": runtime, "events": runtime.take_events()}
 
 
-func _advance(run: Dictionary, target_ms: int) -> void:
+## 推进到歌曲时间目标值。补救窗口开着时歌曲时间会冻结，此时循环会一直走到窗口到期、
+## 解冻之后才可能到达目标，因此真实步数明显多于「目标毫秒 ÷ 10」。
+func _advance(run: Dictionary, target_ms: int, max_steps: int = 20000) -> void:
 	var clock: MusicClock = run["clock"]
 	var runtime: Object = run["runtime"]
-	while clock.get_song_time_ms() < target_ms and not runtime.is_over():
+	var steps: int = 0
+	while clock.get_song_time_ms() < target_ms and not runtime.is_over() and steps < max_steps:
+		_steps(run, 1)
+		steps += 1
+
+
+## 固定步数推进。补救冻结期间只能用这个按真实时间推进。
+func _steps(run: Dictionary, count: int) -> void:
+	var clock: MusicClock = run["clock"]
+	var runtime: Object = run["runtime"]
+	for _i in maxi(count, 0):
 		clock.update(STEP_S)
 		runtime.tick(STEP_S)
 		run["events"].append_array(runtime.take_events())
@@ -59,13 +71,18 @@ func _test_start_to_end(t: ATestBase) -> void:
 	t.check_eq(runtime.stage_def.cues.size(), 6, "使用第一关 6 条关键动作")
 	t.check_eq(_events(run, "stage_start").size(), 1, "开演只发一次 stage_start")
 	_advance(run, 35000)
-	t.check(runtime.is_over(), "35 秒时结束")
+	t.check(runtime.is_over(), "35 秒（歌曲时间）时结束")
 	t.check(runtime.lamp_controller.is_finished(), "油灯随关卡结束停止")
 	t.check_eq(_events(run, "stage_end").size(), 1, "关卡结束事件只发一次")
 	t.check_eq(_events(run, "stage_end")[0]["time_ms"], 35000,
 		"stage_end 使用歌曲时间 35000 ms")
 	t.check(_events(run, "cue_hint").size() > 0, "有落点前提示事件")
 	t.check(_events(run, "cue_miss").size() > 0, "空场漏做仍有结果事件")
+	t.check(_events(run, "remedy_freeze_begin").size() > 0, "空场跑应有补救冻结")
+	t.check(_events(run, "remedy_freeze_end").size() > 0, "补救结束应解冻")
+	t.check(run["clock"].get_real_time_ms() > 35000,
+		"补救冻结使真实耗时长于歌曲时长（真实 %d ms / 歌曲 %d ms）"
+			% [run["clock"].get_real_time_ms(), run["clock"].get_song_time_ms()])
 	t.check(_events(run, "lamp_oil_changed").size() > 0, "油灯状态持续可读")
 	var finished_oil: float = runtime.lamp_controller.lamp.oil
 	_advance(run, 36000)
@@ -118,22 +135,50 @@ func _crouch(run: Dictionary) -> void:
 
 
 func _test_miss_and_remedy(t: ATestBase) -> void:
-	t.begin("漏做开窗，补做成功，但原失误保留")
+	t.begin("漏做开窗并冻结时间轴，补做成功后解冻，但原失误保留")
 	var run: Dictionary = _new_run()
 	var runtime: Object = run["runtime"]
-	_advance(run, 1600)
+	var clock: MusicClock = run["clock"]
+	_advance(run, 1400)
+	_steps(run, 20)                       # 跨过 cue0 的判定窗上界（1500）
 	var cue_id: String = "l1_c0_crouch"
 	t.check(_events(run, "cue_miss", cue_id).size() > 0, "漏做先产生 cue_miss")
 	t.check(_events(run, "remedy_open", cue_id).size() > 0, "漏做打开补救窗口")
+	t.check(runtime.director.is_remedy_frozen(), "补救期间应冻结歌曲时间轴")
+	t.check(_events(run, "remedy_freeze_begin").size() > 0, "应产出 freeze_begin 事件")
+	var song_frozen: int = clock.get_song_time_ms()
 	var feedback_before: float = runtime.lamp_controller.lamp.flame_feedback
-	_crouch(run)
+	var oil_frozen: float = runtime.lamp_controller.lamp.oil
+	_steps(run, 50)
+	t.check_eq(clock.get_song_time_ms(), song_frozen, "冻结期间歌曲时间一分不走")
+	t.check_eq(runtime.lamp_controller.lamp.oil, oil_frozen, "冻结期间灯油不消耗")
+
+	# 补做蹲下。要点：**结算成功的那一帧歌曲时间仍是冻结值**——解冻只对它之后生效，
+	# 否则「补救期间歌曲时间一分不走」就会被结算本身的那一帧破坏。
+	var controller: PuppetController = runtime.puppet_controller
+	var state: PuppetState = controller.get_controlled()
+	controller.begin_drag(0, Vector2(state.stage_pos.x * 1920.0,
+		state.stage_pos.y * 1080.0 - PuppetController.CHEST_TAG_RADIUS_PX * 0.5))
+	var fix_steps: int = 0
+	while runtime.director.remedy.is_open(cue_id) and fix_steps < 30:
+		controller.drag_to(Vector2(0.0, 120.0))
+		_steps(run, 1)
+		fix_steps += 1
+	t.check(fix_steps > 0, "拖动应最终把蹲下做到位（用了 %d 步）" % fix_steps)
 	t.check(_events(run, "remedy_success", cue_id).size() > 0,
 		"窗口内补做动作应产生 remedy_success")
+	t.check_eq(clock.get_song_time_ms(), song_frozen,
+		"结算成功的那一帧歌曲时间仍是冻结值")
+	controller.end_drag()
+	_steps(run, 1)
 	t.check(not runtime.director.remedy.is_open(cue_id), "成功后关闭补救窗口")
 	t.check(runtime.director.remedy.get_records().size() > 0, "原失误留在记录中")
 	t.check(runtime.lamp_controller.lamp.flame_feedback != feedback_before,
 		"判定和补救结果已驱动油灯火苗")
-	t.finish("漏做和补做经同一运行时串联")
+	t.check(not runtime.director.is_remedy_frozen(), "补做成功后应解冻")
+	_advance(run, 3000)
+	t.check(clock.get_song_time_ms() >= 3000, "解冻后歌曲时间恢复推进")
+	t.finish("漏做开窗冻结、补做成功解冻，原失误保留")
 
 
 func _test_pause_and_resume(t: ATestBase) -> void:

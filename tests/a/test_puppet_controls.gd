@@ -141,8 +141,18 @@ func _test_01_initial_state(t: ATestBase) -> void:
 		t.check_in_range(state.stage_pos.y, 0.0, 1.0, "影人 %d 的 stage_pos.y" % state.puppet_id)
 		t.check_in_range(state.stance, 0.0, 1.0, "影人 %d 的 stance" % state.puppet_id)
 		t.check_in_range(state.facing, -1.0, 1.0, "影人 %d 的 facing" % state.puppet_id)
-		t.check_in_range(state.hand_angle.x, -0.6, 0.6, "影人 %d 的左手角" % state.puppet_id)
-		t.check_in_range(state.hand_angle.y, -0.6, 0.6, "影人 %d 的右手角" % state.puppet_id)
+		t.check(absf(state.facing) == 1.0,
+			"影人只有正反两面，facing 应恰为 ±1（实际 %s）" % str(state.facing))
+		t.check_in_range(state.turn_progress, 0.0, 1.0,
+			"影人 %d 的 turn_progress" % state.puppet_id)
+		t.check_in_range(state.hand_angle.x, PuppetState.HAND_ANGLE_MIN, PuppetState.HAND_ANGLE_MAX,
+			"影人 %d 的左手角" % state.puppet_id)
+		t.check_in_range(state.hand_angle.y, PuppetState.HAND_ANGLE_MIN, PuppetState.HAND_ANGLE_MAX,
+			"影人 %d 的右手角" % state.puppet_id)
+		t.check_approx(state.hand_angle.x, 0.0, 1e-9,
+			"影人 %d 开局手臂自然垂下（0 弧度）" % state.puppet_id)
+		t.check_approx(state.turn_progress, 1.0, 1e-9,
+			"影人 %d 开局已停稳在正面（turn_progress = 1）" % state.puppet_id)
 		t.check(state.head_id >= 0 and state.head_id <= 5,
 			"影人 %d 的 head_id 应在 0-5，实际 %d" % [state.puppet_id, state.head_id])
 		t.check(not head_owners.has(state.head_id),
@@ -211,37 +221,55 @@ func _test_04_drag_vertical_stance_bounds(t: ATestBase) -> void:
 	t.finish("纵向拖动改 stance，两端截断，纯纵向不动横坐标")
 
 
+## PRD 第 4.1 节的「转身有短暂过渡，不能瞬间翻面」，在本项目里落成「0.1 秒的快速翻面」：
+## 影人是一张只有正反两面的皮影，所以 facing 是二值量，翻面过程由 turn_progress 表达。
 func _test_05_turn_is_gradual(t: ATestBase) -> void:
-	t.begin("05 转身有短过渡且不瞬间翻面")
+	t.begin("05 翻面：二值正反面 + 0.1 秒过渡，不瞬间跳变")
 	var harness: ControlsHarness = _new_harness()
 	var state: PuppetState = harness.controller.get_controlled()
-	t.check_eq(state.facing, 0.0, "初始朝向应为正面")
+	t.check_eq(state.facing, PuppetState.FACING_FRONT, "初始应为正面朝外")
+	t.check_approx(state.turn_progress, 1.0, 1e-9, "初始应已停稳在正面")
 	harness.input_reader.controller.begin_drag(harness.controller.controlled_id, _chest_tag_px(state))
 
 	_drag_by(harness, Vector2(-40.0, 0.0), 1)
-	t.check(state.facing > -1.0, "第一帧不应瞬间到达 -1.0，实际 %.4f" % state.facing)
-	t.check(state.facing < 0.0, "向左移动应开始向左转身，实际 %.4f" % state.facing)
-	t.check_approx(state.turn_progress, absf(state.facing), 1e-6, "turn_progress 应等于 |facing|")
+	t.check_eq(state.facing, PuppetState.FACING_FRONT,
+		"第一帧仍是正面：翻面有过渡，不能瞬间翻过去")
+	t.check(state.turn_progress < 1.0,
+		"第一帧翻面已经开始（turn_progress=%.4f）" % state.turn_progress)
+	t.check(state.turn_progress > 0.0, "翻面进度应从 0 起步")
 
-	var previous: float = state.facing
-	var monotonic: bool = true
-	var saw_intermediate: bool = false
+	# 换面发生在「侧对观众」的那一瞬（turn_progress = 0.5），之后宽度再展开回 1.0
+	var swap_steps: int = 0
 	for _i in 20:
 		_drag_by(harness, Vector2(-40.0, 0.0), 1)
-		if state.facing > previous + 1e-9:
-			monotonic = false
-		if state.facing < -0.05 and state.facing > -0.95:
-			saw_intermediate = true
-		previous = state.facing
-	t.check(monotonic, "朝向应单调逼近目标，不来回抖动")
-	t.check(saw_intermediate, "过渡期间应取到 -1 < facing < 0 的中间值（渐进转身）")
-	t.check_approx(state.facing, -1.0, 1e-6, "约 0.25 s 后应转到 -1.0")
+		swap_steps += 1
+		if state.facing == PuppetState.FACING_BACK:
+			break
+	t.check_eq(state.facing, PuppetState.FACING_BACK, "向左移动后应翻到反面")
+	t.check(swap_steps <= 4, "换面应发生在翻面中点附近，实际第 %d 帧" % swap_steps)
+	t.check_approx(state.turn_progress, 0.5, 0.2, "换面时应接近翻面中点")
+	# 走完剩下的展开段：整个翻面约 0.1 秒（60 fps 下 6 帧）
+	var total_steps: int = swap_steps
+	for _i in 20:
+		_drag_by(harness, Vector2(-40.0, 0.0), 1)
+		total_steps += 1
+		if state.turn_progress >= 1.0:
+			break
+	t.check_approx(state.turn_progress, 1.0, 1e-9, "翻完后 turn_progress 应回到 1.0")
+	t.check(total_steps <= 8, "整个翻面应在 0.1 秒内完成（实际 %d 帧）" % total_steps)
 
+	# 反向：翻回正面
 	_drag_by(harness, Vector2(40.0, 0.0), 1)
-	t.check(state.facing < 0.0, "反向移动的第一帧仍应保留向左的过渡过程")
-	_drag_by(harness, Vector2(40.0, 0.0), 30)
-	t.check_approx(state.facing, 1.0, 1e-6, "向右移动后应转到 +1.0")
-	t.finish("转身按 0.25 s 过渡推进，中间值可见，方向随移动方向")
+	t.check_eq(state.facing, PuppetState.FACING_BACK, "反向的第一帧仍应停在反面")
+	var back_steps: int = 0
+	for _i in 20:
+		_drag_by(harness, Vector2(40.0, 0.0), 1)
+		back_steps += 1
+		if state.facing == PuppetState.FACING_FRONT:
+			break
+	t.check_eq(state.facing, PuppetState.FACING_FRONT, "向右移动后应翻回正面")
+	t.check(back_steps <= 4, "换回正面同样应在翻面中点发生（实际第 %d 帧）" % back_steps)
+	t.finish("facing 是二值正反面，翻面 0.1 秒完成且不瞬间跳变")
 
 
 func _test_06_hands_independent(t: ATestBase) -> void:
@@ -371,20 +399,29 @@ func _test_09_all_continuous_values_bounded(t: ATestBase) -> void:
 			bounded = false
 			worst = "第 %d 帧 stance=%.6f" % [i, state.stance]
 			break
-		if state.facing < -1.0 or state.facing > 1.0:
+		if absf(state.facing) != 1.0:
 			bounded = false
-			worst = "第 %d 帧 facing=%.6f" % [i, state.facing]
+			worst = "第 %d 帧 facing=%.6f（应恰为 ±1）" % [i, state.facing]
 			break
-		if absf(state.hand_angle.x) > 0.6 + 1e-6 or absf(state.hand_angle.y) > 0.6 + 1e-6:
+		if state.turn_progress < 0.0 or state.turn_progress > 1.0:
+			bounded = false
+			worst = "第 %d 帧 turn_progress=%.6f" % [i, state.turn_progress]
+			break
+		if state.hand_angle.x < PuppetState.HAND_ANGLE_MIN - 1e-6 \
+				or state.hand_angle.x > PuppetState.HAND_ANGLE_MAX + 1e-6 \
+				or state.hand_angle.y < PuppetState.HAND_ANGLE_MIN - 1e-6 \
+				or state.hand_angle.y > PuppetState.HAND_ANGLE_MAX + 1e-6:
 			bounded = false
 			worst = "第 %d 帧 hand_angle=(%.6f, %.6f)" % [i, state.hand_angle.x, state.hand_angle.y]
 			break
 	t.check(bounded, "200 帧极端输入后连续量仍全部在界内：%s" % worst)
 	t.check_approx(state.stage_pos.x, 1.0, 1e-6, "横向应停在右边界")
 	t.check_approx(state.stance, 1.0, 1e-6, "站蹲应停在下边界（完全蹲下）")
-	t.check_approx(state.hand_angle.x, 0.6, 1e-6, "左手角应停在上限 +0.6")
-	t.check_approx(state.hand_angle.y, 0.6, 1e-6, "右手角应停在上限 +0.6")
-	t.finish("极端输入 200 帧后无越界、无非有限值")
+	t.check_approx(state.hand_angle.x, PuppetState.HAND_ANGLE_MAX, 1e-6,
+		"左手角应停在上限 +180°（举过头顶）")
+	t.check_approx(state.hand_angle.y, PuppetState.HAND_ANGLE_MAX, 1e-6,
+		"右手角应停在上限 +180°（举过头顶）")
+	t.finish("极端输入 200 帧后无越界、无非有限值，双手可到达 180°")
 
 
 func _test_10_event_contract(t: ATestBase) -> void:

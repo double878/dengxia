@@ -106,6 +106,9 @@ func shutdown() -> void:
 	if metronome != null:
 		metronome.stop()
 	if clock != null:
+		# 先解冻补救、再解除暂停：冻结状态下 stream_paused 会让 stream 换不干净
+		if clock.is_song_frozen():
+			clock.set_song_frozen(false)
 		if clock.is_paused():
 			clock.resume()
 		clock.set_player(null, clock.bpm)

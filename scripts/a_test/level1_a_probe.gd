@@ -39,12 +39,23 @@ func run(harness: Object) -> int:
 	harness.advance_steps(60)
 	_expect(harness.clock.get_song_time_ms() > paused_ms, "恢复后歌曲时间继续")
 
-	harness.advance_steps(2100)
+	# 补救会冻结歌曲时间（8 秒真实时间/次，空场跑共 6 次），因此真实步数明显多于 35 秒。
+	var guard: int = 0
+	while not harness.runtime.is_over() and guard < 8000:
+		harness.advance_steps(1)
+		guard += 1
 	var events: Array = harness.take_events()
-	_expect(harness.runtime.is_over(), "运行到 35 秒后结束")
+	_expect(harness.runtime.is_over(), "运行到 35 秒（歌曲时间）后结束")
+	_expect(guard < 8000, "补救冻结拉长了真实耗时但不应无上限（实际用了 %d 步）" % guard)
+	_expect(harness.clock.get_song_time_ms() <= 35010,
+		"歌曲时间应停在 35 秒（实际 %d ms）" % harness.clock.get_song_time_ms())
+	_expect(harness.clock.get_real_time_ms() > 40000,
+		"真实耗时应长于歌曲时长（真实 %d ms）" % harness.clock.get_real_time_ms())
 	_expect(_count_kind(events, "stage_end") == 1, "收到 stage_end")
 	_expect(_count_kind(events, "cue_hint") > 0, "收到 cue_hint")
 	_expect(_count_kind(events, "remedy_open") > 0, "漏做收到 remedy_open")
+	_expect(_count_kind(events, "remedy_freeze_begin") > 0, "收到 remedy_freeze_begin")
+	_expect(_count_kind(events, "remedy_freeze_end") > 0, "收到 remedy_freeze_end")
 	_expect(_count_kind(events, "lamp_state_changed") > 0, "收到 lamp_state_changed")
 	var received: Array = LampController.receive_events(events)
 	_expect(received.size() > 0, "模拟接收端解析到事件")

@@ -126,10 +126,11 @@ func _draw_hook_marker(ground: Vector2, height: float, alpha: float) -> void:
 
 func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	var state := puppet_state
-	var squeeze: float = 1.0 - 0.50 * clampf(state.turn_progress, 0.0, 1.0)
-	var facing_sign: float = signf(state.facing)
-	if is_zero_approx(facing_sign):
-		facing_sign = 1.0
+	## 翻面表现：turn_progress 0→1 走完一次翻面，宽度倍率 |2p−1| 在 p=0.5 处压到 0，
+	## 也就是「侧对观众」的那一瞬——正面/反面正是在这一瞬换过来的（PRD 第 4.1 节：
+	## 转身有过渡、不能瞬间翻面）。整段只有 0.1 s。
+	var flip_width: float = maxf(absf(2.0 * clampf(state.turn_progress, 0.0, 1.0) - 1.0), 0.06)
+	var showing_front: bool = state.facing >= 0.0
 
 	var body := Color(LEATHER.r, LEATHER.g, LEATHER.b, alpha)
 	var rim := Color(RIM.r, RIM.g, RIM.b, alpha * 0.75)
@@ -137,10 +138,10 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 
 	var hip := Vector2(ground.x, ground.y - height * 0.44)
 	var shoulder := Vector2(ground.x, ground.y - height * 0.80)
-	var half_w: float = maxf(height * 0.105 * squeeze, 3.0)
+	var half_w: float = maxf(height * 0.105 * flip_width, 3.0)
 
 	# 腿：髋 → 膝 → 脚。蹲下时膝盖外张、重心下沉（stance 越大越蹲）
-	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0))
+	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0)) * flip_width
 	for side in [-1.0, 1.0]:
 		var knee := Vector2(hip.x + side * knee_out, ground.y - height * 0.22)
 		var foot := Vector2(ground.x + side * half_w * 0.95, ground.y)
@@ -158,34 +159,36 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	draw_colored_polygon(torso, body)
 	draw_polyline(torso + PackedVector2Array([torso[0]]), rim, 2.0)
 
-	# 双臂：肩 → 肘 → 腕。角度直接来自 hand_angle，抬起为正
+	# 双臂：肩 → 肘 → 腕。手角 0 = 自然垂下，+π/2 = 水平前伸，+π = 举过头顶
 	_left_wrist = _draw_arm(Vector2(shoulder.x - half_w, shoulder.y),
-		state.hand_angle.x, false, height, body, joint)
+		state.hand_angle.x, false, height, body, joint, flip_width)
 	_right_wrist = _draw_arm(Vector2(shoulder.x + half_w, shoulder.y),
-		state.hand_angle.y, true, height, body, joint)
+		state.hand_angle.y, true, height, body, joint, flip_width)
 
-	# 头：位置随转身左右偏移，形成「翻脸」方向的直接可见证据
-	var head_center := Vector2(
-		shoulder.x + facing_sign * height * 0.07 * state.turn_progress,
-		shoulder.y - height * 0.115)
-	var head_r: float = height * 0.105
-	_draw_head(head_center, head_r, facing_sign, state.turn_progress, body, rim, alpha)
+	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
+	var head_center := Vector2(shoulder.x, shoulder.y - height * 0.115)
+	var head_r: float = maxf(height * 0.105 * maxf(flip_width, 0.35), 4.0)
+	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
 
 
+## 一条手臂。手角以「自然垂下」为 0，向抬手方向为正；屏幕 y 轴向下，因此：
+##   右手屏幕角 = π/2 − 手角，左手屏幕角 = π/2 + 手角
+## 于是 0 时双手垂下、π/2 时双手水平外伸、π 时双手举过头顶，两侧完全对称。
 func _draw_arm(shoulder: Vector2, angle: float, right_side: bool,
-		height: float, body: Color, joint: Color) -> Vector2:
-	# 技术中性位：手臂斜向外下方；正角度为抬起方向
-	var base_angle: float = (PI * 0.62) if right_side else (PI - PI * 0.62)
-	var dir := Vector2(cos(base_angle), sin(base_angle))
-	dir = dir.rotated(-angle * (1.0 if right_side else -1.0))
+		height: float, body: Color, joint: Color, flip_width: float) -> Vector2:
+	var base_angle: float = PI * 0.5
+	var screen_angle: float = (base_angle - angle) if right_side else (base_angle + angle)
+	var dir := Vector2(cos(screen_angle), sin(screen_angle))
 	var upper: float = height * 0.16
 	var lower: float = height * 0.15
 	var elbow: Vector2 = shoulder + dir * upper
 	var wrist: Vector2 = elbow + dir * lower
-	draw_line(shoulder, elbow, body, height * 0.042)
-	draw_line(elbow, wrist, body, height * 0.038)
-	draw_circle(elbow, height * 0.020, joint)
-	draw_circle(wrist, height * 0.024, Color(0.93, 0.86, 0.70, joint.a))
+	# 翻面压扁时手臂同步变细，避免整台只剩两根粗线还挂在外面
+	var thickness: float = maxf(flip_width, 0.25)
+	draw_line(shoulder, elbow, body, height * 0.042 * thickness)
+	draw_line(elbow, wrist, body, height * 0.038 * thickness)
+	draw_circle(elbow, height * 0.020 * thickness, joint)
+	draw_circle(wrist, height * 0.024 * thickness, Color(0.93, 0.86, 0.70, joint.a))
 	return wrist
 
 
@@ -194,8 +197,9 @@ var _left_wrist: Vector2 = Vector2.ZERO
 var _right_wrist: Vector2 = Vector2.ZERO
 
 
-func _draw_head(centre: Vector2, radius: float, facing_sign: float,
-		turn_progress: float, body: Color, rim: Color, alpha: float) -> void:
+## 头：正面画五官、反面只留一道背缝，两者在灰度下也能区分。
+func _draw_head(centre: Vector2, radius: float, showing_front: bool,
+		body: Color, rim: Color, alpha: float) -> void:
 	draw_circle(centre, radius, body)
 	draw_arc(centre, radius, 0.0, TAU, 32, rim, 2.0)
 
@@ -217,14 +221,23 @@ func _draw_head(centre: Vector2, radius: float, facing_sign: float,
 			draw_rect(Rect2(centre.x - radius * 1.15, centre.y - radius * 1.15,
 				radius * 2.30, radius * 0.46), accent)
 
-	# 鼻尖楔形指出朝向
-	if absf(facing_sign) > 0.05 and turn_progress > 0.05:
+	if showing_front:
+		# 正面：两只眼 + 鼻尖楔形
+		draw_circle(centre + Vector2(-radius * 0.34, -radius * 0.14), radius * 0.13,
+			Color(0.10, 0.07, 0.05, alpha))
+		draw_circle(centre + Vector2(radius * 0.30, -radius * 0.14), radius * 0.13,
+			Color(0.10, 0.07, 0.05, alpha))
 		var nose := PackedVector2Array([
-			centre + Vector2(facing_sign * radius * 0.85, -radius * 0.18),
-			centre + Vector2(facing_sign * radius * 1.55 * turn_progress, radius * 0.42),
-			centre + Vector2(facing_sign * radius * 0.85, radius * 0.42),
+			centre + Vector2(radius * 0.82, -radius * 0.10),
+			centre + Vector2(radius * 1.42, radius * 0.40),
+			centre + Vector2(radius * 0.82, radius * 0.46),
 		])
 		draw_colored_polygon(nose, body)
+	else:
+		# 反面：一道竖背缝 + 缝上的小签钉
+		draw_line(centre + Vector2(0.0, -radius * 0.72),
+			centre + Vector2(0.0, radius * 0.96), rim, 2.0)
+		draw_circle(centre + Vector2(0.0, -radius * 0.72), radius * 0.16, rim)
 
 
 ## 三根竹签：一根连胸签、两根连手，全部汇到签手的手部。

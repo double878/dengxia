@@ -108,10 +108,10 @@ func _configure_initial_stage() -> void:
 	var puppets: Array = runtime.puppet_controller.puppets
 	puppets[0].stage_pos = Vector2(0.50, 0.5)
 	puppets[1].stage_pos = Vector2(0.13, 0.5)
-	puppets[1].hand_angle = Vector2(0.46, 0.10)
+	puppets[1].hand_angle = Vector2(1.20, 0.10)
 	_set_hung(puppets[1], 0)
 	puppets[2].stage_pos = Vector2(0.86, 0.5)
-	puppets[2].hand_angle = Vector2(0.10, 0.46)
+	puppets[2].hand_angle = Vector2(0.10, 1.20)
 	_set_hung(puppets[2], 1)
 
 
@@ -158,9 +158,10 @@ func _diag_process(delta: float) -> void:
 	# win / scale 用来核对「实际开窗尺寸」与「1920x1080 画布的等比缩放」是否符合预期：
 	# 窗口尺寸不对或缩放出 1 时，画面会被裁切或变形，而这两种情况从读数上一眼可辨。
 	var window: Window = get_window()
-	print("DIAG ticks=%d frame=%d fps=%d song=%dms beat=%d audio_driven=%s playing=%s pos=%.3fs active=%s advance=%dms ui=%dms delta=%.1fms win=%dx%d canvas_scale=%.3f" % [
+	print("DIAG ticks=%d frame=%d fps=%d song=%dms real=%dms frozen=%s beat=%d audio_driven=%s playing=%s pos=%.3fs active=%s advance=%dms ui=%dms delta=%.1fms win=%dx%d canvas_scale=%.3f" % [
 		Time.get_ticks_msec(), _frame_count, Engine.get_frames_per_second(),
-		clock.get_song_time_ms(), clock.get_beat_index(), clock.is_audio_driven(),
+		clock.get_song_time_ms(), clock.get_real_time_ms(), clock.is_song_frozen(),
+		clock.get_beat_index(), clock.is_audio_driven(),
 		player.playing if player != null else false, position_s,
 		metronome.is_active(), t1 - t0, t3 - t2, delta * 1000.0,
 		window.size.x, window.size.y, get_viewport_transform().get_scale().x])
@@ -289,6 +290,10 @@ func _refresh_ui() -> void:
 	_status_label.text = "第一折 · 入手"
 	if runtime.is_over():
 		_status_label.text += "　本折已收场"
+	elif _harness.clock.is_song_frozen():
+		# 补救冻结期间歌曲时间停住、鼓点变成 0.1 倍速，这是玩家判断
+		# 「现在不是正常演出时间」的主要依据，所以必须写在画面上。
+		_status_label.text += "　补救中 · 演出计时已暂停"
 	elif not _harness.clock.is_audio_driven():
 		# 时钟已降级（无声卡 / 音频停摆）时明确写出来，避免"画面在动但听不到声音"
 		# 被误报成"游戏卡死"或"音乐没做"。
@@ -302,8 +307,14 @@ func _refresh_ui() -> void:
 		_cue_label.text = _active_cue_text()
 
 	var demo_id: String = runtime.director.remedy.current_demo_cue_id
-	_remedy_banner.visible = not demo_id.is_empty() and not _paused
-	if not demo_id.is_empty():
+	var frozen: bool = _harness.clock.is_song_frozen()
+	_remedy_banner.visible = (not demo_id.is_empty() or frozen) and not _paused
+	if frozen:
+		var remedy_text: String = "跟着示范补做刚才漏掉的动作"
+		if not demo_id.is_empty():
+			remedy_text = _action_text(str(_find_cue(demo_id).get("action", "")))
+		_remedy_banner.text = "补救中　·　演出已暂停　·　%s" % remedy_text
+	elif not demo_id.is_empty():
 		_remedy_banner.text = "师父示范　·　%s" % _action_text(
 			str(_find_cue(demo_id).get("action", "")))
 
@@ -384,8 +395,18 @@ func _draw() -> void:
 	_draw_target_marker()
 	if _harness != null and not _harness.runtime.director.remedy.current_demo_cue_id.is_empty():
 		_draw_teacher_hand()
+	if _harness != null and _harness.clock.is_song_frozen():
+		_draw_freeze_overlay()
 	if _paused:
 		draw_rect(Rect2(Vector2.ZERO, CANVAS_SIZE), Color(0.0, 0.0, 0.0, 0.45))
+
+
+## 补救冻结的画面提示：幕布整体压暗 + 外框一圈琥珀色。
+## PRD 第 5.2 节把补救定义成「帮助玩家继续表演」而不是失败，因此这里只做提示，
+## 不打分数、不显示倒计时秒数（第 3、5.1 节明确禁止泄露数值）。
+func _draw_freeze_overlay() -> void:
+	draw_rect(CLOTH, Color(0.06, 0.04, 0.02, 0.42))
+	draw_rect(SCREEN_FRAME, Color(0.98, 0.72, 0.25, 0.80), false, 6.0)
 
 
 ## 幕布经纬线的淡淡质感，避免整块幕布是一块死板的纯色。
@@ -535,7 +556,9 @@ func _draw_pose_arrow(action: String) -> void:
 
 ## 师父示范手：只在失误后的补救窗口里出现，只示范动作本身（PRD 第 5.2 节）。
 func _draw_teacher_hand() -> void:
-	var now_s: float = _harness.clock.get_song_time_s()
+	# 用真实时间驱动示范手的摆动：补救期间歌曲时间是冻结的，用它会得到一只僵住的手，
+	# 而这只手的作用恰恰是「让玩家看出该补做什么动作」。
+	var now_s: float = _harness.clock.get_real_time_s()
 	var action: String = str(_find_cue(
 		_harness.runtime.director.remedy.current_demo_cue_id).get("action", ""))
 	var sway: float = sin(now_s * 7.0) * 20.0
@@ -587,7 +610,8 @@ func _hung_puppet_at(position: Vector2) -> int:
 ## 场景被移出场景树时收尾：临时音轨若仍在播放，音频线程会在引擎清理阶段
 ## 报 ObjectDB 泄漏。选关与重开本关（PRD 第 3、8 节）都会走到这条路径。
 ## 注：`--quit-after` 这类**引擎级强制退出**不会等到音频播放对象释放，
-## 那种情况下仍会打印一条 AudioStreamGeneratorPlayback 泄漏告警（退出码仍为 0）。
+## 那种情况下仍会打印两条 AudioStreamGeneratorPlayback 泄漏告警
+## （主音轨 + 补救慢鼓各一条；退出码仍为 0）。
 func _exit_tree() -> void:
 	if _harness != null:
 		_harness.shutdown()

@@ -1,0 +1,304 @@
+{
+  "contract_version": "a-level1-e791acd+worktree",
+
+  "clock": {
+    "bpm": 96.0,
+    "beats_per_bar": null,
+    "subdivision": null,
+    "tick_unit": "ms",
+    "accent_positions": null,
+    "pause_freezes_clock": true
+  },
+
+  "judgement": {
+    "windows": {
+      "perfect": null,
+      "good": null,
+      "late": null,
+      "miss": null,
+      "hit": {
+        "offset_ms": 250,
+        "per_cue_configurable": true
+      }
+    },
+    "recovery_duration": 8000,
+    "eight_second_recovery": true
+  },
+
+  "states": ["ready", "playing", "paused", "finished"],
+
+  "states_not_provided_by_a": {
+    "idle": "GameFlow / C 侧。A 在 start() 之前不对外暴露状态。",
+    "correct": "不是全局状态。是每条 cue 的结果，见事件 cue_hit。",
+    "wrong": "不是全局状态。是每条 cue 的结果，见事件 cue_miss。",
+    "missed": "不是全局状态。是每条 cue 的结果，见事件 cue_miss（reason=missed_outright）。",
+    "recovery": "不是全局状态。是每条 cue 各自的补救窗口，见 remedy_open / remedy_success / remedy_timeout。",
+    "replay": "C 侧。回放期间 A 的判定模块不被调用。"
+  },
+
+  "event_envelope": {
+    "time_ms": "int，歌曲时间，整数毫秒",
+    "kind": "String，即 event_id",
+    "object_id": "int 0-2 = 影人；String \"lamp_main\" = 油灯（类型不统一，已知问题）",
+    "cue_id": "String，关键动作 ID；非判定事件为 \"\"",
+    "payload": "Dictionary，恒含 \"kind\""
+  },
+
+  "events": [
+    {
+      "event_id": "stage_start",
+      "at": "time_ms = 0（歌曲时间起点）",
+      "payload_schema": { "duration_ms": "int" }
+    },
+    {
+      "event_id": "stage_end",
+      "at": "time_ms = 35000（到时）或 force_end 时刻",
+      "payload_schema": {
+        "reason": "String(duration_reached|forced)",
+        "song_time_ms": "int",
+        "remedy_open_count": "int",
+        "duration_ms": "int"
+      }
+    },
+    {
+      "event_id": "drag_begin",
+      "at": "time_ms = 胸签拖动开始的那一帧",
+      "payload_schema": { "dragging": "bool(true)" }
+    },
+    {
+      "event_id": "drag_end",
+      "at": "time_ms = 胸签拖动结束的那一帧",
+      "payload_schema": { "dragging": "bool(false)" }
+    },
+    {
+      "event_id": "pose_stance",
+      "at": "time_ms = stance 开始变化与停止变化的那两帧（不每帧发）",
+      "payload_schema": { "stance": "float 0.0-1.0" }
+    },
+    {
+      "event_id": "facing_turn",
+      "at": "time_ms = 转身方向切换的那一帧（左/停/右）",
+      "payload_schema": {
+        "from": "float -1.0-1.0",
+        "to": "float -1.0-1.0"
+      }
+    },
+    {
+      "event_id": "hand_motion",
+      "at": "time_ms = 某只手的运动方向改变的那一帧",
+      "payload_schema": {
+        "hand": "String(left|right)",
+        "dir": "int(-1|0|1)",
+        "angle": "float，弧度，-0.6-0.6"
+      }
+    },
+    {
+      "event_id": "cue_fire",
+      "at": "time_ms = 玩家做出该动作的那一帧（不论在不在判定窗内）",
+      "payload_schema": {
+        "action": "String",
+        "metric": "float",
+        "window_start_ms": "int",
+        "window_end_ms": "int"
+      }
+    },
+    {
+      "event_id": "cue_hit",
+      "at": "time_ms = 动作落在判定窗内的那一帧",
+      "payload_schema": {
+        "action": "String",
+        "offset_ms": "int，time_ms - beat_time_ms",
+        "tolerance_ms": "int",
+        "metric": "float"
+      }
+    },
+    {
+      "event_id": "cue_miss",
+      "at": "time_ms = 动作落在判定窗外的那一帧，或落点过后判定为完全漏做的那一帧",
+      "payload_schema": {
+        "action": "String",
+        "offset_ms": "int",
+        "tolerance_ms": "int",
+        "metric": "float 或 NAN（完全漏做时为 NAN）",
+        "reason": "String，可选；仅完全漏做时出现，值为 missed_outright"
+      }
+    },
+    {
+      "event_id": "remedy_open",
+      "at": "time_ms = 补救窗口开启的那一帧",
+      "payload_schema": {
+        "action": "String",
+        "demo_action": "String",
+        "reason": "String(missed_cue|low_sync)",
+        "duration_ms": "int(8000)",
+        "remaining_ms": "int",
+        "target_range": "Dictionary{key,min,max}"
+      }
+    },
+    {
+      "event_id": "remedy_show",
+      "at": "time_ms = 同屏当前示范发生变化的时刻（同屏恒为 0 或 1 条）",
+      "payload_schema": {
+        "action": "String",
+        "demo_action": "String",
+        "remaining_ms": "int"
+      }
+    },
+    {
+      "event_id": "remedy_hide",
+      "at": "time_ms = 当前示范结束或让位给另一条的时刻",
+      "payload_schema": {}
+    },
+    {
+      "event_id": "remedy_success",
+      "at": "time_ms = 窗口内补做成功的时刻",
+      "payload_schema": {
+        "action": "String",
+        "elapsed_ms": "int",
+        "still_missed": "bool，恒为 true（原失误不清除）"
+      }
+    },
+    {
+      "event_id": "remedy_timeout",
+      "at": "time_ms = 8 秒到期，或关卡结束强行关闭窗口的时刻",
+      "payload_schema": {
+        "action": "String",
+        "elapsed_ms": "int",
+        "reason": "String，可选；仅随关卡结束时出现，值为 stage_end"
+      }
+    },
+    {
+      "event_id": "lamp_input_changed",
+      "at": "time_ms = distance 或 exposure 变化的那一帧",
+      "payload_schema": {
+        "distance": "float 0.0-1.0",
+        "exposure": "float 0.0-1.0",
+        "oil": "float 0.0-1.0",
+        "flame_feedback": "float 0.0-1.0",
+        "changed_fields": "Array[String]"
+      }
+    },
+    {
+      "event_id": "lamp_oil_changed",
+      "at": "time_ms = oil 变化的那一帧（演出期间基本每帧）",
+      "payload_schema": {
+        "distance": "float 0.0-1.0",
+        "exposure": "float 0.0-1.0",
+        "oil": "float 0.0-1.0",
+        "flame_feedback": "float 0.0-1.0",
+        "changed_fields": "Array[String]"
+      }
+    },
+    {
+      "event_id": "lamp_feedback_changed",
+      "at": "time_ms = flame_feedback 变化的那一帧（由命中/错拍/补救结果驱动）",
+      "payload_schema": {
+        "distance": "float 0.0-1.0",
+        "exposure": "float 0.0-1.0",
+        "oil": "float 0.0-1.0",
+        "flame_feedback": "float 0.0-1.0",
+        "changed_fields": "Array[String]"
+      }
+    },
+    {
+      "event_id": "lamp_state_changed",
+      "at": "time_ms = 上面三种 lamp_* 任一发生时的同帧附带事件",
+      "payload_schema": {
+        "distance": "float 0.0-1.0",
+        "exposure": "float 0.0-1.0",
+        "oil": "float 0.0-1.0",
+        "flame_feedback": "float 0.0-1.0",
+        "changed_fields": "Array[String]"
+      }
+    },
+    {
+      "event_id": "lamp_finished",
+      "at": "time_ms = 演出结束、油灯停摆的时刻",
+      "payload_schema": {
+        "distance": "float 0.0-1.0",
+        "exposure": "float 0.0-1.0",
+        "oil": "float 0.0-1.0",
+        "flame_feedback": "float 0.0-1.0"
+      }
+    },
+    {
+      "event_id": "puppet_hook",
+      "at": "第一关不可达（挂起属第 2 关）",
+      "payload_schema": { "hook_slot": "int 0|1" }
+    },
+    {
+      "event_id": "puppet_take_back",
+      "at": "第一关不可达（接手属第 2 关）",
+      "payload_schema": { "hook_slot": "int 0|1" }
+    },
+    {
+      "event_id": "head_swap",
+      "at": "第一关不可达（换头属第 4 关）",
+      "payload_schema": {
+        "slot": "int 0-2",
+        "head_from": "int -1|0-5",
+        "head_to": "int 0-5"
+      }
+    }
+  ],
+
+  "events_field_mapping": {
+    "actor_id": "object_id",
+    "gesture_id": "cue_id（动作类型在 payload.action）",
+    "judgement": "由 kind 表达：cue_hit / cue_miss；偏移与容差在 payload.offset_ms 与 payload.tolerance_ms",
+    "beat_index": "A 的事件里没有该字段。用 clock.get_beat_index() 或 clock.beat_time_ms(i) 与 time_ms 互算。"
+  },
+
+  "pause_resume": {
+    "pause_event": null,
+    "resume_event": null,
+    "preserve_remaining_time": true,
+    "preserve_current_judgement": true
+  },
+
+  "replay": {
+    "format_version": null,
+    "start_event": null,
+    "pause_event": null,
+    "skip_event": null,
+    "resume_event": null,
+    "rerun_judgement": false
+  },
+
+  "audio_sync": {
+    "music_clock_owner": "A",
+    "music_resource": null,
+    "audio_bus": null,
+    "loop": false,
+    "loop_start": null,
+    "loop_end": null,
+    "visual_trigger_policy": "状态按 A 的统一歌曲时钟每帧读一次；离散表现按同一帧从 take_events() 取到的事件触发。B 不得另开计时器。"
+  },
+
+  "notes": {
+    "contract_version": "A 侧没有正式版本号。此值 = 提交 e791acd（分支 feat-level1-controls，已推送 origin/feat-level1-controls）**再加尚未提交的工作区改动**。填这份契约时工作区里 scripts/a/music_clock.gd 与 scripts/a/puppet_controller.gd 有未提交改动，内容已包含在内（音乐时钟看门狗、挂起/接手/换头三个接口）。那批改动提交后请把此值换成新提交哈希。字段含义一旦要改，A 会先升这个值并通知 B、C。",
+    "clock.stall_degradation": "工作区新增的时钟看门狗：播放器自称在播、但播放位置连续 0.6 s 不前进时（声卡缺失、被独占、缓冲停摆），MusicClock 会降级为自由计时并 push_warning，clock.is_audio_driven() 随即变成 false，演出照常推进而不是整场冻住。B 若想在降级时让画面有所区别，可以读 clock.is_audio_driven()。注意这条降级路径本身没有在真实声卡故障下验证过，只用无头测试证明了阈值判定会触发。",
+    "clock.beats_per_bar": "A 侧没有小节概念，代码里不存在该数据，因此为 null。唯一相关约定是「重音每 4 拍一次」，但那是编排约定，不是音轨事实。",
+    "clock.subdivision": "A 侧没有细分拍，因此为 null。时钟最小单位是 1 ms，没有 tick 概念，所以 tick_unit 是 ms。",
+    "clock.accent_positions": "A 侧没有重音数据、也没有重音音轨，因此为 null。当前只有一条编排约定：重音每 4 拍一次（第 0,4,8,...,52 拍）；第一关 6 条 cue 里落在重音上的是第 4、20、24 拍。正式锣鼓音轨交付后必须重新确认实际重音位置，不要把上面这组数字当成音轨事实。B 做「随拍跳动」请用 clock.get_beat_index() 与 clock.time_to_next_beat_ms()。",
+    "clock.stage": "第一关：时长 35000 ms（绝不延长），BPM 96，一拍 625 ms，共 56 拍，分 6 段。",
+    "judgement.windows": "A 侧没有 perfect/good/late 分级，所以这三项是 null。实际只有一档：|offset_ms| <= tolerance_ms 记 cue_hit，否则记 cue_miss。tolerance_ms 默认 250，可逐条 cue 配置，第一关 6 条都是 250。合拍度按段汇总、平滑呈现到火苗，不弹即时评价（PRD 5.1）。",
+    "judgement.windows.miss": "miss 不是「一个窗口」，而是「窗口之外」。窗口右端 = beat_time_ms + 250；完全漏做的判定发生在右端之后（实测在落点 +260 ms 那一帧）。",
+    "judgement.recovery_duration": "8000 ms，PRD 5.2.2 固定 8 秒，不因任何情况延长。",
+    "states": "states 只列 A 真正持有的状态。A 的运行时只有「未 start / playing / paused / ended」四态；命中与错拍是每条 cue 的结果，不是全局状态，所以不放进 states。",
+    "events": "A 事件的固定信封是 time_ms / kind / object_id / cue_id / payload 五个字段，见 event_envelope。模板里的 actor_id / gesture_id / judgement / beat_index 不是 A 的字段名，映射见 events_field_mapping。payload 里恒含 \"kind\"。",
+    "events.metric_nan": "cue_miss 在「完全漏做」时 payload.metric 是 NAN。NAN 不是合法 JSON，C 录制时要么转成 null、要么换成哨兵值，否则序列化会失败或写出非法 JSON。",
+    "events.unreachable_in_level1": "puppet_hook / puppet_take_back / head_swap 三个 kind 已在**工作区版本**的 puppet_controller.gd 里实现（提交 e791acd 里还没有），但第一关不会触发（挂起与接手属第 2 关、换头属第 4 关）。B、C 现在不用接，但别因为它们没出现在第一关数据里就以为契约里没有。",
+    "events.lamp_volume": "lamp_oil_changed 在演出期间基本每帧一条（灯油逐毫秒消耗）。不要按「一帧最多一条事件」写逻辑或做分配。",
+    "pause_resume": "A 当前不产出暂停/恢复事件，所以 pause_event 与 resume_event 是 null。暂停时 MusicClock 冻结读数、输入被清空，恢复后从冻结值继续同一时间轴；因此暂停时长不会出现在任何 time_ms 里，回放时间轴天然连续，C 不需要特殊处理。若 C 需要显式事件（例如想在回放里标出暂停过），请明确提出，A 补 clock_paused / clock_resumed。",
+    "pause_resume.preserve_remaining_time": "已实测：暂停 600 帧期间歌曲时间与补救剩余时间完全冻结；恢复 500 ms 后剩余时间恰好减少 500 ms。",
+    "pause_resume.preserve_current_judgement": "已实测：判定窗用歌曲时间计算，冻结期间不推进，恢复后不跳变、不重判。",
+    "replay": "整个 replay 块除 rerun_judgement 外都属 C 侧，A 没有实现也没有接口，因此为 null。A 只确认一条：rerun_judgement = false —— 回放期间 A 的判定模块不被调用，回放不重新判定、不重新评分（PRD 7、TECH_DESIGN 4）。",
+    "audio_sync.music_resource": "尚无正式音轨，因此为 null。StageDef.track_path 目前是空字符串；A 用的是测试目录里的临时节拍音 scripts/a_test/metronome.gd（工作区版本已扩展成可采样、有节奏变化的临时音轨），仅供 A 自测与验证时钟，**不是给 B 用的正式素材**。B 交付正式锣鼓主音轨后 A 必须复测拍点对齐——在那之前 A 不宣称时钟已与正式音轨对齐。资源路径由 B 定。",
+    "audio_sync.audio_bus": "A 不设置总线（MusicClock 只持有 AudioStreamPlayer，不碰 bus），实际就是 Godot 默认的 \"Master\"。B 若要用独立总线，必须保证 A 读的是同一个 AudioStreamPlayer，否则时钟与玩家听到的声音会错开。",
+    "audio_sync.loop": "必须是 false。MusicClock 按播放位置增量累计歌曲时间；音轨一旦循环回绕，播放位置倒退会被判成「没有前进」，歌曲时间当场冻住，判定、灯油、补救、关卡结束全部停摆。B 交付的音轨请关闭 loop，loop_start / loop_end 不适用。",
+    "audio_sync.visual_trigger_policy": "B 的表现只允许两个来源：① 每帧从 clock.get_song_time_ms() 取一次状态（PuppetState / LampState）；② 同一帧从 runtime.take_events() 取离散事件。B 不得另开计时器，也不得用 delta 自行推算歌曲时间。",
+    "unverified": "以下都还没在真实音频下验证过：正式音轨的拍点对齐、真实听感是否对上鼓点。无头模式使用虚拟音频驱动，证明不了音频时钟正确，必须在 Windows 图形环境实测。",
+    "field_semantics_source": "字段语义的唯一事实源是 docs/handoff/A-to-B-level1.md；本文件是同一契约在提交 e791acd 上的机器可读快照。两者冲突时以 A 后续更新的那一份为准，并请立刻告诉 A。"
+  }
+}

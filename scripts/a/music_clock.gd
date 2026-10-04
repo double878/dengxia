@@ -18,6 +18,13 @@ class_name MusicClock
 ##
 ## 暂停约定：pause() 冻结返回值，resume() 从冻结值继续同一时间轴，期间音频真的被暂停/续播。
 ## 绝不另开一个独立的游戏计时器。
+##
+## 补救冻结（set_song_frozen）与暂停**不是**一回事：
+## - 补救窗口开启期间，歌曲时间与判定冻结（补救因此不吃掉关卡固定时长），
+##   但**真实时间照走**——8 秒补救窗口按真实时间计时，结算后恢复 1 倍速继续。
+## - 主音轨在冻结期间被暂停，解冻时与 resume() 走同一套对齐，读数不跳变。
+## - 菜单暂停（pause()）连真实时间一起冻结，补救倒计时因此也跟着停（PRD 第 8 节）。
+## 所有消费者仍然只读同一个歌曲时间；补救冻结的意义只是「这段时间不计入关卡」。
 
 const DEFAULT_BPM: float = 96.0
 const POSITION_EPSILON_S: float = 1.0e-6
@@ -38,6 +45,8 @@ var _position_s: float = 0.0           ## 上一次读到的播放位置
 var _last_beat_index: int = -1
 var _latency_s: float = 0.0
 var _stall_s: float = 0.0                ## 音频位置停止前进的累计时长，用于判定停摆
+var _song_frozen: bool = false           ## 补救冻结：只冻结歌曲时间，真实时间照走
+var _real_s: float = 0.0                 ## 真实时间累计，补救窗口按它计时
 
 
 ## 设置主音轨播放器与 BPM。本方法不启动播放；随后必须调用 start() 才会进入音频时钟模式。
@@ -50,6 +59,8 @@ func set_player(value: AudioStreamPlayer, track_bpm: float = DEFAULT_BPM) -> voi
 ## player 为 null 时只跑自由计时，is_audio_driven() 会返回 false。
 func start(song_start_ms: int = 0) -> void:
 	_paused = false
+	_song_frozen = false
+	_real_s = 0.0
 	_last_beat_index = -1
 	_stall_s = 0.0
 	_latency_s = maxf(AudioServer.get_output_latency(), 0.0)
@@ -72,6 +83,15 @@ func start(song_start_ms: int = 0) -> void:
 ## 每帧一次。返回本帧是否跨过了新的拍点。
 func update(delta: float) -> bool:
 	if _paused:
+		return false
+	# 真实时间与歌曲时间的区别：菜单暂停时两者一起停，补救冻结时只有歌曲时间停。
+	_real_s += maxf(delta, 0.0)
+	if _song_frozen:
+		# 补救冻结：歌曲时间与拍点都停住，但真实时间继续走（8 秒窗口按真实时间计时）。
+		# 主音轨已被暂停、播放位置不动；这里再同步一次读数，
+		# 解冻时不会把冻结时长算成一次大跳。
+		if _active and player != null:
+			_position_s = maxf(player.get_playback_position(), 0.0)
 		return false
 	if _active and player != null and player.playing:
 		var position_now: float = maxf(player.get_playback_position(), 0.0)
@@ -119,7 +139,29 @@ func resume() -> void:
 	# 把它对齐回冻结时的歌曲时间，使恢复后从冻结值继续、不把暂停时长算进歌曲时间。
 	if player != null:
 		_position_s = maxf(float(_pause_song_ms) / 1000.0 + _latency_s, 0.0)
+		# 若补救窗口仍开着，主音轨要保持暂停，由慢鼓接管（等解冻再续播）
+		player.stream_paused = _song_frozen
+
+
+## 补救冻结：只冻结歌曲时间与拍点，真实时间照常推进（与 pause() 的区别见文件头）。
+## 重复设置同值不做事，方便每帧按「有没有补救窗口」直接调用。
+func set_song_frozen(value: bool) -> void:
+	if _song_frozen == value:
+		return
+	_song_frozen = value
+	if player == null:
+		return
+	if value:
+		player.stream_paused = true
+		return
+	# 解冻：与 resume() 同一套对齐，从冻结的歌曲时间继续，不把冻结时长算进歌曲时间
+	_position_s = maxf(float(get_song_time_ms()) / 1000.0 + _latency_s, 0.0)
+	if not _paused:
 		player.stream_paused = false
+
+
+func is_song_frozen() -> bool:
+	return _song_frozen
 
 
 ## 音频播放位置停摆是否已到判定阈值。
@@ -153,6 +195,15 @@ func get_song_time_s() -> float:
 ## 唯一的歌曲时间读数，整数毫秒。
 func get_song_time_ms() -> int:
 	return int(round(get_song_time_s() * 1000.0))
+
+
+## 真实时间。菜单暂停时不推进；补救冻结时照常推进——8 秒补救窗口按它计时。
+func get_real_time_s() -> float:
+	return maxf(_real_s, 0.0)
+
+
+func get_real_time_ms() -> int:
+	return int(round(get_real_time_s() * 1000.0))
 
 
 func beat_duration_s() -> float:

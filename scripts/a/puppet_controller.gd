@@ -1,6 +1,6 @@
 extends RefCounted
 class_name PuppetController
-## A 范围唯一操控实现：胸签拖动、站蹲、渐进转身、双手控制。
+## A 范围唯一操控实现：胸签拖动、站蹲、0.1 秒翻面、双手控制。
 ## 单向数据流（TECH_DESIGN.md 2.3）：本控制器先改 PuppetState，再把 TimedEvent 写入队列；
 ## B 的显示与 C 的录制在同一帧读状态，因此一定读到改动后的值。
 ## 事件契约见 docs/superpowers/plans/2026-10-03-level1-a.md 第 1.3 节。
@@ -12,10 +12,17 @@ const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 const STAGE_PIXEL_SIZE: Vector2 = Vector2(1920.0, 1080.0)
 
 const STANCE_SPEED_PER_S: float = 1.5    ## 站蹲速度（stance/s），站→蹲约 0.67 s
-const TURN_DURATION_S: float = 0.25      ## 转身过渡时长；满足「不能瞬间翻面」
+## 翻面过渡时长。影人只有正反两面，翻一次就是一张纸片翻过去，所以这里很短：
+## 0.1 s 既明显快于原来 0.5 s 的慢压扁，又仍留有过渡，不平白跳变。
+const TURN_DURATION_S: float = 0.1
 const TURN_SPEED_PER_S: float = 1.0 / TURN_DURATION_S
-const HAND_SPEED_RAD_PER_S: float = 2.0  ## 抬手/落手速度
-const HAND_ANGLE_INITIAL: float = 0.3    ## 双手初始角（弧度），抬落两向都留余量
+## 翻面到达这个进度就换面。取 0.5 = 画面上最窄（侧对观众）的一瞬，
+## 换面因此看不出跳变（B 的显示端按 turn_progress 压扁再展开）。
+const FLIP_SWAP_POINT: float = 0.5
+## 抬手/落手速度。0°→180° 约 0.7 s：够快，又不至于一按就到顶。
+const HAND_SPEED_RAD_PER_S: float = 4.5
+## 双手初始角：0 弧度 = 手臂自然垂下，与 PuppetState.HAND_ANGLE_MIN 一致。
+const HAND_ANGLE_INITIAL: float = 0.0
 const CHEST_TAG_RADIUS_PX: float = 90.0  ## 胸签拖动热区（以虚拟舞台像素计）
 const FACING_DEADZONE_PX: float = 2.0    ## 横向位移小于此值不改变转身目标
 const STANCE_EPSILON: float = 0.000001   ## 站蹲「是否仍在变化」的比较阈值
@@ -51,11 +58,11 @@ var _input_map: Dictionary = {}          ## 本帧生效的输入快照
 var _drag_active: bool = false
 var _drag_puppet_id: int = -1
 var _drag_accum_px: Vector2 = Vector2.ZERO
-var _facing_target: float = 0.0          ## 0.0 表示保持当前朝向，+/-1.0 表示转身目标
+var _facing_target: float = 0.0          ## 0.0 表示不翻面，+/-1.0 表示要翻到哪一面
 ## 只在运动方向变化与停稳时发事件，避免每帧噪声撑大 C 的录制
 var _stance_moving: bool = false
 var _stance_last_emitted: float = 0.0
-var _turn_dir: int = 0
+var _flip_target: float = 0.0            ## 当前这次翻面的目标面；0.0 表示还没翻过面
 var _hand_dir: Vector2i = Vector2i.ZERO
 
 
@@ -76,14 +83,14 @@ func setup(puppet_count: int = 3) -> void:
 	_facing_target = 0.0
 	_stance_moving = false
 	_stance_last_emitted = 0.0
-	_turn_dir = 0
+	_flip_target = 0.0
 	_hand_dir = Vector2i.ZERO
 	for i in puppet_count:
 		var state: PuppetState = PuppetStateScript.new(i)
 		state.stage_pos = Vector2(0.5, 0.5)
 		state.stance = 0.0
-		state.facing = 0.0
-		state.turn_progress = 0.0
+		state.facing = PuppetStateScript.FACING_FRONT
+		state.turn_progress = PuppetStateScript.TURN_PROGRESS_MAX
 		state.hand_angle = Vector2(HAND_ANGLE_INITIAL, HAND_ANGLE_INITIAL)
 		state.head_id = i                      ## 前三个头分配给三个影人
 		state.hook_slot = PuppetStateScript.HOOK_SLOT_NONE
@@ -185,7 +192,7 @@ func head_on_rack(slot: int) -> int:
 
 
 ## 每帧一次的唯一步进入口。
-## 顺序固定：应用拖动 → 应用双手 → 应用转身 → clamp → 事件早已在各自步骤内入队。
+## 顺序固定：应用拖动 → 应用双手 → 应用翻面 → clamp → 事件早已在各自步骤内入队。
 ## 保证同一帧内状态先变、事件后到。
 func tick(delta: float) -> void:
 	var controlled: PuppetState = get_controlled()
@@ -268,7 +275,7 @@ func take_events() -> Array[Dictionary]:
 
 
 ## 胸签拖动：横向改 stage_pos.x，纵向改 stance（向下拖 = 蹲下）。
-## 横向位移超过死区时设定转身目标，转身在 _apply_facing 中平滑推进。
+## 横向位移超过死区时设定翻面目标，翻面在 _apply_facing 中推进。
 func _apply_drag(controlled: PuppetState) -> void:
 	if _drag_accum_px == Vector2.ZERO:
 		return
@@ -314,22 +321,25 @@ func _apply_hands(controlled: PuppetState, delta: float) -> void:
 	_emit_hand_if_changed(controlled, left_dir, right_dir)
 
 
-## 转身平滑推进；_facing_target 为 0.0 时保持当前朝向。
+## 翻面推进。影人只有正反两面（PuppetState.facing 为二值），因此这里不做连续旋转：
+## 方向一变就重开一次翻面，turn_progress 用 TURN_DURATION_S 走完，过了换面点才换面。
+## 于是「不能瞬间翻面」（PRD 第 4.1 节）仍然成立，而整个翻面只要 0.1 秒。
+## _facing_target 为 0.0 时表示没有翻面要求，保持当前面。
 func _apply_facing(controlled: PuppetState, delta: float) -> void:
 	if _facing_target == 0.0:
 		return
-	var next: float = move_toward(controlled.facing, _facing_target,
-		TURN_SPEED_PER_S * maxf(delta, 0.0))
-	controlled.facing = clampf(next,
-		PuppetStateScript.FACING_MIN, PuppetStateScript.FACING_MAX)
-	controlled.turn_progress = absf(controlled.facing)
-	var dir: int = 0
-	if not is_equal_approx(controlled.facing, _facing_target):
-		dir = 1 if _facing_target > 0.0 else -1
-	if dir != _turn_dir:
-		_turn_dir = dir
+	if _facing_target != _flip_target:
+		# 方向改变：重开一次翻面。换面点之前 facing 仍是「翻走的那一面」，
+		# 所以这里只重置进度，不动 facing。
+		_flip_target = _facing_target
+		controlled.turn_progress = PuppetStateScript.TURN_PROGRESS_MIN
 		_emit(KIND_FACING_TURN, controlled.puppet_id,
-			{"from": controlled.facing, "to": _facing_target})
+			{"from": controlled.facing, "to": _flip_target})
+	controlled.turn_progress = minf(
+		controlled.turn_progress + TURN_SPEED_PER_S * maxf(delta, 0.0),
+		PuppetStateScript.TURN_PROGRESS_MAX)
+	if controlled.turn_progress >= FLIP_SWAP_POINT:
+		controlled.facing = _flip_target
 
 
 ## 单只手的净方向：抬为 +1、落为 -1、冲突或松开为 0（保持当前姿势）。

@@ -86,7 +86,7 @@ func _ready() -> void:
 	_puppet.puppet_state = puppet_state
 	_puppet.stage_origin = STAGE_ORIGIN
 	_puppet.stage_size = STAGE_SIZE
-	_hud_hint.text = "拖动胸签 = 横向移动 / 纵向站蹲 / 沿移动方向转身    " \
+	_hud_hint.text = "拖动胸签 = 横向移动 / 纵向站蹲 / 沿移动方向翻面    " \
 		+ "A=抬左手 D=抬右手 Shift+A=落左手 Shift+D=落右手 W=双手抬 S=双手落    " \
 		+ "空格=挂起/取回影人（PRD 第 4.1 节）    ESC=暂停/继续"
 
@@ -220,8 +220,10 @@ func _refresh_hud() -> void:
 	lines.append("puppet_id：%d    受控：%s" % [state.puppet_id, state.is_controlled])
 	lines.append("stage_pos：x=%.4f  y=%.4f   （0-1，接地点）" % [state.stage_pos.x, state.stage_pos.y])
 	lines.append("stance：%.4f   %s" % [state.stance, _bar(state.stance)])
-	lines.append("facing：%+.4f   转身进度 turn_progress：%.4f" % [state.facing, state.turn_progress])
-	lines.append("hand_angle：左手 %+.4f  右手 %+.4f  （弧度）" % [state.hand_angle.x, state.hand_angle.y])
+	lines.append("facing：%+.0f（+1 正面 / -1 反面）   翻面进度 turn_progress：%.4f"
+		% [state.facing, state.turn_progress])
+	lines.append("hand_angle：左手 %+.4f  右手 %+.4f  （弧度，0 = 垂下 / %.4f = 举过头顶）"
+		% [state.hand_angle.x, state.hand_angle.y, PuppetState.HAND_ANGLE_MAX])
 	lines.append("head_id：%d    hook_slot：%d" % [state.head_id, state.hook_slot])
 	lines.append("拖动中：%s" % _harness.input_reader.is_drag_active())
 	lines.append("")
@@ -233,9 +235,13 @@ func _refresh_hud() -> void:
 	lines.append("边界自检（应恒为 通过）：")
 	lines.append("  stage_pos ∈ [0,1]        %s" % _ok(_in_unit(state.stage_pos.x) and _in_unit(state.stage_pos.y)))
 	lines.append("  stance ∈ [0,1]           %s" % _ok(state.stance >= 0.0 and state.stance <= 1.0))
-	lines.append("  facing ∈ [-1,1]          %s" % _ok(state.facing >= -1.0 and state.facing <= 1.0))
-	lines.append("  |hand_angle| ≤ 0.6 rad   %s" % _ok(absf(state.hand_angle.x) <= 0.6 + 1e-6
-		and absf(state.hand_angle.y) <= 0.6 + 1e-6))
+	lines.append("  facing 恰为 ±1（正/反两面）%s" % _ok(absf(state.facing) == 1.0))
+	lines.append("  turn_progress ∈ [0,1]    %s" % _ok(state.turn_progress >= 0.0 and state.turn_progress <= 1.0))
+	lines.append("  hand_angle ∈ [%.4f, %.4f] %s" % [PuppetState.HAND_ANGLE_MIN, PuppetState.HAND_ANGLE_MAX,
+		_ok(state.hand_angle.x >= PuppetState.HAND_ANGLE_MIN - 1e-6
+			and state.hand_angle.x <= PuppetState.HAND_ANGLE_MAX + 1e-6
+			and state.hand_angle.y >= PuppetState.HAND_ANGLE_MIN - 1e-6
+			and state.hand_angle.y <= PuppetState.HAND_ANGLE_MAX + 1e-6)])
 	_state_label.text = "\n".join(lines)
 	_refresh_clock_panel()
 	_refresh_cue_panel()
