@@ -13,14 +13,22 @@ class_name UmbrellaController
 ## 手臂比例不是同一套坐标系，显示端不要拿它换算像素——要把伞画在手上，请用显示端自己
 ## 画出的手腕（`PlaceholderPuppet.hand_screen_position()`）。理由与实测见 A→B 交接文档 6.2 节。
 ##
-## 对照流程表：
-##   开场      许仙固定站位、右手举起持伞；玩家控制白素贞。
-##   接伞      白素贞走到许仙身旁、左手与许仙右手等高且在容差内 → 伞自动转到白素贞左手。
-##   向左走    白素贞持伞向左移动；许仙右手一直举着；白素贞可自行放下左手，伞跟随她的手。
-##   到达最左边 白素贞进入舞台最左侧的可达区域，系统记下「已到过左端」。
-##   向右返回  玩家反向拖动白素贞，向右走回许仙身旁。
-##   还伞      已经到过左端、并从左侧返回实际接伞位置 → 伞自动交回许仙右手。
-##             不要求再转身，也不要求白素贞重新抬手；手位较低时用短暂递伞过渡衔接。
+## 对照流程表（用户 2026-10-04 修订版）：
+##   开场      许仙固定站位、右手举到 90°（打伞位）持伞；玩家控制白素贞。
+##   接伞      白素贞走到许仙面前（**不必贴住他、更不必穿过他**）、把左手抬到 90°，
+##             两只手碰到一起（手距与手高都在容差内）→ 伞自动转到白素贞左手。
+##   向右走    接到伞后立即向右走；许仙右手一直举着；白素贞可自行放下左手，伞跟随她的手。
+##   到达最右边 白素贞持伞进入舞台最右侧的可达区域，系统记下「已到过右端」。
+##   转身返回  玩家反向拖动白素贞，她自动翻面（皮影只有正反两面）向左走回许仙身旁。
+##   还伞      已经到过右端、并走回交接位置（手距进入容差）→ 伞自动交回许仙右手。
+##             不要求她重新抬手；手位较低时用短暂递伞过渡衔接。
+##   收势      放下左手。
+##
+## 「交接位置」是**两只手相接**的那一段：两人都把手抬到 90° 时各朝对方伸出
+## `HAND_REACH_X`，因此接地点相距 `2 × HAND_REACH_X` 时两只手正好碰上；
+## 容差 `HAND_JOIN_TOLERANCE` 给出一个位置带（见 `join_window_x()`）。
+## 用户 2026-10-04 修订的原因：原先按「两人接地点距离」判，白素贞必须几乎站到许仙身上
+## 才换手（画面上两具影身叠成一团），而两只手真正相遇的位置在那条判据之外。
 
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 
@@ -38,24 +46,29 @@ const BAISUZHEN_ID: int = 0  ## 白素贞：玩家控制
 const XUXIAN_HAND: String = "right"
 const BAISUZHEN_HAND: String = "left"
 
-## 接伞位置容差：白素贞的接地点要走到许仙身旁多近才算「身旁」。
-## 0.06 = 幕布宽度的 6%，约半个影人身宽；再宽会让人在明显错位处凭空拿到伞。
-const POSITION_TOLERANCE: float = 0.06
-## 还伞位置容差：要回到**实际接伞位置**多近才算「返回接伞的位置」。
+## —— 「两只手相接」判据（本流程的核心，用户 2026-10-04 定案）——
+## 影人手臂抬到 90°（水平前伸）时，手在水平方向上伸出的长度 = 半身宽 + 整条手臂。
+## 占位影人的几何（见 placeholder_puppet.gd）：半身宽 0.105 身高、整臂 0.31 身高，
+## 站立身高 ≈ 230 px × 灯距倍率 1.07 ≈ 246 px，于是 0.415 × 246 ≈ 102 px ≈ 0.053 幕布宽。
+## 两人各朝对方伸出一只手，所以**两人接地点相距 0.106 时两只手正好碰上**。
 ##
-## 刻意比 POSITION_TOLERANCE 紧一倍。流程表两个动作的措辞是不同的：
-## 接伞是「走到许仙身旁」（一个区域），还伞是「返回实际接伞时的位置」（那个点）。
-## 共用一个 0.06 会实测出问题：实测接伞点是 0.16，白素贞走到 0.10 时
-## |0.10 − 0.16| 恰好等于 0.06、被判成「回到了接伞位置」而提前还伞。
-const RETURN_TOLERANCE: float = 0.03
+## ⚠️ 这个数跟着影人素材的几何走（也随灯距缩缩放而坐 ±25%）。正式素材到位后必须重新对一次，
+## 并由 tests/a/test_umbrella.gd 的「判据与画面对表」断言兜住——否则会出现
+## 「判据说手碰到了、画面上手还差半个身位」这种看不见的错。
+const HAND_REACH_X: float = 0.053
+## 手与手之间的距离容差：0.06 ≈ 一掌宽。窗口因此是「接地点相距 0.046~0.166」，
+## 也就是白素贞站在许仙右侧 0.05~0.17 个幕布宽处都能交接——**不必贴住他、更不必穿过他**。
+## 接伞与还伞共用同一条判据（用户定案：还伞遵循同样的逻辑）。
+const HAND_JOIN_TOLERANCE: float = 0.06
 ## 手高容差（幕布归一化高度）。换算到手臂角度约 ±0.13 rad（≈7.6°），
-## 也就是说「两只手大致齐平」才算对齐，随手乱举不会被判成对齐。
+## 也就是说「两只手大致齐平」才算相接，随手乱举不会被判成相接。
+## 只有**接伞**要这一条：还伞不要求她重新抬手（手位低时用递伞过渡衔接）。
 const HAND_HEIGHT_TOLERANCE: float = 0.04
-## 「舞台最左侧的可达区域」的右边界。玩家把白素贞拖到 x ≤ 此值即记下「已到过左端」。
-## 0.05 与接伞区（许仙 x=0.13 ± 0.06 → 0.07~0.19）不重叠，因此「已经到过左端」
-## 一定意味着真的离开过接伞位置往左走过。
-const LEFT_EDGE_X: float = 0.05
-## 还伞要求「从左侧返回」：横向变化小于这个值视为站定，不当作返回动作。
+## 「舞台最右侧的可达区域」的左边界。玩家把白素贞拖到 x ≥ 此值即记下「已到过右端」。
+## 0.95 与交接窗口（许仙 x=0.13 → 0.176~0.296）不重叠，因此「已经到过右端」
+## 一定意味着真的离开过交接位置往右走过。
+const RIGHT_EDGE_X: float = 0.95
+## 还伞要求「从右侧向左返回」：横向变化小于这个值视为站定，不当作返回动作。
 const DIRECTION_EPSILON: float = 0.0005
 
 ## 手部锚点在幕布上的归一化高度（肩/胸位置）。
@@ -75,10 +88,10 @@ var puppets: Array = []
 var _holder_id: int = -1
 ## 当前持伞的那只手（"left" / "right"）。
 var _holder_hand: String = XUXIAN_HAND
-## 实际接伞时的位置，还伞要求回到这里。
+## 实际接伞时的位置（供显示端/录制参考；**还伞的判据是走回交接窗口，不是精确回到这一点**）。
 var _borrow_x: float = 0.0
-## 本次持伞期间是否已经到达过舞台最左侧的可达区域。
-var _reached_left_edge: bool = false
+## 本次持伞期间是否已经到达过舞台最右侧的可达区域。
+var _reached_right_edge: bool = false
 ## 伞在幕布上的归一化位置（A 内部口径；**显示端不要拿它换算像素**，见 `hand_position()`）。
 var position: Vector2 = Vector2.ZERO
 ## 正在做递伞过渡。
@@ -115,7 +128,7 @@ func setup(p_stage_def: StageDef, p_puppets: Array) -> bool:
 	_take_reported = false
 	_return_reported = false
 	_must_leave_zone = false
-	_reached_left_edge = false
+	_reached_right_edge = false
 	handing_off = false
 	_handoff_progress = 1.0
 	_handoff_from_id = -1
@@ -159,7 +172,7 @@ func update(song_time_ms: int, _frame_events: Array) -> void:
 		# 顺序要紧：先按此刻的位置更新「已到过左端」，再判还伞。
 		# 反过来的话，白素贞一帧内从左端挪回接伞位置时，还伞会读到上一帧的
 		# 「到过左端」，而她此刻明明还在接伞区右侧之外——还伞因此会提前在左端触发。
-		_note_left_edge()
+		_note_right_edge()
 		_try_return(song_time_ms)
 	_follow_hand()
 	_previous_x = _puppet_x(BAISUZHEN_ID)
@@ -168,6 +181,20 @@ func update(song_time_ms: int, _frame_events: Array) -> void:
 ## 鸭子类型时钟，用于递伞过渡的推进；只需 get_physics_ticks_per_second()。
 func set_clock(p_clock: Object) -> void:
 	clock = p_clock
+
+
+## —— 交接窗口 ——
+## 白素贞的接地点 x 落在 [min, max] 之内即「两只手相接」。
+## 由「两人都把手抬到 90°」推出：各伸出 `HAND_REACH_X`，相距两倍时两只手正好碰上，
+## 容差 `HAND_JOIN_TOLERANCE` 给出一段带。`xuxian_x` 是许仙的接地点 x。
+##
+## 刻意**按固定姿势**算一次，不按白素贞当下的手臂角度实时重算：她持伞往回走时可以自行
+## 放下左手（伞跟着手落），若窗口随手臂高低移动，还伞的落点就会跟着漂，玩家没法瞄准。
+##
+## 落点数据（StageDef）与运行时判定（本控制器）共用这一个函数，免得拍点与判定漂开。
+static func join_window_x(xuxian_x: float) -> Vector2:
+	var contact_x: float = xuxian_x + 2.0 * HAND_REACH_X
+	return Vector2(contact_x - HAND_JOIN_TOLERANCE, contact_x + HAND_JOIN_TOLERANCE)
 
 
 ## 手举到某个角度时，手在幕布上的归一化高度。
@@ -179,6 +206,10 @@ func set_clock(p_clock: Object) -> void:
 ##   举顶（π）    → cos = −1 → 0.68 + 0.30 = 0.98（最高）
 ## 用 `sin` 会得到「垂下手最高、举起手最低」的反向结果——两只手角度相同时
 ## 两处符号错误会互相抵消，于是「对齐」看起来还能成立，但单看一只手的高度就是错的。
+##
+## 这套肩高/臂长是 A 内部的**相对口径**，只用来比较「两只手是否齐平」（两边同一口径，
+## 比例不影响结论）；它不等于画面上的实际像素位置——那张图由显示端按手腕画
+## （A→B 交接文档 6.2 节）。
 static func hand_height(hand_angle: float, stance: float) -> float:
 	var angle: float = clampf(hand_angle,
 		PuppetStateScript.HAND_ANGLE_MIN, PuppetStateScript.HAND_ANGLE_MAX)
@@ -222,8 +253,8 @@ func borrow_position() -> float:
 	return _borrow_x
 
 
-func has_reached_left_edge() -> bool:
-	return _reached_left_edge
+func has_reached_right_edge() -> bool:
+	return _reached_right_edge
 
 
 ## —— 递伞过渡的只读读数（给显示端画「一只手把伞递给另一只手」）——
@@ -264,25 +295,25 @@ func take_events() -> Array[Dictionary]:
 
 
 ## —— 接伞 ——
-## 白素贞走到许仙身旁，且左手与许仙右手等高 → 伞自动转到白素贞左手。
-## 接伞位置被记下，还伞要求回到这里（而不是「回到许仙身旁的任意一点」）。
+## 白素贞走到交接窗口里（两只手相接的那一段）、把左手抬到打伞位（90°）→ 伞自动转到她左手。
+## 她**不需要**贴到许仙身上、更不需要穿过他：判据是两只手之间的距离，不是两人的接地点距离。
 func _try_take(song_time_ms: int) -> void:
-	# 还伞之后必须先离开接伞区，才能再接一次。
+	# 还伞之后必须先离开交接窗口，才能再接一次。
 	# 否则「还伞」与「接伞」的条件在她站着不动的同一帧里同时成立，伞会每帧在两人之间来回弹
-	# （还伞 → 仍然对齐 → 又接走 → 又还 → …）。这与「到达最左边」用同一套纪律：
+	# （还伞 → 仍然相接 → 又接走 → 又还 → …）。这与「到达最右边」用同一套纪律：
 	# 一个动作要真的做过一次位移才算发生过，不能靠在原地反复满足条件刷出来。
 	if _must_leave_zone:
-		if absf(_puppet_x(BAISUZHEN_ID) - _borrow_x) <= POSITION_TOLERANCE:
+		if in_join_window():
 			return
 		_must_leave_zone = false
-	if not _hands_aligned():
+	if not _hands_meet():
 		return
 	var previous_id: int = _holder_id
 	var previous_hand: String = _holder_hand
 	_borrow_x = _puppet_x(BAISUZHEN_ID)
 	_holder_id = BAISUZHEN_ID
 	_holder_hand = BAISUZHEN_HAND
-	_reached_left_edge = false
+	_reached_right_edge = false
 	_begin_handoff(position, hand_position(BAISUZHEN_ID, BAISUZHEN_HAND),
 		previous_id, previous_hand)
 	if not _take_reported:
@@ -291,48 +322,42 @@ func _try_take(song_time_ms: int) -> void:
 	_return_reported = false
 
 
-## —— 到达最左边 ——
-## 白素贞**持伞走进舞台最左侧的可达区域**时，系统记下「已到过左端」。
-## 这是还伞的前置条件：没有真的往左走到过左端，回到许仙身旁不会自动交伞。
+## —— 到达最右边 ——
+## 白素贞**持伞走进舞台最右侧的可达区域**时，系统记下「已到过右端」。
+## 这是还伞的前置条件：没有真的往右走到过右端，走回许仙身旁不会自动交伞
+## （否则她接到伞站在原地不动就会被判成「已经回来」，伞来回弹个不停）。
 ##
-## 标记「置起」与「清掉」都不能只看位置，必须同时看**方向**：
-##   置起：x ≤ LEFT_EDGE_X（真的走到了最左边）
-##   清掉：**往左走在接伞位置左侧**（x < borrow − 容差 且 x 在减小）
+## 标记「置起」与「清掉」都不能只看位置，必须同时看**方向**（规则与原先成镜像）：
+##   置起：x ≥ RIGHT_EDGE_X（真的走到了最右边）
+##   清掉：**又往更右边走在交接窗口之外**（x 在增大，且此刻不在窗口里）
 ##
-## 两个方向条件都是实测逼出来的，缺一个就会出问题：
-## 1. 清空若「只看位置在接伞位置左侧」（第一版），会把她**持伞向右回程**时
-##    经过的那段左侧区间也算成「重新往左走」，标记在半路被清掉——她这一趟再也
-##    走不到最左端，于是标记永远回不来，还伞永远触发不了（实测就卡在这里）。
-## 2. 清空若「只看走到接伞位置右侧」（更早的一版），会让她从最左端向右返回时
-##    必然先经过的右侧区间把标记清掉，同样是还伞永远触发不了。
-##
-## 于是正确的语义是：只有「又往更左边走」才作废上一趟——那正是重新走一趟
-## 「到最左端 → 返回」的开头；向右返回、站着不动都不作废。
-func _note_left_edge() -> void:
+## 「又往更右边走」正是重新走一趟「到最右端 → 返回」的开头；向左走回、站着不动都不作废。
+func _note_right_edge() -> void:
 	var x: float = _puppet_x(BAISUZHEN_ID)
-	if x <= LEFT_EDGE_X:
-		_reached_left_edge = true
+	if x >= RIGHT_EDGE_X:
+		_reached_right_edge = true
 		return
-	if x < _borrow_x - RETURN_TOLERANCE and x < _previous_x:
-		_reached_left_edge = false
+	if not in_join_window() and x > _previous_x:
+		_reached_right_edge = false
 
 
 ## —— 还伞 ——
-## 三个条件同时成立才自动交回：①本次持伞期间到过左端；②此刻回到接伞位置；
-## ③正在从左侧向右返回（反向拖动）。不要求转身，也不要求重新抬手。
+## 三个条件同时成立才自动交回：①本次持伞期间到过最右端；②此刻走回交接窗口（两只手相接的位置带）；
+## ③正在从右侧向左返回（白素贞在向左走）。**不要求她重新抬手**，也不要求单独做一次转身——
+## 影人只有正反两面，拖动方向一变就自动翻面（`facing_turn`）。
 func _try_return(song_time_ms: int) -> void:
-	if not _reached_left_edge:
+	if not _reached_right_edge:
+		return
+	if not in_join_window():
 		return
 	var x: float = _puppet_x(BAISUZHEN_ID)
-	if absf(x - _borrow_x) > RETURN_TOLERANCE:
-		return
-	if x - _previous_x <= DIRECTION_EPSILON:
+	if _previous_x - x <= DIRECTION_EPSILON:
 		return
 	var previous_id: int = _holder_id
 	var previous_hand: String = _holder_hand
 	_holder_id = XUXIAN_ID
 	_holder_hand = XUXIAN_HAND
-	_reached_left_edge = false
+	_reached_right_edge = false
 	_begin_handoff(position, hand_position(XUXIAN_ID, XUXIAN_HAND),
 		previous_id, previous_hand)
 	_must_leave_zone = true
@@ -342,27 +367,48 @@ func _try_return(song_time_ms: int) -> void:
 	_take_reported = false
 
 
-## 接伞的对齐条件：两条都要。位置按接地点算，手高按幕布上的实际高度算——
-## 手高已经把站蹲与手臂角度都折进去了，因此「蹲着随手一伸」不会与站着手齐平。
-func _hands_aligned() -> bool:
+## —— 判据 ——
+## 白素贞此刻是否站在交接窗口里（两只手相接的那一段）。只按两人的**接地点**算，
+## 因此与她的手臂高低无关——还伞因此不要求她重新抬手（见 `join_window_x` 的说明）。
+func in_join_window() -> bool:
+	var window: Vector2 = join_window_x(_puppet_x(XUXIAN_ID))
+	var x: float = _puppet_x(BAISUZHEN_ID)
+	return x >= window.x and x <= window.y
+
+
+## 接伞的相接条件：位置（在交接窗口里）与手高（两只手齐平）两条都要。
+## 手高按幕布上的实际高度算——它已经把站蹲与手臂角度都折进去了，
+## 因此「蹲着随手一伸」不会与站着的手齐平，而「抬到打伞位 90°」正好齐平。
+func _hands_meet() -> bool:
+	if not in_join_window():
+		return false
 	var baisuzhen: PuppetState = _puppet(BAISUZHEN_ID)
 	var xuxian: PuppetState = _puppet(XUXIAN_ID)
-	if absf(baisuzhen.stage_pos.x - xuxian.stage_pos.x) > POSITION_TOLERANCE:
+	if baisuzhen == null or xuxian == null:
 		return false
 	var left: float = hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
 	var right: float = hand_height(xuxian.hand_angle.y, xuxian.stance)
 	return absf(left - right) <= HAND_HEIGHT_TOLERANCE
 
 
-## 位置与手高的对齐读数，供显示端/测试读取（不参与判定）。
+## 位置与手高的读数，供显示端/测试读取（不参与判定）。
+## `dx` 是**接地点**间距、`window` 是交手窗口、`aligned` 是接伞条件是否成立——
+## 「两只手之间的实际距离」由显示端按画出来的手腕算（A→B 交接文档 6.2 节）。
 func alignment() -> Dictionary:
+	var window: Vector2 = join_window_x(_puppet_x(XUXIAN_ID))
 	var baisuzhen: PuppetState = _puppet(BAISUZHEN_ID)
 	var xuxian: PuppetState = _puppet(XUXIAN_ID)
+	var dy: float = 0.0
+	if baisuzhen != null and xuxian != null:
+		dy = absf(hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
+			- hand_height(xuxian.hand_angle.y, xuxian.stance))
 	return {
-		"dx": absf(baisuzhen.stage_pos.x - xuxian.stage_pos.x),
-		"dy": absf(hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
-			- hand_height(xuxian.hand_angle.y, xuxian.stance)),
-		"aligned": _hands_aligned(),
+		"dx": absf(_puppet_x(BAISUZHEN_ID) - _puppet_x(XUXIAN_ID)),
+		"dy": dy,
+		"window_min": window.x,
+		"window_max": window.y,
+		"in_window": in_join_window(),
+		"aligned": _hands_meet(),
 	}
 
 

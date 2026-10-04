@@ -102,11 +102,11 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		actions.append(str(cue["action"]))
 	t.check(actions.has(CueScript.ACTION_CROUCH) and actions.has(CueScript.ACTION_STAND_UP),
 		"应含蹲下与站起（蹲下为站起提供起点）")
-	t.check(actions.has(CueScript.ACTION_MOVE_LEFT),
-		"应含向左移动（本折只向左走：走到许仙身旁、再走到最左边）")
+	t.check(actions.has(CueScript.ACTION_MOVE_LEFT) and actions.has(CueScript.ACTION_MOVE_RIGHT),
+		"应含向左移动与向右移动（走到许仙身旁 → 持伞走到最右端 → 转身走回）")
 	t.check(actions.has(CueScript.ACTION_HAND_RAISE), "应含抬手")
-	# 借伞还伞流程（用户 2026-10-04 定案）：两次交接各占一条落点，
-	# 加上「抬左手对齐」与「到达最左边」，就是这一折的全部关键动作。
+	# 借伞还伞流程（用户 2026-10-04 修订）：两次交接各占一条落点，
+	# 加上「抬手到打伞位」「走到最右端」，就是这一折的全部关键动作。
 	t.check(actions.has(CueScript.ACTION_UMBRELLA_TAKE), "应含接伞")
 	t.check(actions.has(CueScript.ACTION_UMBRELLA_RETURN), "应含还伞")
 
@@ -131,14 +131,17 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.check(stand_max <= 0.1, "站起到位范围应接近完全站立（stance≈0），实际 max=%.4f" % stand_max)
 	t.check(crouch_min >= 0.8, "蹲下到位范围应接近完全蹲下（stance≈1），实际 min=%.4f" % crouch_min)
 
-	# 「走到最左边」的目标带必须严格窄于接伞区：否则这一趟会先经过接伞区，
-	# 在还没到过左端的时候就被还伞判定抢走伞，流程顺序颠倒。
-	var left_band: Dictionary = _find(def, "l1_c5_move_to_edge")["target_range"]
+	# 「走到最右端」的目标带必须与交接窗口完全不重叠：否则这一趟会先经过交接窗口，
+	# 在还没到过右端的时候就被还伞判定抢走伞，流程顺序颠倒。
+	var edge_band: Dictionary = _find(def, "l1_c5_move_to_edge")["target_range"]
 	var take_band: Dictionary = _find(def, "l1_c4_take_umbrella")["target_range"]
-	t.check(float(left_band["max"]) < float(take_band["min"]),
-		"最左端目标带（≤%.2f）应严格窄于接伞区（≥%.2f）"
-			% [float(left_band["max"]), float(take_band["min"])])
-	t.finish("8 条关键动作覆盖蹲下/站起/左移/抬手/接伞/还伞，含重音落点，全部在时长内")
+	t.check(float(edge_band["min"]) > float(take_band["max"]),
+		"最右端目标带（≥%.2f）应完全在交接窗口（≤%.2f）右侧"
+			% [float(edge_band["min"]), float(take_band["max"])])
+	# 两次交接共用同一个窗口：还伞遵循与接伞相同的判据
+	t.check_approx(float(_find(def, "l1_c6_return_umbrella")["target_range"]["min"]),
+		float(take_band["min"]), 1e-9, "还伞目标带应与接伞同一段窗口")
+	t.finish("8 条关键动作覆盖蹲下/站起/左右移动/抬手/接伞/还伞，含重音落点，全部在时长内")
 
 
 func _test_02_hints_before_deadline(t: ATestBase) -> void:
@@ -475,19 +478,19 @@ func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.begin("14 松开鼠标当帧的末段位移进入目标区仍判到位")
 	var b: CueTestBench = _bench()
 	t.check(_find(b.stage_def, "l1_c5_move_to_edge").size() > 0,
-		"本折的「走到最左边」落点存在（第 20 拍）")
-	# 「走到最左边」的目标带是 x ∈ [0.0, 0.06]，落点 12500、判定窗 12250~12750。
-	# 先把白素贞拖到目标带右侧，再在松开当帧用一次大位移跨进目标带——
+		"本折的「走到最右端」落点存在（第 20 拍）")
+	# 「走到最右端」的目标带是 x ∈ [0.94, 1.0]，落点 12500、判定窗 12250~12750。
+	# 先把白素贞拖到目标带左侧，再在松开当帧用一次大位移跨进目标带——
 	# 验证 drag_end 不会抢先关掉到位判定（末段位移必须仍按「进入目标区」计）。
 	b.advance_to(12300)
 	b.begin_drag()
-	b.drag(Vector2(-440.0, 0.0), 1)
-	t.check(b.state().stage_pos.x > 0.06, "松开前还在目标带右侧：x=%.4f" % b.state().stage_pos.x)
-	b.controller.drag_to(Vector2(-434.0, 0.0))
+	b.drag(Vector2(440.0, 0.0), 1)
+	t.check(b.state().stage_pos.x < 0.94, "松开前还在目标带左侧：x=%.4f" % b.state().stage_pos.x)
+	b.controller.drag_to(Vector2(434.0, 0.0))
 	b.controller.end_drag()
 	b.advance(1)
 	var outcome: Dictionary = b.performance.get_outcome("l1_c5_move_to_edge")
-	t.check_in_range(b.state().stage_pos.x, 0.0, 0.06, "松开当帧位置已进入目标区")
+	t.check_in_range(b.state().stage_pos.x, 0.94, 1.0, "松开当帧位置已进入目标区")
 	t.check_eq(bool(outcome.get("hit", false)), true,
 		"drag_end 不能抢先关闭拖动判定")
 	t.finish("末段位移在松开当帧仍参与到位判定")

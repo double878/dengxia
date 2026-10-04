@@ -436,8 +436,8 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_HEAD_SWAP: return "按 1 / 2 / 3 与备用头架换头"
 		CueScript.ACTION_LAMP_DISTANCE: return "滚轮推拉灯，让全场影子同步缩放"
 		CueScript.ACTION_LAMP_EXPOSURE: return "按 Q / E 调整影子的显露"
-		CueScript.ACTION_UMBRELLA_TAKE: return "走到许仙身旁，按 A 抬左手与他的右手齐平接伞"
-		CueScript.ACTION_UMBRELLA_RETURN: return "向右拖回接伞的位置，把伞还回许仙右手"
+		CueScript.ACTION_UMBRELLA_TAKE: return "走到许仙面前，按 A 抬左手到 90°，两只手碰到就接伞"
+		CueScript.ACTION_UMBRELLA_RETURN: return "向左走回许仙身旁，把伞还回他的右手"
 	return "跟着鼓点继续演出"
 
 
