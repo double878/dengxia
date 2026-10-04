@@ -24,17 +24,18 @@ var _events: Array[Dictionary] = []
 var _parent: Node = null
 
 
-func _init(parent: Node) -> void:
+func _init(parent: Node, stage_def: StageDef = null) -> void:
 	_parent = parent
+	var def: StageDef = stage_def if stage_def != null else StageDef.make_level1()
 	metronome = MetronomeScript.new()
 	metronome.name = "Level1Metronome"
 	parent.add_child(metronome)
 	clock = MusicClockScript.new()
 	metronome.setup(clock)
-	clock.set_player(metronome.get_player(), StageDef.LEVEL1_BPM)
+	clock.set_player(metronome.get_player(), def.bpm)
 	clock.start()
 	runtime = Level1RuntimeScript.new()
-	if not runtime.setup(clock):
+	if not runtime.setup(clock, def.id):
 		push_error("Level1Harness：Level1Runtime 建立失败")
 		runtime = null
 		return

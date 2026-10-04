@@ -11,6 +11,7 @@ const TestRemedyScript := preload("res://tests/a/test_remedy.gd")
 const TestLampScript := preload("res://tests/a/test_lamp.gd")
 const TestLevel1RuntimeScript := preload("res://tests/a/test_level1_runtime.gd")
 const TestLevel1AudioScript := preload("res://tests/a/test_level1_audio.gd")
+const TestLevelHintsScript := preload("res://tests/a/test_level_hints.gd")
 
 
 func _initialize() -> void:
@@ -76,6 +77,14 @@ func _initialize() -> void:
 	total_passed += int(audio_result["passed"])
 	total_failed += int(audio_result["failed"])
 	exit_code = maxi(exit_code, int(audio_result["exit_code"]))
+
+	print("")
+	print("---- 前四关教学关、新动作判定与两类提示手 ----")
+	var hints := TestLevelHintsScript.new()
+	var hints_result: Dictionary = hints.run_all()
+	total_passed += int(hints_result["passed"])
+	total_failed += int(hints_result["failed"])
+	exit_code = maxi(exit_code, int(hints_result["exit_code"]))
 
 	print("")
 	print("========================================")

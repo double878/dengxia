@@ -40,11 +40,13 @@ var _frozen_since_real_ms: int = -1      ## 本次冻结开始时的真实时间
 
 
 ## 建立第一关的演出：判定系统与补救系统共用同一个时钟与同一批 Cue。
-func setup(p_stage_def: StageDef, p_clock: Object, p_puppets: Array) -> void:
+## p_lamp 是灯位/倾灯类 Cue 的读数来源；第 1、2 关没有这类落点，允许传 null。
+func setup(p_stage_def: StageDef, p_clock: Object, p_puppets: Array,
+		p_lamp: LampState = null) -> void:
 	stage_def = p_stage_def
 	clock = p_clock
 	performance = PerformanceSystemScript.new()
-	performance.setup(stage_def.cues, clock, p_puppets)
+	performance.setup(stage_def.cues, clock, p_puppets, p_lamp)
 	remedy = RemedySystemScript.new()
 	remedy.setup(stage_def.cues, clock)
 	started = false

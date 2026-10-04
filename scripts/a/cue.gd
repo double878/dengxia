@@ -17,14 +17,32 @@ const ACTION_HAND_LOWER: String = "hand_lower"  ## 落手：该手角度在目�
 const ACTION_MOVE_LEFT: String = "move_left"    ## 向左横向移动（转身跟随）
 const ACTION_MOVE_RIGHT: String = "move_right"  ## 向右横向移动（转身跟随）
 const ACTION_REACH: String = "reach"            ## 到位：横向到达目标范围
+## 以下五类属第 2~4 关（PRD 第 6 节给这三关的最低可验收动作）：
+## 挂起/取回属第 2 关「双人」，换头与倾灯属第 4 关「显隐」，灯位推拉属第 3 关「灯位」。
+const ACTION_HOOK: String = "hook"                     ## 挂起：把当前受控影人挂到挂钩上
+const ACTION_TAKE_BACK: String = "take_back"           ## 取回：把已挂起的影人取回受控
+const ACTION_HEAD_SWAP: String = "head_swap"           ## 换头：与备用头架某槽位交换头部
+const ACTION_LAMP_DISTANCE: String = "lamp_distance"   ## 灯位：推拉灯使全场影子缩放到位
+const ACTION_LAMP_EXPOSURE: String = "lamp_exposure"   ## 倾灯：幕布影子显露程度到位
 
 const ALL_ACTIONS: Array[String] = [
 	ACTION_STAND_UP, ACTION_CROUCH, ACTION_HAND_RAISE, ACTION_HAND_LOWER,
 	ACTION_MOVE_LEFT, ACTION_MOVE_RIGHT, ACTION_REACH,
+	ACTION_HOOK, ACTION_TAKE_BACK, ACTION_HEAD_SWAP,
+	ACTION_LAMP_DISTANCE, ACTION_LAMP_EXPOSURE,
 ]
 
+## 「取样式」动作：由一次离散事件触发（挂起/取回/换头），不依赖连续量读数。
+## 其余动作要么是连续量跨越（站蹲、手角、灯距、显露），要么是拖动中的位置到位。
+const EVENT_ACTIONS: Array[String] = [ACTION_HOOK, ACTION_TAKE_BACK, ACTION_HEAD_SWAP]
+
+## 由**油灯状态**读取读数的动作（读数取自 LampState，不取自 PuppetState）。
+const LAMP_ACTIONS: Array[String] = [ACTION_LAMP_DISTANCE, ACTION_LAMP_EXPOSURE]
+
 ## 目标范围里允许出现的字段名。范围一律为归一化或弧度值，闭区间。
-const RANGE_KEYS: Array[String] = ["stance", "hand", "angle", "facing", "x", "y"]
+## `slot` 用于换头/挂起类动作指定架位或挂钩槽位（整数，判用时按 float 比较）。
+const RANGE_KEYS: Array[String] = ["stance", "hand", "angle", "facing", "x", "y",
+	"distance", "exposure", "slot"]
 
 const DEFAULT_TOLERANCE_MS: int = 250   ## PRD 第 5.1 节的原型起点，可配置
 const DEFAULT_HINT_LEAD_MS: int = 1000  ## 落点前 1 s 必须已能读到线索

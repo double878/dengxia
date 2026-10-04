@@ -12,11 +12,37 @@ const STAGE_H: float = 1080.0
 
 var clock: MusicClock = null
 var controller: PuppetController = null
+var lamp_controller: LampController = null
 var director: StageDirector = null
 var stage_def: StageDef = null
 var time_ms: int = 0
 var paused: bool = false
 var director_log: Array = []          ## stage_* / remedy_* / cue_* 全部事件
+
+
+## 按关卡数据的开演布景布置影人，与场景 `_configure_initial_stage` 同一口径：
+## 起始受控、挂起分布、站位与手角。
+## 第 2 关的「挂起/取回」判定依赖开局就有人挂在钩上、且留有一个空槽，
+## 不摆布景的话这两条落点在本测试台下永远判不了。
+func apply_initial_puppets() -> void:
+	var positions: Dictionary = stage_def.initial.get("positions", {})
+	var hand_angles: Dictionary = stage_def.initial.get("hand_angles", {})
+	var hung: Dictionary = stage_def.initial.get("hung", {})
+	for state in controller.puppets:
+		var puppet_id: int = state.puppet_id
+		state.is_controlled = false
+		state.hook_slot = PuppetState.HOOK_SLOT_NONE
+		if positions.has(puppet_id):
+			var place: Array = positions[puppet_id]
+			state.stage_pos = Vector2(float(place[0]), float(place[1]))
+		if hand_angles.has(puppet_id):
+			var angles: Array = hand_angles[puppet_id]
+			state.hand_angle = Vector2(float(angles[0]), float(angles[1]))
+		if hung.has(puppet_id):
+			state.hook_slot = int(hung[puppet_id])
+	var controlled: int = int(stage_def.initial.get("controlled", 0))
+	controller.controlled_id = controlled
+	controller.get_puppet(controlled).is_controlled = true
 
 
 func _init(custom_stage_def: StageDef = null) -> void:
@@ -27,9 +53,27 @@ func _init(custom_stage_def: StageDef = null) -> void:
 	controller = PuppetController.new()
 	controller.clock = clock
 	controller.setup(3)
+	apply_initial_puppets()
+	lamp_controller = LampController.new()
+	lamp_controller.clock = clock
+	lamp_controller.setup()
+	apply_initial_lamp()
 	director = StageDirector.new()
-	director.setup(stage_def, clock, controller.puppets)
+	director.setup(stage_def, clock, controller.puppets, lamp_controller.lamp)
 	director.start()
+
+
+## 按关卡数据的开演布景设置灯况，与场景 `_configure_initial_stage` 的灯部分同一口径。
+## 灯位/倾灯类落点的判定读 LampState，不先摆好初值就没法断言「推到目标区间才命中」。
+func apply_initial_lamp() -> void:
+	lamp_controller.lamp.distance = float(stage_def.initial.get("distance", 0.5))
+	lamp_controller.lamp.exposure = float(stage_def.initial.get("exposure", 0.5))
+	lamp_controller.lamp.oil = float(stage_def.initial.get("oil", 1.0))
+
+
+## 设置油灯输入快照，下一帧 advance 生效。
+func lamp_input(input_map: Dictionary) -> void:
+	lamp_controller.set_input_map(input_map)
 
 
 func state() -> PuppetState:
@@ -38,6 +82,9 @@ func state() -> PuppetState:
 
 func chest_tag() -> Vector2:
 	var s: PuppetState = state()
+	if s == null:
+		# 挂起之后可能一时无人受控（第 2 关的挂起/取回中间态），此时没有可抓的胸签。
+		return Vector2.ZERO
 	return Vector2(s.stage_pos.x * STAGE_W,
 		s.stage_pos.y * STAGE_H - PuppetController.CHEST_TAG_RADIUS_PX * 0.5)
 
@@ -54,6 +101,10 @@ func advance(steps: int, input_map: Dictionary = {}) -> void:
 		time_ms = clock.get_song_time_ms()
 		var events: Array[Dictionary] = []
 		if not paused:
+			# 灯况先于判定推进：判定要读 LampState 判灯位/倾灯落点。
+			# 真实运行里灯况滞后判定一帧（17 ms，远小于 ±250 ms 容差），此处不刻意复刻那一帧差。
+			lamp_controller.update(STEP_S, [])
+			lamp_controller.take_events()
 			controller.tick(STEP_S)
 			events = controller.take_events()
 		director.update(events)
@@ -111,6 +162,27 @@ func drag(delta: Vector2, steps: int) -> void:
 func end_drag() -> void:
 	controller.end_drag()
 	advance(1)
+
+
+## 挂起当前影人（PRD 第 4.1 节：空格）。返回是否成功；随后步进一帧让事件进入判定。
+func hook_current() -> bool:
+	var ok: bool = controller.hook_current()
+	advance(1)
+	return ok
+
+
+## 取回指定影人。随后步进一帧让事件进入判定。
+func take_back(puppet_id: int) -> bool:
+	var ok: bool = controller.take_back(puppet_id)
+	advance(1)
+	return ok
+
+
+## 与备用头架第 slot 个位置换头（PRD 第 4.1 节：按键 1/2/3）。
+func swap_head(slot: int) -> bool:
+	var ok: bool = controller.swap_head(slot)
+	advance(1)
+	return ok
 
 
 ## 立即结束本关（例如玩家选择跳过），并把收尾事件收进日志。

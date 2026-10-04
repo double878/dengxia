@@ -13,6 +13,10 @@ const KIND_STANCE: String = "stance"        ## 站起 / 蹲下
 const KIND_HAND: String = "hand"            ## 抬手 / 落手
 const KIND_MOVE: String = "move"            ## 横向移动 / 转身
 const KIND_REACH: String = "reach"          ## 移动到目标位置
+const KIND_HOOK: String = "hook"            ## 挂起 / 取回影人（第 2 关）
+const KIND_HEAD: String = "head"            ## 与备用头架换头（第 4 关）
+const KIND_LAMP_DISTANCE: String = "lamp_distance"   ## 推拉灯位使影子缩放（第 3 关）
+const KIND_LAMP_EXPOSURE: String = "lamp_exposure"   ## 倾灯改变影子显露（第 4 关）
 
 ## 与 Cue.ACTION_* 一一对应的动作名，保持字符串一致即可，不建立类依赖。
 const ACTION_STAND_UP: String = "stand_up"
@@ -22,6 +26,11 @@ const ACTION_HAND_LOWER: String = "hand_lower"
 const ACTION_MOVE_LEFT: String = "move_left"
 const ACTION_MOVE_RIGHT: String = "move_right"
 const ACTION_REACH: String = "reach"
+const ACTION_HOOK: String = "hook"
+const ACTION_TAKE_BACK: String = "take_back"
+const ACTION_HEAD_SWAP: String = "head_swap"
+const ACTION_LAMP_DISTANCE: String = "lamp_distance"
+const ACTION_LAMP_EXPOSURE: String = "lamp_exposure"
 
 
 ## 由动作类型推导线索种类，保证「线索说的动作」与「判定的动作」永远一致。
@@ -35,6 +44,14 @@ static func kind_for_action(action: String) -> String:
 			return KIND_MOVE
 		ACTION_REACH:
 			return KIND_REACH
+		ACTION_HOOK, ACTION_TAKE_BACK:
+			return KIND_HOOK
+		ACTION_HEAD_SWAP:
+			return KIND_HEAD
+		ACTION_LAMP_DISTANCE:
+			return KIND_LAMP_DISTANCE
+		ACTION_LAMP_EXPOSURE:
+			return KIND_LAMP_EXPOSURE
 	return KIND_STANCE
 
 

@@ -1,10 +1,17 @@
 extends Node2D
-## 第一关「入手」的幕后演出画面（A 模块）。本文件只做三件事：
+## 幕后演出画面（A 模块）。**前四关共用这一个场景**，只换 `StageDef` 数据：
+##   godot.exe --path . res://scenes/a_test/level1_a.tscn -- stage=2
+##
+## 本文件只做四件事：
 ## 1. 把物理键鼠按 **PRD 第 4.1 节**的输入规则翻译给 Level1Runtime；
-## 2. 按示意图布局画出幕后工作台：上方幕布与影子，下方「你的手边 · 身前矮处」
+## 2. 按关卡数据的 `initial` 布置开演布景（在场影人、挂起分布、站位、灯况）；
+## 3. 按示意图布局画出幕后工作台：上方幕布与影子，下方「你的手边 · 身前矮处」
 ##    一条放油灯、手与三根签、两个挂钩、备用头架；
-## 3. 作为**模拟显示端**每帧只读 PuppetState / LampState / TimedEvent，从不写状态，
+## 4. 作为**模拟显示端**每帧只读 PuppetState / LampState / TimedEvent，从不写状态，
 ##    因此它证明「A 先改状态，B/C 再读」这条单向数据流成立。
+##
+## 两类提示手（教学手 / 补救手）见下方 `_remedy_hand_visible` 前的说明——
+## 它们的触发时机与条件必须互相区分、互不重叠。
 ##
 ## 本场景不自行计算拍点、不判定对错、不决定补救时机——那些全部来自 Level1Runtime。
 ##
@@ -17,7 +24,6 @@ const HarnessScript := preload("res://scripts/a_test/level1_harness.gd")
 const ProbeScript := preload("res://scripts/a_test/level1_a_probe.gd")
 const StageDefScript := preload("res://scripts/a/stage_def.gd")
 const CueScript := preload("res://scripts/a/cue.gd")
-const CueHintScript := preload("res://scripts/a/cue_hint.gd")
 const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
 const PuppetViewScript := preload("res://scripts/a_test/placeholder_puppet.gd")
 
@@ -43,6 +49,10 @@ const RACK_HIT_RADIUS := 40.0
 const PUPPET_HIT_RADIUS := 96.0
 
 const PROBE_FLAG := "level1_a_probe"
+## 开发用切关开关：`场景 -- stage=2`。四关共用这一个幕后场景，只换关卡数据。
+## 刻意**不做成按键**：PRD 第 4.1 节只定义了一套键位，往演出场景里加测试键会让
+## 玩家按到没有文档依据的键（空格曾被误当暂停就是这么来的）。
+const STAGE_ARG_PREFIX := "stage="
 
 @onready var _lamp: PlaceholderLamp = $Lamp
 @onready var _puppet_views: Array = [$Puppet0, $Puppet1, $Puppet2]
@@ -54,6 +64,8 @@ const PROBE_FLAG := "level1_a_probe"
 
 var _harness: Level1Harness = null
 var _stage_def: StageDef = null
+## 本关在场的影人编号（来自关卡数据的开演布景）。不在列表里的未登场，画面不出现。
+var _on_stage: Array = [0, 1, 2]
 var _paused: bool = false
 ## 已选中、等待取回的挂起影人编号（-1 表示未选中）
 var _selected_puppet: int = -1
@@ -67,6 +79,22 @@ var _diag: bool = false
 var _frame_count: int = 0
 
 
+## 开发用切关：从命令行参数取 `stage=N`（1–4），缺省或非法时回第 1 关。
+## 做成静态纯函数是为了能被无头测试直接断言「参数解析不会把非法值静默变成别的关」。
+static func requested_stage_id() -> int:
+	var args: PackedStringArray = OS.get_cmdline_args()
+	args.append_array(OS.get_cmdline_user_args())
+	for arg in args:
+		var text: String = str(arg)
+		if not text.begins_with(STAGE_ARG_PREFIX):
+			continue
+		var value: int = int(text.substr(STAGE_ARG_PREFIX.length()))
+		if value >= 1 and value <= StageDef.LAST_TUTORIAL_LEVEL:
+			return value
+		return StageDef.LEVEL1_ID
+	return StageDef.LEVEL1_ID
+
+
 func _ready() -> void:
 	# 窗口尺寸与画布拉伸由 project.godot 的 [display] 段（window_width_override /
 	# window_height_override / stretch.mode）在**建窗之前**一次定好，本场景不再改窗口。
@@ -77,8 +105,12 @@ func _ready() -> void:
 	# 窗口「无响应」且关闭按钮无效（只能从任务管理器结束进程）。实测把尺寸要求
 	# 挪到建窗前（等价于启动参数 --resolution）后不再出现，故保留此写法。
 	# 场景只负责演出本身，不负责窗口——这也让另外两个测试场景可以共用同一套显示设置。
-	_stage_def = StageDefScript.make_level1()
-	_harness = HarnessScript.new(self)
+	_stage_def = StageDefScript.make_stage(requested_stage_id())
+	if _stage_def == null:
+		push_error("无法识别的关卡编号，请用 `-- stage=1..4`")
+		_shutdown_and_quit(1)
+		return
+	_harness = HarnessScript.new(self, _stage_def)
 	if _harness.runtime == null:
 		_shutdown_and_quit(1)
 		return
@@ -91,34 +123,51 @@ func _ready() -> void:
 	_refresh_ui()
 	if OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG):
 		_probe_mode = true
+		# 该探针断言的是第一关的布景与时序（35000 ms / 6 条关键动作 / 两钩皆满），
+		# 其它关的布景不同，跑它只会得到一堆无意义的失败——明确跳过而不是误报。
+		if _stage_def.id != StageDef.LEVEL1_ID:
+			print("第一关探针不适用于第 %d 关（用 `-- stage=1` 再跑）" % _stage_def.id)
+			_shutdown_and_quit(0)
+			return
 		var probe := ProbeScript.new()
 		var failures: int = probe.run(_harness)
 		_shutdown_and_quit(1 if failures > 0 else 0)
 
 
-## 开演前的起始布景（PRD 第 4.2、6 节）：
-## 三个影人同时在场，只有一个受控，另两个挂在两个挂钩上保持姿势；
-## 第一关「灯明亮」，所以显露度从满值起步。
+## 开演前的起始布景。全部来自关卡数据的 `initial`（PRD 第 4.2、6 节）：
+## 起始受控影人、在场影人、挂起分布、站位与手角、灯距/显露/灯油。
+##
+## 布景之所以必须逐关不同：第 2 关要教挂起，**开局必须留出一个空挂钩**。
+## 若沿用第一关「两钩皆满」的布景，`hook_current()` 找不到空位必然失败，
+## 而 `take_back` 又要求「当前无人受控」——玩家会卡死在原地，整关无法完成。
 func _configure_initial_stage() -> void:
 	var runtime: Level1Runtime = _harness.runtime
 	var lamp: LampState = runtime.lamp_controller.lamp
-	lamp.exposure = 1.0
-	lamp.distance = 0.5
-	lamp.oil = 1.0
-	var puppets: Array = runtime.puppet_controller.puppets
-	puppets[0].stage_pos = Vector2(0.50, 0.5)
-	puppets[1].stage_pos = Vector2(0.13, 0.5)
-	puppets[1].hand_angle = Vector2(1.20, 0.10)
-	_set_hung(puppets[1], 0)
-	puppets[2].stage_pos = Vector2(0.86, 0.5)
-	puppets[2].hand_angle = Vector2(0.10, 1.20)
-	_set_hung(puppets[2], 1)
-
-
-## 把影人挂到挂钩上。走与 PuppetController 相同的字段，保证不变量继续成立。
-func _set_hung(state: PuppetState, slot: int) -> void:
-	state.is_controlled = false
-	state.hook_slot = slot
+	lamp.exposure = float(_stage_def.initial.get("exposure", 1.0))
+	lamp.distance = float(_stage_def.initial.get("distance", 0.5))
+	lamp.oil = float(_stage_def.initial.get("oil", 1.0))
+	var controller: PuppetController = runtime.puppet_controller
+	var positions: Dictionary = _stage_def.initial.get("positions", {})
+	var hand_angles: Dictionary = _stage_def.initial.get("hand_angles", {})
+	var hung: Dictionary = _stage_def.initial.get("hung", {})
+	for state in controller.puppets:
+		var puppet_id: int = state.puppet_id
+		state.is_controlled = false
+		state.hook_slot = PuppetState.HOOK_SLOT_NONE
+		if positions.has(puppet_id):
+			var place: Array = positions[puppet_id]
+			state.stage_pos = Vector2(float(place[0]), float(place[1]))
+		if hand_angles.has(puppet_id):
+			var angles: Array = hand_angles[puppet_id]
+			state.hand_angle = Vector2(float(angles[0]), float(angles[1]))
+		if hung.has(puppet_id):
+			state.hook_slot = int(hung[puppet_id])
+	# 恰好一个受控影人（不变量 1）：先全部清掉再设。
+	var controlled: int = int(_stage_def.initial.get("controlled", 0))
+	controller.controlled_id = controlled
+	controller.get_puppet(controlled).is_controlled = true
+	var on_stage: Array = _stage_def.initial.get("on_stage", [0, 1, 2])
+	_on_stage = on_stage if not on_stage.is_empty() else [0, 1, 2]
 
 
 func _process(delta: float) -> void:
@@ -281,13 +330,15 @@ func _refresh_ui() -> void:
 	_lamp.lamp = runtime.lamp_controller.lamp
 	for i in _puppet_views.size():
 		var view: PlaceholderPuppet = _puppet_views[i]
+		# 不在场的影人不画：第 2 关只让白素贞与小青登场，好让开局留出一个空挂钩。
+		view.visible = _on_stage.has(i)
 		view.puppet_state = runtime.puppet_controller.puppets[i]
 		view.lamp_state = runtime.lamp_controller.lamp
 		view.hand_anchor = HAND_ANCHOR
 		view.stage_origin = Vector2.ZERO
 		view.stage_size = CANVAS_SIZE
 
-	_status_label.text = "第一折 · 入手"
+	_status_label.text = _stage_def.title
 	if runtime.is_over():
 		_status_label.text += "　本折已收场"
 	elif _harness.clock.is_song_frozen():
@@ -342,14 +393,26 @@ static func hook_hint_text(controller: PuppetController, selected_puppet: int) -
 	return "空格 = 取回 %d 号影人" % (selected_puppet + 1)
 
 
-func _active_cue_text() -> String:
+## 当前「已经被告知、但还没判定」的那条关键动作（无则返回空字典）。
+## 这一条 cue 同时驱动三件事：HUD 文字、目标边界/方向箭头、**教学提示手**。
+## 三处读同一个来源，因此「文字说的」与「手指的」永远是同一个动作，不会各说各话。
+func _active_cue() -> Dictionary:
+	if _stage_def == null or _harness == null:
+		return {}
 	var song_ms: int = _harness.clock.get_song_time_ms()
 	for cue in _stage_def.cues:
 		if _harness.runtime.director.performance.has_outcome(str(cue["cue_id"])):
 			continue
 		if song_ms >= CueScript.hint_time_ms(cue):
-			return _action_text(str(cue["action"]))
-	return "握住手边的胸签，跟着鼓点入场"
+			return cue
+	return {}
+
+
+func _active_cue_text() -> String:
+	var cue: Dictionary = _active_cue()
+	if cue.is_empty():
+		return "握住手边的胸签，跟着鼓点入场"
+	return _action_text(str(cue.get("action", "")))
 
 
 func _find_cue(cue_id: String) -> Dictionary:
@@ -368,6 +431,11 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_MOVE_LEFT: return "向左拖动胸签"
 		CueScript.ACTION_MOVE_RIGHT: return "向右拖动胸签"
 		CueScript.ACTION_REACH: return "把影人带回幕布中央"
+		CueScript.ACTION_HOOK: return "按空格挂起当前影人"
+		CueScript.ACTION_TAKE_BACK: return "点选挂起的影人，按空格取回"
+		CueScript.ACTION_HEAD_SWAP: return "按 1 / 2 / 3 与备用头架换头"
+		CueScript.ACTION_LAMP_DISTANCE: return "滚轮推拉灯，让全场影子同步缩放"
+		CueScript.ACTION_LAMP_EXPOSURE: return "按 Q / E 调整影子的显露"
 	return "跟着鼓点继续演出"
 
 
@@ -393,8 +461,13 @@ func _draw() -> void:
 		Color("#ad8147"), 2.0)
 	_draw_beat_indicator()
 	_draw_target_marker()
-	if _harness != null and not _harness.runtime.director.remedy.current_demo_cue_id.is_empty():
-		_draw_teacher_hand()
+	# 两类提示手：同一时刻只画一只。互斥规则集中在 hint_hand_choice 一处，
+	# 显示端只消费它的结果，不做第二套判断。
+	var hand: int = _hand_choice()
+	if hand == HAND_REMEDY:
+		_draw_remedy_hand()
+	elif hand == HAND_TEACHING:
+		_draw_teaching_hand()
 	if _harness != null and _harness.clock.is_song_frozen():
 		_draw_freeze_overlay()
 	if _paused:
@@ -512,33 +585,72 @@ func _draw_beat_indicator() -> void:
 
 
 ## 当前线索的目标范围。前四关允许出现目标边界图标，但不泄露精确拍号（PRD 第 5.1 节）。
+## 补救冻结期间**不画**：那时演出时间停住、新的落点不会到来，提示落点位置只会误导，
+## 而且玩家正在补做上一个动作（与教学提示手同一条规则）。
 func _draw_target_marker() -> void:
 	if _harness == null or _paused or _harness.runtime.is_over():
 		return
-	var runtime: Level1Runtime = _harness.runtime
-	var song_ms: int = _harness.clock.get_song_time_ms()
-	for cue in _stage_def.cues:
-		var cue_id: String = str(cue["cue_id"])
-		if runtime.director.performance.has_outcome(cue_id):
-			continue
-		var hint: Dictionary = CueHintScript.make(cue)
-		if not CueHintScript.is_visible(hint, song_ms):
-			continue
-		var bounds: Dictionary = cue.get("target_range", {})
-		if str(bounds.get("key", "")) == "x":
-			var x0: float = CLOTH.position.x + float(bounds.get("min", 0.0)) * CLOTH.size.x
-			var x1: float = CLOTH.position.x + float(bounds.get("max", 1.0)) * CLOTH.size.x
-			draw_rect(Rect2(x0, CLOTH.position.y + 8.0, x1 - x0, CLOTH.size.y - 16.0),
-				Color(0.98, 0.72, 0.25, 0.12))
-			for x in range(int(x0), int(x1), 34):
-				draw_line(Vector2(float(x), CLOTH.end.y - 10.0),
-					Vector2(float(x), CLOTH.end.y - 34.0), Color(0.98, 0.72, 0.25, 0.55), 3.0)
-		else:
-			_draw_pose_arrow(str(cue.get("action", "")))
+	if not _stage_def.is_tutorial():
 		return
+	if _harness.clock.is_song_frozen():
+		return
+	var cue: Dictionary = _active_cue()
+	if cue.is_empty():
+		return
+	var bounds: Dictionary = cue.get("target_range", {})
+	var key: String = str(bounds.get("key", ""))
+	var action: String = str(cue.get("action", ""))
+	if key == "x":
+		var x0: float = CLOTH.position.x + float(bounds.get("min", 0.0)) * CLOTH.size.x
+		var x1: float = CLOTH.position.x + float(bounds.get("max", 1.0)) * CLOTH.size.x
+		draw_rect(Rect2(x0, CLOTH.position.y + 8.0, x1 - x0, CLOTH.size.y - 16.0),
+			Color(0.98, 0.72, 0.25, 0.12))
+		for x in range(int(x0), int(x1), 34):
+			draw_line(Vector2(float(x), CLOTH.end.y - 10.0),
+				Vector2(float(x), CLOTH.end.y - 34.0), Color(0.98, 0.72, 0.25, 0.55), 3.0)
+	elif key == "distance" or key == "exposure":
+		_draw_lamp_marker(key, bounds)
+	elif CueScript.EVENT_ACTIONS.has(action):
+		_draw_key_hint(action)
+	else:
+		_draw_pose_arrow(action)
 
 
-## 姿势类动作（站起/蹲下/抬手）用影人身旁的方向箭头提示，不写数字。
+## 灯位/倾灯类落点：在灯的那一侧画一条目标刻度带。只表达「推到哪一段」，
+## 不显示百分比、不显示当前值（PRD 第 4.3、6 节明确不显示百分比）。
+func _draw_lamp_marker(key: String, bounds: Dictionary) -> void:
+	var track := Rect2(1516.0, 748.0, 24.0, 188.0)
+	if key == "exposure":
+		track = Rect2(1428.0, 748.0, 24.0, 188.0)
+	draw_rect(track, Color(0.14, 0.11, 0.09, 0.72))
+	var lo: float = float(bounds.get("min", 0.0))
+	var hi: float = float(bounds.get("max", 1.0))
+	var y0: float = track.end.y - hi * track.size.y
+	var y1: float = track.end.y - lo * track.size.y
+	draw_rect(Rect2(track.position.x, y0, track.size.x, maxf(y1 - y0, 4.0)),
+		Color(0.98, 0.72, 0.25, 0.55))
+	draw_rect(track, Color(0.98, 0.72, 0.25, 0.90), false, 2.0)
+
+
+## 按键类落点（挂起/取回/换头）在受控影人身旁画一个按键徽标。
+## 画的是「按哪个键」，不是「按哪个拍」——拍号依旧不得泄露（PRD 第 5.1 节）。
+func _draw_key_hint(action: String) -> void:
+	var controller: PuppetController = _harness.runtime.puppet_controller
+	var controlled: PuppetState = controller.get_controlled()
+	var base := Vector2(CANVAS_SIZE.x * 0.5, 320.0)
+	if controlled != null:
+		base = Vector2(controlled.stage_pos.x * CANVAS_SIZE.x,
+			controlled.stage_pos.y * CANVAS_SIZE.y - 258.0)
+	var label: String = "1·2·3" if action == CueScript.ACTION_HEAD_SWAP else "空格"
+	var colour := Color(0.98, 0.72, 0.25, 0.90)
+	var box := Rect2(base.x - 54.0, base.y - 27.0, 108.0, 54.0)
+	draw_rect(box, Color(0.10, 0.08, 0.06, 0.78))
+	draw_rect(box, colour, false, 3.0)
+	draw_string(ThemeDB.fallback_font, Vector2(box.position.x, base.y + 11.0), label,
+		HORIZONTAL_ALIGNMENT_CENTER, box.size.x, 30, colour)
+
+
+## 姿势类动作（站起/蹲下/抬手/落手）用影人身旁的方向箭头提示，不写数字。
 func _draw_pose_arrow(action: String) -> void:
 	var controller: PuppetController = _harness.runtime.puppet_controller
 	var controlled: PuppetState = controller.get_controlled()
@@ -554,34 +666,116 @@ func _draw_pose_arrow(action: String) -> void:
 	draw_line(tip, tip + Vector2(17.0, 22.0 if up else -22.0), colour, 7.0)
 
 
-## 师父示范手：只在失误后的补救窗口里出现，只示范动作本身（PRD 第 5.2 节）。
-func _draw_teacher_hand() -> void:
+## —— 两类提示手 ——
+##
+## 这是本文件里最容易被做重的一处，因此把「谁是预告、谁是纠正」写清楚：
+##
+## |            | 教学提示手（前四关） | 补救提示手 |
+## | 触发条件   | 某条落点已进入线索时间、且尚无判定结果 | 补救窗口开着（`current_demo_cue_id` 非空） |
+## | 结束条件   | 该落点被判定（命中或错拍） | 窗口关闭（补做成功／超时／收场） |
+## | 计时依据   | **歌曲时间**（演出正常推进） | **真实时间**（歌曲时间此时已冻结） |
+## | 样式       | 半透明描边（预告，轻） | 实色填充 + 外圈光晕（纠正，重） |
+##
+## **互斥规则：补救冻结期间一律不画教学手，同一时刻只画一只。** 理由有两条：
+## 1. 补救冻结时演出时间停住，**新的落点不会到来**——这时预告「即将到来的动作」是误导，
+##    而且玩家此刻正在补做上一个动作，屏幕上多一只手只会干扰。
+## 2. 漏做型补救的窗口开在落点之后，该落点的线索时段本就已过，天然不重叠；
+##    只有「低合拍型补救挂在段内更靠前、还没到落点的 cue 上」时才可能重叠，必须显式压制。
+## 提示手的选择结果。用整数而不是两个 bool，是为了让「互斥」在类型上就成立：
+## 同一时刻只可能返回其中一种，不存在两只手同时为真的状态。
+const HAND_NONE: int = 0
+const HAND_TEACHING: int = 1
+const HAND_REMEDY: int = 2
+
+
+## 两类提示手的显示判定。做成**静态纯函数**，这样互斥规则可以被无头测试直接断言，
+## 不必靠跑图形界面去看「画面上到底有几只手」。
+## 优先级：补救手 > 教学手；补救冻结期间一律不出手（教学手被压制，补救手本就来自窗口）。
+static func hint_hand_choice(paused: bool, over: bool, is_tutorial: bool, frozen: bool,
+		remedy_demo_cue_id: String, active_cue_id: String) -> int:
+	if paused or over:
+		return HAND_NONE
+	if not remedy_demo_cue_id.is_empty():
+		return HAND_REMEDY
+	if frozen:
+		return HAND_NONE
+	if not is_tutorial:
+		return HAND_NONE
+	if active_cue_id.is_empty():
+		return HAND_NONE
+	return HAND_TEACHING
+
+
+func _hand_choice() -> int:
+	if _harness == null or _stage_def == null:
+		return HAND_NONE
+	return hint_hand_choice(_paused, _harness.runtime.is_over(), _stage_def.is_tutorial(),
+		_harness.clock.is_song_frozen(),
+		_harness.runtime.director.remedy.current_demo_cue_id,
+		str(_active_cue().get("cue_id", "")))
+
+
+## 教学提示手：每个关键动作**发生之前**出现，示范「该做什么」（PRD 第 5.1 节）。
+## 用歌曲时间驱动摆动——这是正常演出时间，与补救手的真实时间形成明确区分。
+func _draw_teaching_hand() -> void:
+	var cue: Dictionary = _active_cue()
+	if cue.is_empty():
+		return
+	var now_s: float = _harness.clock.get_song_time_s()
+	var sway: float = sin(now_s * 4.0) * 16.0
+	var base: Vector2 = HAND_ANCHOR + Vector2(-186.0, 4.0) \
+		+ _action_motion(str(cue.get("action", "")), sway)
+	_draw_hand_shape(base, true, 0.62)
+
+
+## 补救提示手：只在失误后的补救窗口里出现，只示范动作本身（PRD 第 5.2 节）。
+func _draw_remedy_hand() -> void:
 	# 用真实时间驱动示范手的摆动：补救期间歌曲时间是冻结的，用它会得到一只僵住的手，
 	# 而这只手的作用恰恰是「让玩家看出该补做什么动作」。
 	var now_s: float = _harness.clock.get_real_time_s()
 	var action: String = str(_find_cue(
 		_harness.runtime.director.remedy.current_demo_cue_id).get("action", ""))
 	var sway: float = sin(now_s * 7.0) * 20.0
-	var motion := Vector2.ZERO
-	match action:
-		CueScript.ACTION_MOVE_LEFT: motion.x = -sway
-		CueScript.ACTION_MOVE_RIGHT, CueScript.ACTION_REACH: motion.x = sway
-		CueScript.ACTION_CROUCH, CueScript.ACTION_HAND_LOWER: motion.y = sway
-		_: motion.y = -sway
-	var base: Vector2 = HAND_ANCHOR + Vector2(-186.0, 4.0) + motion
-	var skin := Color("#e6bb83")
-	var edge := Color("#714025")
+	var base: Vector2 = HAND_ANCHOR + Vector2(-186.0, 4.0) + _action_motion(action, sway)
+	# 外圈光晕：让「纠正」比「预告」更重，两类手一眼可分。
 	draw_arc(base, 46.0, 0.0, TAU, 40, Color(1.0, 0.85, 0.5, 0.35), 5.0)
-	draw_circle(base, 36.0, skin)
-	draw_arc(base, 36.0, 0.0, TAU, 36, edge, 3.0)
+	_draw_hand_shape(base, false, 1.0)
+
+
+## 由动作类型得到示范手的摆动方向：横移类左右摆，抬落/挂取类上下摆。
+## 两类提示手共用，保证「手指的方向」与「落点要求的动作」永远一致。
+func _action_motion(action: String, sway: float) -> Vector2:
+	match action:
+		CueScript.ACTION_MOVE_LEFT: return Vector2(-sway, 0.0)
+		CueScript.ACTION_MOVE_RIGHT, CueScript.ACTION_REACH: return Vector2(sway, 0.0)
+		CueScript.ACTION_CROUCH, CueScript.ACTION_HAND_LOWER: return Vector2(0.0, sway)
+		CueScript.ACTION_LAMP_DISTANCE: return Vector2(sway, 0.0)
+		CueScript.ACTION_LAMP_EXPOSURE: return Vector2(0.0, -sway)
+		CueScript.ACTION_HOOK, CueScript.ACTION_TAKE_BACK: return Vector2(0.0, -sway * 0.6)
+		CueScript.ACTION_HEAD_SWAP: return Vector2(sway * 0.5, -sway * 0.5)
+		_: return Vector2(0.0, -sway)
+
+
+## 一只手。`outlined` 为 true 时只描边（教学手），false 时实色填充（补救手）。
+func _draw_hand_shape(centre: Vector2, outlined: bool, alpha: float) -> void:
+	var edge := Color(0.44, 0.25, 0.15, alpha)
+	var fill := Color(0.90, 0.73, 0.51, alpha)
 	for i in 4:
-		var x: float = base.x - 25.0 + float(i) * 17.0
-		draw_line(Vector2(x, base.y - 14.0),
-			Vector2(x - 2.0, base.y - 70.0 - float(i % 2) * 12.0), edge, 15.0)
-		draw_line(Vector2(x, base.y - 14.0),
-			Vector2(x - 2.0, base.y - 70.0 - float(i % 2) * 12.0), skin, 11.0)
-	draw_line(base + Vector2(-25.0, 16.0), base + Vector2(-62.0, -19.0), edge, 19.0)
-	draw_line(base + Vector2(-25.0, 16.0), base + Vector2(-62.0, -19.0), skin, 14.0)
+		var root := Vector2(centre.x - 25.0 + float(i) * 17.0, centre.y - 14.0)
+		var tip := Vector2(root.x - 2.0, centre.y - 70.0 - float(i % 2) * 12.0)
+		if not outlined:
+			draw_line(root, tip, fill, 11.0)
+		draw_line(root, tip, edge, 3.0)
+	var thumb_root: Vector2 = centre + Vector2(-25.0, 16.0)
+	var thumb_tip: Vector2 = centre + Vector2(-62.0, -19.0)
+	if not outlined:
+		draw_line(thumb_root, thumb_tip, fill, 14.0)
+	draw_line(thumb_root, thumb_tip, edge, 3.0)
+	if outlined:
+		draw_arc(centre, 36.0, 0.0, TAU, 32, edge, 4.0)
+	else:
+		draw_circle(centre, 36.0, fill)
+		draw_arc(centre, 36.0, 0.0, TAU, 36, edge, 3.0)
 
 
 ## 点中备用头架哪个槽位（-1 表示没点中）

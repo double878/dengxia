@@ -24,6 +24,10 @@ const CueHintScript := preload("res://scripts/a/cue_hint.gd")
 var cues: Array = []                  ## 由 StageDef 提供的 Cue 列表
 var clock: Object = null              ## 鸭子类型：只需 get_song_time_ms() -> int
 var puppets: Array = []               ## Array[PuppetState]，由调用方在 setup() 后保持同步
+## 油灯状态（LampState）。灯位推拉（`lamp_distance`）与倾灯显露（`lamp_exposure`）
+## 这两类 Cue 的读数取自这里。传 null 时这两类 Cue 不判定，但绝不影响影人动作的判定
+## ——第 1、2 关没有灯位类落点，缺油灯不应让整关的判定失效。
+var lamp: LampState = null
 
 var _events: Array[Dictionary] = []
 var _outcomes: Dictionary = {}        ## cue_id -> 判定结果，同一 cue 只判定一次
@@ -32,13 +36,15 @@ var _fired: Dictionary = {}           ## "cue_id|拖动代次" -> 已判定
 var _drag_generation: int = 0         ## 每次 begin_drag 递增，用于「一次拖动只算一次」
 var _dragging: bool = false           ## 仅在拖动中才判定「到位」，避免站定不动也被判到位
 var _reach_outside: Dictionary = {}   ## 本次拖动中「已离开过目标范围」的 reach cue_id
+var _lamp_outside: Dictionary = {}    ## 灯位/倾灯类 cue：此刻是否在目标范围之外（只判上升沿）
 var _last_state: Dictionary = {}       ## puppet_id -> 上次判定时的连续状态
 
 
-func setup(p_cues: Array, p_clock: Object, p_puppets: Array) -> void:
+func setup(p_cues: Array, p_clock: Object, p_puppets: Array, p_lamp: LampState = null) -> void:
 	cues = p_cues
 	clock = p_clock
 	puppets = p_puppets
+	lamp = p_lamp
 	_events.clear()
 	_outcomes.clear()
 	_hint_emitted.clear()
@@ -46,6 +52,7 @@ func setup(p_cues: Array, p_clock: Object, p_puppets: Array) -> void:
 	_drag_generation = 0
 	_dragging = false
 	_reach_outside.clear()
+	_lamp_outside.clear()
 	_last_state.clear()
 	for state in puppets:
 		_last_state[state.puppet_id] = _snapshot(state)
@@ -91,6 +98,7 @@ func update(song_time_ms: int, controller_events: Array) -> void:
 		_evaluate_action_event(song_time_ms, e)
 	_evaluate_continuous(song_time_ms)
 	_evaluate_reach(song_time_ms)
+	_evaluate_lamp(song_time_ms)
 	if drag_ended:
 		_dragging = false
 
@@ -117,7 +125,8 @@ func detect_misses(song_time_ms: int) -> void:
 			"hit": false,
 			"missed_outright": true,      ## 与「错拍做了」区分：这次是完全没做
 		}
-		_emit(song_time_ms, "cue_miss", int(cue.get("target_object", 0)), cue_id, {
+		_emit(song_time_ms, "cue_miss", _resolve_object_id(int(cue.get("target_object", 0))),
+			cue_id, {
 			"action": action,
 			"offset_ms": song_time_ms - int(cue.get("beat_time_ms", 0)),
 			"tolerance_ms": int(cue.get("tolerance_ms", 0)),
@@ -211,7 +220,8 @@ func _emit_hints(song_time_ms: int) -> void:
 			continue
 		_hint_emitted[cue_id] = true
 		var hint: Dictionary = CueHintScript.make(cue)
-		_emit(song_time_ms, "cue_hint", int(cue.get("target_object", 0)), cue_id, {
+		_emit(song_time_ms, "cue_hint", _resolve_object_id(int(cue.get("target_object", 0))),
+			cue_id, {
 			"hint_kind": hint["kind"],
 			"action": hint["action"],
 			"demo_action": hint["demo_action"],
@@ -232,7 +242,7 @@ func _seed_reach_from_previous_state() -> void:
 	for cue in cues:
 		if str(cue.get("action", "")) != CueScript.ACTION_REACH:
 			continue
-		var object_id: int = int(cue.get("target_object", 0))
+		var object_id: int = _resolve_object_id(int(cue.get("target_object", 0)))
 		var previous: Dictionary = _last_state.get(object_id, {})
 		if previous.is_empty():
 			continue
@@ -286,7 +296,8 @@ func _evaluate_reach(song_time_ms: int) -> void:
 		if not _can_attempt(cue):
 			continue
 		var range: Dictionary = cue.get("target_range", {})
-		var metric: float = _metric_value(str(range.get("key", "")), int(cue.get("target_object", 0)))
+		var metric: float = _metric_value(str(range.get("key", "")),
+			_resolve_object_id(int(cue.get("target_object", 0))))
 		if is_nan(metric):
 			continue
 		if not CueScript.condition_met(cue, CueScript.ACTION_REACH, metric):
@@ -299,11 +310,53 @@ func _evaluate_reach(song_time_ms: int) -> void:
 			int(cue.get("target_object", 0)))
 
 
+## 灯位推拉与倾灯显露：连续量，每帧检查一次，但只判「从范围外跨入范围内」的上升沿。
+##
+## 为什么只判上升沿：这两类读数在整个演出里一直存在（灯距从开局就有值），
+## 若按「当前在范围内」判定，一个开局恰好落在目标区间的关卡会在第 0 帧就被判命中。
+## 要求先离开过、再进入，等价于「玩家真的把灯推/倾到了那个位置」。
+## 上升沿后立刻清除标记，于是「错拍推到位」与「补救时重新推到位」都能各自被判定，
+## 去重仍由 `_can_attempt`（命中即定案）与 `_register_action` 统一处理。
+func _evaluate_lamp(song_time_ms: int) -> void:
+	if lamp == null:
+		return
+	for cue in cues:
+		var action: String = str(cue.get("action", ""))
+		if not CueScript.LAMP_ACTIONS.has(action):
+			continue
+		# 装填点：灯位/倾灯读数整场一直存在。若从第 0 帧就参与判定，
+		# 「目标区间恰好与开局值重合」的落点会在开演瞬间被当成一次动作（判命中或判错拍），
+		# 而且会让同一条读数区间上的两个不同落点互相顶掉。因此这类落点只在
+		# **线索时间**之后才参与判定——线索时间就是玩家被告知「现在该把灯推/倾到哪」的时刻。
+		if song_time_ms < CueScript.hint_time_ms(cue):
+			continue
+		var cue_id: String = str(cue.get("cue_id", ""))
+		if not _can_attempt(cue):
+			continue
+		var range: Dictionary = cue.get("target_range", {})
+		var metric: float = _metric_value(str(range.get("key", "")),
+			_resolve_object_id(int(cue.get("target_object", 0))))
+		if is_nan(metric):
+			continue
+		if not CueScript.condition_met(cue, action, metric):
+			_lamp_outside[cue_id] = true
+			continue
+		if not _lamp_outside.has(cue_id):
+			continue
+		_lamp_outside.erase(cue_id)
+		_register_action(song_time_ms, {"actions": [action], "metric": metric},
+			int(cue.get("target_object", 0)))
+
+
 ## 站蹲沿用控制器的到位事件；手和位移读状态跨越，避免方向事件早于到位时刻。
 ##
 ## `pose_stance` 必须真的带 `stance` 读数：缺字段或空 payload 时若按 0.0 默认值判定，
 ## 一个畸形事件就会被当成一次真实的「站起」，甚至会凭它关掉正在开的补救窗口。
 ## 宁可不判定，也不接受一个没有读数的动作事件。
+## 把控制器事件翻译成「这次做出了哪些动作」+「读数是多少」。
+##
+## 与 `pose_stance` 同一条纪律：**读数缺失就不判定**。缺字段的事件若按默认值参与判定，
+## 一个空 payload 就能伪造一次真实的挂起/换头，甚至关掉正在开的补救窗口。
 func _match_event(event: Dictionary) -> Dictionary:
 	var kind: String = str(event.get("kind", ""))
 	var payload: Dictionary = event.get("payload", {})
@@ -314,6 +367,18 @@ func _match_event(event: Dictionary) -> Dictionary:
 			var stance: float = float(payload.get("stance", 0.0))
 			return {"actions": [CueScript.ACTION_STAND_UP, CueScript.ACTION_CROUCH],
 				"metric": stance}
+		"puppet_hook":
+			if not payload.has("hook_slot"):
+				return {}
+			return {"actions": [CueScript.ACTION_HOOK], "metric": float(payload["hook_slot"])}
+		"puppet_take_back":
+			if not payload.has("hook_slot"):
+				return {}
+			return {"actions": [CueScript.ACTION_TAKE_BACK], "metric": float(payload["hook_slot"])}
+		"head_swap":
+			if not payload.has("slot"):
+				return {}
+			return {"actions": [CueScript.ACTION_HEAD_SWAP], "metric": float(payload["slot"])}
 	return {}
 
 
@@ -323,11 +388,14 @@ func _match_event(event: Dictionary) -> Dictionary:
 func _register_action(song_time_ms: int, match_result: Dictionary, object_id: int) -> void:
 	var actions: Array = match_result["actions"]
 	var metric: float = match_result["metric"]
+	var resolved_object: int = _resolve_object_id(object_id)
 	for cue in cues:
 		var cue_id: String = str(cue.get("cue_id", ""))
 		if not _can_attempt(cue):
 			continue
-		if int(cue.get("target_object", 0)) != object_id:
+		# target_object < 0 表示「当前受控影人」：动作作用于谁由玩家当下的操控决定。
+		var target_object: int = int(cue.get("target_object", 0))
+		if target_object >= 0 and target_object != object_id:
 			continue
 		var expected: String = str(cue.get("action", ""))
 		if not actions.has(expected):
@@ -345,7 +413,7 @@ func _register_action(song_time_ms: int, match_result: Dictionary, object_id: in
 			continue
 		if once_per_drag:
 			_fired[fire_key] = song_time_ms
-		_emit(song_time_ms, "cue_fire", object_id, cue_id, {
+		_emit(song_time_ms, "cue_fire", resolved_object, cue_id, {
 			"action": expected,
 			"metric": metric,
 			"window_start_ms": CueScript.window_start_ms(cue),
@@ -393,7 +461,7 @@ func _resolve(cue: Dictionary, song_time_ms: int, action: String, metric: float)
 			and not previous.is_empty()
 	_outcomes[cue_id] = outcome
 	_emit(song_time_ms, "cue_hit" if outcome["hit"] else "cue_miss",
-		int(cue.get("target_object", 0)), cue_id, {
+		_resolve_object_id(int(cue.get("target_object", 0))), cue_id, {
 			"action": action,
 			"offset_ms": offset,
 			"tolerance_ms": tolerance,
@@ -402,7 +470,13 @@ func _resolve(cue: Dictionary, song_time_ms: int, action: String, metric: float)
 
 
 func _metric_value(key: String, object_id: int) -> float:
-	var state: PuppetState = _state_of(object_id)
+	# 灯位类读数取自油灯、与影人无关，因此先于影人查找处理：
+	# 否则 object_id 对应的影人不存在时会直接返回 NAN，灯位落点永远判不了。
+	if key == "distance" or key == "exposure":
+		if lamp == null:
+			return NAN
+		return float(lamp.distance) if key == "distance" else float(lamp.exposure)
+	var state: PuppetState = _state_of(_resolve_object_id(object_id))
 	if state == null:
 		return NAN
 	match key:
@@ -426,6 +500,26 @@ func _state_of(object_id: int) -> PuppetState:
 		if state.puppet_id == object_id:
 			return state
 	return null
+
+
+## 当前受控影人的状态；无人受控时为 null。
+func _controlled_state() -> PuppetState:
+	for state in puppets:
+		if state.is_controlled:
+			return state
+	return null
+
+
+## 把「-1 = 当前受控影人」解析成具体编号；已经是具体编号时原样返回。
+##
+## 存在的理由：第 2 关的挂起/取回之后「谁受控」由玩家决定，若把编号写死在关卡数据里，
+## 取回之后紧跟着的移动/抬手落点就会与实际的受控影人错配，整关判定必然失败。
+## 事件与结果里对外输出的 object_id 一律是**解析后的具体编号**，不让 -1 流给显示与录制。
+func _resolve_object_id(object_id: int) -> int:
+	if object_id >= 0:
+		return object_id
+	var controlled: PuppetState = _controlled_state()
+	return controlled.puppet_id if controlled != null else -1
 
 
 func _emit(song_time_ms: int, kind: String, object_id: int, cue_id: String,
