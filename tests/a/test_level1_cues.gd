@@ -90,7 +90,7 @@ func run_all() -> Dictionary:
 func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.begin("01 第一关关键动作表覆盖 PRD 要求")
 	var def: StageDef = StageDefScript.make_level1()
-	t.check_eq(def.cues.size(), 6, "应有 6 条关键动作")
+	t.check_eq(def.cues.size(), 8, "应有 8 条关键动作")
 	var problems: Array[String] = def.validate()
 	t.check_eq(problems.size(), 0, "数据应通过校验：%s" % str(problems))
 
@@ -99,9 +99,13 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		actions.append(str(cue["action"]))
 	t.check(actions.has(CueScript.ACTION_CROUCH) and actions.has(CueScript.ACTION_STAND_UP),
 		"应含蹲下与站起（蹲下为站起提供起点）")
-	t.check(actions.has(CueScript.ACTION_MOVE_LEFT) and actions.has(CueScript.ACTION_MOVE_RIGHT),
-		"应含横向移动（左右）")
+	t.check(actions.has(CueScript.ACTION_MOVE_LEFT),
+		"应含向左移动（本折只向左走：走到许仙身旁、再走到最左边）")
 	t.check(actions.has(CueScript.ACTION_HAND_RAISE), "应含抬手")
+	# 借伞还伞流程（用户 2026-10-04 定案）：两次交接各占一条落点，
+	# 加上「抬左手对齐」与「到达最左边」，就是这一折的全部关键动作。
+	t.check(actions.has(CueScript.ACTION_UMBRELLA_TAKE), "应含接伞")
+	t.check(actions.has(CueScript.ACTION_UMBRELLA_RETURN), "应含还伞")
 
 	# 重音每 4 拍一次；至少一次关键动作落在重音上
 	var accent_hits: int = 0
@@ -123,7 +127,15 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	var crouch_min: float = float(_find(def, "l1_c0_crouch")["target_range"]["min"])
 	t.check(stand_max <= 0.1, "站起到位范围应接近完全站立（stance≈0），实际 max=%.4f" % stand_max)
 	t.check(crouch_min >= 0.8, "蹲下到位范围应接近完全蹲下（stance≈1），实际 min=%.4f" % crouch_min)
-	t.finish("6 条关键动作覆盖蹲下/站起/左右移动/抬手，含重音落点，全部在时长内")
+
+	# 「走到最左边」的目标带必须严格窄于接伞区：否则这一趟会先经过接伞区，
+	# 在还没到过左端的时候就被还伞判定抢走伞，流程顺序颠倒。
+	var left_band: Dictionary = _find(def, "l1_c5_move_to_edge")["target_range"]
+	var take_band: Dictionary = _find(def, "l1_c4_take_umbrella")["target_range"]
+	t.check(float(left_band["max"]) < float(take_band["min"]),
+		"最左端目标带（≤%.2f）应严格窄于接伞区（≥%.2f）"
+			% [float(left_band["max"]), float(take_band["min"])])
+	t.finish("8 条关键动作覆盖蹲下/站起/左移/抬手/接伞/还伞，含重音落点，全部在时长内")
 
 
 func _test_02_hints_before_deadline(t: ATestBase) -> void:
@@ -253,10 +265,24 @@ func _test_06_translation_not_scored_per_frame(t: ATestBase) -> void:
 	t.finish("持续平移只记一次动作与一次判定，不逐帧评分")
 
 
+## 「到位」是全系统通用的判定规则，而第一关（游湖借伞）本身没有中位到位落点。
+## 因此这里按引擎契约注入一条自定义 Cue，而不是借某一关的关卡数据：
+## 关卡数据会随流程改动（借伞还伞定案就换过一次落点表），判定规则的回归测试不该跟着抖。
+const REACH_CUE_ID: String = "t_reach_center"
+
+
+func _reach_bench() -> CueTestBench:
+	var b: CueTestBench = _bench()
+	b.stage_def.cues.append(CueScript.make(REACH_CUE_ID, 14000, CueScript.ACTION_REACH, 0,
+		{"key": "x", "min": 0.47, "max": 0.53}, 250, "reach_center"))
+	b.performance.setup(b.stage_def.cues, b.clock, b.controller.puppets)
+	return b
+
+
 func _test_07_reach_is_continuous(t: ATestBase) -> void:
 	t.begin("07 到位是连续条件：拖动中进入目标范围即判定")
-	var b: CueTestBench = _bench()
-	var cue: Dictionary = b.find_cue("l1_c5_reach_center")
+	var b: CueTestBench = _reach_bench()
+	var cue: Dictionary = b.find_cue(REACH_CUE_ID)
 	var beat_ms: int = int(cue["beat_time_ms"])
 	var range: Dictionary = cue["target_range"]
 	t.check_approx(float(range["min"]), 0.47, 1e-9, "到位目标范围下限应为 0.47")
@@ -264,7 +290,7 @@ func _test_07_reach_is_continuous(t: ATestBase) -> void:
 
 	# 落点前 1 s 停留：x=0.5 已在范围内，但玩家不在移动，不得判为「移动到到位」
 	b.advance_to(maxi(beat_ms - 1000, 0))
-	t.check(not b.performance.has_outcome("l1_c5_reach_center"),
+	t.check(not b.performance.has_outcome(REACH_CUE_ID),
 		"站定不动即使恰在目标范围内，也不得判为到位")
 
 	# 先在窗口之外移出范围（约到 x≈0.58），这样回到范围的那一刻才代表「移动到到位」
@@ -275,9 +301,9 @@ func _test_07_reach_is_continuous(t: ATestBase) -> void:
 	# 在落点前 60 ms 开始回到范围边缘；只用少量步数，确保判定落在窗口内
 	b.advance_to(beat_ms - 60)
 	var used: int = b.drag_until(Vector2(-19.0, 0.0), func() -> bool:
-		return b.performance.has_outcome("l1_c5_reach_center"), 4)
-	if b.performance.has_outcome("l1_c5_reach_center"):
-		var outcome: Dictionary = b.performance.get_outcome("l1_c5_reach_center")
+		return b.performance.has_outcome(REACH_CUE_ID), 4)
+	if b.performance.has_outcome(REACH_CUE_ID):
+		var outcome: Dictionary = b.performance.get_outcome(REACH_CUE_ID)
 		t.check_eq(bool(outcome["hit"]), true,
 			"落点附近回到中位应命中（offset=%d ms，x=%.4f）"
 			% [int(outcome["offset_ms"]), float(outcome["metric"])])
@@ -337,11 +363,11 @@ func _test_09_unchosen_cues_remain_pending(t: ATestBase) -> void:
 	t.begin("09 未做的关键动作保持待判定，不被静默跳过")
 	var b: CueTestBench = _bench()
 	b.advance(1)
-	t.check_eq(b.performance.pending_count(), 6, "开演时 6 条全部待判定")
+	t.check_eq(b.performance.pending_count(), 8, "开演时 8 条全部待判定")
 	b.advance_to(7000)                     # 已过前两条落点，但什么都没做
 	t.check(not b.performance.has_outcome("l1_c1_stand"),
 		"没做动作就不应产生判定结果（留给切片 4 的补救处理）")
-	t.check_eq(b.performance.pending_count(), 6, "未做的仍计入待判定")
+	t.check_eq(b.performance.pending_count(), 8, "未做的仍计入待判定")
 	t.check_eq(_filter(b.judge_log, "cue_hit").size(), 0, "不应凭空产生命中")
 	t.check(_has_cue_event(b.judge_log, "cue_hint", "l1_c1_stand"),
 		"线索仍应按时发出（目标在落点前已被告知）")
@@ -436,16 +462,20 @@ func _test_13_early_action_can_be_retried_on_beat(t: ATestBase) -> void:
 func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.begin("14 松开鼠标当帧的末段位移进入目标区仍判到位")
 	var b: CueTestBench = _bench()
-	b.advance_to(14900)
+	t.check(_find(b.stage_def, "l1_c5_move_to_edge").size() > 0,
+		"本折的「走到最左边」落点存在（第 20 拍）")
+	# 「走到最左边」的目标带是 x ∈ [0.0, 0.06]，落点 12500、判定窗 12250~12750。
+	# 先把白素贞拖到目标带右侧，再在松开当帧用一次大位移跨进目标带——
+	# 验证 drag_end 不会抢先关掉到位判定（末段位移必须仍按「进入目标区」计）。
+	b.advance_to(12300)
 	b.begin_drag()
-	b.drag(Vector2(50.0, 0.0), 3)
-	t.check(b.state().stage_pos.x > 0.53, "松开前已移出中位范围")
-	b.advance_to(14980)
-	b.controller.drag_to(Vector2(-120.0, 0.0))
+	b.drag(Vector2(-440.0, 0.0), 1)
+	t.check(b.state().stage_pos.x > 0.06, "松开前还在目标带右侧：x=%.4f" % b.state().stage_pos.x)
+	b.controller.drag_to(Vector2(-434.0, 0.0))
 	b.controller.end_drag()
 	b.advance(1)
-	var outcome: Dictionary = b.performance.get_outcome("l1_c5_reach_center")
-	t.check_in_range(b.state().stage_pos.x, 0.47, 0.53, "松开当帧位置已进入目标区")
+	var outcome: Dictionary = b.performance.get_outcome("l1_c5_move_to_edge")
+	t.check_in_range(b.state().stage_pos.x, 0.0, 0.06, "松开当帧位置已进入目标区")
 	t.check_eq(bool(outcome.get("hit", false)), true,
 		"drag_end 不能抢先关闭拖动判定")
 	t.finish("末段位移在松开当帧仍参与到位判定")

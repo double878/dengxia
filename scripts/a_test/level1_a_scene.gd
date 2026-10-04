@@ -436,6 +436,8 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_HEAD_SWAP: return "按 1 / 2 / 3 与备用头架换头"
 		CueScript.ACTION_LAMP_DISTANCE: return "滚轮推拉灯，让全场影子同步缩放"
 		CueScript.ACTION_LAMP_EXPOSURE: return "按 Q / E 调整影子的显露"
+		CueScript.ACTION_UMBRELLA_TAKE: return "走到许仙身旁，按 A 抬左手与他的右手齐平接伞"
+		CueScript.ACTION_UMBRELLA_RETURN: return "向右拖回接伞的位置，把伞还回许仙右手"
 	return "跟着鼓点继续演出"
 
 
@@ -453,6 +455,8 @@ func _draw() -> void:
 	draw_line(Vector2(0.0, TABLE.position.y), Vector2(CANVAS_SIZE.x, TABLE.position.y),
 		Color("#8a6335"), 3.0)
 	_draw_foot_rail()
+	# 伞先画：它挂在影人身后那一侧（幕后看到的正是背面），不该压住持伞的人。
+	_draw_umbrella()
 	_draw_hooks()
 	_draw_head_rack()
 	_draw_hands_and_tags()
@@ -543,6 +547,47 @@ func _draw_spare_head(centre: Vector2, head_id: int) -> void:
 			draw_circle(centre + Vector2(17.0, -17.0), 7.0, accent)
 		_:
 			draw_rect(Rect2(centre.x - 24.0, centre.y - 24.0, 48.0, 10.0), accent)
+
+
+## 第一关的伞（借伞还伞流程）。只读 `UmbrellaController` 的归属与位置：
+##   持有者       → 伞挂在谁的手上（`position` 已经是那只手在幕布上的位置）
+##   递伞过渡中   → 位置在两只手之间移动，画面上就是「一只手把伞递出去」
+## 别的关卡 `umbrella` 为 null，这里直接不画。
+func _draw_umbrella() -> void:
+	if _harness == null:
+		return
+	var umbrella: UmbrellaController = _harness.runtime.director.umbrella
+	if umbrella == null:
+		return
+	# 道具不该画到幕布之外：位置来自手位，手位已在合法区间，这里再夹一次以防越界。
+	var at := Vector2(
+		CLOTH.position.x + clampf(umbrella.position.x, 0.0, 1.0) * CLOTH.size.x,
+		CLOTH.position.y + clampf(umbrella.position.y, 0.0, 1.0) * CLOTH.size.y)
+	var wood := Color("#8a5a2b")
+	var paper := Color(0.87, 0.79, 0.62, 0.92)
+	var edge := Color("#3a2a18")
+	# 伞杆：从手握处向上
+	draw_line(at, at + Vector2(0.0, -74.0), edge, 8.0)
+	draw_line(at, at + Vector2(0.0, -74.0), wood, 5.0)
+	# 伞面：一段扇形的近似（一条弧 + 一条弦）
+	var tip: Vector2 = at + Vector2(0.0, -74.0)
+	draw_colored_polygon(PackedVector2Array([
+		tip,
+		tip + Vector2(-66.0, 34.0),
+		tip + Vector2(-33.0, 46.0),
+		tip + Vector2(0.0, 50.0),
+		tip + Vector2(33.0, 46.0),
+		tip + Vector2(66.0, 34.0),
+	]), paper)
+	draw_polyline(PackedVector2Array([
+		tip + Vector2(-66.0, 34.0),
+		tip + Vector2(-33.0, 46.0),
+		tip + Vector2(0.0, 50.0),
+		tip + Vector2(33.0, 46.0),
+		tip + Vector2(66.0, 34.0),
+	]), edge, 3.0)
+	# 握伞的那只手旁边标一个短横，让「伞在谁手上」一眼可辨
+	draw_circle(at, 7.0, Color(0.98, 0.72, 0.25, 0.90))
 
 
 ## 「你的手边 · 手与三根签」：签手握住的三根签，也是鼠标抓胸签的落点。
@@ -753,6 +798,8 @@ func _action_motion(action: String, sway: float) -> Vector2:
 		CueScript.ACTION_LAMP_EXPOSURE: return Vector2(0.0, -sway)
 		CueScript.ACTION_HOOK, CueScript.ACTION_TAKE_BACK: return Vector2(0.0, -sway * 0.6)
 		CueScript.ACTION_HEAD_SWAP: return Vector2(sway * 0.5, -sway * 0.5)
+		CueScript.ACTION_UMBRELLA_TAKE: return Vector2(0.0, -sway)
+		CueScript.ACTION_UMBRELLA_RETURN: return Vector2(sway, 0.0)
 		_: return Vector2(0.0, -sway)
 
 

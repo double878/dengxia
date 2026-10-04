@@ -68,7 +68,10 @@ static func make_stage(stage_id: int) -> StageDef:
 
 
 ## —— 第一折 · 入手 ·《游湖借伞》——
-## 白素贞自峨眉下山，西湖登场亮相（站起）、游湖移步、向许仙抬手接伞、回到舟中。
+## 按用户 2026-10-04 定案的第一关流程表：许仙固定站位、右手举起持伞；
+## 玩家控制白素贞走到他身旁、左手与许仙右手等高时自动接伞（`UmbrellaController`），
+## 持伞走到舞台最左边，再向右返回**实际接伞的位置**自动还伞；末了放下左手并入舟。
+## 本折学握胸签与双手，同时由「抬手对齐」与「走到左端再回到原位」教出借还伞的因果。
 static func make_level1() -> StageDef:
 	var def := StageDef.new()
 	def.id = LEVEL1_ID
@@ -77,24 +80,33 @@ static func make_level1() -> StageDef:
 	def.track_path = ""
 	def.act = "游湖借伞"
 	def.title = "第一折 · 入手"
-	def.roles = ["白素贞"]
-	def.summary = "白素贞自峨眉下山，西湖登场亮相，游湖移步、抬手接伞，复归舟中。本折学握胸签与双手。"
+	def.roles = ["白素贞", "许仙"]
+	def.summary = "许仙立在湖边，右手举伞相候。白素贞走到他身旁、左手抬到与他右手齐平即接过伞，持伞走到最左边，再折回原处把伞还回许仙右手。本折学握胸签与双手。"
+	# 许仙（1 号）右手**举满 π**（=180°，举过头顶）持伞——流程表「开场：许仙固定站位，
+	# 右手举起持伞」。这个角度由对齐条件反推得到，不是美术偏好：
+	# 白素贞的左手要抬进 [135°, 180°] 才算「抬手」到位，换成手高就是 [0.468, 0.980]；
+	# 而接伞要求两手手高之差 ≤ 0.04（UmbrellaController.HAND_HEIGHT_TOLERANCE）。
+	# 若许仙只举到 135°（手高 0.468），白素贞必须把角度掐在 135°~151° 这一小段才对齐，
+	# 继续抬到顶反而更接不到；举满 π（手高 0.980）时，她只要抬到 168° 以上就一定接得到，
+	# 与「抬手到位」这条落点自然重合。
+	# 白素贞（0 号）左手自然垂下；她要自己把左手抬起来才会接伞。
+	# 两个挂钩仍由许仙、小青占满，第一关因此不会产生挂起/取回事件（见交接文档第 7 节）。
 	def.initial = {
 		"controlled": 0,
 		"on_stage": [0, 1, 2],
 		"hung": {1: 0, 2: 1},
 		"positions": {0: [0.50, 0.5], 1: [0.13, 0.5], 2: [0.86, 0.5]},
-		"hand_angles": {1: [1.20, 0.10], 2: [0.10, 1.20]},
+		"hand_angles": {0: [0.0, 0.0], 1: [1.20, PI], 2: [0.10, 1.20]},
 		"distance": 0.5, "exposure": 1.0, "oil": 1.0,
 	}
 	# 段落连续覆盖整关、单调递增且不重复（TECH_DESIGN.md 2.2 的校验要求）
 	def.segments = [
 		{"name": "出峨眉", "start_ms": def.beat_ms(0), "end_ms": def.beat_ms(3)},
 		{"name": "化人形", "start_ms": def.beat_ms(3), "end_ms": def.beat_ms(7)},
-		{"name": "游湖", "start_ms": def.beat_ms(7), "end_ms": def.beat_ms(13)},
-		{"name": "借伞", "start_ms": def.beat_ms(13), "end_ms": def.beat_ms(17)},
-		{"name": "还伞", "start_ms": def.beat_ms(17), "end_ms": def.beat_ms(23)},
-		{"name": "同舟", "start_ms": def.beat_ms(23), "end_ms": def.duration_ms},
+		{"name": "游湖", "start_ms": def.beat_ms(7), "end_ms": def.beat_ms(12)},
+		{"name": "借伞", "start_ms": def.beat_ms(12), "end_ms": def.beat_ms(22)},
+		{"name": "还伞", "start_ms": def.beat_ms(22), "end_ms": def.beat_ms(28)},
+		{"name": "同舟", "start_ms": def.beat_ms(28), "end_ms": def.duration_ms},
 	]
 	def.cues = make_level1_cues(def)
 	return def
@@ -103,6 +115,14 @@ static func make_level1() -> StageDef:
 ## 第一关关键动作表。落点全部取整拍，方便与重音对齐核对。
 ## 每条都在落点前 1 s 有可读线索（hint_lead_ms），满足「落点前获得提示数据」。
 ## segment 字段指向所在段落名，供按段汇总合拍度与低合拍补救使用。
+##
+## 本条流程里的位置关系（许仙固定在 x=0.13，接伞容差 ±0.06 → 接伞区 0.07~0.19，
+## 舞台最左侧可达区域的右边界 x=0.05，均见 UmbrellaController）：
+##   游湖（第 8 拍）  白素贞在 x=0.5 向左走，学会用胸签横移
+##   借伞（第 14 拍） 左手抬到 135°~180°，与许仙举着的右手齐平
+##   接伞（第 16 拍） 走到许仙身旁 0.07~0.19 且手高齐平 → 伞转到白素贞左手
+##   还伞（第 20/24 拍）先持伞到过左端（x≤0.05），再从左侧回到接伞位置才自动还伞
+##   同舟（第 28 拍） 放下已空的左手收势
 static func make_level1_cues(def: StageDef) -> Array:
 	var cues: Array = [
 		# 第 2 拍：先蹲下（stance 落到接近 1.0），为第 4 拍的站起做准备
@@ -112,19 +132,36 @@ static func make_level1_cues(def: StageDef) -> Array:
 		# 而不是 0.7-1.0（那是蹲下方向，写成后者会让蹲到底反而被判成站起）。
 		CueScript.make("l1_c1_stand", def.beat_ms(4), CueScript.ACTION_STAND_UP, 0,
 			{"key": "stance", "min": 0.0, "max": 0.05}, 250, "stand_up"),
-		# 第 8 拍：向左横向移动（默认站位 x=0.5 不算「已到位」，必须真的左移）
+		# 第 8 拍：向左走向许仙（他从 x=0.13 起就站在那里，右手一直举着）
 		CueScript.make("l1_c2_move_left", def.beat_ms(8), CueScript.ACTION_MOVE_LEFT, 0,
 			{"key": "x", "min": 0.0, "max": 0.35}, 250, "move_left"),
-		# 第 14 拍：抬手（手角 0 = 自然垂下，π = 举过头顶）
+		# 第 14 拍：抬起左手，与许仙右手齐平（手角 0 = 自然垂下，π = 举过头顶）
 		CueScript.make("l1_c3_hand_raise", def.beat_ms(14), CueScript.ACTION_HAND_RAISE, 0,
 			{"key": "angle", "min": LEVEL1_HAND_RAISE_MIN_RAD, "max": LEVEL1_HAND_RAISE_MAX_RAD},
 			250, "hand_raise"),
-		# 重音（第 20 拍）：向右横向移动
-		CueScript.make("l1_c4_move_right", def.beat_ms(20), CueScript.ACTION_MOVE_RIGHT, 0,
-			{"key": "x", "min": 0.65, "max": 1.0}, 250, "move_right"),
-		# 重音（第 24 拍）：移动到中位到位
-		CueScript.make("l1_c5_reach_center", def.beat_ms(24), CueScript.ACTION_REACH, 0,
-			{"key": "x", "min": 0.47, "max": 0.53}, 250, "reach_center"),
+		# 重音（第 16 拍）：伞在**对齐条件成立**的那一刻换手。落点在这里接棒：
+		# 玩家提前对齐、或补救时重新对齐，都由这一条如实记下偏移（早/晚各一次判定机会）。
+		# 物理上的伞早在对齐时就换手了（PRD 第 5.1 节：动作照常发生），本落点只判拍。
+		CueScript.make("l1_c4_take_umbrella", def.beat_ms(16), CueScript.ACTION_UMBRELLA_TAKE, 0,
+			{"key": "x", "min": 0.07, "max": 0.19}, 250, "umbrella_take"),
+		# 第 20 拍：持伞继续向左，走到舞台最左侧的可达区域（x=0 是左边界）。
+		# 目标带取 [0.0, 0.06]：**必须严格窄于接伞区**（0.07~0.19），否则「走到左端」
+		# 这一步会先经过接伞区、被还伞判定抢走伞（还伞要求已到过左端，因此顺序一旦颠倒
+		# 这一趟就白走了）。左端与接伞区之间留出的间隙就是给玩家的缓冲。
+		#
+		# `cue_id` 必须与第 8 拍的 `l1_c2_move_left` **不同**：两条都是 move_left，
+		# 但中间隔着 7.5 秒、是两次独立的漏做机会。补救系统按 `cue_id` 去重
+		# （同一 cue 不能重复触发自己的窗口），共用一个 id 会让这一条漏做开出两个窗口
+		# ——实测就是这样多出第 9 个 remedy_open 的。
+		CueScript.make("l1_c5_move_to_edge", def.beat_ms(20), CueScript.ACTION_MOVE_LEFT, 0,
+			{"key": "x", "min": 0.0, "max": 0.06}, 250, "move_left"),
+		# 重音（第 24 拍）：从左侧向右返回许仙身旁。目标带与接伞区同宽（±0.06）——
+		# 还伞要求「回到实际接伞位置」，两者本就是同一个区域，不另开一套容差。
+		CueScript.make("l1_c6_return_umbrella", def.beat_ms(24), CueScript.ACTION_UMBRELLA_RETURN, 0,
+			{"key": "x", "min": 0.07, "max": 0.19}, 250, "umbrella_return"),
+		# 第 26 拍：放下已经空掉的左手收势（不要求重新抬手，也不要求转身）
+		CueScript.make("l1_c7_hand_lower", def.beat_ms(26), CueScript.ACTION_HAND_LOWER, 0,
+			{"key": "angle", "min": HAND_LOWER_MIN_RAD, "max": HAND_LOWER_MAX_RAD}, 250, "hand_lower"),
 	]
 	# 标注所属段落
 	var segment_of: Dictionary = {
@@ -132,8 +169,10 @@ static func make_level1_cues(def: StageDef) -> Array:
 		"l1_c1_stand": "化人形",
 		"l1_c2_move_left": "游湖",
 		"l1_c3_hand_raise": "借伞",
-		"l1_c4_move_right": "还伞",
-		"l1_c5_reach_center": "同舟",
+		"l1_c4_take_umbrella": "借伞",
+		"l1_c5_move_to_edge": "借伞",
+		"l1_c6_return_umbrella": "还伞",
+		"l1_c7_hand_lower": "还伞",
 	}
 	for cue in cues:
 		cue["segment"] = str(segment_of.get(str(cue.get("cue_id", "")), ""))

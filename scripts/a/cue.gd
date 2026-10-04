@@ -24,17 +24,26 @@ const ACTION_TAKE_BACK: String = "take_back"           ## 取回：把已挂起�
 const ACTION_HEAD_SWAP: String = "head_swap"           ## 换头：与备用头架某槽位交换头部
 const ACTION_LAMP_DISTANCE: String = "lamp_distance"   ## 灯位：推拉灯使全场影子缩放到位
 const ACTION_LAMP_EXPOSURE: String = "lamp_exposure"   ## 倾灯：幕布影子显露程度到位
+## 第一关「游湖借伞」的两次交接（用户 2026-10-04 定案的第一关流程表）。
+## 它们由 UmbrellaController 在**对齐条件成立**时自动触发，读数是她当时的接地点 x：
+##   接伞：白素贞走到许仙身旁、且左手与许仙右手等高 → 伞转到白素贞左手
+##   还伞：已经到过左端、并从左侧返回实际接伞位置 → 伞自动交回许仙右手
+## 「抬手」另有 `l1_c3_hand_raise` 落点；交接本身不要求重新抬手，也不要求转身。
+const ACTION_UMBRELLA_TAKE: String = "umbrella_take"     ## 接伞
+const ACTION_UMBRELLA_RETURN: String = "umbrella_return" ## 还伞
 
 const ALL_ACTIONS: Array[String] = [
 	ACTION_STAND_UP, ACTION_CROUCH, ACTION_HAND_RAISE, ACTION_HAND_LOWER,
 	ACTION_MOVE_LEFT, ACTION_MOVE_RIGHT, ACTION_REACH,
 	ACTION_HOOK, ACTION_TAKE_BACK, ACTION_HEAD_SWAP,
 	ACTION_LAMP_DISTANCE, ACTION_LAMP_EXPOSURE,
+	ACTION_UMBRELLA_TAKE, ACTION_UMBRELLA_RETURN,
 ]
 
-## 「取样式」动作：由一次离散事件触发（挂起/取回/换头），不依赖连续量读数。
+## 「取样式」动作：由一次离散事件触发（挂起/取回/换头/借伞交接），不依赖连续量读数。
 ## 其余动作要么是连续量跨越（站蹲、手角、灯距、显露），要么是拖动中的位置到位。
-const EVENT_ACTIONS: Array[String] = [ACTION_HOOK, ACTION_TAKE_BACK, ACTION_HEAD_SWAP]
+const EVENT_ACTIONS: Array[String] = [ACTION_HOOK, ACTION_TAKE_BACK, ACTION_HEAD_SWAP,
+	ACTION_UMBRELLA_TAKE, ACTION_UMBRELLA_RETURN]
 
 ## 由**油灯状态**读取读数的动作（读数取自 LampState，不取自 PuppetState）。
 const LAMP_ACTIONS: Array[String] = [ACTION_LAMP_DISTANCE, ACTION_LAMP_EXPOSURE]

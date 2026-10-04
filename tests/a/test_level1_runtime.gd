@@ -68,7 +68,7 @@ func _test_start_to_end(t: ATestBase) -> void:
 	var run: Dictionary = _new_run()
 	var runtime: Object = run["runtime"]
 	t.check_eq(runtime.stage_def.duration_ms, 35000, "使用第一关 35 秒数据")
-	t.check_eq(runtime.stage_def.cues.size(), 6, "使用第一关 6 条关键动作")
+	t.check_eq(runtime.stage_def.cues.size(), 8, "使用第一关 8 条关键动作")
 	t.check_eq(_events(run, "stage_start").size(), 1, "开演只发一次 stage_start")
 	_advance(run, 35000)
 	t.check(runtime.is_over(), "35 秒（歌曲时间）时结束")

@@ -15,7 +15,7 @@ func run(harness: Object) -> int:
 	harness.clock.start()
 	_expect(harness.runtime != null, "Level1Runtime 已建立")
 	_expect(harness.runtime.stage_def.duration_ms == 35000, "第一关时长为 35000 ms")
-	_expect(harness.runtime.stage_def.cues.size() == 6, "关键动作数量为 6")
+	_expect(harness.runtime.stage_def.cues.size() == 8, "关键动作数量为 8")
 
 	# 第一关开局：三个影人同时在场，另两个分别挂在两个挂钩上（PRD 第 4.2 节），
 	# 于是两个挂钩槽从第一帧起就被占满。这决定了本关「空格 = 挂起」不可能成功，

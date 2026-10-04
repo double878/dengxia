@@ -12,6 +12,7 @@ const TestLampScript := preload("res://tests/a/test_lamp.gd")
 const TestLevel1RuntimeScript := preload("res://tests/a/test_level1_runtime.gd")
 const TestLevel1AudioScript := preload("res://tests/a/test_level1_audio.gd")
 const TestLevelHintsScript := preload("res://tests/a/test_level_hints.gd")
+const TestUmbrellaScript := preload("res://tests/a/test_umbrella.gd")
 
 
 func _initialize() -> void:
@@ -85,6 +86,14 @@ func _initialize() -> void:
 	total_passed += int(hints_result["passed"])
 	total_failed += int(hints_result["failed"])
 	exit_code = maxi(exit_code, int(hints_result["exit_code"]))
+
+	print("")
+	print("---- 第一关借伞还伞 ----")
+	var umbrella := TestUmbrellaScript.new()
+	var umbrella_result: Dictionary = umbrella.run_all()
+	total_passed += int(umbrella_result["passed"])
+	total_failed += int(umbrella_result["failed"])
+	exit_code = maxi(exit_code, int(umbrella_result["exit_code"]))
 
 	print("")
 	print("========================================")

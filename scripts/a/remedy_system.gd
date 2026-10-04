@@ -156,6 +156,14 @@ func _open_for_new_errors(song_time_ms: int, real_time_ms: int,
 	for cue_id in performance.missed_outright_cue_ids():
 		if windows.has(cue_id):
 			continue                      ## 同一错误不能反复触发
+		# 一个落点只能被补救一次，**不论哪条路径先选中它**。
+		#
+		# 两条路径会盯上同一个落点：低合拍度路径按段挑「本段第一条还没判定的 cue」，
+		# 而那条 cue 如果一直没人做，稍后必然也被漏做路径选中。没有这道闸门时，
+		# 实测出现过同一个 `l1_c5_move_to_edge` 先吃一个低合拍窗口、窗口超时关闭后
+		# 再吃一个漏做窗口——同一次失误被罚了两次，补救窗口总数比落点数还多一个。
+		# `_already_recorded` 认「已经有了结案记录」的落点（低合拍与漏做都算），
+		# 于是先开的那一次生效，后到的那条路径让位，记录仍然只留一条。
 		if _already_recorded(cue_id):
 			continue
 		open(cue_id, REASON_MISSED, song_time_ms, real_time_ms)
@@ -271,9 +279,12 @@ func _select_demo(song_time_ms: int, real_time_ms: int) -> void:
 		})
 
 
+## 这个落点是否已经有过了结的补救记录（低合拍与漏做都算）。
+## 「同一错误不能反复触发或重置自己的窗口」（PRD 第 5.2.6 节）依赖它：
+## 两条触发路径（漏做 / 低合拍）各自都有去重，但**跨路径**的去重只能靠记录。
 func _already_recorded(cue_id: String) -> bool:
 	for record in records:
-		if str(record.get("cue_id", "")) == cue_id and str(record.get("reason", "")) != REASON_LOW_SYNC:
+		if str(record.get("cue_id", "")) == cue_id:
 			return true
 	return false
 

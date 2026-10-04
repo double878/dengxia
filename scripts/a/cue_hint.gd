@@ -17,6 +17,7 @@ const KIND_HOOK: String = "hook"            ## 挂起 / 取回影人（第 2 关
 const KIND_HEAD: String = "head"            ## 与备用头架换头（第 4 关）
 const KIND_LAMP_DISTANCE: String = "lamp_distance"   ## 推拉灯位使影子缩放（第 3 关）
 const KIND_LAMP_EXPOSURE: String = "lamp_exposure"   ## 倾灯改变影子显露（第 4 关）
+const KIND_UMBRELLA: String = "umbrella"             ## 借伞 / 还伞（第 1 关）
 
 ## 与 Cue.ACTION_* 一一对应的动作名，保持字符串一致即可，不建立类依赖。
 const ACTION_STAND_UP: String = "stand_up"
@@ -31,6 +32,8 @@ const ACTION_TAKE_BACK: String = "take_back"
 const ACTION_HEAD_SWAP: String = "head_swap"
 const ACTION_LAMP_DISTANCE: String = "lamp_distance"
 const ACTION_LAMP_EXPOSURE: String = "lamp_exposure"
+const ACTION_UMBRELLA_TAKE: String = "umbrella_take"
+const ACTION_UMBRELLA_RETURN: String = "umbrella_return"
 
 
 ## 由动作类型推导线索种类，保证「线索说的动作」与「判定的动作」永远一致。
@@ -52,6 +55,8 @@ static func kind_for_action(action: String) -> String:
 			return KIND_LAMP_DISTANCE
 		ACTION_LAMP_EXPOSURE:
 			return KIND_LAMP_EXPOSURE
+		ACTION_UMBRELLA_TAKE, ACTION_UMBRELLA_RETURN:
+			return KIND_UMBRELLA
 	return KIND_STANCE
 
 
