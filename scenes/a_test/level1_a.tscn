@@ -1,0 +1,104 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/a_test/level1_a_scene.gd" id="1_scene"]
+[ext_resource type="Script" path="res://scripts/a_test/placeholder_lamp.gd" id="2_lamp"]
+[ext_resource type="Script" path="res://scripts/a_test/placeholder_puppet.gd" id="3_puppet"]
+
+[node name="Level1AScene" type="Node2D"]
+script = ExtResource("1_scene")
+
+[node name="Lamp" type="Node2D" parent="."]
+script = ExtResource("2_lamp")
+
+[node name="Puppet0" type="Node2D" parent="."]
+script = ExtResource("3_puppet")
+
+[node name="Puppet1" type="Node2D" parent="."]
+script = ExtResource("3_puppet")
+
+[node name="Puppet2" type="Node2D" parent="."]
+script = ExtResource("3_puppet")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="StatusLabel" type="Label" parent="Hud"]
+offset_left = 76.0
+offset_top = 16.0
+offset_right = 1100.0
+offset_bottom = 66.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.93, 0.83, 0.64, 1)
+theme_override_font_sizes/font_size = 28
+
+[node name="PauseButton" type="Button" parent="Hud"]
+offset_left = 1766.0
+offset_top = 15.0
+offset_right = 1838.0
+offset_bottom = 67.0
+theme_override_font_sizes/font_size = 28
+text = "Ⅱ"
+tooltip_text = "暂停演出（也可以按 ESC）"
+
+[node name="RemedyBanner" type="Label" parent="Hud"]
+offset_left = 520.0
+offset_top = 700.0
+offset_right = 1560.0
+offset_bottom = 760.0
+mouse_filter = 2
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.82, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0.1, 0.06, 0.02, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 32
+
+[node name="HandLabel" type="Label" parent="Hud"]
+offset_left = 800.0
+offset_top = 898.0
+offset_right = 1120.0
+offset_bottom = 936.0
+mouse_filter = 2
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.74, 0.64, 0.46, 1)
+theme_override_font_sizes/font_size = 20
+text = "手与三根签"
+
+[node name="HooksLabel" type="Label" parent="Hud"]
+offset_left = 1120.0
+offset_top = 898.0
+offset_right = 1360.0
+offset_bottom = 936.0
+mouse_filter = 2
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.74, 0.64, 0.46, 1)
+theme_override_font_sizes/font_size = 20
+text = "两个挂钩"
+
+[node name="RackLabel" type="Label" parent="Hud"]
+offset_left = 1420.0
+offset_top = 898.0
+offset_right = 1760.0
+offset_bottom = 936.0
+mouse_filter = 2
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.74, 0.64, 0.46, 1)
+theme_override_font_sizes/font_size = 20
+text = "备用影人头 1 / 2 / 3"
+
+[node name="HookLabel" type="Label" parent="Hud"]
+offset_left = 380.0
+offset_top = 944.0
+offset_right = 1540.0
+offset_bottom = 986.0
+mouse_filter = 2
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.83, 0.73, 0.55, 1)
+theme_override_font_sizes/font_size = 22
+
+[node name="CueLabel" type="Label" parent="Hud"]
+offset_left = 88.0
+offset_top = 1006.0
+offset_right = 1300.0
+offset_bottom = 1060.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.93, 0.83, 0.64, 1)
+theme_override_font_sizes/font_size = 27

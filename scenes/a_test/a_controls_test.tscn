@@ -1,0 +1,126 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/a/puppet_state.gd" id="1_puppet_state"]
+[ext_resource type="Script" path="res://scripts/a/puppet_controller.gd" id="2_puppet_controller"]
+[ext_resource type="Script" path="res://scripts/a_test/controls_harness.gd" id="3_harness"]
+[ext_resource type="Script" path="res://scripts/a_test/placeholder_puppet.gd" id="4_placeholder"]
+[ext_resource type="Script" path="res://scripts/a_test/controls_test_scene.gd" id="5_test_scene"]
+[ext_resource type="Script" path="res://scripts/a_test/frame_clock.gd" id="6_frame_clock"]
+[ext_resource type="Script" path="res://scripts/a_test/input_reader.gd" id="7_input_reader"]
+[ext_resource type="Script" path="res://scripts/a/music_clock.gd" id="8_music_clock"]
+[ext_resource type="Script" path="res://scripts/a/stage_def.gd" id="9_stage_def"]
+[ext_resource type="Script" path="res://scripts/a_test/metronome.gd" id="10_metronome"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.05, 0.05, 0.07, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.45, 0.25, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="ControlsTestScene" type="Node2D"]
+script = ExtResource("5_test_scene")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 2
+color = Color(0.08, 0.07, 0.09, 1)
+
+[node name="StageFloor" type="ColorRect" parent="."]
+offset_top = 150.0
+offset_right = 1920.0
+offset_bottom = 790.0
+mouse_filter = 2
+color = Color(0.14, 0.12, 0.11, 1)
+
+[node name="Puppet" type="Node2D" parent="."]
+script = ExtResource("4_placeholder")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="HintLabel" type="Label" parent="Hud"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 1908.0
+offset_bottom = 40.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+text = "占位提示"
+
+[node name="StatePanel" type="Panel" parent="Hud"]
+offset_left = 12.0
+offset_top = 48.0
+offset_right = 726.0
+offset_bottom = 590.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="StateLabel" type="RichTextLabel" parent="Hud/StatePanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 702.0
+offset_bottom = 532.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 17
+theme_override_font_sizes/bold_font_size = 19
+
+[node name="CuePanel" type="Panel" parent="Hud"]
+offset_left = 12.0
+offset_top = 600.0
+offset_right = 726.0
+offset_bottom = 1030.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="CueLabel" type="RichTextLabel" parent="Hud/CuePanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 702.0
+offset_bottom = 412.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 16
+theme_override_font_sizes/bold_font_size = 18
+
+[node name="EventPanel" type="Panel" parent="Hud"]
+offset_left = 738.0
+offset_top = 48.0
+offset_right = 1452.0
+offset_bottom = 528.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="EventLabel" type="RichTextLabel" parent="Hud/EventPanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 702.0
+offset_bottom = 470.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 17
+theme_override_font_sizes/bold_font_size = 19
+
+[node name="ClockPanel" type="Panel" parent="Hud"]
+offset_left = 738.0
+offset_top = 540.0
+offset_right = 1452.0
+offset_bottom = 1030.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="ClockLabel" type="RichTextLabel" parent="Hud/ClockPanel"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 702.0
+offset_bottom = 470.0
+mouse_filter = 2
+bbcode_enabled = true
+theme_override_font_sizes/normal_font_size = 17
+theme_override_font_sizes/bold_font_size = 19
