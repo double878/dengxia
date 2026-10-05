@@ -131,39 +131,48 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.check(stand_max <= 0.1, "站起到位范围应接近完全站立（stance≈0），实际 max=%.4f" % stand_max)
 	t.check(crouch_min >= 0.8, "蹲下到位范围应接近完全蹲下（stance≈1），实际 min=%.4f" % crouch_min)
 
-	# 「走到最右端」的目标带必须与交接窗口完全不重叠：否则这一趟会先经过交接窗口，
-	# 在还没到过右端的时候就被还伞判定抢走伞，流程顺序颠倒。
-	var edge_band: Dictionary = _find(def, "l1_c5_move_to_edge")["target_range"]
+	# 「走到小青身旁」的目标带必须与交接窗口完全不重叠：否则这一趟会先经过交接窗口，
+	# 在还没到过折返点的时候就被还伞判定抢走伞，流程顺序颠倒。
+	var turn_band: Dictionary = _find(def, "l1_c5_move_to_xiaoping")["target_range"]
 	var take_band: Dictionary = _find(def, "l1_c4_take_umbrella")["target_range"]
-	t.check(float(edge_band["min"]) > float(take_band["max"]),
-		"最右端目标带（≥%.2f）应完全在交接窗口（≤%.2f）右侧"
-			% [float(edge_band["min"]), float(take_band["max"])])
-	# 下界必须与控制器的「已到过右端」阈值**完全一致**：若落点带的下界更低
-	# （这里曾写 0.94，而控制器要求 ≥0.95，差 0.01 = 19 px），玩家停在两者之间时
-	# 会出现最坏的错配——「走到最右端」这条拍点判命中，但控制器没记下「到过右端」，
-	# 走回去还伞永远不触发。实测模拟正常手速玩家时正好停在 0.94 上踩到了。
-	t.check_approx(float(edge_band["min"]), UmbrellaControllerScript.RIGHT_EDGE_X, 1e-9,
-		"最右端目标带下界应等于控制器的 RIGHT_EDGE_X")
+	t.check(float(turn_band["min"]) > float(take_band["max"]),
+		"折返点目标带（≥%.2f）应完全在交接窗口（≤%.2f）右侧"
+			% [float(turn_band["min"]), float(take_band["max"])])
+	# 下界必须与控制器的「已到过折返点」阈值**完全一致**：若落点带的下界更低，
+	# 玩家停在两者之间时会出现最坏的错配——拍点判命中、但控制器没记下「到过折返点」，
+	# 走回去时还伞永远不触发。（这条曾经真的踩过：落点带写 0.94、控制器要求 0.95。）
+	t.check_approx(float(turn_band["min"]), UmbrellaControllerScript.TURN_POINT_X, 1e-9,
+		"折返点目标带下界应等于控制器的 TURN_POINT_X")
+	# 上界要停在小青（0.86 不动）左侧，否则两具影身画面上会叠在一起
+	t.check(float(turn_band["max"]) <= StageDef.LEVEL1_XIAOPING_X - 0.02,
+		"折返点目标带上界（%.2f）应停在小青（%.2f）左侧"
+			% [float(turn_band["max"]), StageDef.LEVEL1_XIAOPING_X])
 	# 两次交接共用同一个窗口：还伞遵循与接伞相同的判据
 	t.check_approx(float(_find(def, "l1_c6_return_umbrella")["target_range"]["min"]),
 		float(take_band["min"]), 1e-9, "还伞目标带应与接伞同一段窗口")
 
-	# —— 长距离移动的时间预算（2026-10-04 实测教训，用户报「根本来不及向右走」）——
-	# 两次「走到一端」各要走约 0.65 个舞台宽 ≈ 1250 画布像素（拖动 1:1 映射），
-	# 按正常拖速 450~600 px/s 需 2~2.8 s，再加反应时间。原来这两条一律按原地动作处理：
+	# —— 长距离移动的时间预算（2026-10-04 教训，用户报「根本来不及向右走」）——
+	# 两次横移各走约 0.5~0.55 个舞台宽（960~1060 画布像素，拖动 1:1 映射），
+	# 按正常拖速 450~600 px/s 需 1.6~2.4 s，再加反应时间。曾经这两条按原地动作处理：
 	# 线索只提前 1 s、拍间只留 2.5 s——玩家看到提示就只剩 1 s，实测走不到。
 	# 因此这里把「拍间间隔」与「线索提前量」两条都钉住：任何一条被改小都会被拦下。
-	for pair in [["l1_c4_take_umbrella", "l1_c5_move_to_edge"],
-			["l1_c5_move_to_edge", "l1_c6_return_umbrella"]]:
+	for pair in [["l1_c4_take_umbrella", "l1_c5_move_to_xiaoping"],
+			["l1_c5_move_to_xiaoping", "l1_c6_return_umbrella"]]:
 		var gap: int = int(_find(def, pair[1])["beat_time_ms"]) \
 			- int(_find(def, pair[0])["beat_time_ms"])
 		var lead: int = int(_find(def, pair[1])["hint_lead_ms"])
 		t.check(gap >= StageDef.MOVE_BUDGET_MS,
-			"「%s」→「%s」的拍间间隔 %d ms 应 ≥ 移动预算 %d ms（要走 0.65 个舞台宽）"
+			"「%s」→「%s」的拍间间隔 %d ms 应 ≥ 移动预算 %d ms（要走 0.5~0.55 个舞台宽）"
 				% [pair[0], pair[1], gap, StageDef.MOVE_BUDGET_MS])
 		t.check(lead >= StageDef.MOVE_BUDGET_MS,
 			"「%s」是长距离移动，线索提前量 %d ms 应 ≥ 移动预算 %d ms"
 				% [pair[1], lead, StageDef.MOVE_BUDGET_MS])
+	# 尾部不能留长空档（2026-10-05 教训，用户报「所有动作做完还有约 10 秒没事做」）：
+	# 最后一条落点必须贴近关卡结尾，只留 <= LEVEL1_TAIL_MS 收势。
+	var tail: int = def.duration_ms - int(_find(def, "l1_c7_hand_lower")["beat_time_ms"])
+	t.check(tail <= StageDef.LEVEL1_TAIL_MS,
+		"最后一条落点之后只剩 %d ms，应不超过 %d ms（否则玩家做完动作要干等）"
+			% [tail, StageDef.LEVEL1_TAIL_MS])
 	# 原地动作仍按 1 s 提前：不要被顺手改成 3 s（提前量过大等于上一拍刚做完就提示下一步）
 	for cue_id in ["l1_c0_crouch", "l1_c1_stand", "l1_c3_hand_raise",
 			"l1_c4_take_umbrella", "l1_c7_hand_lower"]:
@@ -514,20 +523,22 @@ func _test_13_early_action_can_be_retried_on_beat(t: ATestBase) -> void:
 func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.begin("14 松开鼠标当帧的末段位移进入目标区仍判到位")
 	var b: CueTestBench = _bench()
-	t.check(_find(b.stage_def, "l1_c5_move_to_edge").size() > 0,
-		"本折的「走到最右端」落点存在（第 22 拍）")
-	# 「走到最右端」的目标带是 x ∈ [0.95, 1.0]，落点 13750、判定窗 13500~14000。
-	# 先把白素贞拖到目标带左侧，再在松开当帧用一次大位移跨进目标带——
+	t.check(_find(b.stage_def, "l1_c5_move_to_xiaoping").size() > 0,
+		"本折的「走到小青身旁」落点存在（第 26 拍）")
+	# 目标带是 x ∈ [0.74, 0.84]，落点 16250、判定窗 16000~16500。
+	# 先把白素贞拖到目标带左侧，再在松开当帧用一次位移跨进目标带——
 	# 验证 drag_end 不会抢先关掉到位判定（末段位移必须仍按「进入目标区」计）。
-	b.advance_to(13550)
+	b.advance_to(16050)
 	b.begin_drag()
 	b.drag(Vector2(440.0, 0.0), 1)
-	t.check(b.state().stage_pos.x < 0.94, "松开前还在目标带左侧：x=%.4f" % b.state().stage_pos.x)
-	b.controller.drag_to(Vector2(434.0, 0.0))
+	t.check(b.state().stage_pos.x < StageDef.LEVEL1_TURN_MIN,
+		"松开前还在目标带左侧：x=%.4f" % b.state().stage_pos.x)
+	b.controller.drag_to(Vector2(120.0, 0.0))
 	b.controller.end_drag()
 	b.advance(1)
-	var outcome: Dictionary = b.performance.get_outcome("l1_c5_move_to_edge")
-	t.check_in_range(b.state().stage_pos.x, 0.94, 1.0, "松开当帧位置已进入目标区")
+	var outcome: Dictionary = b.performance.get_outcome("l1_c5_move_to_xiaoping")
+	t.check_in_range(b.state().stage_pos.x, StageDef.LEVEL1_TURN_MIN, StageDef.LEVEL1_TURN_MAX,
+		"松开当帧位置已进入目标区")
 	t.check_eq(bool(outcome.get("hit", false)), true,
 		"drag_end 不能抢先关闭拖动判定")
 	t.finish("末段位移在松开当帧仍参与到位判定")

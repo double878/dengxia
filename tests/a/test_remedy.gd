@@ -132,18 +132,20 @@ func _test_01b_all_hits_no_remedy(t: ATestBase) -> void:
 	t.finish("前半场五条落点全部命中，没有补救窗口与冻结")
 
 
-## 借伞还伞后半程的端到端走查：接到伞 → 走到最右边 → 转身走回 → 按拍还伞 → 放手收势。
+## 借伞还伞后半程的端到端走查：接到伞 → 走到小青身旁 → 转身走回 → 按拍还伞 → 放手收势。
 ##
 ## 与 01b 拆开的原因：补救窗口开着时歌曲时间是冻结的，前半场只要有一条错拍，
 ## 后半场的落点时刻就全部对不上。
 ##
-## 这条测试覆盖**八条落点全部命中且零补救窗口**，因此它同时钉住两件容易悄悄退化的事：
-##   ① 长距离移动落点的时间预算（走到最右端、走回还伞各留 3.75 s）——
+## 这条测试覆盖**八条落点全部命中且零补救窗口**，因此它同时钉住三件容易悄悄退化的事：
+##   ① 长距离移动落点的时间预算（走到小青身旁 6.25 s、走回还伞 8.75 s）——
 ##      步长按「正常拖速」折算，走不完就会错过拍点；
 ##   ② `l1_c6_return_umbrella` 的 `target_object` 必须等于交接事件上报的 `object_id`（许仙）。
-##      写错时这条落点永远判不到（判定直接跳过、窗后判死），本测试会立刻失败。
+##      写错时这条落点永远判不到（判定直接跳过、窗后判死），本测试会立刻失败；
+##   ③ 折返点是**小青身旁**（0.74），不是舞台最右端——`has_reached_turn_point()` 必须置起，
+##      否则还伞不触发。
 func _test_01c_borrow_and_return_journey(t: ATestBase) -> void:
-	t.begin("01c 借伞还伞后半程：走到最右边、转身走回、按拍还伞、放手收势")
+	t.begin("01c 借伞还伞后半程：走到小青身旁、转身走回、按拍还伞、放手收势")
 	var b: DirectorTestBench = _bench()
 	var umb: UmbrellaController = b.director.umbrella
 	t.check(umb != null and umb.is_enabled(), "第一关应启用借伞还伞流程")
@@ -174,20 +176,20 @@ func _test_01c_borrow_and_return_journey(t: ATestBase) -> void:
 	t.check_eq(umb.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID,
 		"两只手相接后应已接过伞")
 
-	# 接到伞后向右走，走到舞台最右侧的可达区域（落点 13750，目标带 x ≥ 0.94）。
-	# `drag_to_x(target_x, step_px)` 的第二个参数是**每步位移量（像素）**：从 0.28 走到 0.94
-	# 是 1267 px、每步 10 px（127 步 = 1270 ms），因此从 12500 ms 起走，跨进目标带约在 13770。
-	b.advance_to(12500)
+	# 向右走，走到**小青身旁**（落点 16250，目标带 x ∈ [0.74, 0.84]）。
+	# `drag_to_x(target_x, step_px)` 的第二个参数是**每步位移量（像素）**：从 0.28 走到 0.74
+	# 是 883 px、每步 10 px（89 步 = 890 ms），因此从 15350 ms 起走，跨进目标带约在 16240。
+	b.advance_to(15350)
 	b.begin_drag()
-	b.drag_to_x(0.98, 10.0)
+	b.drag_to_x(0.80, 10.0)
 	b.end_drag()
-	t.check(umb.has_reached_right_edge(), "走到最右边后应记下「已到过右端」")
+	t.check(umb.has_reached_turn_point(), "走到小青身旁后应记下「已到过折返点」")
 
-	# 转身向左走回许仙身旁还伞（落点 17500）。一次连续左扫：从最右边一路走回交接窗口，
+	# 转身向左走回许仙身旁还伞（落点 25000）。一次连续左扫：从小青身旁一路走回交接窗口，
 	# 还伞应当在「踏进交接窗口」的那一刻触发。影人的「转身」由拖动方向自动完成
 	# （皮影只有正反两面，0.1 秒翻面），因此不为它单开落点。
-	# 从 0.98 走回窗口上界 0.296 是 1313 px、每步 12 px（110 步 = 1100 ms），
-	# 因此从 16400 ms 起走，跨进窗口约在 17500。
+	# 从 0.80 走回窗口上界 0.296 是 968 px、每步 12 px（81 步 = 810 ms），
+	# 因此从 24190 ms 起走，跨进窗口约在 25000。
 	#
 	# 这里**可以**断言还伞的拍点容差了（此前不能）。原来的注释把「还伞稳定偏 +260 ms」
 	# 归因成「测试台拖动模型的时序问题」，其实根因是关卡数据：`l1_c6_return_umbrella` 的
@@ -195,21 +197,21 @@ func _test_01c_borrow_and_return_journey(t: ATestBase) -> void:
 	# 判定时被 `target_object != object_id` 直接跳过——**这条落点从来没被判过**，
 	# 每次都是窗过之后由 detect_misses 判死，offset 正好是窗上界后的 +260 ms。
 	# 2026-10-04 把 `target_object` 改成许仙后，这条落点恢复判定（这条断言就是验证）。
-	b.advance_to(16400)
+	b.advance_to(24190)
 	b.begin_drag()
 	b.drag_to_x(0.22, 12.0)
 	b.end_drag()
-	b.advance_to(17600)
+	b.advance_to(25100)
 
-	# 放下已经空掉的左手收势（落点 18750，判定窗 18500~19000）：放手速度 4.5 rad/s，
-	# 从 90° 落回 0 约需 0.35 s，因此从 18600 ms 开始按住。
-	b.advance_to(18600)
+	# 放下已经空掉的左手收势（落点 30000，判定窗 29750~30250）：放手速度 4.5 rad/s，
+	# 从 90° 落回 0 约需 0.35 s，因此从 29800 ms 开始按住。
+	b.advance_to(29800)
 	b.hold_left_lower(80)
 	b.idle(1)
 
 	var hits: Array[String] = []
 	for cue_id in ["l1_c0_crouch", "l1_c1_stand", "l1_c2_move_left", "l1_c3_hand_raise",
-			"l1_c4_take_umbrella", "l1_c5_move_to_edge", "l1_c6_return_umbrella",
+			"l1_c4_take_umbrella", "l1_c5_move_to_xiaoping", "l1_c6_return_umbrella",
 			"l1_c7_hand_lower"]:
 		var outcome: Dictionary = b.director.performance.get_outcome(cue_id)
 		if bool(outcome.get("hit", false)):

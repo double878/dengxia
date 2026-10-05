@@ -18,9 +18,11 @@ class_name UmbrellaController
 ##   接伞      白素贞走到许仙面前（**不必贴住他、更不必穿过他**）、把左手抬到 90°，
 ##             两只手碰到一起（手距与手高都在容差内）→ 伞自动转到白素贞左手。
 ##   向右走    接到伞后立即向右走；许仙右手一直举着；白素贞可自行放下左手，伞跟随她的手。
-##   到达最右边 白素贞持伞进入舞台最右侧的可达区域，系统记下「已到过右端」。
+##   走到折返点 白素贞持伞走到**小青身旁**（舞台右侧的折返点），系统记下「已到过折返点」。
+##             用户 2026-10-05 修订：原先要求走到舞台最右端（x≥0.95），实测太远、也没必要——
+##             小青就站在右侧，走到她身旁即可。
 ##   转身返回  玩家反向拖动白素贞，她自动翻面（皮影只有正反两面）向左走回许仙身旁。
-##   还伞      已经到过右端、并走回交接位置（手距进入容差）→ 伞自动交回许仙右手。
+##   还伞      已经到过折返点、并走回交接位置（手距进入容差）→ 伞自动交回许仙右手。
 ##             不要求她重新抬手；手位较低时用短暂递伞过渡衔接。
 ##   收势      放下左手。
 ##
@@ -64,10 +66,17 @@ const HAND_JOIN_TOLERANCE: float = 0.06
 ## 也就是说「两只手大致齐平」才算相接，随手乱举不会被判成相接。
 ## 只有**接伞**要这一条：还伞不要求她重新抬手（手位低时用递伞过渡衔接）。
 const HAND_HEIGHT_TOLERANCE: float = 0.04
-## 「舞台最右侧的可达区域」的左边界。玩家把白素贞拖到 x ≥ 此值即记下「已到过右端」。
-## 0.95 与交接窗口（许仙 x=0.13 → 0.176~0.296）不重叠，因此「已经到过右端」
+## 折返点的左边界：玩家把白素贞拖到 x ≥ 此值即记下「已到过折返点」，之后走回来才可能还伞。
+##
+## 折返点取**小青身旁**（用户 2026-10-05 定案，此前要求走到舞台最右端 0.95）：小青站在
+## `StageDef` 开演布景里的 x=0.86 且整关不动，0.74 让白素贞停在她左侧、留约 0.12 个身位
+## （两具影身各宽约 0.026，再近画面上就会叠在一起）。
+## 它与交接窗口（许仙 x=0.13 → 0.176~0.296）不重叠，因此「已经到过折返点」
 ## 一定意味着真的离开过交接位置往右走过。
-const RIGHT_EDGE_X: float = 0.95
+##
+## ⚠️ 落点的目标带下界**必须取这个值**，不要另写一个数：控制器置起标记的条件就是这个不等式；
+## 落点带若写得比它低，会出现「拍点判命中、却没记下到过折返点」→ 走回去时还伞永远不触发。
+const TURN_POINT_X: float = 0.74
 ## 还伞要求「从右侧向左返回」：横向变化小于这个值视为站定，不当作返回动作。
 const DIRECTION_EPSILON: float = 0.0005
 
@@ -90,8 +99,8 @@ var _holder_id: int = -1
 var _holder_hand: String = XUXIAN_HAND
 ## 实际接伞时的位置（供显示端/录制参考；**还伞的判据是走回交接窗口，不是精确回到这一点**）。
 var _borrow_x: float = 0.0
-## 本次持伞期间是否已经到达过舞台最右侧的可达区域。
-var _reached_right_edge: bool = false
+## 本次持伞期间是否已经走到过折返点（小青身旁）。
+var _reached_turn_point: bool = false
 ## 伞在幕布上的归一化位置（A 内部口径；**显示端不要拿它换算像素**，见 `hand_position()`）。
 var position: Vector2 = Vector2.ZERO
 ## 正在做递伞过渡。
@@ -128,7 +137,7 @@ func setup(p_stage_def: StageDef, p_puppets: Array) -> bool:
 	_take_reported = false
 	_return_reported = false
 	_must_leave_zone = false
-	_reached_right_edge = false
+	_reached_turn_point = false
 	handing_off = false
 	_handoff_progress = 1.0
 	_handoff_from_id = -1
@@ -172,7 +181,7 @@ func update(song_time_ms: int, _frame_events: Array) -> void:
 		# 顺序要紧：先按此刻的位置更新「已到过左端」，再判还伞。
 		# 反过来的话，白素贞一帧内从左端挪回接伞位置时，还伞会读到上一帧的
 		# 「到过左端」，而她此刻明明还在接伞区右侧之外——还伞因此会提前在左端触发。
-		_note_right_edge()
+		_note_turn_point()
 		_try_return(song_time_ms)
 	_follow_hand()
 	_previous_x = _puppet_x(BAISUZHEN_ID)
@@ -253,8 +262,8 @@ func borrow_position() -> float:
 	return _borrow_x
 
 
-func has_reached_right_edge() -> bool:
-	return _reached_right_edge
+func has_reached_turn_point() -> bool:
+	return _reached_turn_point
 
 
 ## —— 递伞过渡的只读读数（给显示端画「一只手把伞递给另一只手」）——
@@ -300,7 +309,7 @@ func take_events() -> Array[Dictionary]:
 func _try_take(song_time_ms: int) -> void:
 	# 还伞之后必须先离开交接窗口，才能再接一次。
 	# 否则「还伞」与「接伞」的条件在她站着不动的同一帧里同时成立，伞会每帧在两人之间来回弹
-	# （还伞 → 仍然相接 → 又接走 → 又还 → …）。这与「到达最右边」用同一套纪律：
+	# （还伞 → 仍然相接 → 又接走 → 又还 → …）。这与「走到折返点」用同一套纪律：
 	# 一个动作要真的做过一次位移才算发生过，不能靠在原地反复满足条件刷出来。
 	if _must_leave_zone:
 		if in_join_window():
@@ -313,7 +322,7 @@ func _try_take(song_time_ms: int) -> void:
 	_borrow_x = _puppet_x(BAISUZHEN_ID)
 	_holder_id = BAISUZHEN_ID
 	_holder_hand = BAISUZHEN_HAND
-	_reached_right_edge = false
+	_reached_turn_point = false
 	_begin_handoff(position, hand_position(BAISUZHEN_ID, BAISUZHEN_HAND),
 		previous_id, previous_hand)
 	if not _take_reported:
@@ -322,31 +331,31 @@ func _try_take(song_time_ms: int) -> void:
 	_return_reported = false
 
 
-## —— 到达最右边 ——
-## 白素贞**持伞走进舞台最右侧的可达区域**时，系统记下「已到过右端」。
-## 这是还伞的前置条件：没有真的往右走到过右端，走回许仙身旁不会自动交伞
+## —— 走到折返点（小青身旁）——
+## 白素贞**持伞走到小青身旁**（x ≥ TURN_POINT_X）时，系统记下「已到过折返点」。
+## 这是还伞的前置条件：没有真的往右走到过折返点，走回许仙身旁不会自动交伞
 ## （否则她接到伞站在原地不动就会被判成「已经回来」，伞来回弹个不停）。
 ##
 ## 标记「置起」与「清掉」都不能只看位置，必须同时看**方向**（规则与原先成镜像）：
-##   置起：x ≥ RIGHT_EDGE_X（真的走到了最右边）
+##   置起：x ≥ TURN_POINT_X（真的走到了小青身旁）
 ##   清掉：**又往更右边走在交接窗口之外**（x 在增大，且此刻不在窗口里）
 ##
-## 「又往更右边走」正是重新走一趟「到最右端 → 返回」的开头；向左走回、站着不动都不作废。
-func _note_right_edge() -> void:
+## 「又往更右边走」正是重新走一趟「走到折返点 → 返回」的开头；向左走回、站着不动都不作废。
+func _note_turn_point() -> void:
 	var x: float = _puppet_x(BAISUZHEN_ID)
-	if x >= RIGHT_EDGE_X:
-		_reached_right_edge = true
+	if x >= TURN_POINT_X:
+		_reached_turn_point = true
 		return
 	if not in_join_window() and x > _previous_x:
-		_reached_right_edge = false
+		_reached_turn_point = false
 
 
 ## —— 还伞 ——
-## 三个条件同时成立才自动交回：①本次持伞期间到过最右端；②此刻走回交接窗口（两只手相接的位置带）；
+## 三个条件同时成立才自动交回：①本次持伞期间到过折返点；②此刻走回交接窗口（两只手相接的位置带）；
 ## ③正在从右侧向左返回（白素贞在向左走）。**不要求她重新抬手**，也不要求单独做一次转身——
 ## 影人只有正反两面，拖动方向一变就自动翻面（`facing_turn`）。
 func _try_return(song_time_ms: int) -> void:
-	if not _reached_right_edge:
+	if not _reached_turn_point:
 		return
 	if not in_join_window():
 		return
@@ -357,7 +366,7 @@ func _try_return(song_time_ms: int) -> void:
 	var previous_hand: String = _holder_hand
 	_holder_id = XUXIAN_ID
 	_holder_hand = XUXIAN_HAND
-	_reached_right_edge = false
+	_reached_turn_point = false
 	_begin_handoff(position, hand_position(XUXIAN_ID, XUXIAN_HAND),
 		previous_id, previous_hand)
 	_must_leave_zone = true
