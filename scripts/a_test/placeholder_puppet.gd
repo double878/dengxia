@@ -42,6 +42,11 @@ const HIP_RATIO: float = 0.44         ## 髋在接地点上方 0.44 个身高
 const HALF_W_RATIO: float = 0.105     ## 半身宽
 const UPPER_ARM_RATIO: float = 0.16   ## 上臂长（与下臂合计 0.31 个身高）
 const LOWER_ARM_RATIO: float = 0.15   ## 下臂长
+## 头：中心在肩上方 0.115 个身高、半径 0.105 个身高。
+## 抽成常量是因为**伞面要罩住头**（用户 2026-10-05）：伞的定位读
+## `head_top_screen_position()`，与这里画出来的头共用同一套数，不会各算一套。
+const HEAD_CENTRE_RATIO: float = 0.115
+const HEAD_RADIUS_RATIO: float = 0.105
 ## 站蹲对身高的折减系数：蹲到底矮 32%，与腿部的外张幅度配合。
 const STANCE_HEIGHT_DROP: float = 0.32
 
@@ -146,6 +151,24 @@ func hand_screen_position(hand: String) -> Vector2:
 	return arm_wrist(shoulder, angle, right_side, height)
 
 
+## 头半径（像素）。翻面压扁时头也收窄，但不小于 4 px——侧对观众那一瞬头不能消失。
+func head_radius_px(height: float) -> float:
+	return maxf(height * HEAD_RADIUS_RATIO * maxf(flip_width_ratio(), 0.35), 4.0)
+
+
+## 头顶在屏幕上的位置（像素）。**只读状态，不改任何东西。**
+## 「要罩住头的东西」（第一关的伞面）按这个点定位，就不会与画出来的头错位；
+## 灯距变化、翻面压扁时也一并跟随。
+func head_top_screen_position() -> Vector2:
+	if puppet_state == null:
+		return Vector2.ZERO
+	var height: float = figure_px_height()
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var centre := Vector2(ground.x,
+		ground.y - height * (SHOULDER_RATIO + HEAD_CENTRE_RATIO))
+	return Vector2(centre.x, centre.y - head_radius_px(height))
+
+
 func _draw() -> void:
 	if puppet_state == null:
 		return
@@ -230,8 +253,8 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		state.hand_angle.y, true, height, body, joint, flip_width)
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
-	var head_center := Vector2(shoulder.x, shoulder.y - height * 0.115)
-	var head_r: float = maxf(height * 0.105 * maxf(flip_width, 0.35), 4.0)
+	var head_center := Vector2(shoulder.x, shoulder.y - height * HEAD_CENTRE_RATIO)
+	var head_r: float = head_radius_px(height)
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
 
 

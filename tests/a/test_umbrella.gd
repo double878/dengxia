@@ -14,6 +14,8 @@ const UmbrellaControllerScript := preload("res://scripts/a/umbrella_controller.g
 const LampStateScript := preload("res://scripts/a/lamp_state.gd")
 ## 伞的落点由显示端算（A 不给绝对坐标），所以这里要连显示端的影人一起验证。
 const PlaceholderPuppetScript := preload("res://scripts/a_test/placeholder_puppet.gd")
+## 伞面几何（中心 / 半径 / 下垂量）定义在显示端场景里，这里取来独立复算。
+const Level1SceneScript := preload("res://scripts/a_test/level1_a_scene.gd")
 
 ## 许仙站位与举伞角：与 StageDef.make_level1 的开演布景一致
 ## （他举到 90°（打伞位）持伞；90° 同时是第一关的手角上限，所以白素贞抬到顶就是这个姿势）。
@@ -222,9 +224,33 @@ func _test_join_window_matches_data_and_display(t: ATestBase) -> void:
 	t.check(his_hand.distance_to(her_hand) <= 12.0,
 		"窗口中心处两只画出来的手应几乎重合（许仙 %s，白素贞 %s，相距 %.1f px）"
 			% [str(his_hand), str(her_hand), his_hand.distance_to(her_hand)])
+
+	# —— 伞：位置留在手上、伞杆笔直、伞面放大到盖住头（用户 2026-10-05 三条要求）——
+	# 独立复算一遍显示端的伞面几何，钉住四条性质：
+	#   ① 伞面中心在**手腕正上方**（伞杆是一条竖直线，不弯不斜，位置也没被挪到头顶）；
+	#   ② 伞面整体在**头顶之上**；③ 伞面**横向盖住头**；④ 半径 ≥ 手腕到头心的水平距离
+	#      （0.415 个身高，这是「盖得住头」的几何门槛，改小就盖不到）。
+	# 变更前伞面是写死像素的小伞（宽 132 px ≈ 0.55 个身高），手举 90° 时头顶露在伞面外。
+	var his_height: float = xuxian_view.figure_px_height()
+	var his_top: Vector2 = xuxian_view.head_top_screen_position()
+	var canopy: Vector2 = Level1SceneScript.umbrella_canopy_centre(his_hand, his_height)
+	var canopy_r: float = Level1SceneScript.umbrella_canopy_radius(his_height)
+	var canopy_drop: float = Level1SceneScript.umbrella_canopy_drop(his_height)
+	t.check_approx(canopy.x, his_hand.x, 0.5,
+		"伞面中心应在拿伞那只手的正上方（伞杆笔直）")
+	t.check(canopy.y + canopy_drop <= his_top.y,
+		"伞面应整体落在头顶之上（伞面下沿 y=%.1f，头顶 y=%.1f）"
+			% [canopy.y + canopy_drop, his_top.y])
+	t.check(canopy.x - canopy_r <= his_top.x,
+		"伞面应横向盖住头（伞面左缘 x=%.1f，头顶 x=%.1f）"
+			% [canopy.x - canopy_r, his_top.x])
+	t.check(canopy_r >= absf(his_hand.x - his_top.x),
+		"伞面半径应不小于手腕到头心的水平距离（伞 %.1f px，距离 %.1f px）"
+			% [canopy_r, absf(his_hand.x - his_top.x)])
+
 	xuxian_view.free()
 	baisuzhen_view.free()
-	t.finish("判据与画面在同一段位置上说「两只手碰到了一起」")
+	t.finish("判据与画面在同一段位置上说「两只手碰到了一起」，且伞面盖住了头")
 
 
 ## 关卡数据里按 cue_id 找落点。

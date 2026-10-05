@@ -569,6 +569,39 @@ func _puppet_view(puppet_id: int) -> PlaceholderPuppet:
 ## 而他自己画出的右手在 267 px 高处——这就是「开局伞不在许仙手上」的原因。
 ##
 ## 别的关卡 `umbrella` 为 null，这里直接不画。
+## —— 伞的几何（静态纯函数，供测试断言「伞面在头顶之上、且横向盖住头」）——
+## 用户 2026-10-05 定案三条：① 伞留在**原位置**（拿伞的那只手上），不挪到头顶、也不居中；
+## ② 整体放大，让伞面显得更大；③ **伞柄笔直**，不弯不斜。
+##
+## 因此伞面中心就在**手腕正上方**、伞杆是一条竖直线——而不是「从手斜拉到头顶」。
+## 代价是几何上的：手举 90° 时腕点离身体中心 0.415 个身高（半身宽 0.105 + 整臂 0.31），
+## 所以伞面半径必须 ≥ 0.415 个身高才能在横向盖住头，伞宽因此接近一个身高。
+## 半径与下垂量都按当前身高算，灯距推拉、站蹲、翻面时伞都跟着走。
+const CANOPY_LIFT_RATIO: float = 0.44    ## 伞面中心在手腕正上方多高（身高比例）
+## 伞面半径（身高比例）。**0.415 是硬门槛**（手腕离身体中心的水平距离），低于它就盖不到头；
+## 取 0.45 留一点余量，于是伞面左缘落到头顶左侧约 0.035 个身高处。
+const CANOPY_RADIUS_RATIO: float = 0.45
+## 伞面中心到最低下沿的距离（身高比例）。取 0.20 使伞面下沿恰好落在头顶之上
+## （0.80 肩 + 0.44 抬升 − 0.20 下垂 = 1.04 > 头顶的 1.02）。
+const CANOPY_DROP_RATIO: float = 0.20
+## 伞杆粗细与「伞在谁手上」的标记也按身高走，灯距推拉时与影人一起缩放（原来是写死的像素）。
+const CANOPY_STEM_EDGE_RATIO: float = 0.034
+const CANOPY_STEM_WOOD_RATIO: float = 0.021
+const CANOPY_GRIP_RATIO: float = 0.030
+
+## 伞面中心：**手腕正上方** `CANOPY_LIFT_RATIO` 个身高处（伞杆因此是竖直的）。
+static func umbrella_canopy_centre(hand: Vector2, figure_height: float) -> Vector2:
+	return hand + Vector2(0.0, -figure_height * CANOPY_LIFT_RATIO)
+
+
+static func umbrella_canopy_radius(figure_height: float) -> float:
+	return figure_height * CANOPY_RADIUS_RATIO
+
+
+static func umbrella_canopy_drop(figure_height: float) -> float:
+	return figure_height * CANOPY_DROP_RATIO
+
+
 func _draw_umbrella() -> void:
 	if _harness == null:
 		return
@@ -578,37 +611,41 @@ func _draw_umbrella() -> void:
 	var holder: PlaceholderPuppet = _puppet_view(umbrella.holder_id_of())
 	if holder == null:
 		return
-	var at: Vector2 = holder.hand_screen_position(umbrella.holder_hand_of())
+	# 握伞的那只手：伞面就在这只手的正上方，位置不挪动（用户 2026-10-05 第 1 条）
+	var hand: Vector2 = holder.hand_screen_position(umbrella.holder_hand_of())
+	var height: float = holder.figure_px_height()
 	if umbrella.handing_off:
 		var previous: PlaceholderPuppet = _puppet_view(umbrella.handoff_from_id())
 		if previous != null:
-			at = previous.hand_screen_position(umbrella.handoff_from_hand()) \
-				.lerp(at, umbrella.handoff_blend())
+			var blend: float = umbrella.handoff_blend()
+			hand = previous.hand_screen_position(umbrella.handoff_from_hand()) \
+				.lerp(hand, blend)
+			height = lerpf(previous.figure_px_height(), height, blend)
 	var wood := Color("#8a5a2b")
 	var paper := Color(0.87, 0.79, 0.62, 0.92)
 	var edge := Color("#3a2a18")
-	# 伞杆：从手握处向上
-	draw_line(at, at + Vector2(0.0, -74.0), edge, 8.0)
-	draw_line(at, at + Vector2(0.0, -74.0), wood, 5.0)
-	# 伞面：一段扇形的近似（一条弧 + 一条弦）
-	var tip: Vector2 = at + Vector2(0.0, -74.0)
-	draw_colored_polygon(PackedVector2Array([
-		tip,
-		tip + Vector2(-66.0, 34.0),
-		tip + Vector2(-33.0, 46.0),
-		tip + Vector2(0.0, 50.0),
-		tip + Vector2(33.0, 46.0),
-		tip + Vector2(66.0, 34.0),
-	]), paper)
-	draw_polyline(PackedVector2Array([
-		tip + Vector2(-66.0, 34.0),
-		tip + Vector2(-33.0, 46.0),
-		tip + Vector2(0.0, 50.0),
-		tip + Vector2(33.0, 46.0),
-		tip + Vector2(66.0, 34.0),
-	]), edge, 3.0)
+	var canopy: Vector2 = umbrella_canopy_centre(hand, height)
+	var radius: float = umbrella_canopy_radius(height)
+	var drop: float = umbrella_canopy_drop(height)
+	# 伞杆：从手握处**竖直**向上到伞面中心（用户 2026-10-05 第 3 条：不弯不斜）
+	draw_line(hand, canopy, edge, height * CANOPY_STEM_EDGE_RATIO)
+	draw_line(hand, canopy, wood, height * CANOPY_STEM_WOOD_RATIO)
+	# 伞面：一条弧（顶点在伞面中心，向两侧下垂），加上几条伞骨
+	var rim := PackedVector2Array([
+		canopy + Vector2(-radius, drop * 0.68),
+		canopy + Vector2(-radius * 0.5, drop * 0.92),
+		canopy + Vector2(0.0, drop),
+		canopy + Vector2(radius * 0.5, drop * 0.92),
+		canopy + Vector2(radius, drop * 0.68),
+	])
+	var face := PackedVector2Array([canopy])
+	face.append_array(rim)
+	draw_colored_polygon(face, paper)
+	for i in rim.size():
+		draw_line(canopy, rim[i], Color(edge.r, edge.g, edge.b, 0.45), 2.0)
+	draw_polyline(rim, edge, 3.0)
 	# 握伞的那只手旁边标一个短横，让「伞在谁手上」一眼可辨
-	draw_circle(at, 7.0, Color(0.98, 0.72, 0.25, 0.90))
+	draw_circle(hand, height * CANOPY_GRIP_RATIO, Color(0.98, 0.72, 0.25, 0.90))
 
 
 ## 「你的手边 · 手与三根签」：签手握住的三根签，也是鼠标抓胸签的落点。
