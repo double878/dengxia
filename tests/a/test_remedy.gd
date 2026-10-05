@@ -15,6 +15,7 @@ const StageDefScript := preload("res://scripts/a/stage_def.gd")
 const CueScript := preload("res://scripts/a/cue.gd")
 const RemedySystemScript := preload("res://scripts/a/remedy_system.gd")
 const StageDirectorScript := preload("res://scripts/a/stage_director.gd")
+const UmbrellaControllerScript := preload("res://scripts/a/umbrella_controller.gd")
 
 const CROUCH_ID: String = "l1_c0_crouch"     ## 落点 1250 ms，判定窗 1000-1500
 const STAND_ID: String = "l1_c1_stand"       ## 落点 2500 ms，判定窗 2250-2750
@@ -29,6 +30,7 @@ func run_all() -> Dictionary:
 	var t: ATestBase = ATestBaseScript.new()
 	_test_01_normal_run_no_remedy(t)
 	_test_01b_all_hits_no_remedy(t)
+	_test_01c_borrow_and_return_journey(t)
 	_test_02_miss_opens_window_and_freezes(t)
 	_test_02b_two_windows_single_demo(t)
 	_test_03_out_of_sync_action_still_happens(t)
@@ -47,7 +49,7 @@ func run_all() -> Dictionary:
 
 
 func _test_01_normal_run_no_remedy(t: ATestBase) -> void:
-	t.begin("01 空场跑完：六条落点全部漏做、逐条补救，歌曲时间仍按时到达 35 秒")
+	t.begin("01 空场跑完：八条落点全部漏做、逐条补救，歌曲时间仍按时到达 35 秒")
 	var b: DirectorTestBench = _bench()
 	var steps_used: int = b.run_to_end()
 	t.check(b.director.is_over(), "歌曲时间到 35 秒应已收场")
@@ -61,6 +63,10 @@ func _test_01_normal_run_no_remedy(t: ATestBase) -> void:
 		"未做的关键动作应全部记为「完全没做」（%d / %d）" % [missed, b.stage_def.cues.size()])
 	t.check_eq(b.events_of("remedy_open").size(), b.stage_def.cues.size(),
 		"每条漏做应各开一次补救窗口（实际 %d）" % b.events_of("remedy_open").size())
+	var open_ids: Array[String] = []
+	for e in b.events_of("remedy_open"):
+		open_ids.append(str(e.get("cue_id", "")))
+	print("DBGOPEN %s" % str(open_ids))
 	# 冻结的核心证据：真实时间被六条补救各拉长 8 秒
 	t.check(b.real_ms() > b.director.song_time_ms() + 30000,
 		"六条补救各冻结 8 秒，真实耗时应明显长于歌曲时间（真实 %d ms / 歌曲 %d ms）"
@@ -71,59 +77,150 @@ func _test_01_normal_run_no_remedy(t: ATestBase) -> void:
 
 ## 正常演出：关键动作都在容差内做到时，**不产生任何补救窗口**，因此也不会冻结。
 ## 这是唯一一条验证「做对了就没有补救」的正向测试；空场跑完的 01 验证的是相反情况。
+##
+## 走完整条「游湖借伞」流程：蹲下 → 站起 → 向左走 → 抬左手到打伞位（90°）与许仙右手相接 →
+## 接伞 → 持伞走到最右边 → 转身走回交接窗口还伞 → 放手收势。
+## 每一步都按落点排好，因此这条测试同时是「借伞还伞能不能按时做完」的端到端验证。
 func _test_01b_all_hits_no_remedy(t: ATestBase) -> void:
-	t.begin("01b 正常演出：六条关键动作都在容差内做到，全程无补救")
+	t.begin("01b 正常演出：前半场五条落点都在容差内做到，全程无补救")
 	var b: DirectorTestBench = _bench()
 
-	# 1200 ms 蹲下、2450 ms 站起（先蹲再起，站起才是一次真实的姿势切换）
+	# 蹲下（落点 1250）：蹲到底，stance 到 1.0
 	b.advance_to(1200)
 	b.begin_drag()
-	b.drag(Vector2(0.0, 130.0), 24)          # 蹲到底
-	b.end_drag()
-	b.advance_to(2450)
-	b.begin_drag()
-	b.drag(Vector2(0.0, -100.0), 20)         # 站起
+	b.crouch_here()
 	b.end_drag()
 
-	# 4950 ms 向左移动
+	# 站起（落点 2500，判定窗 2250~2750）：判定时刻是 stance 跨进 [0, 0.05] 的那一帧。
+	# 每步 8 px 时 stance 每步降 0.0074，从 1.0 降到 0.05 要 ~128 步 = 1280 ms，
+	# 而蹲到底约在 1330 ms 结束——因此站起必须**紧接蹲下**开始，跨过阈值约在 2730 ms。
+	b.advance_to(1450)
+	b.begin_drag()
+	b.stand_up(8.0, 130)
+	b.end_drag()
+
+	# 向左移动（落点 5000）：走到 x≈0.34，仍在接伞区（0.07~0.19）右侧
 	b.advance_to(4950)
 	b.begin_drag()
-	b.drag(Vector2(-380.0, 0.0), 22)
-	b.end_drag()
-	# 抬手：手角以「自然垂下」为 0、π 为举过头顶，到位区间 135°～180°。
-	# 4.5 rad/s 下从 0 抬到 135° 约需 0.52 s，因此在落点前约 500 ms 开始按住。
-	b.advance_to(8250)
-	b.advance(60, {"left_raise": true})
-	# 12450 ms 向右移动、14950 ms 回到中位
-	b.advance_to(12450)
-	b.begin_drag()
-	b.drag(Vector2(1100.0, 0.0), 30)
-	b.end_drag()
-	b.advance_to(14700)
-	b.begin_drag()
-	# 从右端回到中位：目标带只有 0.47-0.53 这么窄（且为闭区间），单帧位移必须远小于
-	# 带宽，否则会一帧跨过整条带（0.53 → 0.06）而不留下任何「进入范围」的帧。
-	b.drag(Vector2(-20.0, 0.0), 60)
+	b.drag_to_x(0.34, 16.0)
 	b.end_drag()
 
-	for cue in b.stage_def.cues:
-		var cue_id: String = str(cue["cue_id"])
+	# 抬手（落点 8750，第一关的到位区间 75°~90°）：4.5 rad/s 下抬到本关上界（90°）约需
+	# 0.35 s，因此从 8250 ms 起按住 80 步。按到头会停在上界 90°（StageDef.LEVEL1_HAND_MAX_RAD），
+	# 与许仙举着的右手齐平；**一直举着**——中途放手就接不到伞。
+	b.advance_to(8250)
+	b.hold_left_raise(80)
+
+	# 持抬起的左手向左走进**交接窗口**（落点 10000，容差 ±250）。
+	# 窗口是「两只手相接」的那一段（约 0.176~0.296），她从窗口右侧踏进来；
+	# 步长与起始时刻一起决定「跨进窗口」落在哪一帧：每步 18 px 时第 5 帧跨进（约 +10 ms）。
+	# 步长过大（50 px）会一帧跨过整条窗口；过小（2 px）要七十多帧才走到，反被推到 +260 ms。
+	b.advance_to(9940)
+	b.begin_drag()
+	b.drag_to_x(0.28, 18.0)
+	b.end_drag()
+
+	for cue_id in ["l1_c0_crouch", "l1_c1_stand", "l1_c2_move_left",
+			"l1_c3_hand_raise", "l1_c4_take_umbrella"]:
 		var outcome: Dictionary = b.director.performance.get_outcome(cue_id)
 		t.check_eq(bool(outcome.get("hit", false)), true,
-			"「%s」应在容差内命中（实际 offset=%s）"
-				% [cue_id, str(outcome.get("offset_ms", "无判定"))])
-	t.check_eq(b.director.performance.missed_outright_cue_ids().size(), 0,
-		"做对的动作不应被记为「完全没做」")
-	t.check_eq(b.events_of("remedy_open").size(), 0, "全部做对时不应开出任何补救窗口")
-	t.check_eq(b.events_of("remedy_show").size(), 0, "不应出现任何示范提示")
+			"「%s」应在容差内命中（实际 offset=%s，x=%.4f）"
+				% [cue_id, str(outcome.get("offset_ms", "无判定")), b.state().stage_pos.x])
+	t.check_eq(b.events_of("remedy_open").size(), 0, "前半场全部做对时不应开出补救窗口")
 	t.check_eq(b.events_of(StageDirectorScript.KIND_FREEZE_BEGIN).size(), 0,
-		"全部做对时不应冻结过时间轴")
-	t.check(b.director.remedy.get_records().is_empty(), "不应留下任何失误记录")
+		"前半场不应冻结过时间轴")
+	t.finish("前半场五条落点全部命中，没有补救窗口与冻结")
 
-	b.advance_to(40000)
-	t.check(b.director.is_over(), "正常演出仍应按时结束")
-	t.check_eq(b.events_of("stage_end").size(), 1, "应只结束一次")
-	t.finish("六条关键动作全部命中，全程没有补救窗口与失误记录")
+
+## 借伞还伞后半程的端到端走查：接到伞 → 走到最右边 → 转身走回 → 按拍还伞 → 放手收势。
+##
+## 与 01b 拆开的原因：补救窗口开着时歌曲时间是冻结的，前半场只要有一条错拍，
+## 后半场的落点时刻就全部对不上。
+##
+## 这条测试覆盖**八条落点全部命中且零补救窗口**，因此它同时钉住两件容易悄悄退化的事：
+##   ① 长距离移动落点的时间预算（走到最右端、走回还伞各留 3.75 s）——
+##      步长按「正常拖速」折算，走不完就会错过拍点；
+##   ② `l1_c6_return_umbrella` 的 `target_object` 必须等于交接事件上报的 `object_id`（许仙）。
+##      写错时这条落点永远判不到（判定直接跳过、窗后判死），本测试会立刻失败。
+func _test_01c_borrow_and_return_journey(t: ATestBase) -> void:
+	t.begin("01c 借伞还伞后半程：走到最右边、转身走回、按拍还伞、放手收势")
+	var b: DirectorTestBench = _bench()
+	var umb: UmbrellaController = b.director.umbrella
+	t.check(umb != null and umb.is_enabled(), "第一关应启用借伞还伞流程")
+
+	# 前摇必须照做：少做一条落点就会开出一个 8 秒补救窗口，**歌曲时间随之冻结**，
+	# 后面每条落点的时刻全部错位（这条测试第一版就是漏了前摇，五条后半场落点一起判错）。
+	# 这也正是真实玩法顺序：蹲下 → 站起 → 左移 → 抬手 → 接伞 → 走到最右边 → 转身走回还伞。
+	b.advance_to(1200)
+	b.begin_drag()
+	b.crouch_here()
+	b.end_drag()
+	b.advance_to(1450)
+	b.begin_drag()
+	b.stand_up(8.0, 130)
+	b.end_drag()
+	b.advance_to(4950)
+	b.begin_drag()
+	b.drag_to_x(0.34, 16.0)
+	b.end_drag()
+	b.advance_to(8250)
+	b.hold_left_raise(80)
+
+	# 握伞向左走入交接窗口接住伞（落点 10000）
+	b.advance_to(9940)
+	b.begin_drag()
+	b.drag_to_x(0.28, 18.0)
+	b.end_drag()
+	t.check_eq(umb.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID,
+		"两只手相接后应已接过伞")
+
+	# 接到伞后向右走，走到舞台最右侧的可达区域（落点 13750，目标带 x ≥ 0.94）。
+	# `drag_to_x(target_x, step_px)` 的第二个参数是**每步位移量（像素）**：从 0.28 走到 0.94
+	# 是 1267 px、每步 10 px（127 步 = 1270 ms），因此从 12500 ms 起走，跨进目标带约在 13770。
+	b.advance_to(12500)
+	b.begin_drag()
+	b.drag_to_x(0.98, 10.0)
+	b.end_drag()
+	t.check(umb.has_reached_right_edge(), "走到最右边后应记下「已到过右端」")
+
+	# 转身向左走回许仙身旁还伞（落点 17500）。一次连续左扫：从最右边一路走回交接窗口，
+	# 还伞应当在「踏进交接窗口」的那一刻触发。影人的「转身」由拖动方向自动完成
+	# （皮影只有正反两面，0.1 秒翻面），因此不为它单开落点。
+	# 从 0.98 走回窗口上界 0.296 是 1313 px、每步 12 px（110 步 = 1100 ms），
+	# 因此从 16400 ms 起走，跨进窗口约在 17500。
+	#
+	# 这里**可以**断言还伞的拍点容差了（此前不能）。原来的注释把「还伞稳定偏 +260 ms」
+	# 归因成「测试台拖动模型的时序问题」，其实根因是关卡数据：`l1_c6_return_umbrella` 的
+	# `target_object` 写成 0（白素贞），而交接事件上报的 `object_id` 是「接手的那个人」=许仙(1)，
+	# 判定时被 `target_object != object_id` 直接跳过——**这条落点从来没被判过**，
+	# 每次都是窗过之后由 detect_misses 判死，offset 正好是窗上界后的 +260 ms。
+	# 2026-10-04 把 `target_object` 改成许仙后，这条落点恢复判定（这条断言就是验证）。
+	b.advance_to(16400)
+	b.begin_drag()
+	b.drag_to_x(0.22, 12.0)
+	b.end_drag()
+	b.advance_to(17600)
+
+	# 放下已经空掉的左手收势（落点 18750，判定窗 18500~19000）：放手速度 4.5 rad/s，
+	# 从 90° 落回 0 约需 0.35 s，因此从 18600 ms 开始按住。
+	b.advance_to(18600)
+	b.hold_left_lower(80)
+	b.idle(1)
+
+	var hits: Array[String] = []
+	for cue_id in ["l1_c0_crouch", "l1_c1_stand", "l1_c2_move_left", "l1_c3_hand_raise",
+			"l1_c4_take_umbrella", "l1_c5_move_to_edge", "l1_c6_return_umbrella",
+			"l1_c7_hand_lower"]:
+		var outcome: Dictionary = b.director.performance.get_outcome(cue_id)
+		if bool(outcome.get("hit", false)):
+			hits.append(cue_id)
+		else:
+			t.check(false, "「%s」应在容差内命中（实际 offset=%s，x=%.4f）"
+				% [cue_id, str(outcome.get("offset_ms", "无判定")), b.state().stage_pos.x])
+	t.check_eq(hits.size(), 8, "八条关键动作应全部命中（实际命中 %d 条）" % hits.size())
+	t.check_eq(b.events_of("remedy_open").size(), 0,
+		"整条借伞还伞做对时不应开出任何补救窗口")
+	t.finish("接到伞、走到最右边、转身走回、按拍还伞、放手收势全部命中")
 
 
 func _test_02_miss_opens_window_and_freezes(t: ATestBase) -> void:

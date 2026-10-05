@@ -47,6 +47,12 @@ const HOOK_SLOTS: int = 2
 ## 切片 1 用 FrameClock / TestClock，切片 2 起换成 MusicClock，本控制器不改。
 var clock: Object = null
 
+## 手角上限（弧度）。默认举过头顶（180°）；关卡可以把本折的上限收小——第一关收到
+## 90°（打伞位，见 StageDef.LEVEL1_HAND_MAX_RAD）。收上限不只是姿势问题，也是手感问题：
+## 「抬到 90°」因此在按住抬手键到顶时就能停住，玩家不必掐角度、也不会扫过头。
+## 由 Level1Runtime.setup 按 StageDef.hand_angle_max_rad 赋值。
+var hand_angle_max: float = PuppetStateScript.HAND_ANGLE_MAX
+
 var puppets: Array = []                  ## Array[PuppetState]，下标即 puppet_id
 var controlled_id: int = -1              ## 当前唯一受控影人；-1 表示无人受控
 ## 头架上每个槽位当前放着哪个头。与 puppets 的 head_id 合起来，
@@ -85,6 +91,9 @@ func setup(puppet_count: int = 3) -> void:
 	_stance_last_emitted = 0.0
 	_flip_target = 0.0
 	_hand_dir = Vector2i.ZERO
+	# 手角上限回到硬边界：调用方（Level1Runtime）随后按本折的 StageDef 收上限，
+	# 这样复用同一个控制器换关时不会残留上一关的上限。
+	hand_angle_max = PuppetStateScript.HAND_ANGLE_MAX
 	for i in puppet_count:
 		var state: PuppetState = PuppetStateScript.new(i)
 		state.stage_pos = Vector2(0.5, 0.5)
@@ -314,10 +323,10 @@ func _apply_hands(controlled: PuppetState, delta: float) -> void:
 		controlled.hand_angle.x += float(left_dir) * step
 	if right_dir != 0:
 		controlled.hand_angle.y += float(right_dir) * step
-	controlled.hand_angle.x = clampf(controlled.hand_angle.x,
+	var ceiling: float = clampf(hand_angle_max,
 		PuppetStateScript.HAND_ANGLE_MIN, PuppetStateScript.HAND_ANGLE_MAX)
-	controlled.hand_angle.y = clampf(controlled.hand_angle.y,
-		PuppetStateScript.HAND_ANGLE_MIN, PuppetStateScript.HAND_ANGLE_MAX)
+	controlled.hand_angle.x = clampf(controlled.hand_angle.x, PuppetStateScript.HAND_ANGLE_MIN, ceiling)
+	controlled.hand_angle.y = clampf(controlled.hand_angle.y, PuppetStateScript.HAND_ANGLE_MIN, ceiling)
 	_emit_hand_if_changed(controlled, left_dir, right_dir)
 
 

@@ -36,7 +36,9 @@ const FACING_MAX: float = 1.0
 const TURN_PROGRESS_MIN: float = 0.0
 const TURN_PROGRESS_MAX: float = 1.0
 ## 手角范围（弧度）。0 = 手臂自然垂下（开局位），+π/2 = 水平前伸，+π = 举过头顶；
-## 负值表示手臂向内收，给「落手」与收手姿势留余地。抬手因此能到达 180°。
+## 负值表示手臂向内收，给「落手」与收手姿势留余地。
+## 这是**硬边界**：某一折实际能抬到多高还要看该关的手角上界
+## （`StageDef.hand_angle_max_rad`，第 1 关收到 90° 的打伞位；由 PuppetController 执行）。
 const HAND_ANGLE_MIN: float = -PI * 0.5
 const HAND_ANGLE_MAX: float = PI
 

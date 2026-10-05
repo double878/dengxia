@@ -170,7 +170,7 @@ func _test_07_stage_def_level1(t: ATestBase) -> void:
 	t.check_approx(def.bpm, 96.0, 1e-9, "BPM 应为 96（PRD 第 10 节的 90-100 区间内）")
 	t.check_eq(def.total_beats(), 56, "35 秒 @96 BPM 应为 56 拍")
 	t.check(def.segments.size() >= 4, "应至少划分 4 个段落，实际 %d" % def.segments.size())
-	t.check_eq(def.cues.size(), 6, "第一关应有 6 条关键动作（切片 3 已填写）")
+	t.check_eq(def.cues.size(), 8, "第一关应有 8 条关键动作（游湖借伞流程已定案）")
 	var problems: Array[String] = def.validate()
 	t.check_eq(problems.size(), 0, "第一关数据应通过校验：%s" % str(problems))
 	t.finish("35 秒 / 56 拍 / 五段连续覆盖，校验通过")

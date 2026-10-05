@@ -10,6 +10,8 @@ const BenchScript := preload("res://tests/a/cue_test_bench.gd")
 const StageDefScript := preload("res://scripts/a/stage_def.gd")
 const CueScript := preload("res://scripts/a/cue.gd")
 const CueHintScript := preload("res://scripts/a/cue_hint.gd")
+## 第一关抬手落点的到位区间必须包住接伞的对齐窗口，两侧读数都取自它，故在这里对表。
+const UmbrellaControllerScript := preload("res://scripts/a/umbrella_controller.gd")
 
 const CROUCH_STEP_PX: float = 120.0
 const CROUCH_STEPS: int = 12            ## 12 x 120/1080 ≈ 1.33，足以蹲到底并被截断
@@ -83,6 +85,7 @@ func run_all() -> Dictionary:
 	_test_12_same_direction_move_hits(t)
 	_test_13_early_action_can_be_retried_on_beat(t)
 	_test_14_release_applies_final_reach(t)
+	_test_15_level1_uses_90_degree_umbrella_pose(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
 		"failures": t.failures}
 
@@ -90,7 +93,7 @@ func run_all() -> Dictionary:
 func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.begin("01 第一关关键动作表覆盖 PRD 要求")
 	var def: StageDef = StageDefScript.make_level1()
-	t.check_eq(def.cues.size(), 6, "应有 6 条关键动作")
+	t.check_eq(def.cues.size(), 8, "应有 8 条关键动作")
 	var problems: Array[String] = def.validate()
 	t.check_eq(problems.size(), 0, "数据应通过校验：%s" % str(problems))
 
@@ -100,8 +103,12 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.check(actions.has(CueScript.ACTION_CROUCH) and actions.has(CueScript.ACTION_STAND_UP),
 		"应含蹲下与站起（蹲下为站起提供起点）")
 	t.check(actions.has(CueScript.ACTION_MOVE_LEFT) and actions.has(CueScript.ACTION_MOVE_RIGHT),
-		"应含横向移动（左右）")
+		"应含向左移动与向右移动（走到许仙身旁 → 持伞走到最右端 → 转身走回）")
 	t.check(actions.has(CueScript.ACTION_HAND_RAISE), "应含抬手")
+	# 借伞还伞流程（用户 2026-10-04 修订）：两次交接各占一条落点，
+	# 加上「抬手到打伞位」「走到最右端」，就是这一折的全部关键动作。
+	t.check(actions.has(CueScript.ACTION_UMBRELLA_TAKE), "应含接伞")
+	t.check(actions.has(CueScript.ACTION_UMBRELLA_RETURN), "应含还伞")
 
 	# 重音每 4 拍一次；至少一次关键动作落在重音上
 	var accent_hits: int = 0
@@ -123,7 +130,55 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	var crouch_min: float = float(_find(def, "l1_c0_crouch")["target_range"]["min"])
 	t.check(stand_max <= 0.1, "站起到位范围应接近完全站立（stance≈0），实际 max=%.4f" % stand_max)
 	t.check(crouch_min >= 0.8, "蹲下到位范围应接近完全蹲下（stance≈1），实际 min=%.4f" % crouch_min)
-	t.finish("6 条关键动作覆盖蹲下/站起/左右移动/抬手，含重音落点，全部在时长内")
+
+	# 「走到最右端」的目标带必须与交接窗口完全不重叠：否则这一趟会先经过交接窗口，
+	# 在还没到过右端的时候就被还伞判定抢走伞，流程顺序颠倒。
+	var edge_band: Dictionary = _find(def, "l1_c5_move_to_edge")["target_range"]
+	var take_band: Dictionary = _find(def, "l1_c4_take_umbrella")["target_range"]
+	t.check(float(edge_band["min"]) > float(take_band["max"]),
+		"最右端目标带（≥%.2f）应完全在交接窗口（≤%.2f）右侧"
+			% [float(edge_band["min"]), float(take_band["max"])])
+	# 下界必须与控制器的「已到过右端」阈值**完全一致**：若落点带的下界更低
+	# （这里曾写 0.94，而控制器要求 ≥0.95，差 0.01 = 19 px），玩家停在两者之间时
+	# 会出现最坏的错配——「走到最右端」这条拍点判命中，但控制器没记下「到过右端」，
+	# 走回去还伞永远不触发。实测模拟正常手速玩家时正好停在 0.94 上踩到了。
+	t.check_approx(float(edge_band["min"]), UmbrellaControllerScript.RIGHT_EDGE_X, 1e-9,
+		"最右端目标带下界应等于控制器的 RIGHT_EDGE_X")
+	# 两次交接共用同一个窗口：还伞遵循与接伞相同的判据
+	t.check_approx(float(_find(def, "l1_c6_return_umbrella")["target_range"]["min"]),
+		float(take_band["min"]), 1e-9, "还伞目标带应与接伞同一段窗口")
+
+	# —— 长距离移动的时间预算（2026-10-04 实测教训，用户报「根本来不及向右走」）——
+	# 两次「走到一端」各要走约 0.65 个舞台宽 ≈ 1250 画布像素（拖动 1:1 映射），
+	# 按正常拖速 450~600 px/s 需 2~2.8 s，再加反应时间。原来这两条一律按原地动作处理：
+	# 线索只提前 1 s、拍间只留 2.5 s——玩家看到提示就只剩 1 s，实测走不到。
+	# 因此这里把「拍间间隔」与「线索提前量」两条都钉住：任何一条被改小都会被拦下。
+	for pair in [["l1_c4_take_umbrella", "l1_c5_move_to_edge"],
+			["l1_c5_move_to_edge", "l1_c6_return_umbrella"]]:
+		var gap: int = int(_find(def, pair[1])["beat_time_ms"]) \
+			- int(_find(def, pair[0])["beat_time_ms"])
+		var lead: int = int(_find(def, pair[1])["hint_lead_ms"])
+		t.check(gap >= StageDef.MOVE_BUDGET_MS,
+			"「%s」→「%s」的拍间间隔 %d ms 应 ≥ 移动预算 %d ms（要走 0.65 个舞台宽）"
+				% [pair[0], pair[1], gap, StageDef.MOVE_BUDGET_MS])
+		t.check(lead >= StageDef.MOVE_BUDGET_MS,
+			"「%s」是长距离移动，线索提前量 %d ms 应 ≥ 移动预算 %d ms"
+				% [pair[1], lead, StageDef.MOVE_BUDGET_MS])
+	# 原地动作仍按 1 s 提前：不要被顺手改成 3 s（提前量过大等于上一拍刚做完就提示下一步）
+	for cue_id in ["l1_c0_crouch", "l1_c1_stand", "l1_c3_hand_raise",
+			"l1_c4_take_umbrella", "l1_c7_hand_lower"]:
+		t.check_eq(int(_find(def, cue_id)["hint_lead_ms"]), CueScript.DEFAULT_HINT_LEAD_MS,
+			"「%s」是原地动作，线索提前量应保持默认 1 s" % cue_id)
+	# 交接类落点（接伞 / 还伞）的 `target_object` 必须与**交接事件上报的 `object_id`**一致：
+	# 事件上报的是「接手的那个人」（接伞记白素贞、还伞记许仙，见 `UmbrellaController._emit`），
+	# 而判定里 `_register_action` 会拿 `target_object != object_id` 直接跳过这条 cue。
+	# 还伞这条曾被写成 0（白素贞），于是**永远判不到**：玩家把伞还回去也拿不到命中，
+	# 窗一过就被判「完全没做」并开出补救窗口——实测踩到过，且当时被误归因成测试台时序问题。
+	t.check_eq(int(_find(def, "l1_c4_take_umbrella")["target_object"]),
+		UmbrellaControllerScript.BAISUZHEN_ID, "接伞落点的 target_object 应为接手的白素贞")
+	t.check_eq(int(_find(def, "l1_c6_return_umbrella")["target_object"]),
+		UmbrellaControllerScript.XUXIAN_ID, "还伞落点的 target_object 应为接手的许仙")
+	t.finish("8 条关键动作覆盖蹲下/站起/左右移动/抬手/接伞/还伞，含重音落点，全部在时长内")
 
 
 func _test_02_hints_before_deadline(t: ATestBase) -> void:
@@ -253,10 +308,24 @@ func _test_06_translation_not_scored_per_frame(t: ATestBase) -> void:
 	t.finish("持续平移只记一次动作与一次判定，不逐帧评分")
 
 
+## 「到位」是全系统通用的判定规则，而第一关（游湖借伞）本身没有中位到位落点。
+## 因此这里按引擎契约注入一条自定义 Cue，而不是借某一关的关卡数据：
+## 关卡数据会随流程改动（借伞还伞定案就换过一次落点表），判定规则的回归测试不该跟着抖。
+const REACH_CUE_ID: String = "t_reach_center"
+
+
+func _reach_bench() -> CueTestBench:
+	var b: CueTestBench = _bench()
+	b.stage_def.cues.append(CueScript.make(REACH_CUE_ID, 14000, CueScript.ACTION_REACH, 0,
+		{"key": "x", "min": 0.47, "max": 0.53}, 250, "reach_center"))
+	b.performance.setup(b.stage_def.cues, b.clock, b.controller.puppets)
+	return b
+
+
 func _test_07_reach_is_continuous(t: ATestBase) -> void:
 	t.begin("07 到位是连续条件：拖动中进入目标范围即判定")
-	var b: CueTestBench = _bench()
-	var cue: Dictionary = b.find_cue("l1_c5_reach_center")
+	var b: CueTestBench = _reach_bench()
+	var cue: Dictionary = b.find_cue(REACH_CUE_ID)
 	var beat_ms: int = int(cue["beat_time_ms"])
 	var range: Dictionary = cue["target_range"]
 	t.check_approx(float(range["min"]), 0.47, 1e-9, "到位目标范围下限应为 0.47")
@@ -264,7 +333,7 @@ func _test_07_reach_is_continuous(t: ATestBase) -> void:
 
 	# 落点前 1 s 停留：x=0.5 已在范围内，但玩家不在移动，不得判为「移动到到位」
 	b.advance_to(maxi(beat_ms - 1000, 0))
-	t.check(not b.performance.has_outcome("l1_c5_reach_center"),
+	t.check(not b.performance.has_outcome(REACH_CUE_ID),
 		"站定不动即使恰在目标范围内，也不得判为到位")
 
 	# 先在窗口之外移出范围（约到 x≈0.58），这样回到范围的那一刻才代表「移动到到位」
@@ -275,9 +344,9 @@ func _test_07_reach_is_continuous(t: ATestBase) -> void:
 	# 在落点前 60 ms 开始回到范围边缘；只用少量步数，确保判定落在窗口内
 	b.advance_to(beat_ms - 60)
 	var used: int = b.drag_until(Vector2(-19.0, 0.0), func() -> bool:
-		return b.performance.has_outcome("l1_c5_reach_center"), 4)
-	if b.performance.has_outcome("l1_c5_reach_center"):
-		var outcome: Dictionary = b.performance.get_outcome("l1_c5_reach_center")
+		return b.performance.has_outcome(REACH_CUE_ID), 4)
+	if b.performance.has_outcome(REACH_CUE_ID):
+		var outcome: Dictionary = b.performance.get_outcome(REACH_CUE_ID)
 		t.check_eq(bool(outcome["hit"]), true,
 			"落点附近回到中位应命中（offset=%d ms，x=%.4f）"
 			% [int(outcome["offset_ms"]), float(outcome["metric"])])
@@ -337,11 +406,11 @@ func _test_09_unchosen_cues_remain_pending(t: ATestBase) -> void:
 	t.begin("09 未做的关键动作保持待判定，不被静默跳过")
 	var b: CueTestBench = _bench()
 	b.advance(1)
-	t.check_eq(b.performance.pending_count(), 6, "开演时 6 条全部待判定")
+	t.check_eq(b.performance.pending_count(), 8, "开演时 8 条全部待判定")
 	b.advance_to(7000)                     # 已过前两条落点，但什么都没做
 	t.check(not b.performance.has_outcome("l1_c1_stand"),
 		"没做动作就不应产生判定结果（留给切片 4 的补救处理）")
-	t.check_eq(b.performance.pending_count(), 6, "未做的仍计入待判定")
+	t.check_eq(b.performance.pending_count(), 8, "未做的仍计入待判定")
 	t.check_eq(_filter(b.judge_log, "cue_hit").size(), 0, "不应凭空产生命中")
 	t.check(_has_cue_event(b.judge_log, "cue_hint", "l1_c1_stand"),
 		"线索仍应按时发出（目标在落点前已被告知）")
@@ -373,14 +442,23 @@ func _test_10_no_leak_of_beat_or_score(t: ATestBase) -> void:
 func _test_11_held_hand_enters_target_range(t: ATestBase) -> void:
 	t.begin("11 按住抬手键进入目标角度时命中")
 	var b: CueTestBench = _bench()
-	# 手角以「自然垂下」为 0、π 为举过头顶，抬手到位区间是 135°～180°。
-	# 抬手速度 4.5 rad/s，从 0 抬到 135°（≈2.356 rad）约需 0.52 s，
-	# 因此要在落点前约 530 ms 开始按住，让「跨入目标角度」正好落在判定窗内。
+	# 手角以「自然垂下」为 0、π/2 为水平前伸。第一关的抬手是「打伞位」：
+	# 到位区间 75°~90°，且 90° 就是本关的手角上限（抬到顶即到位）。
+	# 抬手速度 4.5 rad/s，从 0 抬到 75°（≈1.309 rad）约需 0.29 s，
+	# 因此要在落点前约 300 ms 开始按住，让「跨入目标角度」正好落在判定窗内。
 	b.advance_to(8300)
 	b.advance(60, {"left_raise": true})
 	var outcome: Dictionary = b.performance.get_outcome("l1_c3_hand_raise")
-	t.check_in_range(b.state().hand_angle.x, StageDef.LEVEL1_HAND_RAISE_MIN_RAD,
-		StageDef.LEVEL1_HAND_RAISE_MAX_RAD, "左手已抬到目标角度（举过头顶）")
+	# 手角存在 Vector2（float32）里：把上界 π/2 写进去、再读回来会大 4e-8，
+	# 所以这里用判定侧同一个容差来断言（见 CueScript.CONDITION_EPSILON）。
+	t.check_in_range(b.state().hand_angle.x, StageDef.LEVEL1_UMBRELLA_RAISE_MIN_RAD,
+		StageDef.LEVEL1_UMBRELLA_RAISE_MAX_RAD + CueScript.CONDITION_EPSILON,
+		"左手已抬到打伞位（水平前伸，停在本关上界也算）")
+	# 停在上界必须仍算「到位」：玩家按住 A 到顶恰好停在本关上界，
+	# 若边界比较不含表示误差，这一姿态会被判成「不在区间内」。
+	t.check(CueScript.condition_met(b.find_cue("l1_c3_hand_raise"),
+		CueScript.ACTION_HAND_RAISE, b.state().hand_angle.x),
+		"停在 90°（本关上界）应算抬手到位，否则按住到顶反而判不到位")
 	t.check_eq(bool(outcome.get("hit", false)), true,
 		"进入角度范围时应命中，不必松键或反复按键")
 	t.check_in_range(float(outcome.get("time_ms", -1)), 8500, 9000,
@@ -436,16 +514,60 @@ func _test_13_early_action_can_be_retried_on_beat(t: ATestBase) -> void:
 func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.begin("14 松开鼠标当帧的末段位移进入目标区仍判到位")
 	var b: CueTestBench = _bench()
-	b.advance_to(14900)
+	t.check(_find(b.stage_def, "l1_c5_move_to_edge").size() > 0,
+		"本折的「走到最右端」落点存在（第 22 拍）")
+	# 「走到最右端」的目标带是 x ∈ [0.95, 1.0]，落点 13750、判定窗 13500~14000。
+	# 先把白素贞拖到目标带左侧，再在松开当帧用一次大位移跨进目标带——
+	# 验证 drag_end 不会抢先关掉到位判定（末段位移必须仍按「进入目标区」计）。
+	b.advance_to(13550)
 	b.begin_drag()
-	b.drag(Vector2(50.0, 0.0), 3)
-	t.check(b.state().stage_pos.x > 0.53, "松开前已移出中位范围")
-	b.advance_to(14980)
-	b.controller.drag_to(Vector2(-120.0, 0.0))
+	b.drag(Vector2(440.0, 0.0), 1)
+	t.check(b.state().stage_pos.x < 0.94, "松开前还在目标带左侧：x=%.4f" % b.state().stage_pos.x)
+	b.controller.drag_to(Vector2(434.0, 0.0))
 	b.controller.end_drag()
 	b.advance(1)
-	var outcome: Dictionary = b.performance.get_outcome("l1_c5_reach_center")
-	t.check_in_range(b.state().stage_pos.x, 0.47, 0.53, "松开当帧位置已进入目标区")
+	var outcome: Dictionary = b.performance.get_outcome("l1_c5_move_to_edge")
+	t.check_in_range(b.state().stage_pos.x, 0.94, 1.0, "松开当帧位置已进入目标区")
 	t.check_eq(bool(outcome.get("hit", false)), true,
 		"drag_end 不能抢先关闭拖动判定")
 	t.finish("末段位移在松开当帧仍参与到位判定")
+
+
+## 第一关「打伞位」：许仙举 90°、本关手角上限也是 90°（用户 2026-10-04 定案），
+## 而且「抬手」落点的到位区间必须**完整包住接伞的对齐窗口**。
+##
+## 这条不变量是关键：接伞要求「两手手高差 ≤ 容差」，抬手落点又要求「角度在某区间内」，
+## 两者若错配，玩家就会遇到「拍点算抬手到位、伞却不换手」。这里用数值扫描反推对齐窗口
+## （而不是把公式再抄一遍），再要求它落在落点区间之内。
+func _test_15_level1_uses_90_degree_umbrella_pose(t: ATestBase) -> void:
+	t.begin("15 第一关打伞位：许仙举 90°，抬手落点包住接伞对齐窗口")
+	var def: StageDef = StageDefScript.make_level1()
+	t.check_approx(def.hand_angle_max_rad, StageDef.LEVEL1_HAND_MAX_RAD, 1e-9,
+		"第一关的手角上限应是 90°（打伞位）")
+	t.check_approx(def.hand_angle_max_rad, PI * 0.5, 1e-9, "90° 即 π/2")
+	var angles: Array = def.initial["hand_angles"][UmbrellaControllerScript.XUXIAN_ID]
+	t.check_approx(float(angles[1]), StageDef.LEVEL1_HAND_MAX_RAD, 1e-9,
+		"许仙开局右手应举在 90°（水平前伸）持伞")
+
+	var cue: Dictionary = _find(def, "l1_c3_hand_raise")
+	t.check(not cue.is_empty(), "应存在抬手落点 l1_c3_hand_raise")
+	var range: Dictionary = cue.get("target_range", {})
+	var reference: float = UmbrellaController.hand_height(StageDef.LEVEL1_HAND_MAX_RAD, 0.0)
+	var tolerance: float = UmbrellaControllerScript.HAND_HEIGHT_TOLERANCE
+	var step: float = 0.0025
+	var window_min: float = INF
+	var window_max: float = -INF
+	var angle: float = 0.0
+	while angle <= def.hand_angle_max_rad + step * 0.5:
+		if absf(UmbrellaController.hand_height(angle, 0.0) - reference) <= tolerance:
+			window_min = minf(window_min, angle)
+			window_max = maxf(window_max, angle)
+		angle += step
+	t.check(window_min < INF,
+		"本关上限之内应存在与许仙右手齐平的角度（容差 %.3f）" % tolerance)
+	t.check(window_min >= float(range.get("min", 0.0)) - 1e-9
+			and window_max <= float(range.get("max", PI)) + 1e-9,
+		"抬手到位区间 %.4f~%.4f 应包住对齐窗口 %.4f~%.4f（否则会出现「算到位、不换手」）"
+			% [float(range.get("min", 0.0)), float(range.get("max", PI)),
+				window_min, window_max])
+	t.finish("打伞位 90°：抬手到位与接伞对齐落在同一段角度里")

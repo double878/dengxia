@@ -28,6 +28,10 @@ func _init() -> void:
 	controller = PuppetController.new()
 	controller.clock = clock
 	controller.setup(3)
+	# 手角上界按本关数据收（第一关是 90° 打伞位，见 StageDef.LEVEL1_HAND_MAX_RAD）。
+	# 缺这一步，测试台里的手能一路举到 180°，与真实第一关的手感不一致——
+	# 「抬手到位」的判定测试就失去了意义（实测：它会停在 2.7 rad，超出到位区间）。
+	controller.hand_angle_max = stage_def.hand_angle_max_rad
 	performance = PerformanceSystem.new()
 	performance.setup(stage_def.cues, clock, controller.puppets)
 

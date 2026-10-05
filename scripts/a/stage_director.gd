@@ -16,6 +16,7 @@ class_name StageDirector
 
 const PerformanceSystemScript := preload("res://scripts/a/performance_system.gd")
 const RemedySystemScript := preload("res://scripts/a/remedy_system.gd")
+const UmbrellaControllerScript := preload("res://scripts/a/umbrella_controller.gd")
 
 const END_REASON_DURATION: String = "duration_reached"   ## 正常到时结束
 const END_REASON_FORCED: String = "forced"               ## 外部要求立即结束（如跳过）
@@ -28,6 +29,10 @@ var stage_def: StageDef = null
 var clock: Object = null                ## 鸭子类型：get_song_time_ms() -> int
 var performance: PerformanceSystem = null
 var remedy: RemedySystem = null
+## 第一关「借伞还伞」状态机。**其它关卡为 null**（流程表只定义第一关）：
+## `UmbrellaController.setup()` 在非第一关返回 false，这里据此把引用置空，
+## 于是「本关有没有伞」在显示端只需判一个 null，不必各自去查 stage_id。
+var umbrella: UmbrellaController = null
 
 var started: bool = false
 var ended: bool = false
@@ -47,6 +52,10 @@ func setup(p_stage_def: StageDef, p_clock: Object, p_puppets: Array,
 	clock = p_clock
 	performance = PerformanceSystemScript.new()
 	performance.setup(stage_def.cues, clock, p_puppets, p_lamp)
+	umbrella = UmbrellaControllerScript.new()
+	umbrella.clock = clock
+	if not umbrella.setup(stage_def, p_puppets):
+		umbrella = null
 	remedy = RemedySystemScript.new()
 	remedy.setup(stage_def.cues, clock)
 	started = false
@@ -78,7 +87,23 @@ func update(controller_events: Array) -> void:
 		return
 	var now_ms: int = song_time_ms()
 	var now_real_ms: int = real_time_ms()
+	# 借伞还伞先走：它只读影人状态，交接在同一帧产生 umbrella_take / umbrella_return 事件。
+	# 交接事件**不再混回判定系统的常规事件流**：常规事件流里每一条都会先被
+	# `_evaluate_action_event` 当成一次状态切换动作、随后又被 `_evaluate_continuous`
+	# 当成「本帧的影子状态」再评估一遍，而伞的交接事件两件事都不是——
+	# 混进去会让它在 5 秒前的拖动帧里就把「走到最左边」判掉。
+	# 因此交接事件走 `_register_action` 这个单一入口直接登记（`cue_fire` / `cue_hit` /
+	# `cue_miss` 的产出与常规动作完全一致），其余判定仍只看操控事件。
+	var umbrella_events: Array = []
+	if umbrella != null:
+		umbrella.update(now_ms, controller_events)
+		umbrella_events.append_array(umbrella.take_events())
+		_events.append_array(umbrella_events)
 	performance.update(now_ms, controller_events)
+	_events.append_array(performance.take_events())
+	for umbrella_event in umbrella_events:
+		if umbrella_event is Dictionary:
+			performance.register_external_action(now_ms, umbrella_event as Dictionary)
 	_events.append_array(performance.take_events())
 	performance.detect_misses(now_ms)
 	_events.append_array(performance.take_events())

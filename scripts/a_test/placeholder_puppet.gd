@@ -32,6 +32,19 @@ const SHADOW_SCALE_MAX: float = 1.36
 ## 显露程度的下限仍留一点轮廓：最暗时关键对象仍要可辨认（PRD 第 8 节）
 const EXPOSURE_ALPHA_MIN: float = 0.20
 
+## —— 身形几何（全部以「当前屏幕身高」为单位）——
+## 这组比例是**唯一的**几何定义：画影人身体用它，回答「手腕在哪」也用它。
+## 因此「挂在手上的道具」（第一关的伞）只要问 `hand_screen_position()` 就与画出来的手
+## 对齐，不必在别处再算一遍——2026-10-04 之前伞就是因为在别处按另一套公式算，
+## 被画到了幕布底部（详见 A→B 交接文档 6.2 节）。
+const SHOULDER_RATIO: float = 0.80    ## 肩在接地点上方 0.80 个身高
+const HIP_RATIO: float = 0.44         ## 髋在接地点上方 0.44 个身高
+const HALF_W_RATIO: float = 0.105     ## 半身宽
+const UPPER_ARM_RATIO: float = 0.16   ## 上臂长（与下臂合计 0.31 个身高）
+const LOWER_ARM_RATIO: float = 0.15   ## 下臂长
+## 站蹲对身高的折减系数：蹲到底矮 32%，与腿部的外张幅度配合。
+const STANCE_HEIGHT_DROP: float = 0.32
+
 const LEATHER: Color = Color(0.27, 0.18, 0.11)
 const RIM: Color = Color(0.85, 0.62, 0.30)
 const JOINT: Color = Color(0.92, 0.75, 0.40)
@@ -81,13 +94,64 @@ func exposure_alpha() -> float:
 	return lerpf(EXPOSURE_ALPHA_MIN, 1.0, clampf(lamp_state.exposure, 0.0, 1.0))
 
 
+## 本帧影人的屏幕身高（像素）：站高 × 灯距倍率 × 站蹲折减。
+## 身体与两只手都从这一个值推出去，因此影子随灯距变大时，手（和手上的道具）一起变大。
+func figure_px_height() -> float:
+	var shrink: float = 1.0 - STANCE_HEIGHT_DROP * clampf(puppet_state.stance, 0.0, 1.0)
+	return figure_height * shadow_scale() * shrink
+
+
+## 翻面时的宽度倍率：|2p−1| 在 p=0.5 处压到 0（侧对观众），乘在宽度与手臂粗细上。
+func flip_width_ratio() -> float:
+	return maxf(absf(2.0 * clampf(puppet_state.turn_progress, 0.0, 1.0) - 1.0), 0.06)
+
+
+## 半身宽（像素）。翻面压扁时收窄，但不小于 3 px——否则侧对观众那一瞬整个人会消失。
+static func half_width_px(height: float, flip_width: float) -> float:
+	return maxf(height * HALF_W_RATIO * flip_width, 3.0)
+
+
+## 手臂方向（单位向量）。手角以「自然垂下」为 0、+π/2 水平前伸、+π 举过头顶；
+## 屏幕 y 轴向下，因此右手是 π/2 − 手角、左手是 π/2 + 手角，两侧完全对称。
+static func arm_direction(hand_angle: float, right_side: bool) -> Vector2:
+	var screen_angle: float = (PI * 0.5 - hand_angle) if right_side else (PI * 0.5 + hand_angle)
+	return Vector2(cos(screen_angle), sin(screen_angle))
+
+
+## 肘点：肩 + 上臂。
+static func arm_elbow(shoulder: Vector2, hand_angle: float, right_side: bool,
+		height: float) -> Vector2:
+	return shoulder + arm_direction(hand_angle, right_side) * height * UPPER_ARM_RATIO
+
+
+## 腕点（= 手的位置）：肩 → 肘 → 腕走完，与 `_draw_arm` 画的完全同一条链。
+static func arm_wrist(shoulder: Vector2, hand_angle: float, right_side: bool,
+		height: float) -> Vector2:
+	return arm_elbow(shoulder, hand_angle, right_side, height) \
+		+ arm_direction(hand_angle, right_side) * height * LOWER_ARM_RATIO
+
+
+## 某只手此刻画在屏幕上的位置（像素）。**只读状态，不改任何东西。**
+## 「挂在手上的道具」按这个点画，就不会与画出来的手错位；灯距变化时也一并跟随。
+func hand_screen_position(hand: String) -> Vector2:
+	if puppet_state == null:
+		return Vector2.ZERO
+	var height: float = figure_px_height()
+	var half_w: float = half_width_px(height, flip_width_ratio())
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var right_side: bool = hand != "left"
+	var shoulder := Vector2(ground.x + (half_w if right_side else -half_w),
+		ground.y - height * SHOULDER_RATIO)
+	var angle: float = puppet_state.hand_angle.y if right_side else puppet_state.hand_angle.x
+	return arm_wrist(shoulder, angle, right_side, height)
+
+
 func _draw() -> void:
 	if puppet_state == null:
 		return
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
 	var alpha: float = exposure_alpha()
-	var height: float = figure_height * shadow_scale() \
-		* (1.0 - 0.32 * clampf(puppet_state.stance, 0.0, 1.0))
+	var height: float = figure_px_height()
 
 	_draw_contact_shadow(ground, height, alpha)
 	if puppet_state.hook_slot != PuppetStateScript.HOOK_SLOT_NONE:
@@ -129,16 +193,16 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	## 翻面表现：turn_progress 0→1 走完一次翻面，宽度倍率 |2p−1| 在 p=0.5 处压到 0，
 	## 也就是「侧对观众」的那一瞬——正面/反面正是在这一瞬换过来的（PRD 第 4.1 节：
 	## 转身有过渡、不能瞬间翻面）。整段只有 0.1 s。
-	var flip_width: float = maxf(absf(2.0 * clampf(state.turn_progress, 0.0, 1.0) - 1.0), 0.06)
+	var flip_width: float = flip_width_ratio()
 	var showing_front: bool = state.facing >= 0.0
 
 	var body := Color(LEATHER.r, LEATHER.g, LEATHER.b, alpha)
 	var rim := Color(RIM.r, RIM.g, RIM.b, alpha * 0.75)
 	var joint := Color(JOINT.r, JOINT.g, JOINT.b, alpha)
 
-	var hip := Vector2(ground.x, ground.y - height * 0.44)
-	var shoulder := Vector2(ground.x, ground.y - height * 0.80)
-	var half_w: float = maxf(height * 0.105 * flip_width, 3.0)
+	var hip := Vector2(ground.x, ground.y - height * HIP_RATIO)
+	var shoulder := Vector2(ground.x, ground.y - height * SHOULDER_RATIO)
+	var half_w: float = half_width_px(height, flip_width)
 
 	# 腿：髋 → 膝 → 脚。蹲下时膝盖外张、重心下沉（stance 越大越蹲）
 	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0)) * flip_width
@@ -171,18 +235,13 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
 
 
-## 一条手臂。手角以「自然垂下」为 0，向抬手方向为正；屏幕 y 轴向下，因此：
-##   右手屏幕角 = π/2 − 手角，左手屏幕角 = π/2 + 手角
-## 于是 0 时双手垂下、π/2 时双手水平外伸、π 时双手举过头顶，两侧完全对称。
+## 一条手臂。手角以「自然垂下」为 0，向抬手方向为正；屏幕角口径见 `arm_direction()`。
+## 几何全部走 `arm_elbow()` / `arm_wrist()`，与 `hand_screen_position()` 共用一条链——
+## 手画在哪，问道具落点时就会得到同一个点。
 func _draw_arm(shoulder: Vector2, angle: float, right_side: bool,
 		height: float, body: Color, joint: Color, flip_width: float) -> Vector2:
-	var base_angle: float = PI * 0.5
-	var screen_angle: float = (base_angle - angle) if right_side else (base_angle + angle)
-	var dir := Vector2(cos(screen_angle), sin(screen_angle))
-	var upper: float = height * 0.16
-	var lower: float = height * 0.15
-	var elbow: Vector2 = shoulder + dir * upper
-	var wrist: Vector2 = elbow + dir * lower
+	var elbow: Vector2 = arm_elbow(shoulder, angle, right_side, height)
+	var wrist: Vector2 = arm_wrist(shoulder, angle, right_side, height)
 	# 翻面压扁时手臂同步变细，避免整台只剩两根粗线还挂在外面
 	var thickness: float = maxf(flip_width, 0.25)
 	draw_line(shoulder, elbow, body, height * 0.042 * thickness)

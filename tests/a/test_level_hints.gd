@@ -74,7 +74,7 @@ func _outcome(bench: DirectorTestBench, cue_id: String) -> Dictionary:
 func _test_01_four_levels_data(t: ATestBase) -> void:
 	t.begin("01 前四关数据符合 PRD 第 6 节，且四关都是教学关")
 	var expected: Dictionary = {
-		1: {"duration": 35000, "beats": 56, "cues": 6},
+		1: {"duration": 35000, "beats": 56, "cues": 8},
 		2: {"duration": 45000, "beats": 72, "cues": 7},
 		3: {"duration": 50000, "beats": 80, "cues": 7},
 		4: {"duration": 55000, "beats": 88, "cues": 9},

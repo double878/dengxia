@@ -436,6 +436,8 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_HEAD_SWAP: return "按 1 / 2 / 3 与备用头架换头"
 		CueScript.ACTION_LAMP_DISTANCE: return "滚轮推拉灯，让全场影子同步缩放"
 		CueScript.ACTION_LAMP_EXPOSURE: return "按 Q / E 调整影子的显露"
+		CueScript.ACTION_UMBRELLA_TAKE: return "走到许仙面前，按 A 抬左手到 90°，两只手碰到就接伞"
+		CueScript.ACTION_UMBRELLA_RETURN: return "向左走回许仙身旁，把伞还回他的右手"
 	return "跟着鼓点继续演出"
 
 
@@ -453,6 +455,8 @@ func _draw() -> void:
 	draw_line(Vector2(0.0, TABLE.position.y), Vector2(CANVAS_SIZE.x, TABLE.position.y),
 		Color("#8a6335"), 3.0)
 	_draw_foot_rail()
+	# 伞先画：它挂在影人身后那一侧（幕后看到的正是背面），不该压住持伞的人。
+	_draw_umbrella()
 	_draw_hooks()
 	_draw_head_rack()
 	_draw_hands_and_tags()
@@ -543,6 +547,68 @@ func _draw_spare_head(centre: Vector2, head_id: int) -> void:
 			draw_circle(centre + Vector2(17.0, -17.0), 7.0, accent)
 		_:
 			draw_rect(Rect2(centre.x - 24.0, centre.y - 24.0, 48.0, 10.0), accent)
+
+
+## 某个影人的显示节点（下标即影人编号，与 `_refresh_ui` 的取法一致）。
+## 不在场（未登场）或编号越界时返回 null，调用方据此不画——道具跟着人走，人不在就不画。
+func _puppet_view(puppet_id: int) -> PlaceholderPuppet:
+	if puppet_id < 0 or puppet_id >= _puppet_views.size():
+		return null
+	var view: PlaceholderPuppet = _puppet_views[puppet_id]
+	return view if view.visible else null
+
+
+## 第一关的伞（借伞还伞流程）。**落点由显示端决定**：画在持伞那只手画出来的手腕上
+## （`PlaceholderPuppet.hand_screen_position`），所以伞永远握在手上，而且影子随灯距缩放时
+## 手和伞一起变大变小。递伞过渡期间，从原来那只手的手腕移到新手的手腕，比例取 A 的
+## `umbrella.handoff_blend()`（已缓入缓出），画面上就是「一只手把伞递出去」。
+##
+## 为什么不读 `UmbrellaController.position`：那是 A 内部的相对口径（归一化「幕布」坐标，
+## 手高按 A 自己的肩高/臂长公式算），与影人显示端画出来的手臂比例不是同一套坐标系。
+## 2026-10-04 实测：拿它换算像素，许仙举伞时伞被画到幕布底部（y≈668 px），
+## 而他自己画出的右手在 267 px 高处——这就是「开局伞不在许仙手上」的原因。
+##
+## 别的关卡 `umbrella` 为 null，这里直接不画。
+func _draw_umbrella() -> void:
+	if _harness == null:
+		return
+	var umbrella: UmbrellaController = _harness.runtime.director.umbrella
+	if umbrella == null:
+		return
+	var holder: PlaceholderPuppet = _puppet_view(umbrella.holder_id_of())
+	if holder == null:
+		return
+	var at: Vector2 = holder.hand_screen_position(umbrella.holder_hand_of())
+	if umbrella.handing_off:
+		var previous: PlaceholderPuppet = _puppet_view(umbrella.handoff_from_id())
+		if previous != null:
+			at = previous.hand_screen_position(umbrella.handoff_from_hand()) \
+				.lerp(at, umbrella.handoff_blend())
+	var wood := Color("#8a5a2b")
+	var paper := Color(0.87, 0.79, 0.62, 0.92)
+	var edge := Color("#3a2a18")
+	# 伞杆：从手握处向上
+	draw_line(at, at + Vector2(0.0, -74.0), edge, 8.0)
+	draw_line(at, at + Vector2(0.0, -74.0), wood, 5.0)
+	# 伞面：一段扇形的近似（一条弧 + 一条弦）
+	var tip: Vector2 = at + Vector2(0.0, -74.0)
+	draw_colored_polygon(PackedVector2Array([
+		tip,
+		tip + Vector2(-66.0, 34.0),
+		tip + Vector2(-33.0, 46.0),
+		tip + Vector2(0.0, 50.0),
+		tip + Vector2(33.0, 46.0),
+		tip + Vector2(66.0, 34.0),
+	]), paper)
+	draw_polyline(PackedVector2Array([
+		tip + Vector2(-66.0, 34.0),
+		tip + Vector2(-33.0, 46.0),
+		tip + Vector2(0.0, 50.0),
+		tip + Vector2(33.0, 46.0),
+		tip + Vector2(66.0, 34.0),
+	]), edge, 3.0)
+	# 握伞的那只手旁边标一个短横，让「伞在谁手上」一眼可辨
+	draw_circle(at, 7.0, Color(0.98, 0.72, 0.25, 0.90))
 
 
 ## 「你的手边 · 手与三根签」：签手握住的三根签，也是鼠标抓胸签的落点。
@@ -753,6 +819,8 @@ func _action_motion(action: String, sway: float) -> Vector2:
 		CueScript.ACTION_LAMP_EXPOSURE: return Vector2(0.0, -sway)
 		CueScript.ACTION_HOOK, CueScript.ACTION_TAKE_BACK: return Vector2(0.0, -sway * 0.6)
 		CueScript.ACTION_HEAD_SWAP: return Vector2(sway * 0.5, -sway * 0.5)
+		CueScript.ACTION_UMBRELLA_TAKE: return Vector2(0.0, -sway)
+		CueScript.ACTION_UMBRELLA_RETURN: return Vector2(sway, 0.0)
 		_: return Vector2(0.0, -sway)
 
 

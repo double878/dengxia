@@ -238,6 +238,20 @@ func _evaluate_action_event(song_time_ms: int, event: Dictionary) -> void:
 	_register_action(song_time_ms, match_result, int(event.get("object_id", 0)))
 
 
+## 由**控制器之外**的模块上报一次离散动作（当前只有第一关的借伞还伞）。
+##
+## 为什么不让这类事件走 `update()` 的常规事件流：常规流里的每一条都会被当成
+## 「本帧的状态切换事件」与「本帧的连续状态」各评估一次，而伞的交接只是
+## 「一次离散动作发生」——它既不是控制器事件，也不该顺带改写任何连续读数。
+## 混进去的后果是实测过的：拖动帧里的一条交接事件会让「走到最左边」在离落点
+## 还有 7.5 秒的时候就被判掉。
+##
+## 判定规则本身（拍点、容差、`cue_fire` / `cue_hit` / `cue_miss` 的产出、
+## 「一次拖动只判一次」的去重口径）与控制器动作共用同一条路径，不另起一套。
+func register_external_action(song_time_ms: int, event: Dictionary) -> void:
+	_evaluate_action_event(song_time_ms, event)
+
+
 func _seed_reach_from_previous_state() -> void:
 	for cue in cues:
 		if str(cue.get("action", "")) != CueScript.ACTION_REACH:
@@ -379,6 +393,17 @@ func _match_event(event: Dictionary) -> Dictionary:
 			if not payload.has("slot"):
 				return {}
 			return {"actions": [CueScript.ACTION_HEAD_SWAP], "metric": float(payload["slot"])}
+		# 第一关借伞还伞：交接由 UmbrellaController 在对齐条件成立时自动完成，
+		# 这里只把「伞确实换手了」翻译成一次动作，读数用白素贞当时的接地点 x。
+		# 与 pose_stance 同一条纪律：**读数缺失就不判定**，空 payload 不能伪造一次交接。
+		"umbrella_take":
+			if not payload.has("metric"):
+				return {}
+			return {"actions": [CueScript.ACTION_UMBRELLA_TAKE], "metric": float(payload["metric"])}
+		"umbrella_return":
+			if not payload.has("metric"):
+				return {}
+			return {"actions": [CueScript.ACTION_UMBRELLA_RETURN], "metric": float(payload["metric"])}
 	return {}
 
 
@@ -404,6 +429,9 @@ func _register_action(song_time_ms: int, match_result: Dictionary, object_id: in
 				cue, expected, float(match_result["previous_metric"])):
 			continue
 		var fire_key: String = "%s|%d" % [cue_id, _drag_generation]
+		# 「一次拖动只算一次」只适用于由**拖动本身**触发的动作（平移、到位、站蹲）。
+		# 借伞交接、挂起、取回、换头是离散事件：一次交接就一条事件，
+		# 用拖动代次去重反而会把「还伞之后再借一次」在没重新拖动的帧里挡掉。
 		var once_per_drag: bool = expected == CueScript.ACTION_MOVE_LEFT \
 			or expected == CueScript.ACTION_MOVE_RIGHT or expected == CueScript.ACTION_REACH \
 			or expected == CueScript.ACTION_STAND_UP or expected == CueScript.ACTION_CROUCH

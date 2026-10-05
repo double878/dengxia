@@ -53,6 +53,11 @@ func _init(custom_stage_def: StageDef = null) -> void:
 	controller = PuppetController.new()
 	controller.clock = clock
 	controller.setup(3)
+	# 手角上界按本关数据收（第一关是 90° 打伞位）。**这条不能漏**：测试台若允许手举到
+	# 180°，而布景里许仙只有 90°，两手永远不齐平，接伞与整条借伞还伞流程都跑不通
+	# ——实测就是这个原因让「前半场五条落点全部命中」的端到端走查失败。
+	# 真实游戏走 Level1Runtime.setup 的同一处接线。
+	controller.hand_angle_max = stage_def.hand_angle_max_rad
 	apply_initial_puppets()
 	lamp_controller = LampController.new()
 	lamp_controller.clock = clock
@@ -164,6 +169,47 @@ func end_drag() -> void:
 	advance(1)
 
 
+## 按住左手抬起键 steps 步（每步 10 ms），让手角单调升到目标区间。
+func hold_left_raise(steps: int) -> void:
+	advance(steps, {"left_raise": true})
+
+
+## 按住左手放下键 steps 步。
+func hold_left_lower(steps: int) -> void:
+	advance(steps, {"left_lower": true})
+
+
+## 不拖动的空推进 steps 步。
+func idle(steps: int) -> void:
+	advance(steps)
+
+
+## 把受控影人拖到目标横坐标附近（每步位移量上限由 step_px 给出）。
+##
+## 存在的理由：`PuppetController.drag_to()` 传的是**逐步位移**，而 `tick()` 会把它累积
+## 之后一次性应用。连续 `drag()` 多步时每步都往同一个累加器里加一次，于是一次 -310 px
+## 的「22 步拖动」实际累计了 -6820 px——影人直接被推到幕布边、整段测试的时序随之作废。
+## 本方法按差值反推每步位移，并在到达目标带时停止，因此不会踩到这个陷阱：
+## 无论调用者写多少步，影人都停在 target_x 附近。
+## 返回实际用掉的步数；已经在目标带内时返回 0（此时拖动仍算一次真实的横移，
+## 「到位」类落点因此仍能按「先离开过、再进入」判定）。
+func drag_to_x(target_x: float, step_px: float, tolerance: float = 0.005) -> int:
+	var state: PuppetState = state()
+	if state == null:
+		return 0
+	var steps: int = 0
+	var direction: float = 1.0 if target_x >= state.stage_pos.x else -1.0
+	while steps < 200:
+		var remaining: float = absf(target_x - state.stage_pos.x)
+		if remaining <= tolerance:
+			break
+		var step_norm: float = minf(remaining, maxf(step_px, 1.0) / STAGE_W)
+		controller.drag_to(Vector2(direction * step_norm * STAGE_W, 0.0))
+		advance(1)
+		steps += 1
+	return steps
+
+
 ## 挂起当前影人（PRD 第 4.1 节：空格）。返回是否成功；随后步进一帧让事件进入判定。
 func hook_current() -> bool:
 	var ok: bool = controller.hook_current()
@@ -221,11 +267,18 @@ func has_event(kind: String, cue_id: String = "") -> bool:
 	return events_for(kind, cue_id).size() > 0
 
 
-## 蹲到底
+## 蹲到底（stance 到 1.0）。每步 130 px、12 步：`drag_to()` 是逐步位移，
+## tick 时一次累积应用，因此这里会在第一帧直接越过 stance 上限并被 clamp 到蹲位。
+## 必须在已经 `begin_drag()` 之后调用。
+func crouch_here() -> void:
+	drag(Vector2(0.0, 130.0), 12)
+
+
+## 蹲到底（含 begin/end），沿用旧的整段用法。
 func crouch(at_ms: int) -> void:
 	advance_to(at_ms)
 	begin_drag()
-	drag(Vector2(0.0, 120.0), 12)
+	crouch_here()
 	end_drag()
 
 
