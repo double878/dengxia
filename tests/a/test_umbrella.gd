@@ -71,6 +71,7 @@ func run_all() -> Dictionary:
 	_test_only_level1(t)
 	_test_starts_in_xuxian_hand(t)
 	_test_drawn_at_holder_wrist(t)
+	_test_baisuzhen_hands_mirror_with_umbrella(t)
 	_test_join_window_matches_data_and_display(t)
 	_test_take_requires_alignment(t)
 	_test_misaligned_take_does_not_transfer(t)
@@ -94,6 +95,45 @@ func _has_event(controller: UmbrellaController, kind: String) -> bool:
 		if str(event.get("kind", "")) == kind:
 			return true
 	return false
+
+
+## 不对称手角最容易暴露「只翻头和衣服，手/伞仍留在原侧」的问题。
+func _test_baisuzhen_hands_mirror_with_umbrella(t: ATestBase) -> void:
+	t.begin("白素贞的双手与持伞挂点同步镜像")
+	var state: PuppetState = PuppetStateScript.new(0)
+	state.stage_pos = Vector2(0.5, 0.6)
+	state.hand_angle = Vector2(PI * 0.5, PI * 0.18)
+	var view: PlaceholderPuppet = PlaceholderPuppetScript.new()
+	view.puppet_state = state
+	var centre: Vector2 = view.stage_to_screen(state.stage_pos)
+	for progress in [1.0, 0.75, 0.5]:
+		state.turn_progress = progress
+		state.facing = -1.0
+		var left: Vector2 = view.hand_screen_position("left")
+		var right: Vector2 = view.hand_screen_position("right")
+		var canopy: Vector2 = Level1SceneScript.umbrella_canopy_centre(left, view.figure_px_height())
+		state.facing = 1.0
+		var flipped_left: Vector2 = view.hand_screen_position("left")
+		var flipped_right: Vector2 = view.hand_screen_position("right")
+		var flipped_canopy: Vector2 = Level1SceneScript.umbrella_canopy_centre(flipped_left, view.figure_px_height())
+		for pair in [[left, flipped_left], [right, flipped_right], [canopy, flipped_canopy]]:
+			t.check_approx(pair[0].x + pair[1].x, centre.x * 2.0, 0.01, "双手和伞关于身体中心镜像")
+			t.check_approx(pair[0].y, pair[1].y, 0.01, "镜像不改变手和伞的高度")
+		if progress == 0.5:
+			t.check(absf(flipped_left.x - centre.x) < view.figure_px_height() * 0.03,
+				"翻面最窄时，手与伞也应收拢到身体旁")
+	view.free()
+	# 小青继续使用已有占位绘制，手位行为不受这次美术修复影响。
+	state = PuppetStateScript.new(2)
+	state.stage_pos = Vector2(0.5, 0.6)
+	state.hand_angle.x = PI * 0.5
+	view = PlaceholderPuppetScript.new()
+	view.puppet_state = state
+	var original: Vector2 = view.hand_screen_position("left")
+	state.facing = -1.0
+	t.check_eq(view.hand_screen_position("left"), original, "小青的显示手位保持原行为")
+	view.free()
+	t.finish("同一逻辑手在翻面后仍是伞的挂点，小青不受影响")
 
 
 func _test_only_level1(t: ATestBase) -> void:
@@ -219,6 +259,8 @@ func _test_join_window_matches_data_and_display(t: ATestBase) -> void:
 		view.lamp_state = LampStateScript.new()          # 灯距默认 0.5
 	xuxian_view.puppet_state = puppets[UmbrellaControllerScript.XUXIAN_ID]
 	baisuzhen_view.puppet_state = puppets[UmbrellaControllerScript.BAISUZHEN_ID]
+	# 真实接伞时白素贞向左走，已经面向许仙。
+	baisuzhen_view.puppet_state.facing = -1.0
 	var his_hand: Vector2 = xuxian_view.hand_screen_position(UmbrellaControllerScript.XUXIAN_HAND)
 	var her_hand: Vector2 = baisuzhen_view.hand_screen_position(UmbrellaControllerScript.BAISUZHEN_HAND)
 	t.check(his_hand.distance_to(her_hand) <= 12.0,

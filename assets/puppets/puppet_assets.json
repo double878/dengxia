@@ -11,10 +11,11 @@
       "image_right": "baisuzhen",
       "image_left": "xuxian"
     },
-    "method": "Manually traced masks and source-pixel texture. Hidden pieces use marked mirrored reconstruction.",
+    "method": "Source-pixel texture with repaired leather connections and reconstructed five-finger hands; see repair note.",
     "alpha": "Estimated display opacity; the JPEG does not contain material transmittance.",
     "back": "Same cutout mirrored; no independently observed reverse side.",
-    "veil": "Split across existing torso and leg pieces to preserve the existing movement chain."
+    "veil": "Split across existing torso and leg pieces to preserve the existing movement chain.",
+    "repair": "Neck/shoulder/wrist overlap restored at unchanged pivots. Bai Suzhen white cloth uses reference palette samples; five-finger open and grip hands are reconstructed."
   },
   "atlas_size": [
     2048,
@@ -2703,7 +2704,7 @@
             64.0
           ],
           "axis_pixels": 320,
-          "opacity": 0.94,
+          "opacity": 0.97,
           "inferred": false
         },
         "left_upper_arm": {
@@ -2718,7 +2719,7 @@
             64.0
           ],
           "axis_pixels": 320,
-          "opacity": 0.94,
+          "opacity": 0.97,
           "inferred": false
         },
         "left_forearm": {
@@ -2733,7 +2734,7 @@
             64.0
           ],
           "axis_pixels": 320,
-          "opacity": 0.94,
+          "opacity": 0.97,
           "inferred": false
         },
         "left_hand": {
@@ -2763,7 +2764,7 @@
             64.0
           ],
           "axis_pixels": 320,
-          "opacity": 0.94,
+          "opacity": 0.97,
           "inferred": false
         },
         "right_forearm": {
@@ -2778,7 +2779,7 @@
             64.0
           ],
           "axis_pixels": 320,
-          "opacity": 0.94,
+          "opacity": 0.97,
           "inferred": false
         },
         "right_hand": {
@@ -2892,7 +2893,7 @@
             64.0
           ],
           "axis_pixels": 320,
-          "opacity": 0.88,
+          "opacity": 0.97,
           "inferred": false
         },
         "left_upper_arm": {
@@ -2907,7 +2908,7 @@
             64.0
           ],
           "axis_pixels": 320,
-          "opacity": 0.88,
+          "opacity": 0.97,
           "inferred": false
         },
         "left_forearm": {
@@ -2952,7 +2953,7 @@
             64.0
           ],
           "axis_pixels": 320,
-          "opacity": 0.88,
+          "opacity": 0.97,
           "inferred": true
         },
         "right_forearm": {
@@ -3044,8 +3045,39 @@
           "axis_pixels": 320,
           "opacity": 0.83,
           "inferred": false
+        },
+        "left_hand_grip": {
+          "rect": [
+            0,
+            1536,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            256.0
+          ],
+          "axis_pixels": 1,
+          "opacity": 0.98,
+          "inferred": true
+        },
+        "right_hand_grip": {
+          "rect": [
+            512,
+            1536,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            256.0
+          ],
+          "axis_pixels": 1,
+          "opacity": 0.98,
+          "inferred": true
         }
-      }
+      },
+      "palette_layout": "Ivory main cloth; teal edging and belt pattern; original black hair and gold ornament."
     }
   }
 }

@@ -3,7 +3,7 @@ class_name PlaceholderPuppet
 ## 幕后影人显示端：白素贞/许仙使用参考图分件，小青沿用占位图形。
 ## 只读 PuppetState / LampState，从不写——它同时充当「模拟 B 的显示端」。
 ##
-## 美术不改变 A 的状态、关节坐标或道具挂点。保留的几何负责：
+## 美术只读 A 的状态；分件、手腕和道具共用同一显示变换。保留的几何负责：
 ## 1. 这是皮影戏的影人，不是普通剪影——所以有关节铆钉与竹签；
 ## 2. 滚轮推拉灯会让影子的**尺寸**同步变化（PRD 第 4.3 节）；
 ## 3. Q/E 倾灯改变影子的**显露程度**，低显露时只剩一点轮廓（同上）。
@@ -17,6 +17,9 @@ const SKIN_TEXTURES: Array[Texture2D] = [
 const SKIN_MANIFEST_PATH: String = "res://assets/puppets/puppet_assets.json"
 const SKIN_MANIFEST: JSON = preload("res://assets/puppets/puppet_assets.json")
 var _skins: Dictionary = _read_skins()
+var _skin_canvas_transform: Transform2D = Transform2D.IDENTITY
+## 由场景按原有持伞归属更新，仅选择手部贴图，不写操控状态。
+var _held_prop_hand: String = ""
 
 ## 由场景注入的舞台渲染区域。必须与 PuppetController.STAGE_PIXEL_SIZE 同一坐标系，
 ## 这样「看到的胸签」与「拖得到的区域」才是同一个位置。
@@ -148,13 +151,24 @@ func hand_screen_position(hand: String) -> Vector2:
 	if puppet_state == null:
 		return Vector2.ZERO
 	var height: float = figure_px_height()
-	var half_w: float = half_width_px(height, flip_width_ratio())
+	var half_w: float = half_width_px(height, 1.0 if _has_body_skin() else flip_width_ratio())
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
 	var right_side: bool = hand != "left"
 	var shoulder := Vector2(ground.x + (half_w if right_side else -half_w),
 		ground.y - height * SHOULDER_RATIO)
 	var angle: float = puppet_state.hand_angle.y if right_side else puppet_state.hand_angle.x
-	return arm_wrist(shoulder, angle, right_side, height)
+	return _skin_figure_transform(ground) * arm_wrist(shoulder, angle, right_side, height)
+
+
+## 固定枢轴上完成整个人的水平翻面；宽度压缩也作用于肩、手和伞的挂点。
+## 小青保持原有显示几何。参考朝向定义分件原稿的那一面。
+func _skin_figure_transform(ground: Vector2) -> Transform2D:
+	if not _has_body_skin():
+		return Transform2D.IDENTITY
+	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+	var width: float = flip_width_ratio() * puppet_state.facing / float(skin["reference_facing"])
+	return Transform2D(Vector2(width, 0.0), Vector2(0.0, 1.0),
+		Vector2(ground.x * (1.0 - width), 0.0))
 
 
 ## 头半径（像素）。翻面压扁时头也收窄，但不小于 4 px——侧对观众那一瞬头不能消失。
@@ -222,7 +236,8 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	## 翻面表现：turn_progress 0→1 走完一次翻面，宽度倍率 |2p−1| 在 p=0.5 处压到 0，
 	## 也就是「侧对观众」的那一瞬——正面/反面正是在这一瞬换过来的（PRD 第 4.1 节：
 	## 转身有过渡、不能瞬间翻面）。整段只有 0.1 s。
-	var flip_width: float = flip_width_ratio()
+	_skin_canvas_transform = _skin_figure_transform(ground)
+	var flip_width: float = 1.0 if _has_body_skin() else flip_width_ratio()
 	var showing_front: bool = state.facing >= 0.0
 
 	var body := Color(LEATHER.r, LEATHER.g, LEATHER.b, alpha)
@@ -240,9 +255,6 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		var foot := Vector2(ground.x + side * half_w * 0.95, ground.y)
 		if _has_body_skin():
 			var leg: String = "left" if side < 0.0 else "right"
-			var skin: Dictionary = _skins[str(state.puppet_id)]
-			if state.facing / float(skin["reference_facing"]) < 0.0:
-				leg = "right" if side < 0.0 else "left"
 			_draw_skin_segment(leg + "_thigh", hip, knee, flip_width, alpha)
 			_draw_skin_segment(leg + "_calf", knee, foot, flip_width, alpha)
 			_draw_skin_joint(knee, height * 0.021, alpha)
@@ -272,8 +284,11 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
 	var head_center := Vector2(shoulder.x, shoulder.y - height * HEAD_CENTRE_RATIO)
-	var head_r: float = head_radius_px(height)
+	var head_r: float = height * HEAD_RADIUS_RATIO if _has_body_skin() else head_radius_px(height)
+	draw_set_transform_matrix(_skin_canvas_transform)
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
+	draw_set_transform(Vector2.ZERO)
+	_skin_canvas_transform = Transform2D.IDENTITY
 
 
 ## 一条手臂。手角以「自然垂下」为 0，向抬手方向为正；屏幕角口径见 `arm_direction()`。
@@ -292,7 +307,7 @@ func _draw_arm(shoulder: Vector2, angle: float, right_side: bool,
 		_draw_skin_joint(elbow, height * 0.020 * thickness, body.a)
 		_draw_skin_hand(side + "_hand", wrist, arm_direction(angle, right_side),
 			height, thickness, right_side, body.a)
-		return wrist
+		return _skin_canvas_transform * wrist
 	draw_line(shoulder, elbow, body, height * 0.042 * thickness)
 	draw_line(elbow, wrist, body, height * 0.038 * thickness)
 	draw_circle(elbow, height * 0.020 * thickness, joint)
@@ -313,6 +328,8 @@ func _draw_head(centre: Vector2, radius: float, showing_front: bool,
 		var skin: Dictionary = _skins[str(skin_id)]
 		var size: float = radius * float(skin["head_size_per_radius"])
 		var facing: float = 1.0 if showing_front else -1.0
+		if _has_body_skin():
+			facing = float(_skins[str(puppet_state.puppet_id)]["reference_facing"])
 		var mirror: float = facing / float(skin["reference_facing"])
 		_draw_skin_tile(skin_id, "head", centre, 0.0,
 			Vector2(size * mirror, size), alpha)
@@ -357,7 +374,7 @@ func _draw_head(centre: Vector2, radius: float, showing_front: bool,
 		draw_circle(centre + Vector2(0.0, -radius * 0.72), radius * 0.16, rim)
 
 
-## 美术适配只读状态。所有原有几何、手腕/头顶接口和 draw 顺序保持不变。
+## 美术适配只读状态，保持分件枢轴、接口签名和动作数据。
 func _read_skins() -> Dictionary:
 	var parsed: Variant = SKIN_MANIFEST.data
 	if not parsed is Dictionary or parsed.get("version", 0) != 1:
@@ -398,7 +415,9 @@ func _draw_skin_tile(skin_id: int, part_name: String, at: Vector2,
 	var pivot: Array = part["pivot"]
 	var source := Rect2(float(rect[0]), float(rect[1]), float(rect[2]), float(rect[3]))
 	var offset := Vector2(float(pivot[0]) / source.size.x, float(pivot[1]) / source.size.y)
-	draw_set_transform(at, rotation_rad, Vector2(size.x / source.size.x, size.y / source.size.y))
+	var tile_transform := Transform2D(rotation_rad,
+		Vector2(size.x / source.size.x, size.y / source.size.y), 0.0, at)
+	draw_set_transform_matrix(_skin_canvas_transform * tile_transform)
 	draw_texture_rect_region(SKIN_TEXTURES[skin_id],
 		Rect2(-offset * source.size, source.size), source, Color(1.0, 1.0, 1.0, alpha))
 	draw_set_transform(Vector2.ZERO)
@@ -411,9 +430,8 @@ func _draw_skin_segment(part_name: String, start: Vector2, end: Vector2,
 	var part: Dictionary = skin["parts"][part_name]
 	var length: float = start.distance_to(end)
 	var tile_length: float = length * 512.0 / float(part["axis_pixels"])
-	var mirror: float = puppet_state.facing / float(skin["reference_facing"])
 	_draw_skin_tile(skin_id, part_name, start, (end - start).angle() - PI * 0.5,
-		Vector2(tile_length * width_ratio * mirror, tile_length), alpha)
+		Vector2(tile_length * width_ratio, tile_length), alpha)
 
 
 func _draw_skin_hand(part_name: String, wrist: Vector2, direction: Vector2,
@@ -421,6 +439,9 @@ func _draw_skin_hand(part_name: String, wrist: Vector2, direction: Vector2,
 	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
 	var size: float = height * float(skin["hand_size_ratio"])
 	var mirror: float = 1.0 if right_side else -1.0
+	var side: String = "right" if right_side else "left"
+	if _held_prop_hand == side and skin["parts"].has(part_name + "_grip"):
+		part_name += "_grip"
 	_draw_skin_tile(puppet_state.puppet_id, part_name, wrist, direction.angle() - PI * 0.5,
 		Vector2(size * mirror * thickness, size), alpha)
 
@@ -431,9 +452,11 @@ func _draw_skin_joint(at: Vector2, radius: float, alpha: float) -> void:
 	var gold: Color = skin["joint_color"]
 	ink.a = alpha
 	gold.a = alpha
+	draw_set_transform_matrix(_skin_canvas_transform)
 	draw_circle(at, radius, ink)
 	draw_circle(at, radius * 0.72, gold)
 	draw_circle(at, radius * 0.20, ink)
+	draw_set_transform(Vector2.ZERO)
 
 
 ## 三根竹签：一根连胸签、两根连手，全部汇到签手的手部。

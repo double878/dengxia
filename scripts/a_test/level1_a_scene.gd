@@ -618,6 +618,11 @@ static func umbrella_canopy_drop(figure_height: float) -> float:
 
 
 func _draw_umbrella() -> void:
+	# 清除上帧握持贴图，再按原控制器归属选择。交接与输入逻辑不变。
+	for id in [0, 1]:
+		var view: PlaceholderPuppet = _puppet_view(id)
+		if view != null:
+			view._held_prop_hand = ""
 	if _harness == null:
 		return
 	var umbrella: UmbrellaController = _harness.runtime.director.umbrella
@@ -626,9 +631,11 @@ func _draw_umbrella() -> void:
 	var holder: PlaceholderPuppet = _puppet_view(umbrella.holder_id_of())
 	if holder == null:
 		return
+	holder._held_prop_hand = umbrella.holder_hand_of()
 	# 握伞的那只手：伞面就在这只手的正上方，位置不挪动（用户 2026-10-05 第 1 条）
 	var hand: Vector2 = holder.hand_screen_position(umbrella.holder_hand_of())
 	var height: float = holder.figure_px_height()
+	var flip_width: float = holder.flip_width_ratio()
 	if umbrella.handing_off:
 		var previous: PlaceholderPuppet = _puppet_view(umbrella.handoff_from_id())
 		if previous != null:
@@ -636,15 +643,16 @@ func _draw_umbrella() -> void:
 			hand = previous.hand_screen_position(umbrella.handoff_from_hand()) \
 				.lerp(hand, blend)
 			height = lerpf(previous.figure_px_height(), height, blend)
+			flip_width = lerpf(previous.flip_width_ratio(), flip_width, blend)
 	var wood := Color("#8a5a2b")
 	var paper := Color(0.87, 0.79, 0.62, 0.92)
 	var edge := Color("#3a2a18")
 	var canopy: Vector2 = umbrella_canopy_centre(hand, height)
-	var radius: float = umbrella_canopy_radius(height)
+	var radius: float = umbrella_canopy_radius(height) * flip_width
 	var drop: float = umbrella_canopy_drop(height)
 	# 伞杆：从手握处**竖直**向上到伞面中心（用户 2026-10-05 第 3 条：不弯不斜）
-	draw_line(hand, canopy, edge, height * CANOPY_STEM_EDGE_RATIO)
-	draw_line(hand, canopy, wood, height * CANOPY_STEM_WOOD_RATIO)
+	draw_line(hand, canopy, edge, height * CANOPY_STEM_EDGE_RATIO * maxf(flip_width, 0.25))
+	draw_line(hand, canopy, wood, height * CANOPY_STEM_WOOD_RATIO * maxf(flip_width, 0.25))
 	# 伞面：一条弧（顶点在伞面中心，向两侧下垂），加上几条伞骨
 	var rim := PackedVector2Array([
 		canopy + Vector2(-radius, drop * 0.68),
@@ -659,8 +667,9 @@ func _draw_umbrella() -> void:
 	for i in rim.size():
 		draw_line(canopy, rim[i], Color(edge.r, edge.g, edge.b, 0.45), 2.0)
 	draw_polyline(rim, edge, 3.0)
-	# 握伞的那只手旁边标一个短横，让「伞在谁手上」一眼可辨
-	draw_circle(hand, height * CANOPY_GRIP_RATIO, Color(0.98, 0.72, 0.25, 0.90))
+	# 分件手本身显示握持；旧的大圆会遮住手指与伞杆的接触。
+	if holder.puppet_state.puppet_id > 1:
+		draw_circle(hand, height * CANOPY_GRIP_RATIO, Color(0.98, 0.72, 0.25, 0.90))
 
 
 ## 「你的手边 · 手与三根签」：签手握住的三根签，也是鼠标抓胸签的落点。
