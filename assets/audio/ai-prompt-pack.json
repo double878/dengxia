@@ -1,0 +1,21 @@
+{
+  "status": "blocked_public_gpu_unavailable_no_audio_generated",
+  "stage_id": 1,
+  "duration_ms": 55000,
+  "bpm": 96,
+  "language": "zh",
+  "model_candidate": "ACE-Step 1.5",
+  "seed": 20261008,
+  "reference_boundary": "Reference video pages and heritage descriptions researched; no verified listening or voice cloning.",
+  "female_prompt": "Chinese traditional shadow puppetry opera, Leting-style banqiang, solo female dan-role high-register operatic singing, clear Chinese syllables, one short seven-character sung line, ornamented upward turn followed by descending cadential glide, gentle melisma on the final syllable, intimate acoustic theatre, sparse traditional bowed and plucked strings, wooden clappers and small gong, 96 BPM. Female singer only, no pop drum kit, no electronic synthesizer, no choir, no spoken dialogue.",
+  "male_prompt": "Chinese traditional shadow puppetry opera inspired by northwestern folk theatre, solo male scholar-role singer with a warm gentle voice, clearly articulated Chinese syllables, expressive short melodic ornaments and sustained cadential ending, polite affectionate invitation rather than martial shouting, sparse traditional bowed and plucked strings, wooden clappers and small gong, 96 BPM, intimate acoustic theatre. Male singer only, no pop drum kit, no electronic synthesizer, no choir, no spoken dialogue.",
+  "xiaoqing_direction": "Use the female style with brighter, brisker articulation and a playful invitation; preserve an audible identity distinct from Bai Suzhen.",
+  "instrumental_prompt": "Traditional Chinese shadow puppetry theatre instrumental interludes, intimate acoustic ensemble, bowed and plucked strings, wooden clappers and sparse small gong, steady 96 BPM and four beats per bar, gentle lake-and-spring-rain mood, phrases with clear entrances and soft cadential endings, leave space for alternating operatic voices, no singing, no spoken voice, no pop drums, no electronic synthesizer.",
+  "lines": [
+    {"line_id": "xiaoqing_01", "role_id": "xiaoqing", "start_ms": 5000, "end_ms": 10000, "lyrics": "姐姐移步到亭前"},
+    {"line_id": "xuxian_01", "role_id": "xuxian", "start_ms": 12500, "end_ms": 20000, "lyrics": "一柄青伞遮春雨"},
+    {"line_id": "baisuzhen_01", "role_id": "baisuzhen", "start_ms": 22500, "end_ms": 30000, "lyrics": "借伞归来再奉还"},
+    {"line_id": "baisuzhen_02", "role_id": "baisuzhen", "start_ms": 37500, "end_ms": 45000, "lyrics": "青伞还君情未了"},
+    {"line_id": "xuxian_02", "role_id": "xuxian", "start_ms": 47500, "end_ms": 52500, "lyrics": "他朝有缘再相见"}
+  ]
+}
