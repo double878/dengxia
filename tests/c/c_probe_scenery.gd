@@ -91,7 +91,7 @@ func _build() -> void:
 
 ## 摆放选型开关（**仅探针用，不入正式数据**）：环境变量覆盖拱桥的 anchor_x 与贴图缩放，
 ## 用于一次性跑出多个摆放方案截图、供人眼挑选拍板。
-##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 0.86）
+##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 1.00 = 幕布右缘）
 ##   BRIDGE_SCALE     素材像素比（缺省用 DefScript.TEXTURE_SCALE_PX）
 ## 「只露右半拱」已烘进资产本身（arch_bridge.png = 1024×726 右半），
 ## 不再需要裁半开关；改「露多少」直接重裁资产并同步 texture_foot_px。

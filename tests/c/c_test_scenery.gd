@@ -7,7 +7,8 @@ class_name CTestScenery
 ##
 ## 断言依据（用户 2026-10-08 逐条定案）：
 ##   ① 第一关布景只有柳树 + 拱桥（无花草、无边界线）
-##   ② 柳树树干 x = 0.08；拱桥贴图锚点（桥心）x = 0.86（用户三方案拍板选 C）
+##   ② 柳树树干 x = 0.08；拱桥贴图锚点（拱心）x = 1.00
+##      （用户 2026-10-08「左半拱右移到幕布边上」定案，由 0.86 右移）
 ##   ③ 纵轴容差口径：Y_TOLERANCE = 0.5（用户第三次定案「放宽至 0.5」），
 ##      [Y_MIN, Y_MAX] = [0.0, 1.0] 覆盖整个舞台高度；影人接地点仍为 0.5
 ##   ④ 景物只能左右平移：位置相关字段**只有** anchor_x / anchor_y / pan_x，
@@ -57,7 +58,7 @@ func _level1_shape(t: RefCounted) -> void:
 	t.check(not willow.is_empty(), "柳树元素存在（id=willow_left）")
 	t.check(not bridge.is_empty(), "拱桥元素存在（id=bridge_right）")
 
-	# 定位：柳树 0.08 / 桥心 0.86（用户三方案拍板选 C）
+	# 定位：柳树 0.08 / 拱心 1.00（用户 2026-10-08「右移到幕布边上」定案）
 	if not willow.is_empty():
 		t.check_approx(float(willow.get("anchor_x", -1.0)), DefScript.LEVEL1_WILLOW_X, 1e-6,
 			"柳树 anchor_x = LEVEL1_WILLOW_X")
@@ -155,7 +156,7 @@ func _texture_contract(t: RefCounted) -> void:
 		"拱桥 texture 引用 SCENERY_TEX_BRIDGE 常量")
 	var foot: Vector2 = bridge.get("texture_foot_px", Vector2.ZERO)
 	t.check_approx(foot.x, 1024.0, 1e-6,
-		"贴图锚点 x = 1024（只露左半：贴图右缘=拱心，对齐 anchor_x，用户定案）")
+		"贴图锚点 x = 1024（只露左半：贴图右缘=拱心，对齐 anchor_x=1.00）")
 	t.check_approx(foot.y, 710.0, 1e-6, "贴图锚点 y = 710（=1410-700 裁雨后桥台底边）")
 	var poly: String = str(bridge.get("polygon", ""))
 	t.check_eq(poly, DefScript.POLY_ARCH_SIDE,
@@ -202,11 +203,11 @@ func _constants_consistency(t: RefCounted) -> void:
 	var bridge: Dictionary = _find(def, "bridge_right")
 	t.check_approx(float(willow.get("anchor_x", 0.0)), 0.08, 1e-6,
 		"LEVEL1_WILLOW_X 常量值 = 0.08（用户定案）")
-	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.86, 1e-6,
-		"LEVEL1_BRIDGE_START_X 常量值 = 0.86（用户三方案拍板选 C，桥心对 0.86）")
-	# 弧形锚点与贴图锚点同源：桥心必须等于拱门中心，照 C 方案小青(0.86)站拱门正前
-	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.86, 1e-6,
-		"桥心 0.86 = 小青站位 0.86（视觉上「站在桥前」）")
+	t.check_approx(float(bridge.get("anchor_x", 0.0)), 1.00, 1e-6,
+		"LEVEL1_BRIDGE_START_X 常量值 = 1.00（用户 2026-10-08「右移到幕布边上」）")
+	# 拱心靠幕布右缘：素材左缘 = 1.00 - 1024×0.42/1920 ≈ 0.776，整半拱落在幕布内
+	t.check_approx(float(bridge.get("anchor_x", 0.0)), 1.00, 1e-6,
+		"拱心 1.00 = 幕布右缘（左半拱本体完整入画，贴图左缘 ≈ 0.776）")
 	# 接地线（用户二次定案：0.50 → 0.53；现容差已放宽至 0.5，0.53 不再是边界值）
 	t.check_approx(DefScript.LEVEL1_GROUND_Y, 0.53, 1e-6,
 		"LEVEL1_GROUND_Y = 0.53（用户定案「再往下移动 0.03」）")
