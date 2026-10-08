@@ -533,11 +533,11 @@ func _draw_head_rack() -> void:
 ## 备用头的形状按 head_id 变化，与影人头上的头饰同一套映射，
 ## 这样「按 1/2/3 换头」在画面上是可核对的。
 func _draw_spare_head(centre: Vector2, head_id: int) -> void:
-	# 初始两颗头换下后仍显示同一美术；头架位置、命中区与交换逻辑不变。
-	if head_id == 0 or head_id == 1:
+	# 初始三颗头换下后仍显示同一美术；头架位置、命中区与交换逻辑不变。
+	if head_id >= 0 and head_id < PuppetViewScript.SKIN_TEXTURES.size():
 		var skin_manifest: Variant = PuppetViewScript.SKIN_MANIFEST.data
 		if skin_manifest is Dictionary:
-			var character: String = "baisuzhen" if head_id == 0 else "xuxian"
+			var character: String = ["baisuzhen", "xuxian", "xiaoqing"][head_id]
 			var skin: Dictionary = skin_manifest.get("characters", {}).get(character, {})
 			if not skin.is_empty():
 				var size: float = 21.0 * float(skin["head_size_per_radius"])

@@ -123,17 +123,23 @@ func _test_baisuzhen_hands_mirror_with_umbrella(t: ATestBase) -> void:
 			t.check(absf(flipped_left.x - centre.x) < view.figure_px_height() * 0.03,
 				"翻面最窄时，手与伞也应收拢到身体旁")
 	view.free()
-	# 小青继续使用已有占位绘制，手位行为不受这次美术修复影响。
+	# 小青接入第三套参考分件后，也必须将双手与身体同步翻面。
 	state = PuppetStateScript.new(2)
 	state.stage_pos = Vector2(0.5, 0.6)
-	state.hand_angle.x = PI * 0.5
+	state.hand_angle = Vector2(PI * 0.5, PI * 0.18)
 	view = PlaceholderPuppetScript.new()
 	view.puppet_state = state
-	var original: Vector2 = view.hand_screen_position("left")
+	var original_left: Vector2 = view.hand_screen_position("left")
+	var original_right: Vector2 = view.hand_screen_position("right")
+	centre = view.stage_to_screen(state.stage_pos)
 	state.facing = -1.0
-	t.check_eq(view.hand_screen_position("left"), original, "小青的显示手位保持原行为")
+	for pair in [[original_left, view.hand_screen_position("left")],
+			[original_right, view.hand_screen_position("right")]]:
+		t.check_approx(pair[0].x + pair[1].x, centre.x * 2.0, 0.01,
+			"小青双手也必须关于身体中心镜像")
+		t.check_approx(pair[0].y, pair[1].y, 0.01, "小青镜像不改变腕部高度")
 	view.free()
-	t.finish("同一逻辑手在翻面后仍是伞的挂点，小青不受影响")
+	t.finish("同一逻辑手仍是道具挂点，三具影人的双手都随身体镜像")
 
 
 func _test_only_level1(t: ATestBase) -> void:

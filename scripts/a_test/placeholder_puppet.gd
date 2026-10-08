@@ -1,6 +1,6 @@
 extends Node2D
 class_name PlaceholderPuppet
-## 幕后影人显示端：白素贞/许仙使用参考图分件，小青沿用占位图形。
+## 幕后影人显示端：白素贞、许仙、小青使用参考图分件。
 ## 只读 PuppetState / LampState，从不写——它同时充当「模拟 B 的显示端」。
 ##
 ## 美术只读 A 的状态；分件、手腕和道具共用同一显示变换。保留的几何负责：
@@ -13,6 +13,7 @@ const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
 const SKIN_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/puppets/baisuzhen.png"),
 	preload("res://assets/puppets/xuxian.png"),
+	preload("res://assets/puppets/xiaoqing.png"),
 ]
 const SKIN_MANIFEST_PATH: String = "res://assets/puppets/puppet_assets.json"
 const SKIN_MANIFEST: JSON = preload("res://assets/puppets/puppet_assets.json")
@@ -161,7 +162,7 @@ func hand_screen_position(hand: String) -> Vector2:
 
 
 ## 固定枢轴上完成整个人的水平翻面；宽度压缩也作用于肩、手和伞的挂点。
-## 小青保持原有显示几何。参考朝向定义分件原稿的那一面。
+## 参考朝向定义分件原稿的那一面，三具影人使用同一显示变换。
 func _skin_figure_transform(ground: Vector2) -> Transform2D:
 	if not _has_body_skin():
 		return Transform2D.IDENTITY
@@ -381,7 +382,7 @@ func _read_skins() -> Dictionary:
 		push_error("影人美术清单无效：%s" % SKIN_MANIFEST_PATH)
 		return {}
 	var skins: Dictionary = {}
-	for character: String in ["baisuzhen", "xuxian"]:
+	for character: String in ["baisuzhen", "xuxian", "xiaoqing"]:
 		var skin: Dictionary = parsed.get("characters", {}).get(character, {}).duplicate()
 		var parts: Dictionary = skin.get("parts", {})
 		var id: int = int(skin.get("puppet_id", -1))
@@ -398,8 +399,8 @@ func _read_skins() -> Dictionary:
 				push_error("影人分件无效：%s/%s" % [character, part_name])
 				valid = false
 		if valid:
-			skin["joint_color"] = Color(parsed["named_samples"]["gold_joint"]["hex"])
-			skin["ink_color"] = Color(parsed["named_samples"]["ink"]["hex"])
+			skin["joint_color"] = Color(skin.get("joint_hex", parsed["named_samples"]["gold_joint"]["hex"]))
+			skin["ink_color"] = Color(skin.get("ink_hex", parsed["named_samples"]["ink"]["hex"]))
 			skins[str(id)] = skin
 	return skins
 
