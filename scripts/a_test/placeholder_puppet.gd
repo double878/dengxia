@@ -36,6 +36,7 @@ var _held_prop_hand: String = ""
 enum RenderMode { LEGACY, ENTITY, PROJECTION }
 @export var render_mode: RenderMode = RenderMode.LEGACY
 var _view_material: ShaderMaterial = null
+var _last_draw_state: Array = []
 
 var puppet_state: PuppetState = null
 var lamp_state: LampState = null
@@ -81,7 +82,24 @@ const HEAD_ACCENTS: Array[Color] = [
 
 func _process(_delta: float) -> void:
 	_update_view_material()
-	queue_redraw()
+	if puppet_state == null:
+		if not _last_draw_state.is_empty():
+			_last_draw_state.clear()
+			queue_redraw()
+		return
+	# 自定义绘制命令由 Godot 保留；灯晃动可直接改节点变换/材质，不重建静止分件。
+	var draw_state: Array = [render_mode, puppet_state.stage_pos, puppet_state.stance,
+		puppet_state.facing, puppet_state.turn_progress, puppet_state.hand_angle,
+		puppet_state.head_id, puppet_state.hook_slot, puppet_state.is_controlled,
+		puppet_state.puppet_id, stage_origin, stage_size, figure_height, hand_anchor,
+		show_chest_tag, _held_prop_hand]
+	if render_mode != RenderMode.ENTITY and lamp_state != null:
+		draw_state.append(lamp_state.distance)
+	if render_mode == RenderMode.LEGACY and lamp_state != null:
+		draw_state.append(lamp_state.exposure)
+	if draw_state != _last_draw_state:
+		_last_draw_state = draw_state
+		queue_redraw()
 
 
 func _update_view_material() -> void:
@@ -92,7 +110,7 @@ func _update_view_material() -> void:
 	if _view_material == null or _view_material.shader != shader:
 		_view_material = ShaderMaterial.new()
 		_view_material.shader = shader
-		material = _view_material
+	material = _view_material
 	if render_mode == RenderMode.ENTITY:
 		_view_material.set_shader_parameter("environment", 0.58 + 0.42 * StageLight.unit(lamp_state.oil) if lamp_state != null else 1.0)
 
@@ -512,6 +530,12 @@ func _draw_bamboo(start: Vector2, end: Vector2, width: float) -> void:
 ## 胸签热区的可视化。前四关允许出现融入画面的操作图标（PRD 第 3、8 节）。
 func _draw_chest_tag() -> void:
 	var centre: Vector2 = chest_tag_screen()
+	if render_mode == RenderMode.ENTITY:
+		# 融入签手操作的细刻线；保留原命中范围与落点。
+		for i in range(8):
+			draw_arc(centre, PuppetControllerScript.CHEST_TAG_RADIUS_PX, TAU * i / 8.0, TAU * i / 8.0 + 0.16, 6, Color(0.73, 0.51, 0.24, 0.36), 1.4, true)
+		draw_circle(centre, 4.0, Color(0.83, 0.68, 0.42, 0.8))
+		return
 	draw_arc(centre, PuppetControllerScript.CHEST_TAG_RADIUS_PX, 0.0, TAU, 40,
 		Color(0.95, 0.55, 0.20, 0.75), 3.0)
 	draw_circle(centre, 7.0, Color(0.99, 0.80, 0.42, 0.95))

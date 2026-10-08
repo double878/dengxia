@@ -13,7 +13,12 @@ func _draw() -> void:
 
 
 static func wood_band(canvas: Node2D, rect: Rect2, tint: Color) -> void:
-	canvas.draw_texture_rect(WOOD, rect, true, tint)
+	if rect.size.y > rect.size.x * 2.0:
+		canvas.draw_set_transform(rect.position + Vector2(rect.size.x, 0), PI * 0.5)
+		canvas.draw_texture_rect(WOOD, Rect2(Vector2.ZERO, Vector2(rect.size.y, rect.size.x)), true, tint)
+		canvas.draw_set_transform(Vector2.ZERO)
+	else:
+		canvas.draw_texture_rect(WOOD, rect, true, tint)
 	canvas.draw_line(rect.position, Vector2(rect.end.x, rect.position.y), Color(0.67, 0.49, 0.28, 0.42), 1.5)
 	canvas.draw_line(Vector2(rect.position.x, rect.end.y), rect.end, Color(0.06, 0.04, 0.025, 0.8), 3.0)
 

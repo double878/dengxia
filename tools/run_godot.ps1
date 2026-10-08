@@ -7,6 +7,11 @@ $ErrorActionPreference = 'Stop'
 $stageRoot = Split-Path -Parent $PSScriptRoot
 $stageLogDir = Join-Path $stageRoot 'builds\stage-realism\logs'
 New-Item -ItemType Directory -Path $stageLogDir -Force | Out-Null
+# 日志、截图与临时入口不作为 Godot 项目资源导入或打包。
+$stageBuildIgnore = Join-Path $stageRoot 'builds\.gdignore'
+if (-not (Test-Path -LiteralPath $stageBuildIgnore)) {
+    New-Item -ItemType File -Path $stageBuildIgnore | Out-Null
+}
 $stageOut = Join-Path $stageLogDir ($LogName + '.out.log')
 $stageErr = Join-Path $stageLogDir ($LogName + '.err.log')
 # PowerShell 对 GUI 子进程的直接调用可能提早返回；显式等待，记录真实退出码。

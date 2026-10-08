@@ -7,6 +7,7 @@ const LampView := preload("res://scripts/a_test/placeholder_lamp.gd")
 const PuppetData := preload("res://scripts/a/puppet_state.gd")
 const LampData := preload("res://scripts/a/lamp_state.gd")
 const Clock := preload("res://scripts/a/music_clock.gd")
+const UmbrellaView := preload("res://scripts/b/umbrella_visual.gd")
 
 
 func run_all() -> Dictionary:
@@ -14,6 +15,7 @@ func run_all() -> Dictionary:
 	_test_entity_geometry(t)
 	_test_projection_geometry(t)
 	_test_flame_time_and_feedback(t)
+	_test_prop_attachments(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed}
 
 
@@ -107,3 +109,49 @@ func _test_flame_time_and_feedback(t: ATestBase) -> void:
 	t.check_eq(view.lamp.to_dict(), lamp_before, "自然火光不得扣油或修改反馈")
 	view.free()
 	t.finish("既有时钟决定画面，反馈只改变稳定程度")
+
+
+func _test_prop_attachments(t: ATestBase) -> void:
+	t.begin("实体伞和投影伞分别跟随各自手腕与交接")
+	var views: Array = []
+	var states: Array = []
+	for id in range(3):
+		var view: PlaceholderPuppet = _view(1)
+		view.puppet_state.puppet_id = id
+		view.puppet_state.head_id = id
+		view.puppet_state.stage_pos = Vector2(0.236 if id == 0 else 0.13, 0.50)
+		view.puppet_state.hand_angle = Vector2(PI * 0.5, PI * 0.5)
+		views.append(view)
+		states.append(view.puppet_state)
+	var controller := UmbrellaController.new()
+	controller.setup(StageDef.make_level1(), states)
+	var prop := UmbrellaView.new()
+	prop.views = views
+	prop.umbrella = controller
+	for mode in [1, 2]:
+		for view: PlaceholderPuppet in views:
+			view.set("render_mode", mode)
+		for distance: float in [0.0, 1.0]:
+			for view: PlaceholderPuppet in views:
+				view.lamp_state.distance = distance
+			var data: Dictionary = prop.geometry()
+			t.check((data["hand"] as Vector2).is_equal_approx(views[1].hand_screen_position("right")), "两种灯距下伞柄握点与相应腕点一致")
+	controller.update(8750, [])
+	t.check_eq(controller.holder_id_of(), 0, "样例确实通过原控制器接伞")
+	states[0].stage_pos.x = UmbrellaController.TURN_POINT_X
+	controller.update(11000, [])
+	states[0].hand_angle.x = 0.0
+	states[0].stage_pos.x = 0.236
+	controller.update(13000, [])
+	t.check(controller.handing_off, "低手还伞样例进入真实交接过渡")
+	for mode in [1, 2]:
+		for view: PlaceholderPuppet in views:
+			view.set("render_mode", mode)
+		var data: Dictionary = prop.geometry()
+		var from: Vector2 = views[0].hand_screen_position("left")
+		var to: Vector2 = views[1].hand_screen_position("right")
+		t.check((data["hand"] as Vector2).is_equal_approx(from.lerp(to, controller.handoff_blend())), "交接时实体与投影各自在对应腕点间过渡")
+	prop.free()
+	for view: PlaceholderPuppet in views:
+		view.free()
+	t.finish("同一归属与过渡驱动两套道具几何")

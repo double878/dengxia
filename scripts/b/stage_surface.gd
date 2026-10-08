@@ -7,6 +7,8 @@ const ClothShader := preload("res://shaders/stage_cloth.gdshader")
 var cloth := Rect2(66, 92, 1788, 588)
 var front_view: bool = false
 var extra_softness: float = 0.0
+## 仅开发离幕样例使用；正常演出保持 1.0，不增加游戏输入。
+var extra_projection_scale: float = 1.0
 var projection_views: Array[PlaceholderPuppet] = []
 var projection_viewport: SubViewport
 var cloth_material: ShaderMaterial
@@ -64,10 +66,11 @@ func update_light(lamp: LampState, real_ms: int, song_ms: int, bpm: float) -> vo
 	cloth_material.set_shader_parameter("front_view", front_view)
 	var shear: float = lerpf(-0.008, 0.008, StageLight.unit(lamp.distance))
 	var shift := Vector2(shear * -cloth.get_center().y + float(light["tip_x"]) * 0.10, lerpf(1.5, -2.0, StageLight.unit(lamp.distance)))
+	var magnification: float = clampf(extra_projection_scale, 1.0, 1.15)
+	shift += cloth.get_center() * (1.0 - magnification)
 	for view: PlaceholderPuppet in projection_views:
 		view.lamp_state = lamp
-		view.transform = Transform2D(Vector2(1, 0), Vector2(shear, 1), shift)
-		view.queue_redraw()
+		view.transform = Transform2D(Vector2(magnification, 0), Vector2(shear * magnification, magnification), shift)
 	_umbrella.transform = projection_views[0].transform
 	_umbrella.queue_redraw()
 
@@ -85,6 +88,8 @@ func projected_hand_position(id: int, hand: String) -> Vector2:
 	if id < 0 or id >= projection_views.size():
 		return Vector2.ZERO
 	var view: PlaceholderPuppet = projection_views[id]
+	if not view.visible or view.puppet_state == null:
+		return Vector2.ZERO
 	var point: Vector2 = view.transform * view.hand_screen_position(hand)
 	if front_view:
 		point.x = cloth.get_center().x * 2.0 - point.x

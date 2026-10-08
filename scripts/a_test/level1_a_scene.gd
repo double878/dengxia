@@ -519,17 +519,9 @@ func _draw_freeze_overlay() -> void:
 	_draw_canvas.draw_rect(SCREEN_FRAME, Color(0.98, 0.72, 0.25, 0.80), false, 6.0)
 
 
-## 幕布经纬线的淡淡质感，避免整块幕布是一块死板的纯色。
-## 工作台前沿的横杆与台下阴影。
-func _draw_foot_rail() -> void:
-	_draw_canvas.draw_rect(Rect2(0.0, TABLE.end.y - 26.0, CANVAS_SIZE.x, 26.0), Color("#241a0f"))
-	_draw_canvas.draw_line(Vector2(0.0, TABLE.end.y - 26.0), Vector2(CANVAS_SIZE.x, TABLE.end.y - 26.0),
-		Color("#6b4a28"), 3.0)
-
-
 ## 两个挂钩（PRD 第 4.2 节：另两人可以挂在各自挂钩上）。
 func _draw_hooks() -> void:
-	var wood := Color("#b07a41")
+	var wood := Color("#b07a41") * _environment()
 	for x in HOOK_X:
 		_draw_canvas.draw_line(Vector2(x, TABLE.position.y + 12.0), Vector2(x, 790.0), wood, 9.0)
 		_draw_canvas.draw_arc(Vector2(x + 15.0, 795.0), 17.0, 0.1, PI + 0.35, 18, wood, 7.0)
@@ -539,7 +531,7 @@ func _draw_hooks() -> void:
 func _draw_head_rack() -> void:
 	if _harness == null:
 		return
-	var wood := Color("#b07a41")
+	var wood := Color("#b07a41") * _environment()
 	_draw_canvas.draw_line(Vector2(RACK_SLOT_X[0] - 62.0, 764.0),
 		Vector2(RACK_SLOT_X[2] + 62.0, 764.0), wood, 11.0)
 	for i in RACK_SLOT_X.size():
@@ -569,7 +561,7 @@ func _draw_spare_head(centre: Vector2, head_id: int) -> void:
 				_draw_canvas.draw_set_transform(centre, 0.0, Vector2(mirror, 1.0))
 				_draw_canvas.draw_texture_rect_region(PuppetViewScript.SKIN_TEXTURES[head_id],
 					Rect2(Vector2(-size * 0.5, -size * 0.5), Vector2(size, size)),
-					Rect2(0.0, 0.0, 512.0, 512.0))
+					Rect2(0.0, 0.0, 512.0, 512.0), Color(1, 1, 1, 1) * _environment())
 				_draw_canvas.draw_set_transform(Vector2.ZERO)
 				return
 	var accents: Array = PuppetViewScript.HEAD_ACCENTS
@@ -616,17 +608,14 @@ func _puppet_view(puppet_id: int) -> PlaceholderPuppet:
 ## 代价是几何上的：手举 90° 时腕点离身体中心 0.415 个身高（半身宽 0.105 + 整臂 0.31），
 ## 所以伞面半径必须 ≥ 0.415 个身高才能在横向盖住头，伞宽因此接近一个身高。
 ## 半径与下垂量都按当前身高算，灯距推拉、站蹲、翻面时伞都跟着走。
-const CANOPY_LIFT_RATIO: float = 0.44    ## 伞面中心在手腕正上方多高（身高比例）
+const CANOPY_LIFT_RATIO: float = UmbrellaVisualScript.LIFT
 ## 伞面半径（身高比例）。**0.415 是硬门槛**（手腕离身体中心的水平距离），低于它就盖不到头；
 ## 取 0.45 留一点余量，于是伞面左缘落到头顶左侧约 0.035 个身高处。
-const CANOPY_RADIUS_RATIO: float = 0.45
+const CANOPY_RADIUS_RATIO: float = UmbrellaVisualScript.RADIUS
 ## 伞面中心到最低下沿的距离（身高比例）。取 0.20 使伞面下沿恰好落在头顶之上
 ## （0.80 肩 + 0.44 抬升 − 0.20 下垂 = 1.04 > 头顶的 1.02）。
-const CANOPY_DROP_RATIO: float = 0.20
+const CANOPY_DROP_RATIO: float = UmbrellaVisualScript.DROP
 ## 伞杆粗细与「伞在谁手上」的标记也按身高走，灯距推拉时与影人一起缩放（原来是写死的像素）。
-const CANOPY_STEM_EDGE_RATIO: float = 0.034
-const CANOPY_STEM_WOOD_RATIO: float = 0.021
-const CANOPY_GRIP_RATIO: float = 0.030
 
 ## 伞面中心：**手腕正上方** `CANOPY_LIFT_RATIO` 个身高处（伞杆因此是竖直的）。
 static func umbrella_canopy_centre(hand: Vector2, figure_height: float) -> Vector2:
@@ -643,9 +632,10 @@ static func umbrella_canopy_drop(figure_height: float) -> float:
 
 ## 「你的手边 · 手与三根签」：签手握住的三根签，也是鼠标抓胸签的落点。
 func _draw_hands_and_tags() -> void:
-	var wood := Color("#c08f4a")
-	var skin := Color("#e0b783")
-	var edge := Color("#6d4224")
+	var brightness: float = _environment()
+	var wood := Color("#c08f4a") * brightness
+	var skin := Color("#e0b783") * brightness
+	var edge := Color("#6d4224") * brightness
 	# 三根签的杆身
 	for i in 3:
 		var x: float = HAND_ANCHOR.x - 34.0 + float(i) * 34.0
@@ -666,6 +656,10 @@ func _draw_hands_and_tags() -> void:
 		edge, 20.0)
 	_draw_canvas.draw_line(HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0),
 		skin, 15.0)
+
+
+func _environment() -> float:
+	return 0.65 + 0.35 * StageLight.unit(_lamp.lamp.oil) if _lamp.lamp != null else 1.0
 
 
 ## 节拍指示（仅教学关）。不打拍号、不显示倒计时，只让重音循环亮一下。
