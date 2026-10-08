@@ -32,6 +32,10 @@ var _held_prop_hand: String = ""
 @export var hand_anchor: Vector2 = Vector2(960.0, 852.0)
 ## 画面上画出的胸签热区。前四关允许出现操作图标（PRD 第 3、8 节）。
 @export var show_chest_tag: bool = false
+## 旧 A 测试保留 0；游戏实体使用 1；幕面离屏透射使用 2。
+enum RenderMode { LEGACY, ENTITY, PROJECTION }
+@export var render_mode: RenderMode = RenderMode.LEGACY
+var _view_material: ShaderMaterial = null
 
 var puppet_state: PuppetState = null
 var lamp_state: LampState = null
@@ -76,7 +80,21 @@ const HEAD_ACCENTS: Array[Color] = [
 
 
 func _process(_delta: float) -> void:
+	_update_view_material()
 	queue_redraw()
+
+
+func _update_view_material() -> void:
+	if render_mode == RenderMode.LEGACY:
+		material = null
+		return
+	var shader: Shader = preload("res://shaders/puppet_back.gdshader") if render_mode == RenderMode.ENTITY else preload("res://shaders/puppet_transmission.gdshader")
+	if _view_material == null or _view_material.shader != shader:
+		_view_material = ShaderMaterial.new()
+		_view_material.shader = shader
+		material = _view_material
+	if render_mode == RenderMode.ENTITY:
+		_view_material.set_shader_parameter("environment", 0.58 + 0.42 * StageLight.unit(lamp_state.oil) if lamp_state != null else 1.0)
 
 
 ## 归一化舞台坐标（0-1）→ 屏幕像素。y=0 在幕布最深处（画面上方），y=1 最靠玩家。
@@ -104,6 +122,9 @@ func shadow_scale() -> float:
 
 ## Q/E 倾灯 → 影子显露程度
 func exposure_alpha() -> float:
+	# 投影显露在幕面合成时控制一次；实体始终保持不透明。
+	if render_mode != RenderMode.LEGACY:
+		return 1.0
 	if lamp_state == null:
 		return 1.0
 	return lerpf(EXPOSURE_ALPHA_MIN, 1.0, clampf(lamp_state.exposure, 0.0, 1.0))
@@ -113,7 +134,7 @@ func exposure_alpha() -> float:
 ## 身体与两只手都从这一个值推出去，因此影子随灯距变大时，手（和手上的道具）一起变大。
 func figure_px_height() -> float:
 	var shrink: float = 1.0 - STANCE_HEIGHT_DROP * clampf(puppet_state.stance, 0.0, 1.0)
-	return figure_height * shadow_scale() * shrink
+	return figure_height * (1.0 if render_mode == RenderMode.ENTITY else shadow_scale()) * shrink
 
 
 ## 翻面时的宽度倍率：|2p−1| 在 p=0.5 处压到 0（侧对观众），乘在宽度与手臂粗细上。
@@ -197,13 +218,14 @@ func _draw() -> void:
 	var alpha: float = exposure_alpha()
 	var height: float = figure_px_height()
 
-	_draw_contact_shadow(ground, height, alpha)
-	if puppet_state.hook_slot != PuppetStateScript.HOOK_SLOT_NONE:
+	if render_mode == RenderMode.LEGACY:
+		_draw_contact_shadow(ground, height, alpha)
+	if render_mode != RenderMode.PROJECTION and puppet_state.hook_slot != PuppetStateScript.HOOK_SLOT_NONE:
 		_draw_hook_marker(ground, height, alpha)
 	_draw_figure(ground, height, alpha)
-	if puppet_state.is_controlled:
+	if render_mode != RenderMode.PROJECTION and puppet_state.is_controlled:
 		_draw_sticks(ground, height, alpha)
-	if show_chest_tag or puppet_state.is_controlled:
+	if render_mode != RenderMode.PROJECTION and (show_chest_tag or puppet_state.is_controlled):
 		_draw_chest_tag()
 
 
@@ -463,11 +485,28 @@ func _draw_skin_joint(at: Vector2, radius: float, alpha: float) -> void:
 ## 三根竹签：一根连胸签、两根连手，全部汇到签手的手部。
 ## 这是「借签操演」在画面上唯一的直接证据（PRD 第 4 节）。
 func _draw_sticks(ground: Vector2, height: float, alpha: float) -> void:
+	if render_mode == RenderMode.ENTITY:
+		_draw_bamboo(Vector2(ground.x, ground.y - height * 0.62), hand_anchor - Vector2(0, 28), 3.7)
+		_draw_bamboo(_left_wrist, hand_anchor + Vector2(-18, -22), 2.5)
+		_draw_bamboo(_right_wrist, hand_anchor + Vector2(18, -22), 2.5)
+		return
 	var color := Color(STICK.r, STICK.g, STICK.b, alpha * 0.95)
 	var chest: Vector2 = Vector2(ground.x, ground.y - height * 0.62)
 	draw_line(chest, hand_anchor, color, 4.0)
 	draw_line(_left_wrist, hand_anchor, color, 3.0)
 	draw_line(_right_wrist, hand_anchor, color, 3.0)
+
+
+func _draw_bamboo(start: Vector2, end: Vector2, width: float) -> void:
+	draw_line(start, end, Color("#493824"), width + 1.4, true)
+	draw_line(start, end, Color("#be995e"), width, true)
+	var normal: Vector2 = (end - start).normalized().orthogonal()
+	draw_line(start + normal * 0.6, end + normal * 0.6, Color(0.88, 0.76, 0.49, 0.55), 0.6, true)
+	for blend: float in [0.28, 0.61, 0.85]:
+		var knot: Vector2 = start.lerp(end, blend)
+		draw_line(knot - normal * width, knot + normal * width, Color("#79613b"), 1.3, true)
+	draw_circle(start, width * 1.35, Color("#6b4b28"))
+	draw_circle(start, width * 0.6, Color("#d4b578"))
 
 
 ## 胸签热区的可视化。前四关允许出现融入画面的操作图标（PRD 第 3、8 节）。

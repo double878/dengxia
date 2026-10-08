@@ -26,6 +26,9 @@ const StageDefScript := preload("res://scripts/a/stage_def.gd")
 const CueScript := preload("res://scripts/a/cue.gd")
 const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
 const PuppetViewScript := preload("res://scripts/a_test/placeholder_puppet.gd")
+const SurfaceScript := preload("res://scripts/b/stage_surface.gd")
+const BackdropScript := preload("res://scripts/b/stage_backdrop.gd")
+const UmbrellaVisualScript := preload("res://scripts/b/umbrella_visual.gd")
 
 const CANVAS_SIZE := Vector2(1920.0, 1080.0)
 
@@ -77,6 +80,11 @@ var _shutting_down: bool = false
 ## 掉帧、窗口尺寸不符时仍然要看它，不靠肉眼猜。
 var _diag: bool = false
 var _frame_count: int = 0
+var _stage_surface: StageSurface
+var _stage_backdrop: StageBackdrop
+var _entity_umbrella: UmbrellaVisual
+var _foreground: Node2D
+@onready var _draw_canvas: Node2D = self
 
 
 ## 开发用切关：从命令行参数取 `stage=N`（1–4），缺省或非法时回第 1 关。
@@ -118,7 +126,29 @@ func _ready() -> void:
 	_diag = OS.get_cmdline_args().has("diag") or OS.get_cmdline_user_args().has("diag")
 	if _diag:
 		print("DIAG: 诊断开关已开启")
-	_lamp.cloth_rect = CLOTH
+	_stage_backdrop = BackdropScript.new()
+	_stage_backdrop.z_index = -2
+	add_child(_stage_backdrop)
+	_stage_surface = SurfaceScript.new()
+	_stage_surface.z_index = -1
+	add_child(_stage_surface)
+	_stage_surface.configure(CLOTH)
+	_entity_umbrella = UmbrellaVisualScript.new()
+	_entity_umbrella.views = _puppet_views
+	_entity_umbrella.z_index = 18
+	var back_material := ShaderMaterial.new()
+	back_material.shader = preload("res://shaders/puppet_back.gdshader")
+	_entity_umbrella.material = back_material
+	add_child(_entity_umbrella)
+	# 提示手、暂停遮罩必须位于实体之上，不被新材质层挡住。
+	_foreground = Node2D.new()
+	_foreground.z_index = 80
+	_foreground.draw.connect(_draw_foreground)
+	add_child(_foreground)
+	_lamp.z_index = 30
+	for view: PlaceholderPuppet in _puppet_views:
+		view.render_mode = PlaceholderPuppet.RenderMode.ENTITY
+		view.z_index = 20
 	_pause_button.pressed.connect(_toggle_pause)
 	_refresh_ui()
 	if OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG):
@@ -328,6 +358,15 @@ func _refresh_ui() -> void:
 		return
 	var runtime: Level1Runtime = _harness.runtime
 	_lamp.lamp = runtime.lamp_controller.lamp
+	_lamp.set_visual_time(_harness.clock.get_real_time_ms(), _harness.clock.get_song_time_ms(), _harness.clock.bpm)
+	_stage_surface.update_light(_lamp.lamp, _harness.clock.get_real_time_ms(), _harness.clock.get_song_time_ms(), _harness.clock.bpm)
+	_stage_surface.sync_puppets(runtime.puppet_controller.puppets, _on_stage, runtime.director.umbrella)
+	_stage_backdrop.oil = _lamp.lamp.oil
+	_stage_backdrop.queue_redraw()
+	_entity_umbrella.umbrella = runtime.director.umbrella
+	(_entity_umbrella.material as ShaderMaterial).set_shader_parameter("environment", 0.58 + 0.42 * StageLight.unit(_lamp.lamp.oil))
+	_entity_umbrella.queue_redraw()
+	_foreground.queue_redraw()
 	for i in _puppet_views.size():
 		var view: PlaceholderPuppet = _puppet_views[i]
 		# 不在场的影人不画：第 2 关只让白素贞与小青登场，好让开局留出一个空挂钩。
@@ -337,6 +376,7 @@ func _refresh_ui() -> void:
 		view.hand_anchor = HAND_ANCHOR
 		view.stage_origin = Vector2.ZERO
 		view.stage_size = CANVAS_SIZE
+		view._held_prop_hand = runtime.director.umbrella.holder_hand_of() if runtime.director.umbrella != null and runtime.director.umbrella.holder_id_of() == i else ""
 
 	_status_label.text = _stage_def.title
 	if runtime.is_over():
@@ -444,26 +484,19 @@ func _action_text(action: String) -> String:
 ## —— 以下全是只读的画面表现 ——
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, CANVAS_SIZE), Color("#171b19"))
-	draw_rect(TOP_BAR, Color("#232a27"))
-	draw_rect(SCREEN_FRAME, Color("#7b4d23"))
-	# 幕布用「未被照亮」的底色；画面上的亮度全部由油灯的洗光提供，
-	# 这样灯油变暗、Q/E 改显露度才在画面上看得见。
-	draw_rect(CLOTH, Color("#a3977c"))
-	_draw_cloth_grain()
-	draw_rect(TABLE, Color("#382818"))
-	draw_line(Vector2(0.0, TABLE.position.y), Vector2(CANVAS_SIZE.x, TABLE.position.y),
-		Color("#8a6335"), 3.0)
-	_draw_foot_rail()
-	# 伞先画：它挂在影人身后那一侧（幕后看到的正是背面），不该压住持伞的人。
-	_draw_umbrella()
+	_draw_canvas = self
+	_draw_canvas.draw_rect(TOP_BAR, Color("#232a27"))
 	_draw_hooks()
 	_draw_head_rack()
-	_draw_hands_and_tags()
-	draw_rect(FOOTER, Color("#222927"))
-	draw_line(Vector2(0.0, FOOTER.position.y), Vector2(CANVAS_SIZE.x, FOOTER.position.y),
+	_draw_canvas.draw_rect(FOOTER, Color("#222927"))
+	_draw_canvas.draw_line(Vector2(0.0, FOOTER.position.y), Vector2(CANVAS_SIZE.x, FOOTER.position.y),
 		Color("#ad8147"), 2.0)
 	_draw_beat_indicator()
+
+
+func _draw_foreground() -> void:
+	_draw_canvas = _foreground
+	_draw_hands_and_tags()
 	_draw_target_marker()
 	# 两类提示手：同一时刻只画一只。互斥规则集中在 hint_hand_choice 一处，
 	# 显示端只消费它的结果，不做第二套判断。
@@ -475,31 +508,22 @@ func _draw() -> void:
 	if _harness != null and _harness.clock.is_song_frozen():
 		_draw_freeze_overlay()
 	if _paused:
-		draw_rect(Rect2(Vector2.ZERO, CANVAS_SIZE), Color(0.0, 0.0, 0.0, 0.45))
+		_draw_canvas.draw_rect(Rect2(Vector2.ZERO, CANVAS_SIZE), Color(0.0, 0.0, 0.0, 0.45))
 
 
 ## 补救冻结的画面提示：幕布整体压暗 + 外框一圈琥珀色。
 ## PRD 第 5.2 节把补救定义成「帮助玩家继续表演」而不是失败，因此这里只做提示，
 ## 不打分数、不显示倒计时秒数（第 3、5.1 节明确禁止泄露数值）。
 func _draw_freeze_overlay() -> void:
-	draw_rect(CLOTH, Color(0.06, 0.04, 0.02, 0.42))
-	draw_rect(SCREEN_FRAME, Color(0.98, 0.72, 0.25, 0.80), false, 6.0)
+	_draw_canvas.draw_rect(CLOTH, Color(0.06, 0.04, 0.02, 0.42))
+	_draw_canvas.draw_rect(SCREEN_FRAME, Color(0.98, 0.72, 0.25, 0.80), false, 6.0)
 
 
 ## 幕布经纬线的淡淡质感，避免整块幕布是一块死板的纯色。
-func _draw_cloth_grain() -> void:
-	for x in range(int(CLOTH.position.x), int(CLOTH.end.x), 52):
-		draw_line(Vector2(float(x), CLOTH.position.y), Vector2(float(x), CLOTH.end.y),
-			Color(0.42, 0.34, 0.22, 0.045), 1.0)
-	for y in range(int(CLOTH.position.y), int(CLOTH.end.y), 52):
-		draw_line(Vector2(CLOTH.position.x, float(y)), Vector2(CLOTH.end.x, float(y)),
-			Color(0.42, 0.34, 0.22, 0.035), 1.0)
-
-
 ## 工作台前沿的横杆与台下阴影。
 func _draw_foot_rail() -> void:
-	draw_rect(Rect2(0.0, TABLE.end.y - 26.0, CANVAS_SIZE.x, 26.0), Color("#241a0f"))
-	draw_line(Vector2(0.0, TABLE.end.y - 26.0), Vector2(CANVAS_SIZE.x, TABLE.end.y - 26.0),
+	_draw_canvas.draw_rect(Rect2(0.0, TABLE.end.y - 26.0, CANVAS_SIZE.x, 26.0), Color("#241a0f"))
+	_draw_canvas.draw_line(Vector2(0.0, TABLE.end.y - 26.0), Vector2(CANVAS_SIZE.x, TABLE.end.y - 26.0),
 		Color("#6b4a28"), 3.0)
 
 
@@ -507,8 +531,8 @@ func _draw_foot_rail() -> void:
 func _draw_hooks() -> void:
 	var wood := Color("#b07a41")
 	for x in HOOK_X:
-		draw_line(Vector2(x, TABLE.position.y + 12.0), Vector2(x, 790.0), wood, 9.0)
-		draw_arc(Vector2(x + 15.0, 795.0), 17.0, 0.1, PI + 0.35, 18, wood, 7.0)
+		_draw_canvas.draw_line(Vector2(x, TABLE.position.y + 12.0), Vector2(x, 790.0), wood, 9.0)
+		_draw_canvas.draw_arc(Vector2(x + 15.0, 795.0), 17.0, 0.1, PI + 0.35, 18, wood, 7.0)
 
 
 ## 备用头架：三个备用头，编号 1/2/3 指架上位置。可用鼠标直接点取。
@@ -516,17 +540,17 @@ func _draw_head_rack() -> void:
 	if _harness == null:
 		return
 	var wood := Color("#b07a41")
-	draw_line(Vector2(RACK_SLOT_X[0] - 62.0, 764.0),
+	_draw_canvas.draw_line(Vector2(RACK_SLOT_X[0] - 62.0, 764.0),
 		Vector2(RACK_SLOT_X[2] + 62.0, 764.0), wood, 11.0)
 	for i in RACK_SLOT_X.size():
 		var x: float = RACK_SLOT_X[i]
-		draw_line(Vector2(x, 764.0), Vector2(x, 804.0), wood, 5.0)
+		_draw_canvas.draw_line(Vector2(x, 764.0), Vector2(x, 804.0), wood, 5.0)
 		var head_id: int = _harness.runtime.puppet_controller.head_on_rack(i)
 		if head_id >= 0:
 			_draw_spare_head(Vector2(x, RACK_Y), head_id)
 		else:
-			draw_arc(Vector2(x, RACK_Y), 20.0, 0.0, TAU, 24, Color(0.42, 0.36, 0.28), 3.0)
-		draw_string(ThemeDB.fallback_font, Vector2(x - 6.0, RACK_Y + 48.0),
+			_draw_canvas.draw_arc(Vector2(x, RACK_Y), 20.0, 0.0, TAU, 24, Color(0.42, 0.36, 0.28), 3.0)
+		_draw_canvas.draw_string(ThemeDB.fallback_font, Vector2(x - 6.0, RACK_Y + 48.0),
 			str(i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.85, 0.75, 0.55))
 
 
@@ -542,26 +566,26 @@ func _draw_spare_head(centre: Vector2, head_id: int) -> void:
 			if not skin.is_empty():
 				var size: float = 21.0 * float(skin["head_size_per_radius"])
 				var mirror: float = 1.0 / float(skin["reference_facing"])
-				draw_set_transform(centre, 0.0, Vector2(mirror, 1.0))
-				draw_texture_rect_region(PuppetViewScript.SKIN_TEXTURES[head_id],
+				_draw_canvas.draw_set_transform(centre, 0.0, Vector2(mirror, 1.0))
+				_draw_canvas.draw_texture_rect_region(PuppetViewScript.SKIN_TEXTURES[head_id],
 					Rect2(Vector2(-size * 0.5, -size * 0.5), Vector2(size, size)),
 					Rect2(0.0, 0.0, 512.0, 512.0))
-				draw_set_transform(Vector2.ZERO)
+				_draw_canvas.draw_set_transform(Vector2.ZERO)
 				return
 	var accents: Array = PuppetViewScript.HEAD_ACCENTS
 	var shapes: Array = PuppetViewScript.HEAD_SHAPES
 	var index: int = head_id % accents.size()
 	var accent: Color = accents[index]
-	draw_circle(centre, 21.0, Color(0.30, 0.20, 0.12))
-	draw_arc(centre, 21.0, 0.0, TAU, 28, Color(0.83, 0.60, 0.28), 2.0)
+	_draw_canvas.draw_circle(centre, 21.0, Color(0.30, 0.20, 0.12))
+	_draw_canvas.draw_arc(centre, 21.0, 0.0, TAU, 28, Color(0.83, 0.60, 0.28), 2.0)
 	match str(shapes[index]):
 		"bun_high":
-			draw_circle(centre + Vector2(0.0, -28.0), 9.0, accent)
+			_draw_canvas.draw_circle(centre + Vector2(0.0, -28.0), 9.0, accent)
 		"bun_twin":
-			draw_circle(centre + Vector2(-17.0, -17.0), 7.0, accent)
-			draw_circle(centre + Vector2(17.0, -17.0), 7.0, accent)
+			_draw_canvas.draw_circle(centre + Vector2(-17.0, -17.0), 7.0, accent)
+			_draw_canvas.draw_circle(centre + Vector2(17.0, -17.0), 7.0, accent)
 		_:
-			draw_rect(Rect2(centre.x - 24.0, centre.y - 24.0, 48.0, 10.0), accent)
+			_draw_canvas.draw_rect(Rect2(centre.x - 24.0, centre.y - 24.0, 48.0, 10.0), accent)
 
 
 ## 某个影人的显示节点（下标即影人编号，与 `_refresh_ui` 的取法一致）。
@@ -617,61 +641,6 @@ static func umbrella_canopy_drop(figure_height: float) -> float:
 	return figure_height * CANOPY_DROP_RATIO
 
 
-func _draw_umbrella() -> void:
-	# 清除上帧握持贴图，再按原控制器归属选择。交接与输入逻辑不变。
-	for id in [0, 1]:
-		var view: PlaceholderPuppet = _puppet_view(id)
-		if view != null:
-			view._held_prop_hand = ""
-	if _harness == null:
-		return
-	var umbrella: UmbrellaController = _harness.runtime.director.umbrella
-	if umbrella == null:
-		return
-	var holder: PlaceholderPuppet = _puppet_view(umbrella.holder_id_of())
-	if holder == null:
-		return
-	holder._held_prop_hand = umbrella.holder_hand_of()
-	# 握伞的那只手：伞面就在这只手的正上方，位置不挪动（用户 2026-10-05 第 1 条）
-	var hand: Vector2 = holder.hand_screen_position(umbrella.holder_hand_of())
-	var height: float = holder.figure_px_height()
-	var flip_width: float = holder.flip_width_ratio()
-	if umbrella.handing_off:
-		var previous: PlaceholderPuppet = _puppet_view(umbrella.handoff_from_id())
-		if previous != null:
-			var blend: float = umbrella.handoff_blend()
-			hand = previous.hand_screen_position(umbrella.handoff_from_hand()) \
-				.lerp(hand, blend)
-			height = lerpf(previous.figure_px_height(), height, blend)
-			flip_width = lerpf(previous.flip_width_ratio(), flip_width, blend)
-	var wood := Color("#8a5a2b")
-	var paper := Color(0.87, 0.79, 0.62, 0.92)
-	var edge := Color("#3a2a18")
-	var canopy: Vector2 = umbrella_canopy_centre(hand, height)
-	var radius: float = umbrella_canopy_radius(height) * flip_width
-	var drop: float = umbrella_canopy_drop(height)
-	# 伞杆：从手握处**竖直**向上到伞面中心（用户 2026-10-05 第 3 条：不弯不斜）
-	draw_line(hand, canopy, edge, height * CANOPY_STEM_EDGE_RATIO * maxf(flip_width, 0.25))
-	draw_line(hand, canopy, wood, height * CANOPY_STEM_WOOD_RATIO * maxf(flip_width, 0.25))
-	# 伞面：一条弧（顶点在伞面中心，向两侧下垂），加上几条伞骨
-	var rim := PackedVector2Array([
-		canopy + Vector2(-radius, drop * 0.68),
-		canopy + Vector2(-radius * 0.5, drop * 0.92),
-		canopy + Vector2(0.0, drop),
-		canopy + Vector2(radius * 0.5, drop * 0.92),
-		canopy + Vector2(radius, drop * 0.68),
-	])
-	var face := PackedVector2Array([canopy])
-	face.append_array(rim)
-	draw_colored_polygon(face, paper)
-	for i in rim.size():
-		draw_line(canopy, rim[i], Color(edge.r, edge.g, edge.b, 0.45), 2.0)
-	draw_polyline(rim, edge, 3.0)
-	# 分件手本身显示握持；旧的大圆会遮住手指与伞杆的接触。
-	if holder.puppet_state.puppet_id > 1:
-		draw_circle(hand, height * CANOPY_GRIP_RATIO, Color(0.98, 0.72, 0.25, 0.90))
-
-
 ## 「你的手边 · 手与三根签」：签手握住的三根签，也是鼠标抓胸签的落点。
 func _draw_hands_and_tags() -> void:
 	var wood := Color("#c08f4a")
@@ -680,22 +649,22 @@ func _draw_hands_and_tags() -> void:
 	# 三根签的杆身
 	for i in 3:
 		var x: float = HAND_ANCHOR.x - 34.0 + float(i) * 34.0
-		draw_line(Vector2(x, HAND_ANCHOR.y - 122.0), Vector2(x, HAND_ANCHOR.y + 6.0),
+		_draw_canvas.draw_line(Vector2(x, HAND_ANCHOR.y - 122.0), Vector2(x, HAND_ANCHOR.y + 6.0),
 			Color("#4a3419"), 11.0)
-		draw_line(Vector2(x, HAND_ANCHOR.y - 122.0), Vector2(x, HAND_ANCHOR.y + 6.0),
+		_draw_canvas.draw_line(Vector2(x, HAND_ANCHOR.y - 122.0), Vector2(x, HAND_ANCHOR.y + 6.0),
 			wood, 7.0)
 	# 手：掌 + 四指 + 拇指
-	draw_circle(HAND_ANCHOR, 40.0, skin)
-	draw_arc(HAND_ANCHOR, 40.0, 0.0, TAU, 36, edge, 3.0)
+	_draw_canvas.draw_circle(HAND_ANCHOR, 40.0, skin)
+	_draw_canvas.draw_arc(HAND_ANCHOR, 40.0, 0.0, TAU, 36, edge, 3.0)
 	for i in 4:
 		var x: float = HAND_ANCHOR.x - 30.0 + float(i) * 20.0
-		draw_line(Vector2(x, HAND_ANCHOR.y - 18.0),
+		_draw_canvas.draw_line(Vector2(x, HAND_ANCHOR.y - 18.0),
 			Vector2(x - 2.0, HAND_ANCHOR.y - 74.0 - float(i % 2) * 10.0), edge, 16.0)
-		draw_line(Vector2(x, HAND_ANCHOR.y - 18.0),
+		_draw_canvas.draw_line(Vector2(x, HAND_ANCHOR.y - 18.0),
 			Vector2(x - 2.0, HAND_ANCHOR.y - 74.0 - float(i % 2) * 10.0), skin, 12.0)
-	draw_line(HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0),
+	_draw_canvas.draw_line(HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0),
 		edge, 20.0)
-	draw_line(HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0),
+	_draw_canvas.draw_line(HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0),
 		skin, 15.0)
 
 
@@ -707,7 +676,7 @@ func _draw_beat_indicator() -> void:
 	for i in 4:
 		var x: float = 1372.0 + float(i) * 66.0
 		var active: bool = i == beat and not _paused and not _harness.runtime.is_over()
-		draw_circle(Vector2(x, FOOTER.position.y + 48.0), 15.0 if active else 10.0,
+		_draw_canvas.draw_circle(Vector2(x, FOOTER.position.y + 48.0), 15.0 if active else 10.0,
 			Color("#ef9f27") if active else Color("#776857"))
 
 
@@ -730,10 +699,10 @@ func _draw_target_marker() -> void:
 	if key == "x":
 		var x0: float = CLOTH.position.x + float(bounds.get("min", 0.0)) * CLOTH.size.x
 		var x1: float = CLOTH.position.x + float(bounds.get("max", 1.0)) * CLOTH.size.x
-		draw_rect(Rect2(x0, CLOTH.position.y + 8.0, x1 - x0, CLOTH.size.y - 16.0),
+		_draw_canvas.draw_rect(Rect2(x0, CLOTH.position.y + 8.0, x1 - x0, CLOTH.size.y - 16.0),
 			Color(0.98, 0.72, 0.25, 0.12))
 		for x in range(int(x0), int(x1), 34):
-			draw_line(Vector2(float(x), CLOTH.end.y - 10.0),
+			_draw_canvas.draw_line(Vector2(float(x), CLOTH.end.y - 10.0),
 				Vector2(float(x), CLOTH.end.y - 34.0), Color(0.98, 0.72, 0.25, 0.55), 3.0)
 	elif key == "distance" or key == "exposure":
 		_draw_lamp_marker(key, bounds)
@@ -749,14 +718,14 @@ func _draw_lamp_marker(key: String, bounds: Dictionary) -> void:
 	var track := Rect2(1516.0, 748.0, 24.0, 188.0)
 	if key == "exposure":
 		track = Rect2(1428.0, 748.0, 24.0, 188.0)
-	draw_rect(track, Color(0.14, 0.11, 0.09, 0.72))
+	_draw_canvas.draw_rect(track, Color(0.14, 0.11, 0.09, 0.72))
 	var lo: float = float(bounds.get("min", 0.0))
 	var hi: float = float(bounds.get("max", 1.0))
 	var y0: float = track.end.y - hi * track.size.y
 	var y1: float = track.end.y - lo * track.size.y
-	draw_rect(Rect2(track.position.x, y0, track.size.x, maxf(y1 - y0, 4.0)),
+	_draw_canvas.draw_rect(Rect2(track.position.x, y0, track.size.x, maxf(y1 - y0, 4.0)),
 		Color(0.98, 0.72, 0.25, 0.55))
-	draw_rect(track, Color(0.98, 0.72, 0.25, 0.90), false, 2.0)
+	_draw_canvas.draw_rect(track, Color(0.98, 0.72, 0.25, 0.90), false, 2.0)
 
 
 ## 按键类落点（挂起/取回/换头）在受控影人身旁画一个按键徽标。
@@ -771,9 +740,9 @@ func _draw_key_hint(action: String) -> void:
 	var label: String = "1·2·3" if action == CueScript.ACTION_HEAD_SWAP else "空格"
 	var colour := Color(0.98, 0.72, 0.25, 0.90)
 	var box := Rect2(base.x - 54.0, base.y - 27.0, 108.0, 54.0)
-	draw_rect(box, Color(0.10, 0.08, 0.06, 0.78))
-	draw_rect(box, colour, false, 3.0)
-	draw_string(ThemeDB.fallback_font, Vector2(box.position.x, base.y + 11.0), label,
+	_draw_canvas.draw_rect(box, Color(0.10, 0.08, 0.06, 0.78))
+	_draw_canvas.draw_rect(box, colour, false, 3.0)
+	_draw_canvas.draw_string(ThemeDB.fallback_font, Vector2(box.position.x, base.y + 11.0), label,
 		HORIZONTAL_ALIGNMENT_CENTER, box.size.x, 30, colour)
 
 
@@ -788,9 +757,9 @@ func _draw_pose_arrow(action: String) -> void:
 	var up: bool = action == CueScript.ACTION_STAND_UP or action == CueScript.ACTION_HAND_RAISE
 	var tip := base + Vector2(0.0, -58.0 if up else 58.0)
 	var colour := Color(0.98, 0.72, 0.25, 0.85)
-	draw_line(base, tip, colour, 7.0)
-	draw_line(tip, tip + Vector2(-17.0, 22.0 if up else -22.0), colour, 7.0)
-	draw_line(tip, tip + Vector2(17.0, 22.0 if up else -22.0), colour, 7.0)
+	_draw_canvas.draw_line(base, tip, colour, 7.0)
+	_draw_canvas.draw_line(tip, tip + Vector2(-17.0, 22.0 if up else -22.0), colour, 7.0)
+	_draw_canvas.draw_line(tip, tip + Vector2(17.0, 22.0 if up else -22.0), colour, 7.0)
 
 
 ## —— 两类提示手 ——
@@ -865,7 +834,7 @@ func _draw_remedy_hand() -> void:
 	var sway: float = sin(now_s * 7.0) * 20.0
 	var base: Vector2 = HAND_ANCHOR + Vector2(-186.0, 4.0) + _action_motion(action, sway)
 	# 外圈光晕：让「纠正」比「预告」更重，两类手一眼可分。
-	draw_arc(base, 46.0, 0.0, TAU, 40, Color(1.0, 0.85, 0.5, 0.35), 5.0)
+	_draw_canvas.draw_arc(base, 46.0, 0.0, TAU, 40, Color(1.0, 0.85, 0.5, 0.35), 5.0)
 	_draw_hand_shape(base, false, 1.0)
 
 
@@ -893,18 +862,18 @@ func _draw_hand_shape(centre: Vector2, outlined: bool, alpha: float) -> void:
 		var root := Vector2(centre.x - 25.0 + float(i) * 17.0, centre.y - 14.0)
 		var tip := Vector2(root.x - 2.0, centre.y - 70.0 - float(i % 2) * 12.0)
 		if not outlined:
-			draw_line(root, tip, fill, 11.0)
-		draw_line(root, tip, edge, 3.0)
+			_draw_canvas.draw_line(root, tip, fill, 11.0)
+		_draw_canvas.draw_line(root, tip, edge, 3.0)
 	var thumb_root: Vector2 = centre + Vector2(-25.0, 16.0)
 	var thumb_tip: Vector2 = centre + Vector2(-62.0, -19.0)
 	if not outlined:
-		draw_line(thumb_root, thumb_tip, fill, 14.0)
-	draw_line(thumb_root, thumb_tip, edge, 3.0)
+		_draw_canvas.draw_line(thumb_root, thumb_tip, fill, 14.0)
+	_draw_canvas.draw_line(thumb_root, thumb_tip, edge, 3.0)
 	if outlined:
-		draw_arc(centre, 36.0, 0.0, TAU, 32, edge, 4.0)
+		_draw_canvas.draw_arc(centre, 36.0, 0.0, TAU, 32, edge, 4.0)
 	else:
-		draw_circle(centre, 36.0, fill)
-		draw_arc(centre, 36.0, 0.0, TAU, 36, edge, 3.0)
+		_draw_canvas.draw_circle(centre, 36.0, fill)
+		_draw_canvas.draw_arc(centre, 36.0, 0.0, TAU, 36, edge, 3.0)
 
 
 ## 点中备用头架哪个槽位（-1 表示没点中）
