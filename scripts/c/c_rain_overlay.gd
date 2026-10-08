@@ -22,13 +22,16 @@ class_name CRainOverlay
 ## 动画：_process 以 delta 累加滚动偏移（不依赖时钟系统——雨与演出节奏无关，
 ## 它是环境常量，录制暂停时照下不误；若以后要「暂停雨也停」，再接 MusicClock）。
 ##
-## 落向：雨丝笔触向左下斜（与 woop 素材原笔触一致），滚动向量取同方向。
+## 落向：雨点笔触向右下斜（scratch/make_rain.py 生成，dx/dy≈0.42），滚动向量取同方向。
 
 const RAIN_NEAR := preload("res://assets/scenery/level1/rain_near.png")
 const RAIN_FAR := preload("res://assets/scenery/level1/rain_far.png")
 
-## 近层落速（px/s，向左下）：雨丝斜率约 dy/dx ≈ 4，取 (-70, 300) 沿斜向下滑。
-const VEL_NEAR := Vector2(-70.0, 300.0)
+## 近层落速（px/s，向**右**下）：雨点斜率 dx/dy ≈ 0.42（生成脚本同参数），
+## 落向沿笔触方向 (70, 300)。
+## ⚠️ 方向必须与贴图笔触一致：旧 woop 笔触向左下时取 (-70,300)；
+## 2026-10-08 雨点重生成（scratch/make_rain.py）后笔触向右下，落速随之改号。
+const VEL_NEAR := Vector2(70.0, 300.0)
 ## 远层落速：约近层一半，制造纵深视差。
 const VEL_FAR := VEL_NEAR * 0.5
 
