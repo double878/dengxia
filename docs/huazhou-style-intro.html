@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>华州皮影 · 灯下</title>
+<style>
+  :root {
+    --wood: #3A2A18;        /* 幕后木褐（边框主色） */
+    --wood-deep: #2A1D0F;
+    --ink: #54371F;         /* 文字褐 */
+    --ink-soft: #6B4A2C;
+    --paper-hi: #DDC49E;    /* 做旧纸面亮部 */
+    --paper-mid: #C9A97C;
+    --paper-lo: #B28A58;
+    --carve: #8A6644;       /* 雕花镂空浅色 */
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
+    background:
+      radial-gradient(1100px 700px at 50% 38%, var(--paper-hi) 0%, var(--paper-mid) 55%, var(--paper-lo) 100%);
+    color: var(--ink);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  /* 纸面斑驳与噪点 */
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 5;
+    opacity: .10; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .blotch { position: fixed; inset: 0; pointer-events: none; z-index: 4;
+    background:
+      radial-gradient(420px 300px at 12% 20%, rgba(90,58,28,.14), transparent 70%),
+      radial-gradient(500px 340px at 88% 78%, rgba(90,58,28,.16), transparent 70%),
+      radial-gradient(360px 260px at 78% 12%, rgba(120,86,48,.10), transparent 70%),
+      radial-gradient(300px 220px at 22% 86%, rgba(120,86,48,.10), transparent 70%);
+  }
+  /* 暗角晕影 */
+  .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 6;
+    box-shadow: inset 0 0 180px 60px rgba(42,29,15,.55);
+  }
+
+  header, footer { position: relative; z-index: 2; flex: none; }
+  header svg, footer svg { display: block; width: 100%; height: auto; }
+
+  main {
+    position: relative; z-index: 3; flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: clamp(18px, 4.2vh, 40px);
+    padding: 12px 8vw;
+    text-align: center;
+  }
+  main p {
+    font-size: clamp(17px, 2.6vh, 27px);
+    line-height: 2.05;
+    letter-spacing: .12em;
+    opacity: 0;
+    animation: fadeUp 1.6s ease forwards;
+  }
+  main p:nth-child(1) { animation-delay: .3s; }
+  main p:nth-child(2) { animation-delay: 1.0s; }
+  main p:nth-child(3) { animation-delay: 1.7s; }
+  main p:nth-child(4) { animation-delay: 2.4s; }
+  main p:nth-child(5) { animation-delay: 3.2s; }
+  .era b { color: var(--wood); }
+  .verse {
+    font-size: clamp(21px, 3.4vh, 36px) !important;
+    line-height: 2.0 !important;
+    letter-spacing: .22em !important;
+    color: var(--wood) !important;
+    font-weight: bold;
+  }
+  .verse .bar {
+    display: inline-block; width: 64px; height: 1px; vertical-align: middle;
+    background: linear-gradient(90deg, transparent, var(--carve), transparent);
+    margin: 0 22px;
+  }
+  .note { font-size: clamp(15px, 2.2vh, 22px) !important; color: var(--ink-soft) !important; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    main p { animation: none; opacity: 1; }
+  }
+</style>
+</head>
+<body>
+  <div class="grain"></div>
+  <div class="blotch"></div>
+  <div class="vignette"></div>
+
+  <!-- 上边框：帷幔式皮影雕花 -->
+  <header>
+    <svg viewBox="0 0 1280 148" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+      <defs>
+        <!-- 单元卷草：涡旋 + 叶 -->
+        <g id="vine">
+          <path d="M0,52 C40,20 86,20 116,44 C138,61 138,84 118,90 C104,94 94,84 98,72 C101,63 112,62 115,69"
+                fill="none" stroke="var(--carve)" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+          <circle cx="150" cy="58" r="5" fill="var(--carve)" opacity=".9"/>
+          <path d="M150,58 C170,44 196,44 214,58" fill="none" stroke="var(--carve)" stroke-width="2.4" stroke-linecap="round" opacity=".75"/>
+          <circle cx="228" cy="58" r="3.4" fill="var(--carve)" opacity=".75"/>
+        </g>
+        <!-- 中央团花 -->
+        <g id="medallion">
+          <circle r="42" fill="none" stroke="var(--carve)" stroke-width="3" opacity=".95"/>
+          <circle r="32" fill="none" stroke="var(--carve)" stroke-width="1.6" opacity=".7"/>
+          <path d="M0,-30 C7,-14 7,-7 0,0 C-7,-7 -7,-14 0,-30 Z" fill="var(--carve)" opacity=".9"/>
+          <path d="M0,30 C7,14 7,7 0,0 C-7,7 -7,14 0,30 Z" fill="var(--carve)" opacity=".9"/>
+          <path d="M-30,0 C-14,-7 -7,-7 0,0 C-7,7 -14,7 -30,0 Z" fill="var(--carve)" opacity=".9"/>
+          <path d="M30,0 C14,-7 7,-7 0,0 C7,7 14,7 30,0 Z" fill="var(--carve)" opacity=".9"/>
+          <circle r="5" fill="var(--carve)"/>
+        </g>
+      </defs>
+
+      <!-- 深色主带 -->
+      <rect x="0" y="0" width="1280" height="88" fill="var(--wood)"/>
+      <!-- 帷幔垂弧 -->
+      <g fill="var(--wood)">
+        <circle cx="53"  cy="88" r="50"/><circle cx="160" cy="88" r="50"/><circle cx="266" cy="88" r="50"/>
+        <circle cx="373" cy="88" r="50"/><circle cx="480" cy="88" r="50"/><circle cx="586" cy="88" r="50"/>
+        <circle cx="693" cy="88" r="50"/><circle cx="800" cy="88" r="50"/><circle cx="906" cy="88" r="50"/>
+        <circle cx="1013" cy="88" r="50"/><circle cx="1120" cy="88" r="50"/><circle cx="1226" cy="88" r="50"/>
+      </g>
+      <!-- 垂弧尖饰（影人雕花小坠） -->
+      <g fill="var(--wood-deep)">
+        <path d="M53,132 l-8,-12 h16 Z"/><path d="M266,132 l-8,-12 h16 Z"/><path d="M480,132 l-8,-12 h16 Z"/>
+        <path d="M693,132 l-8,-12 h16 Z"/><path d="M906,132 l-8,-12 h16 Z"/><path d="M1120,132 l-8,-12 h16 Z"/>
+      </g>
+
+      <!-- 中央团花 + 对称卷草 -->
+      <use href="#medallion" x="640" y="46"/>
+      <use href="#vine" x="238" y="-8"/>
+      <use href="#vine" x="828" y="-8" transform="scale(-1,1) translate(-1896,0)"/>
+      <use href="#vine" x="60" y="-8" opacity=".55"/>
+      <use href="#vine" x="1160" y="-8" transform="scale(-1,1) translate(-2600,0)" opacity=".55"/>
+    </svg>
+  </header>
+
+  <main>
+    <p>「华州皮影」，陕西省渭南市华州区特产，中国国家地理标志产品。</p>
+    <p>它是中国出现最早的传统戏曲剧种之一，流行于关中东部的华州一带，<br>为<b>陕西东路皮影</b>之代表。</p>
+    <p class="era">起源于<b>汉代</b>，成熟于<b>唐宋</b>时期，<b>清末民初</b>发展到鼎盛。</p>
+    <p class="verse"><span class="bar"></span>三尺生绢作戏台，全凭十指逞诙谐。<br>一口道尽千古事，双手对舞百万兵。<span class="bar"></span></p>
+    <p class="note">「一张牛皮居然喜怒哀乐，半边人脸收尽忠奸贤恶」——正是华州皮影艺术的真实写照。</p>
+  </main>
+
+  <!-- 下边框：花卉纹横带 -->
+  <footer>
+    <svg viewBox="0 0 1280 128" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+      <defs>
+        <!-- 单元花簇：五瓣梅花 + 蔓 -->
+        <g id="flower">
+          <g transform="translate(0,64)">
+            <circle cx="0" cy="-14" r="9" fill="var(--carve)" opacity=".85"/>
+            <circle cx="13" cy="-4" r="9" fill="var(--carve)" opacity=".85"/>
+            <circle cx="8" cy="11" r="9" fill="var(--carve)" opacity=".85"/>
+            <circle cx="-8" cy="11" r="9" fill="var(--carve)" opacity=".85"/>
+            <circle cx="-13" cy="-4" r="9" fill="var(--carve)" opacity=".85"/>
+            <circle cx="0" cy="0" r="5" fill="var(--paper-mid)"/>
+          </g>
+          <path d="M28,64 C58,44 88,44 112,64 C136,82 168,82 196,64" fill="none" stroke="var(--carve)" stroke-width="2.6" stroke-linecap="round" opacity=".7"/>
+          <circle cx="112" cy="47" r="3.2" fill="var(--carve)" opacity=".7"/>
+          <circle cx="170" cy="80" r="3.2" fill="var(--carve)" opacity=".7"/>
+        </g>
+      </defs>
+      <!-- 花簇横带（在浅色纸底上，带深色上下沿线） -->
+      <rect x="0" y="6" width="1280" height="4" fill="var(--wood)" opacity=".85"/>
+      <g>
+        <use href="#flower" x="60"/><use href="#flower" x="220"/><use href="#flower" x="380"/><use href="#flower" x="540"/>
+        <use href="#flower" x="700"/><use href="#flower" x="860"/><use href="#flower" x="1020"/><use href="#flower" x="1180"/>
+      </g>
+      <rect x="0" y="118" width="1280" height="10" fill="var(--wood)"/>
+    </svg>
+  </footer>
+</body>
+</html>
