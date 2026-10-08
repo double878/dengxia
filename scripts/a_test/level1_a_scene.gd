@@ -165,7 +165,7 @@ func _ready() -> void:
 
 
 ## 开演前的起始布景。全部来自关卡数据的 `initial`（PRD 第 4.2、6 节）：
-## 起始受控影人、在场影人、挂起分布、站位与手角、灯距/显露/灯油。
+## 起始受控影人、在场影人、挂起分布、站位、手角与朝向、灯距/显露/灯油。
 ##
 ## 布景之所以必须逐关不同：第 2 关要教挂起，**开局必须留出一个空挂钩**。
 ## 若沿用第一关「两钩皆满」的布景，`hook_current()` 找不到空位必然失败，
@@ -180,10 +180,16 @@ func _configure_initial_stage() -> void:
 	var positions: Dictionary = _stage_def.initial.get("positions", {})
 	var hand_angles: Dictionary = _stage_def.initial.get("hand_angles", {})
 	var hung: Dictionary = _stage_def.initial.get("hung", {})
+	## 开演朝向。**缺省即 FACING_FRONT（+1，朝右）**，因此关卡数据只写偏离默认的那一个。
+	var facing: Dictionary = _stage_def.initial.get("facing", {})
 	for state in controller.puppets:
 		var puppet_id: int = state.puppet_id
 		state.is_controlled = false
 		state.hook_slot = PuppetState.HOOK_SLOT_NONE
+		# 朝向与翻面过渡一起复位。过渡若停在中间（turn_progress < 1），`flip_width_ratio()`
+		# 会把整个人压扁成「侧对观众」——而开演布景是一帧定格的画面，没有过渡可言。
+		state.facing = float(facing.get(puppet_id, PuppetState.FACING_FRONT))
+		state.turn_progress = 1.0
 		if positions.has(puppet_id):
 			var place: Array = positions[puppet_id]
 			state.stage_pos = Vector2(float(place[0]), float(place[1]))
@@ -469,7 +475,7 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_HAND_RAISE: return "按 A 抬起左手"
 		CueScript.ACTION_HAND_LOWER: return "按 Shift+A 放下左手"
 		CueScript.ACTION_MOVE_LEFT: return "向左拖动胸签，走向许仙"
-		CueScript.ACTION_MOVE_RIGHT: return "向右拖动胸签，走到小青身旁"
+		CueScript.ACTION_MOVE_RIGHT: return "向右拖动胸签，走回小青身旁"
 		CueScript.ACTION_REACH: return "把影人带回幕布中央"
 		CueScript.ACTION_HOOK: return "按空格挂起当前影人"
 		CueScript.ACTION_TAKE_BACK: return "点选挂起的影人，按空格取回"
