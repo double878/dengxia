@@ -154,18 +154,18 @@ func _texture_contract(t: RefCounted) -> void:
 	t.check_eq(str(bridge.get("texture", "")), DefScript.SCENERY_TEX_BRIDGE,
 		"拱桥 texture 引用 SCENERY_TEX_BRIDGE 常量")
 	var foot: Vector2 = bridge.get("texture_foot_px", Vector2.ZERO)
-	t.check_approx(foot.x, 0.0, 1e-6,
-		"贴图锚点 x = 0（只露右半：贴图左缘=拱心，直接对齐 anchor_x，用户定案）")
+	t.check_approx(foot.x, 1024.0, 1e-6,
+		"贴图锚点 x = 1024（只露左半：贴图右缘=拱心，对齐 anchor_x，用户定案）")
 	t.check_approx(foot.y, 710.0, 1e-6, "贴图锚点 y = 710（=1410-700 裁雨后桥台底边）")
 	var poly: String = str(bridge.get("polygon", ""))
 	t.check_eq(poly, DefScript.POLY_ARCH_SIDE,
-		"polygon = arch_side（只露一半、延伸出画，用户 2026-10-08 定案）")
-	# 资产裁切契约：arch_bridge.png = 右半拱 1024×726
-	# （裁掉左半、顶部雨丝带、底部水雾；改资产必须同步 foot 与这两条断言）
+		"polygon = arch_side（只露一半，用户 2026-10-08 定案）")
+	# 资产裁切契约：arch_bridge.png = 左半拱 1024×726
+	# （裁掉右半、顶部雨丝带、底部水雾；改资产必须同步 foot 与这两条断言）
 	var img := Image.load_from_file(ProjectSettings.globalize_path(DefScript.SCENERY_TEX_BRIDGE))
 	t.check(img != null, "拱桥贴图可读（Image.load_from_file，不依赖导入缓存）")
 	if img != null:
-		t.check_eq(img.get_width(), 1024, "桥贴图宽 1024（只含右半拱，拱心=左缘）")
+		t.check_eq(img.get_width(), 1024, "桥贴图宽 1024（只含左半拱，拱心=右缘）")
 		t.check_eq(img.get_height(), 726, "桥贴图高 726（顶部雨丝带/底部水雾均已裁）")
 
 
