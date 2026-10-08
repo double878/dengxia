@@ -165,6 +165,14 @@ static func half_width_px(height: float, flip_width: float) -> float:
 	return maxf(height * HALF_W_RATIO * flip_width, 3.0)
 
 
+## 肩间距属于身体美术，不随换头改变；腕点查询与绘制共用，腿部沿用原身宽。
+func shoulder_half_width_px(height: float, flip_width: float) -> float:
+	if not _has_body_skin():
+		return half_width_px(height, flip_width)
+	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+	return maxf(height * float(skin.get("shoulder_half_width_ratio", HALF_W_RATIO)) * flip_width, 3.0)
+
+
 ## 手臂方向（单位向量）。手角以「自然垂下」为 0、+π/2 水平前伸、+π 举过头顶；
 ## 屏幕 y 轴向下，因此右手是 π/2 − 手角、左手是 π/2 + 手角，两侧完全对称。
 static func arm_direction(hand_angle: float, right_side: bool) -> Vector2:
@@ -191,7 +199,7 @@ func hand_screen_position(hand: String) -> Vector2:
 	if puppet_state == null:
 		return Vector2.ZERO
 	var height: float = figure_px_height()
-	var half_w: float = half_width_px(height, 1.0 if _has_body_skin() else flip_width_ratio())
+	var half_w: float = shoulder_half_width_px(height, 1.0 if _has_body_skin() else flip_width_ratio())
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
 	var right_side: bool = hand != "left"
 	var shoulder := Vector2(ground.x + (half_w if right_side else -half_w),
@@ -288,6 +296,7 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	var hip := Vector2(ground.x, ground.y - height * HIP_RATIO)
 	var shoulder := Vector2(ground.x, ground.y - height * SHOULDER_RATIO)
 	var half_w: float = half_width_px(height, flip_width)
+	var shoulder_half_w: float = shoulder_half_width_px(height, flip_width)
 
 	# 腿：髋 → 膝 → 脚。蹲下时膝盖外张、重心下沉（stance 越大越蹲）
 	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0)) * flip_width
@@ -318,9 +327,9 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		draw_polyline(torso + PackedVector2Array([torso[0]]), rim, 2.0)
 
 	# 双臂：肩 → 肘 → 腕。手角 0 = 自然垂下，+π/2 = 水平前伸，+π = 举过头顶
-	_left_wrist = _draw_arm(Vector2(shoulder.x - half_w, shoulder.y),
+	_left_wrist = _draw_arm(Vector2(shoulder.x - shoulder_half_w, shoulder.y),
 		state.hand_angle.x, false, height, body, joint, flip_width)
-	_right_wrist = _draw_arm(Vector2(shoulder.x + half_w, shoulder.y),
+	_right_wrist = _draw_arm(Vector2(shoulder.x + shoulder_half_w, shoulder.y),
 		state.hand_angle.y, true, height, body, joint, flip_width)
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
@@ -430,6 +439,10 @@ func _read_skins() -> Dictionary:
 			push_error("影人美术定义无效：%s (%s)" % [character, SKIN_MANIFEST_PATH])
 			continue
 		var valid: bool = true
+		var shoulder_width: float = float(skin.get("shoulder_half_width_ratio", HALF_W_RATIO))
+		if not is_finite(shoulder_width) or shoulder_width <= 0.0 or shoulder_width > 0.25:
+			push_error("影人肩间距无效：%s (%s)" % [character, SKIN_MANIFEST_PATH])
+			valid = false
 		for part_name: String in ["head", "torso", "left_upper_arm", "left_forearm", "left_hand",
 				"right_upper_arm", "right_forearm", "right_hand", "left_thigh", "left_calf",
 				"right_thigh", "right_calf"]:
@@ -437,6 +450,10 @@ func _read_skins() -> Dictionary:
 			if part.get("rect", []).size() != 4 or part.get("pivot", []).size() != 2 \
 					or float(part.get("axis_pixels", 0.0)) <= 0.0:
 				push_error("影人分件无效：%s/%s" % [character, part_name])
+				valid = false
+			var width_scale: float = float(part.get("width_scale", 1.0))
+			if not is_finite(width_scale) or width_scale <= 0.0 or width_scale > 2.0:
+				push_error("影人分件宽度无效：%s/%s" % [character, part_name])
 				valid = false
 		if valid:
 			skin["joint_color"] = Color(skin.get("joint_hex", parsed["named_samples"]["gold_joint"]["hex"]))
@@ -472,7 +489,7 @@ func _draw_skin_segment(part_name: String, start: Vector2, end: Vector2,
 	var length: float = start.distance_to(end)
 	var tile_length: float = length * 512.0 / float(part["axis_pixels"])
 	_draw_skin_tile(skin_id, part_name, start, (end - start).angle() - PI * 0.5,
-		Vector2(tile_length * width_ratio, tile_length), alpha)
+		Vector2(tile_length * width_ratio * float(part.get("width_scale", 1.0)), tile_length), alpha)
 
 
 func _draw_skin_hand(part_name: String, wrist: Vector2, direction: Vector2,

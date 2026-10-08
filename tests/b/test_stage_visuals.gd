@@ -14,6 +14,7 @@ func run_all() -> Dictionary:
 	var t: ATestBase = TestBase.new()
 	_test_entity_geometry(t)
 	_test_projection_geometry(t)
+	_test_female_shoulders(t)
 	_test_flame_time_and_feedback(t)
 	_test_prop_attachments(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed}
@@ -72,6 +73,42 @@ func _test_projection_geometry(t: ATestBase) -> void:
 		t.check_approx(first.y, flipped.y, 0.01, "翻面保持腕高")
 		view.free()
 	t.finish("同一灯距作用于所有在场实体的影像")
+
+
+func _test_female_shoulders(t: ATestBase) -> void:
+	t.begin("女性肩间距收窄，双臂长度与道具挂点连续")
+	for id in [0, 2]:
+		for mode in [0, 1, 2]:
+			var view: PlaceholderPuppet = _view(mode)
+			view.puppet_state.puppet_id = id
+			view.puppet_state.hand_angle = Vector2.ZERO
+			for stance in [0.0, 1.0]:
+				view.puppet_state.stance = stance
+				var height: float = view.figure_px_height()
+				var left: Vector2 = view.hand_screen_position("left")
+				var right: Vector2 = view.hand_screen_position("right")
+				# 垂臂时腕间距就是肩间距，不依赖绘制端内部的比例配置。
+				t.check_in_range(absf(right.x - left.x) / height, 0.10, 0.17,
+					"白素贞和小青应有窄肩，站蹲与三种显示口径一致")
+				var centre: Vector2 = view.stage_to_screen(view.puppet_state.stage_pos)
+				for angle in [-PI * 0.5, 0.0, PI * 0.5, PI]:
+					view.puppet_state.hand_angle = Vector2(angle, angle)
+					for hand: String in ["left", "right"]:
+						var wrist: Vector2 = view.hand_screen_position(hand)
+						var shoulder := Vector2(left.x if hand == "left" else right.x,
+							centre.y - height * 0.80)
+						t.check_approx(wrist.distance_to(shoulder) / height, 0.31, 0.001,
+							"收肩不能拉长、缩短或断开手腕运动链")
+				view.puppet_state.hand_angle = Vector2.ZERO
+			view.free()
+	var male: PlaceholderPuppet = _view(1)
+	male.puppet_state.puppet_id = 1
+	male.puppet_state.hand_angle = Vector2.ZERO
+	t.check_approx(male.hand_screen_position("left").distance_to(
+		male.hand_screen_position("right")) / male.figure_px_height(), 0.21, 0.001,
+		"许仙仍使用原肩间距")
+	male.free()
+	t.finish("美术收肩不改变臂长、手角及原状态语义")
 
 
 func _test_flame_time_and_feedback(t: ATestBase) -> void:
