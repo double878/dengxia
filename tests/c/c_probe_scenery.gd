@@ -93,6 +93,8 @@ func _build() -> void:
 ## 用于一次性跑出多个摆放方案截图、供人眼挑选拍板。
 ##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 0.86）
 ##   BRIDGE_SCALE     素材像素比（缺省用 DefScript.TEXTURE_SCALE_PX）
+## 「只露右半拱」已烘进资产本身（arch_bridge.png = 1024×726 右半），
+## 不再需要裁半开关；改「露多少」直接重裁资产并同步 texture_foot_px。
 ## 选型定案后，把拍板数值写回 c_scenery_def.gd，此函数留作以后调型用。
 func _apply_bridge_override(def: CSceneryDef) -> void:
 	var ax := OS.get_environment("BRIDGE_ANCHOR_X")
