@@ -8,7 +8,8 @@ class_name CTestScenery
 ## 断言依据（用户 2026-10-08 逐条定案）：
 ##   ① 第一关布景只有柳树 + 拱桥（无花草、无边界线）
 ##   ② 柳树树干 x = 0.08；拱桥起点 x = 0.72
-##   ③ 接地线对齐：anchor_y ∈ [0.47, 0.53]（人影脚在 y=0.5，浮动 ≤0.03）
+##   ③ 纵轴容差口径：Y_TOLERANCE = 0.5（用户第三次定案「放宽至 0.5」），
+##      [Y_MIN, Y_MAX] = [0.0, 1.0] 覆盖整个舞台高度；影人接地点仍为 0.5
 ##   ④ 景物只能左右平移：位置相关字段**只有** anchor_x / anchor_y / pan_x，
 ##      不得出现 y 位移、缩放、旋转（数据结构层面就没有）
 ##   ⑤ 小青位置**不在**本文件管辖内（那是 A 侧 stage_def 的事；本测试不碰 A 数据）
@@ -68,22 +69,37 @@ func _level1_shape(t: RefCounted) -> void:
 			"%s 的 anchor_x ∈ [0,1]" % str(item.get("id", "")))
 
 
-## 接地线对齐（用户 2026-10-08：「纵轴线要跟人物水平对齐，上下浮动不能超过 0.03」）
+## 纵轴容差口径（用户 2026-10-08 三次定案：0.03 → **放宽至 0.5**）
+## 这里校验的是「容差常量自洽 + 覆盖整个舞台高度」，而**不是**「每条布景都必须贴在影人脚上」——
+## 放宽之后允许布景离开 0.5，所以不再逐条断言 anchor_y 贴近 0.5（那会与新口径自相矛盾）。
 func _ground_line_alignment(t: RefCounted) -> void:
-	t.begin("接地线对齐")
+	t.begin("纵轴容差口径")
 	var def: CSceneryDef = DefScript.make_level1()
-	for item in def.items:
-		t.check_in_range(float(item.get("anchor_y", -1.0)), DefScript.Y_MIN, DefScript.Y_MAX,
-			"%s 的 anchor_y ∈ [%.2f, %.2f]（影人脚在 %.2f）"
-			% [str(item.get("id", "")), DefScript.Y_MIN, DefScript.Y_MAX, DefScript.ANCHOR_Y])
-	# 容差本身自洽：Y_MIN/Y_MAX 必须对称落在 ANCHOR_Y ± Y_TOLERANCE
+
+	# ① 容差本身：用户定案 0.5
+	t.check_approx(DefScript.Y_TOLERANCE, 0.5, 1e-9,
+		"Y_TOLERANCE = 0.5（用户 2026-10-08 定案「放宽至 0.5」）")
+	# ② Y_MIN/Y_MAX 必须仍对称落在 ANCHOR_Y ± Y_TOLERANCE（改一处忘另一处要被抓住）
 	t.check_approx(DefScript.Y_MIN, DefScript.ANCHOR_Y - DefScript.Y_TOLERANCE, 1e-9,
 		"Y_MIN = ANCHOR_Y - Y_TOLERANCE")
 	t.check_approx(DefScript.Y_MAX, DefScript.ANCHOR_Y + DefScript.Y_TOLERANCE, 1e-9,
 		"Y_MAX = ANCHOR_Y + Y_TOLERANCE")
-	# 影人接地点口径：A 侧第一关 initial 三具全部 y=0.5。这里只核对常量本身，
-	# 不 preload A 的 stage_def（C 不引用 A 的关卡数据做判定，避免双向依赖）。
+	# ③ 放宽后 [Y_MIN, Y_MAX] 应撑满整个舞台高度（这是「放宽至 0.5」的直接效果）
+	t.check_approx(DefScript.Y_MIN, 0.0, 1e-9, "Y_MIN = 0.0（布景可下移到画布底）")
+	t.check_approx(DefScript.Y_MAX, 1.0, 1e-9, "Y_MAX = 1.0（布景可上移到画布顶）")
+	# ④ 基准线口径未变：影人接地点仍是 0.5（放宽的是布景的移动自由，不是影人的位置）
 	t.check_approx(DefScript.ANCHOR_Y, 0.5, 1e-9, "ANCHOR_Y 与影人接地点 0.5 同一条线")
+	# ⑤ 每条布景的 anchor_y 仍必须落在（已放宽的）合法区间内，且是有限数
+	for item in def.items:
+		var ay: float = float(item.get("anchor_y", -1.0))
+		t.check_finite(ay, "%s 的 anchor_y 是有限数" % str(item.get("id", "")))
+		t.check_in_range(ay, DefScript.Y_MIN, DefScript.Y_MAX,
+			"%s 的 anchor_y ∈ [%.2f, %.2f]（放宽后）"
+			% [str(item.get("id", "")), DefScript.Y_MIN, DefScript.Y_MAX])
+	# ⑥ 宽松哨兵：明确记录「布景已不再被强制贴 0.5」。若哪天有人把容差改回 0.03，
+	#    这条会失败并指向用户定案，而不是让人对着「影人脚对不齐」猜原因。
+	t.check(DefScript.Y_TOLERANCE >= 0.03,
+		"容差不得回退到 0.03 以下（2026-10-08 用户放宽至 0.5）")
 
 
 ## 「景物只能左右平移」：位置相关字段白名单之外不得出现任何位移/形变字段
@@ -132,13 +148,16 @@ func _constants_consistency(t: RefCounted) -> void:
 		"LEVEL1_WILLOW_X 常量值 = 0.08（用户定案）")
 	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.72, 1e-6,
 		"LEVEL1_BRIDGE_START_X 常量值 = 0.72（用户定案）")
-	# 接地线（用户二次定案：0.50 → 0.53）
+	# 接地线（用户二次定案：0.50 → 0.53；现容差已放宽至 0.5，0.53 不再是边界值）
 	t.check_approx(DefScript.LEVEL1_GROUND_Y, 0.53, 1e-6,
 		"LEVEL1_GROUND_Y = 0.53（用户定案「再往下移动 0.03」）")
 	t.check_approx(float(willow.get("anchor_y", 0.0)), DefScript.LEVEL1_GROUND_Y, 1e-6,
 		"柳树 anchor_y = LEVEL1_GROUND_Y")
 	t.check_approx(float(bridge.get("anchor_y", 0.0)), DefScript.LEVEL1_GROUND_Y, 1e-6,
 		"拱桥 anchor_y = LEVEL1_GROUND_Y")
+	# 纵轴容差（用户三次定案：放宽至 0.5）
+	t.check_approx(DefScript.Y_TOLERANCE, 0.5, 1e-6,
+		"Y_TOLERANCE = 0.5（用户定案「放宽至 0.5」）")
 	# 形状参数（用户二次定案）
 	t.check_approx(float(willow.get("params", {}).get("trunk_height", 0.0)), 0.25, 1e-6,
 		"树干高 0.25（用户定案「更高 0.05」）")
