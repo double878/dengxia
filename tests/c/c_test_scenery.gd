@@ -132,6 +132,18 @@ func _constants_consistency(t: RefCounted) -> void:
 		"LEVEL1_WILLOW_X 常量值 = 0.08（用户定案）")
 	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.72, 1e-6,
 		"LEVEL1_BRIDGE_START_X 常量值 = 0.72（用户定案）")
+	# 接地线（用户二次定案：0.50 → 0.53）
+	t.check_approx(DefScript.LEVEL1_GROUND_Y, 0.53, 1e-6,
+		"LEVEL1_GROUND_Y = 0.53（用户定案「再往下移动 0.03」）")
+	t.check_approx(float(willow.get("anchor_y", 0.0)), DefScript.LEVEL1_GROUND_Y, 1e-6,
+		"柳树 anchor_y = LEVEL1_GROUND_Y")
+	t.check_approx(float(bridge.get("anchor_y", 0.0)), DefScript.LEVEL1_GROUND_Y, 1e-6,
+		"拱桥 anchor_y = LEVEL1_GROUND_Y")
+	# 形状参数（用户二次定案）
+	t.check_approx(float(willow.get("params", {}).get("trunk_height", 0.0)), 0.25, 1e-6,
+		"树干高 0.25（用户定案「更高 0.05」）")
+	t.check_approx(float(bridge.get("params", {}).get("deck_thickness", 0.0)), 0.048, 1e-6,
+		"桥身厚 0.048（用户定案「厚度增加 0.03」）")
 
 
 func _find(def: CSceneryDef, id: String) -> Dictionary:

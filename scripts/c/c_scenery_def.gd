@@ -49,6 +49,13 @@ const Y_MAX: float = ANCHOR_Y + Y_TOLERANCE   ## 0.53
 const LEVEL1_WILLOW_X: float = 0.08      ## 柳树树干
 const LEVEL1_BRIDGE_START_X: float = 0.72  ## 拱桥起点（用户 2026-10-08 由 0.85 改为 0.72）
 
+## —— 第一关接地线（用户 2026-10-08 二次定案：由 0.50 下移到 0.53）——
+## 用户原话「桥和树的纵轴线再往下移动 0.03」：0.50 + 0.03 = 0.53。
+## 正好落在容差上界 Y_MAX（0.50 + 0.03）上——仍满足「与人物接地线浮动不超过 0.03」，
+## 但**已无继续下移的余量**：再往下必须回头改 ANCHOR_Y 或 Y_TOLERANCE（那是全局口径，
+## 要连同影人接地点一起重议，不能只改布景）。
+const LEVEL1_GROUND_Y: float = ANCHOR_Y + 0.03   ## = 0.53
+
 ## —— 元素种类 ——
 ## 显示端按 `kind` 选画法。新增种类时两边都要改（数据 + 画面），故集中在这里。
 const KIND_WILLOW: String = "willow"      ## 柳树：树干 + 向左上展开的树冠
@@ -85,12 +92,14 @@ static func make_level1() -> CSceneryDef:
 			"id": "willow_left",
 			"kind": KIND_WILLOW,
 			"anchor_x": LEVEL1_WILLOW_X,
-			"anchor_y": ANCHOR_Y,
+			"anchor_y": LEVEL1_GROUND_Y,
 			"pan_x": 0.0,
 			"params": {
 				# 树干高 / 树冠横向展开半径 / 树冠纵向半径，单位都是「画布高度比例」。
 				# 树冠向左上展开：`crown_bias_x` 为负表示树冠中心在树干左侧。
-				"trunk_height": 0.20,
+				# 用户 2026-10-08：「树的长度要更高 0.05」→ trunk_height 0.20 → 0.25。
+				# 树冠跟着上移（其位置由 trunk_height 推出），因此整棵树变高、树冠顶更高。
+				"trunk_height": 0.25,
 				"crown_radius_x": 0.075,
 				"crown_radius_y": 0.055,
 				"crown_bias_x": -0.02,
@@ -100,14 +109,15 @@ static func make_level1() -> CSceneryDef:
 			"id": "bridge_right",
 			"kind": KIND_ARCH_BRIDGE,
 			"anchor_x": LEVEL1_BRIDGE_START_X,
-			"anchor_y": ANCHOR_Y,
+			"anchor_y": LEVEL1_GROUND_Y,
 			"pan_x": 0.0,
 			"params": {
 				# 半拱：从 anchor_x 起拱，到 `arch_end_x` 到达拱顶高度，之后水平延伸出画。
 				# `arch_end_x` = 1.0 表示「拱顶正好在画布右缘」，随后桥面水平伸到画外。
 				"arch_end_x": 1.0,
 				"deck_rise": 0.10,   ## 桥面（拱顶）比接地线高多少
-				"deck_thickness": 0.018,
+				# 桥身厚度。用户 2026-10-08：「桥自身的厚度增加 0.03」→ 0.018 → 0.048。
+				"deck_thickness": 0.048,
 				"pier_width": 0.010,
 			},
 		},
