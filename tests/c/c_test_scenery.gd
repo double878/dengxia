@@ -7,7 +7,7 @@ class_name CTestScenery
 ##
 ## 断言依据（用户 2026-10-08 逐条定案）：
 ##   ① 第一关布景只有柳树 + 拱桥（无花草、无边界线）
-##   ② 柳树树干 x = 0.08；拱桥起点 x = 0.72
+##   ② 柳树树干 x = 0.08；拱桥贴图锚点（桥心）x = 0.86（用户三方案拍板选 C）
 ##   ③ 纵轴容差口径：Y_TOLERANCE = 0.5（用户第三次定案「放宽至 0.5」），
 ##      [Y_MIN, Y_MAX] = [0.0, 1.0] 覆盖整个舞台高度；影人接地点仍为 0.5
 ##   ④ 景物只能左右平移：位置相关字段**只有** anchor_x / anchor_y / pan_x，
@@ -24,6 +24,7 @@ func run_all() -> Dictionary:
 	_level1_shape(t)
 	_ground_line_alignment(t)
 	_pan_only_constraint(t)
+	_texture_contract(t)
 	_empty_stage_fallback(t)
 	_constants_consistency(t)
 
@@ -55,7 +56,7 @@ func _level1_shape(t: RefCounted) -> void:
 	t.check(not willow.is_empty(), "柳树元素存在（id=willow_left）")
 	t.check(not bridge.is_empty(), "拱桥元素存在（id=bridge_right）")
 
-	# 定位：柳树 0.08 / 桥起 0.72（用户 2026-10-08 定案；先 0.85 后修正）
+	# 定位：柳树 0.08 / 桥心 0.86（用户三方案拍板选 C）
 	if not willow.is_empty():
 		t.check_approx(float(willow.get("anchor_x", -1.0)), DefScript.LEVEL1_WILLOW_X, 1e-6,
 			"柳树 anchor_x = LEVEL1_WILLOW_X")
@@ -107,7 +108,10 @@ func _pan_only_constraint(t: RefCounted) -> void:
 	t.begin("只能左右平移")
 	var def: CSceneryDef = DefScript.make_level1()
 	# 顶层字段白名单：除 params 外，只允许 id/kind + POSITION_KEYS 三个位置字段
-	var allowed := {"id": true, "kind": true}
+	# + 贴图三件套（texture/texture_foot_px/polygon——它们描述「画什么、怎么对齐」，
+	#   不提供任何 y 位移/缩放/旋转能力；缩放走全局统一比例，不是逐元素自由变换）
+	var allowed := {"id": true, "kind": true,
+		"texture": true, "texture_foot_px": true, "polygon": true}
 	for key in DefScript.POSITION_KEYS:
 		allowed[key] = true
 	for item in def.items:
@@ -129,6 +133,28 @@ func _pan_only_constraint(t: RefCounted) -> void:
 			"%s 的 pan_x 初始为 0" % str(item.get("id", "")))
 
 
+## 贴图契约（用户 2026-10-08：woop 素材接入）——贴图存在、锚点合法、走向白名单
+func _texture_contract(t: RefCounted) -> void:
+	t.begin("贴图契约")
+	t.check(FileAccess.file_exists(DefScript.SCENERY_TEX_BRIDGE),
+		"拱桥贴图文件存在：%s" % DefScript.SCENERY_TEX_BRIDGE)
+	t.check_approx(DefScript.TEXTURE_SCALE_PX, 0.42, 1e-9,
+		"TEXTURE_SCALE_PX = 0.42（用户拍板选 C 小桥：素材1px→画布0.42px，桥宽约占画布45%）")
+	var def: CSceneryDef = DefScript.make_level1()
+	var bridge: Dictionary = _find(def, "bridge_right")
+	t.check(not bridge.is_empty(), "拱桥元素存在")
+	if bridge.is_empty():
+		return
+	t.check_eq(str(bridge.get("texture", "")), DefScript.SCENERY_TEX_BRIDGE,
+		"拱桥 texture 引用 SCENERY_TEX_BRIDGE 常量")
+	var foot: Vector2 = bridge.get("texture_foot_px", Vector2.ZERO)
+	t.check_approx(foot.x, 1024.0, 1e-6, "贴图接地点 x = 1024（素材中轴）")
+	t.check_approx(foot.y, 1410.0, 1e-6, "贴图接地点 y = 1410（桥台底边=桥脚）")
+	var poly: String = str(bridge.get("polygon", ""))
+	t.check(poly == DefScript.POLY_ARCH_SPAN or poly == DefScript.POLY_ARCH_SIDE,
+		"polygon ∈ 走向白名单（arch_span/arch_side），实际 %s" % poly)
+
+
 ## 未知关卡返回空布景，而不是静默顶替成第一关的
 func _empty_stage_fallback(t: RefCounted) -> void:
 	t.begin("未知关卡返回空布景")
@@ -146,8 +172,11 @@ func _constants_consistency(t: RefCounted) -> void:
 	var bridge: Dictionary = _find(def, "bridge_right")
 	t.check_approx(float(willow.get("anchor_x", 0.0)), 0.08, 1e-6,
 		"LEVEL1_WILLOW_X 常量值 = 0.08（用户定案）")
-	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.72, 1e-6,
-		"LEVEL1_BRIDGE_START_X 常量值 = 0.72（用户定案）")
+	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.86, 1e-6,
+		"LEVEL1_BRIDGE_START_X 常量值 = 0.86（用户三方案拍板选 C，桥心对 0.86）")
+	# 弧形锚点与贴图锚点同源：桥心必须等于拱门中心，照 C 方案小青(0.86)站拱门正前
+	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.86, 1e-6,
+		"桥心 0.86 = 小青站位 0.86（视觉上「站在桥前」）")
 	# 接地线（用户二次定案：0.50 → 0.53；现容差已放宽至 0.5，0.53 不再是边界值）
 	t.check_approx(DefScript.LEVEL1_GROUND_Y, 0.53, 1e-6,
 		"LEVEL1_GROUND_Y = 0.53（用户定案「再往下移动 0.03」）")

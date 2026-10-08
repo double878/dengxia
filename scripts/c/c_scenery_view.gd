@@ -31,12 +31,34 @@ const BACKDROP_ALPHA: float = 0.55                   ## 整体透明度：背景
 @export var stage_size: Vector2 = Vector2(1920.0, 1080.0)
 
 var _def: CSceneryDef = null
+## 贴图缓存：路径 → Texture2D（或 null 表示加载失败，避免每帧重试）。
+## 为什么缓存 null：资源缺失时每帧 `load()` 会刷屏报错，缓存住只报一次。
+var _tex_cache: Dictionary = {}
 
 
 ## 装载一关的布景。传 null 视为空布景（画空白，不报错——第 2~5 关还没做）。
 func setup(scenery_def: CSceneryDef) -> void:
 	_def = scenery_def
 	queue_redraw()
+
+
+## 取贴图（带缓存）。找不到资源返回 null，由调用方回退程序化画法。
+## 检测两种失败：路径为空、以及 `load()` 拿到的是「非 Texture2D」（避免把脚本当贴图）。
+func _get_texture(path: String) -> Texture2D:
+	if path.is_empty():
+		return null
+	if _tex_cache.has(path):
+		return _tex_cache[path]
+	var res: Resource = null
+	if ResourceLoader.exists(path):
+		res = load(path)
+	var tex: Texture2D = res as Texture2D
+	if tex == null:
+		# 只在首次失败时提示：贴图缺失是「用占位画法继续跑」的正常降级路径，
+		# 不是崩溃。headless 批跑正好走这条分支（无渲染资源）。
+		push_warning("CSceneryView: 贴图不可用，回退程序化占位 —— %s" % path)
+	_tex_cache[path] = tex
+	return tex
 
 
 ## 水平平移（**唯一**允许的位移；第 1 关恒 0）。
@@ -68,6 +90,12 @@ func _draw() -> void:
 		var x: float = float(item.get("anchor_x", 0.0)) + float(item.get("pan_x", 0.0))
 		var y: float = float(item.get("anchor_y", DefScript.ANCHOR_Y))
 		var params: Dictionary = item.get("params", {})
+		# 贴图优先：有可用贴图就画贴图，否则回退程序化占位。
+		# 两条路都**只受 anchor_x/anchor_y/pan_x 影响**，不存在额外位移。
+		var tex: Texture2D = _get_texture(str(item.get("texture", "")))
+		if tex != null:
+			_draw_texture_item(item, tex, x, y)
+			continue
 		match kind:
 			DefScript.KIND_WILLOW:
 				_draw_willow(x, y, params)
@@ -77,6 +105,24 @@ func _draw() -> void:
 				# 未知种类不静默吞掉：这类 bug 在画面上表现为「布景少了东西」，
 				# 排查时最怕它一声不吭。push_warning 让 --headless 也能看见。
 				push_warning("CSceneryView: 未知布景种类 %s（id=%s）" % [kind, str(item.get("id", ""))])
+
+
+## 贴图摆放：统一像素比例缩放 + 把「贴图内的桥脚接地点」对齐到 (anchor_x, anchor_y)。
+##
+## 数学：设 scale = 贴图1px → 画布多少px（item 级 `texture_scale_px` 优先，
+## 缺省用全局 `TEXTURE_SCALE_PX`），贴图内接地点像素为 (fx, fy)，
+## 则贴图左上角应画在 `target - (fx, fy) * scale`，整张图以 `target` 为基准定位。
+## 好处：贴图内的雨丝、水雾、桥面装饰都按同一比例随桥缩放，比例自洽；
+## 调整大小只需改一个缩放数，anchor 不动。
+func _draw_texture_item(item: Dictionary, tex: Texture2D, anchor_x: float, anchor_y: float) -> void:
+	var target: Vector2 = _to_px(anchor_x, anchor_y)
+	var scale: float = DefScript.TEXTURE_SCALE_PX
+	if item.has("texture_scale_px"):
+		scale = float(item["texture_scale_px"])
+	var foot: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
+	var size: Vector2 = Vector2(tex.get_width(), tex.get_height()) * scale
+	var top_left: Vector2 = target - foot * scale
+	draw_texture_rect(tex, Rect2(top_left, size), false, Color(1.0, 1.0, 1.0, BACKDROP_ALPHA))
 
 
 ## 柳树：树干 + 向左上展开的树冠。

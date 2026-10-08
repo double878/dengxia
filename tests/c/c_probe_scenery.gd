@@ -55,7 +55,9 @@ func _build() -> void:
 	scenery.name = "Scenery"
 	scenery.stage_origin = Vector2.ZERO
 	scenery.stage_size = CANVAS_SIZE
-	scenery.setup(DefScript.make_level1())
+	var def: CSceneryDef = DefScript.make_level1()
+	_apply_bridge_override(def)
+	scenery.setup(def)
 	_root.add_child(scenery)
 
 	# 3) 三具影人（复用 A 的占位表现；它只读 PuppetState）
@@ -72,6 +74,27 @@ func _build() -> void:
 		st.is_controlled = (i == 0)
 		view.puppet_state = st
 		_root.add_child(view)
+
+
+## 摆放选型开关（**仅探针用，不入正式数据**）：环境变量覆盖拱桥的 anchor_x 与贴图缩放，
+## 用于一次性跑出多个摆放方案截图、供人眼挑选拍板。
+##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 0.72）
+##   BRIDGE_SCALE     素材像素比（缺省用 DefScript.TEXTURE_SCALE_PX）
+## 选型定案后，把拍板数值写回 c_scenery_def.gd，此函数留作以后调型用。
+func _apply_bridge_override(def: CSceneryDef) -> void:
+	var ax := OS.get_environment("BRIDGE_ANCHOR_X")
+	var sc := OS.get_environment("BRIDGE_SCALE")
+	if ax.is_empty() and sc.is_empty():
+		return
+	for item in def.items:
+		if str(item.get("id", "")) != "bridge_right":
+			continue
+		if not ax.is_empty():
+			item["anchor_x"] = float(ax)
+		if not sc.is_empty():
+			# 探针级覆盖：直接改视图常量不行（const），改为把缩放写进 item，
+			# 由 CSceneryView 优先读 item 级 `texture_scale_px`（见视图端注释）。
+			item["texture_scale_px"] = float(sc)
 
 
 ## 幕布与工作台（照 A 侧 `level1_a_scene.gd` 的版面，只画布景校验需要的部分）。
