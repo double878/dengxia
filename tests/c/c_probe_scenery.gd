@@ -75,22 +75,12 @@ func _build() -> void:
 
 
 ## 幕布与工作台（照 A 侧 `level1_a_scene.gd` 的版面，只画布景校验需要的部分）。
+## 刻意**不画**接地参考线：画面要尽量接近成品观感，用来看布景本身的形状与位置是否顺眼；
+## 数值层面的对齐由 `run_scenery_tests.gd` 的断言负责，不在画面上打辅助线。
 func _draw_board(_node: Node2D) -> void:
 	var b: Node2D = _node
 	b.draw_rect(Rect2(Vector2.ZERO, CANVAS_SIZE), Color("#171b19"))
 	b.draw_rect(CLOTH, Color("#a3977c"))
-	# 两条调试参考线（仅探针画，不入产品代码）。影人 `stage_origin` 是 (0,0)，
-	# 与幕布矩形无关，所以直接用「归一化 y × 画布高」换算，**不要**加 CLOTH.position.y。
-	#   红线 = 影人接地线 y=0.5（A 侧 initial.positions 三具全部 0.5）
-	#   黄线 = 布景接地线 LEVEL1_GROUND_Y=0.53（用户二次定案下移 0.03 后的位置）
-	# 两条线相距 0.03×1080 ≈ 32px。容差放宽至 0.5 后这 32px 偏差**是允许的**，
-	# 画出来是为了让人眼看清楚它有多大，而不是当成 bug。
-	b.draw_line(Vector2(CLOTH.position.x, PUPPET_GROUND_Y * CANVAS_SIZE.y),
-		Vector2(CLOTH.end.x, PUPPET_GROUND_Y * CANVAS_SIZE.y),
-		Color(1.0, 0.3, 0.3, 0.35), 2.0)
-	b.draw_line(Vector2(CLOTH.position.x, DefScript.LEVEL1_GROUND_Y * CANVAS_SIZE.y),
-		Vector2(CLOTH.end.x, DefScript.LEVEL1_GROUND_Y * CANVAS_SIZE.y),
-		Color(1.0, 0.85, 0.2, 0.35), 2.0)
 
 
 func _on_frame() -> void:
