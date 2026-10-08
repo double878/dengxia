@@ -25,6 +25,7 @@ func run_all() -> Dictionary:
 	_ground_line_alignment(t)
 	_pan_only_constraint(t)
 	_texture_contract(t)
+	_view_scripts_load(t)
 	_empty_stage_fallback(t)
 	_constants_consistency(t)
 
@@ -138,6 +139,11 @@ func _texture_contract(t: RefCounted) -> void:
 	t.begin("贴图契约")
 	t.check(FileAccess.file_exists(DefScript.SCENERY_TEX_BRIDGE),
 		"拱桥贴图文件存在：%s" % DefScript.SCENERY_TEX_BRIDGE)
+	# 雨幕贴图（烟雨氛围层用；桥贴图已裁掉烘焙雨丝，雨单一来源）
+	t.check(FileAccess.file_exists("res://assets/scenery/level1/rain_near.png"),
+		"近层雨幕贴图存在（rain_near.png）")
+	t.check(FileAccess.file_exists("res://assets/scenery/level1/rain_far.png"),
+		"远层雨幕贴图存在（rain_far.png）")
 	t.check_approx(DefScript.TEXTURE_SCALE_PX, 0.42, 1e-9,
 		"TEXTURE_SCALE_PX = 0.42（用户拍板选 C 小桥：素材1px→画布0.42px，桥宽约占画布45%）")
 	var def: CSceneryDef = DefScript.make_level1()
@@ -149,10 +155,26 @@ func _texture_contract(t: RefCounted) -> void:
 		"拱桥 texture 引用 SCENERY_TEX_BRIDGE 常量")
 	var foot: Vector2 = bridge.get("texture_foot_px", Vector2.ZERO)
 	t.check_approx(foot.x, 1024.0, 1e-6, "贴图接地点 x = 1024（素材中轴）")
-	t.check_approx(foot.y, 1410.0, 1e-6, "贴图接地点 y = 1410（桥台底边=桥脚）")
+	t.check_approx(foot.y, 710.0, 1e-6, "贴图接地点 y = 710（=1410-700 裁雨后桥台底边）")
 	var poly: String = str(bridge.get("polygon", ""))
 	t.check(poly == DefScript.POLY_ARCH_SPAN or poly == DefScript.POLY_ARCH_SIDE,
 		"polygon ∈ 走向白名单（arch_span/arch_side），实际 %s" % poly)
+
+
+## 视图脚本可加载、可实例化（= 编译通过）。
+## 数据测试跑在 headless，管不到画面；但「显示端脚本一个语法错误就让整个布景
+## 消失（preload 失败连锁）」这种事故可以在 headless 就拦住——代价只有 4 条断言。
+## 画面本身对不对由探针（c_probe_scenery.gd）截图供人眼核对。
+func _view_scripts_load(t: RefCounted) -> void:
+	t.begin("视图脚本可加载")
+	var view_res: Resource = load("res://scripts/c/c_scenery_view.gd")
+	t.check(view_res is GDScript, "c_scenery_view.gd 加载为 GDScript")
+	if view_res is GDScript:
+		t.check(view_res.can_instantiate(), "c_scenery_view.gd 编译通过（可实例化）")
+	var rain_res: Resource = load("res://scripts/c/c_rain_overlay.gd")
+	t.check(rain_res is GDScript, "c_rain_overlay.gd 加载为 GDScript")
+	if rain_res is GDScript:
+		t.check(rain_res.can_instantiate(), "c_rain_overlay.gd 编译通过（可实例化）")
 
 
 ## 未知关卡返回空布景，而不是静默顶替成第一关的

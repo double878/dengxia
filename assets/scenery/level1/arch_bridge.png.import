@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bhkabw8h5tqhp"
-path="res://.godot/imported/arch_bridge_rain.webp-f42e912acc053e0788d0f5a0985202c0.ctex"
+uid="uid://cb8spq266phie"
+path="res://.godot/imported/arch_bridge.png-41d7a97835c043370044af083ba9913c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/scenery/level1/arch_bridge_rain.webp"
-dest_files=["res://.godot/imported/arch_bridge_rain.webp-f42e912acc053e0788d0f5a0985202c0.ctex"]
+source_file="res://assets/scenery/level1/arch_bridge.png"
+dest_files=["res://.godot/imported/arch_bridge.png-41d7a97835c043370044af083ba9913c.ctex"]
 
 [params]
 

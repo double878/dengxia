@@ -83,17 +83,21 @@ const POSITION_KEYS: Array[String] = ["anchor_x", "anchor_y", "pan_x"]
 ## —— 贴图相关（用户 2026-10-08：以 woop 素材替换程序化占位）——
 ## 素材来源：`architecture-014-002.woop`（woop@2 生成资产包，皮影生成工作流产物）
 ## 内含 2048×2048 生成纹样——带祥云雕花的石拱桥 + 雨丝 + 桥下水雾，真透明通道。
-## 已提取为 `assets/scenery/level1/arch_bridge_rain.webp`（2048×1656，截去上方空白天）。
+## 已提取为 `assets/scenery/level1/arch_bridge.png`（2048×956）。
+## ⚠️ 用 PNG 不用 webp：同一张 PIL 无损 webp，CPU 解码（get_image）正常、
+## 但 Compatibility 渲染器实测画成白块/碎片（2026-10-08 踩坑）；PNG 无此问题。
+## ⚠️ 素材顶部原本烘焙的雨丝已被**裁掉**（y 0~700 只含雨）——雨抽成独立雨幕
+## `rain_near.png`/`rain_far.png`（CRainOverlay 全场铺），桥贴图不再带雨，避免下两场雨。
 ##
 ## 摆放模型：贴图按**统一像素比例**缩放（`TEXTURE_SCALE_PX`：素材 1px → 画布多少 px），
 ## 再让「贴图内的桥脚接地点」`texture_foot_px` 对齐到元素的 (anchor_x, anchor_y)。
-## 这样贴图内部的雨丝/水雾/桥面比例天然自洽，只需调一个缩放数即可整体放大缩小。
+## 这样贴图内部的水雾/桥面装饰比例天然自洽，只需调一个缩放数即可整体放大缩小。
 ##
 ## 两条路并存（**不是二选一**）：
 ##   - `texture` 非空且资源可加载 → 贴图绘制
 ##   - `texture` 为空串（或资源缺失/headless）→ 回退程序化占位画法（见 CSceneryView）
 ## 这样断言与批跑不依赖贴图资源，画面上又能拿到真美术。
-const SCENERY_TEX_BRIDGE: String = "res://assets/scenery/level1/arch_bridge_rain.webp"
+const SCENERY_TEX_BRIDGE: String = "res://assets/scenery/level1/arch_bridge.png"
 
 ## 贴图统一像素比例：素材 1 像素 = 画布多少像素。
 ## 0.42 → 2048 宽素材映射为 860 画布像素宽（占 1920 的 45%）。
@@ -158,10 +162,10 @@ static func make_level1() -> CSceneryDef:
 			# 走向：完整拱跨。素材本身就是左右对称的整座拱桥，无需翻转；
 			# 摆放时**只做水平平移**让拱心落在 anchor_x（见 CSceneryView）。
 			"polygon": POLY_ARCH_SPAN,
-			# 贴图内「桥脚接地中点」的素材像素坐标（素材 2048×1656，左上为原点）。
-			# 选点依据：桥体条带 y≈700~1410，桥台底边 y≈1410 即桥脚接地点；
-			# x 取桥体中轴 1024（素材左右对称）。
-			"texture_foot_px": Vector2(1024.0, 1410.0),
+			# 贴图内「桥脚接地中点」的素材像素坐标（素材 2048×956，左上为原点）。
+			# 选点依据：原 2048² 素材里桥台底边 y≈1410；裁去顶部 700px 雨丝带后
+			# y = 1410-700 = 710；x 取桥体中轴 1024（素材左右对称）。
+			"texture_foot_px": Vector2(1024.0, 710.0),
 			"params": {
 				# 程序化占位画法用的形状参数（无贴图时生效；有贴图时被贴图取代）。
 				# 保留它们是为了 headless 批跑与断言不依赖贴图资源、且贴图缺失时画面不空。

@@ -15,6 +15,7 @@ extends SceneTree
 
 const DefScript := preload("res://scripts/c/c_scenery_def.gd")
 const ViewScript := preload("res://scripts/c/c_scenery_view.gd")
+const RainScript := preload("res://scripts/c/c_rain_overlay.gd")
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 const PuppetViewScript := preload("res://scripts/a_test/placeholder_puppet.gd")
 
@@ -55,6 +56,9 @@ func _build() -> void:
 	scenery.name = "Scenery"
 	scenery.stage_origin = Vector2.ZERO
 	scenery.stage_size = CANVAS_SIZE
+	# 贴图桥比幕布宽（右缘出画 227px）。裁剪走渲染器级 clip_children（视图内部实现）：
+	# draw_texture_rect_region 手工求交在 Compatibility 渲染器上画白块（实测 bug），禁用。
+	scenery.clip_rect = CLOTH
 	var def: CSceneryDef = DefScript.make_level1()
 	_apply_bridge_override(def)
 	scenery.setup(def)
@@ -75,10 +79,19 @@ func _build() -> void:
 		view.puppet_state = st
 		_root.add_child(view)
 
+	# 4) 烟雨氛围层：全场铺在最上（雨丝 + 雾霭）。节点定位到幕布左上角，
+	#    内部自带 clip_children 模板裁剪——滚动副本越出幕布的部分由渲染器裁掉，
+	#    不会印到黑边框上。
+	var rain := RainScript.new()
+	rain.name = "Rain"
+	rain.position = CLOTH.position
+	rain.setup(CLOTH.size)
+	_root.add_child(rain)
+
 
 ## 摆放选型开关（**仅探针用，不入正式数据**）：环境变量覆盖拱桥的 anchor_x 与贴图缩放，
 ## 用于一次性跑出多个摆放方案截图、供人眼挑选拍板。
-##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 0.72）
+##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 0.86）
 ##   BRIDGE_SCALE     素材像素比（缺省用 DefScript.TEXTURE_SCALE_PX）
 ## 选型定案后，把拍板数值写回 c_scenery_def.gd，此函数留作以后调型用。
 func _apply_bridge_override(def: CSceneryDef) -> void:

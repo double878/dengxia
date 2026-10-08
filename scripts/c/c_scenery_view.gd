@@ -15,6 +15,19 @@ class_name CSceneryView
 ##
 ## 坐标口径：舞台归一化 0–1，映射到 `stage_size`（与影人同一坐标系）。
 ## 只支持**水平平移**（`pan_x`）——景物不能上下移动/缩放/旋转（用户 2026-10-08 定案）。
+##
+## —— 裁剪方案（clip_children），2026-10-08 定案 ——
+## 贴图桥比幕布宽（右缘出画约 227px），越界部分会印到幕布外的黑边框上。
+## 原本想用 `draw_texture_rect_region` 与幕布求交手工裁剪，但 Compatibility 渲染器上
+## 该 API 实测**画白块/碎片**（2026-10-08 对照实验：preload 整图直绘完美、
+## region 子矩形全废）。故改用渲染器级裁剪，本文件**禁用** `draw_texture_rect_region`：
+##   - 本节点自身 `_draw()` 画一块**不透明矩形**作裁剪模板；
+##     `CLIP_CHILDREN_ONLY` 模式下模板本身不显示，只取它圈定的区域做模板。
+##   - 真正的布景内容画在子节点 `_content` 上，由渲染器裁进模板区域。
+##   - 因此所有绘制都**整图/整体直绘**（`draw_texture_rect` / `draw_line` 等），
+##     越不越界交给裁剪，不在绘制端做几何裁剪。
+## `clip_rect` 必须在节点**进树之前**设置（`_ready` 按它决定是否开启裁剪）；
+## 零尺寸（默认）= 不裁剪，内容原样画出（headless/断言路径不受影响）。
 
 const DefScript := preload("res://scripts/c/c_scenery_def.gd")
 
@@ -26,20 +39,46 @@ const COLOR_BRIDGE: Color = Color("#8a5a2b")        ## 木褐（比「幕后木�
 const COLOR_BRIDGE_LIGHT: Color = Color("#b07a41")
 const BACKDROP_ALPHA: float = 0.55                   ## 整体透明度：背景不抢戏
 
+## 裁剪模板色。CLIP_CHILDREN_ONLY 下模板不显示，只取其 alpha 圈区域——
+## 用纯白表达「这是模板，不是颜色设计」。
+const MASK_COLOR := Color.WHITE
+
 ## 舞台映射区。必须与影人用**同一套**（由调用方注入，避免两处各写一个数）。
 @export var stage_origin: Vector2 = Vector2.ZERO
 @export var stage_size: Vector2 = Vector2(1920.0, 1080.0)
+
+## 可选裁剪矩形（**本节点局部坐标**，与 stage_origin 同参照；探针把节点放在原点，
+## 故即画布坐标）。零尺寸（默认）= 不裁剪。
+## ⚠️ 必须在进树前设置——`_ready` 里按它决定是否开启 clip_children。
+@export var clip_rect: Rect2 = Rect2()
 
 var _def: CSceneryDef = null
 ## 贴图缓存：路径 → Texture2D（或 null 表示加载失败，避免每帧重试）。
 ## 为什么缓存 null：资源缺失时每帧 `load()` 会刷屏报错，缓存住只报一次。
 var _tex_cache: Dictionary = {}
+## 实际布景内容画在这个子节点上；本节点自身绘制 = 裁剪模板（见类头「裁剪方案」）。
+var _content: Node2D = null
 
 
 ## 装载一关的布景。传 null 视为空布景（画空白，不报错——第 2~5 关还没做）。
 func setup(scenery_def: CSceneryDef) -> void:
 	_def = scenery_def
 	queue_redraw()
+	if _content != null:
+		_content.queue_redraw()
+
+
+func _ready() -> void:
+	# 组装「模板（自身）+ 内容（子节点）」结构。只有给了 clip_rect 才开裁剪；
+	# 不开时 _draw 什么都不画，内容按原样画出（与旧版为等价行为）。
+	_content = Node2D.new()
+	_content.name = "SceneryContent"
+	add_child(_content)
+	_content.draw.connect(_draw_items)
+	if clip_rect.size != Vector2.ZERO:
+		clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+		queue_redraw()   # 画裁剪模板
+	_content.queue_redraw()
 
 
 ## 取贴图（带缓存）。找不到资源返回 null，由调用方回退程序化画法。
@@ -70,7 +109,8 @@ func set_pan(item_id: String, pan_x: float) -> void:
 	for item in _def.items:
 		if str(item.get("id", "")) == item_id:
 			item["pan_x"] = pan_x
-			queue_redraw()
+			if _content != null:
+				_content.queue_redraw()
 			return
 
 
@@ -83,6 +123,15 @@ func _to_px(nx: float, ny: float) -> Vector2:
 
 
 func _draw() -> void:
+	# 裁剪模板：CLIP_CHILDREN_ONLY 下自身绘制不显示，只当子节点的裁剪区域用。
+	# 未开裁剪（clip_rect 为零）时这里什么都不画。
+	if clip_children == CanvasItem.CLIP_CHILDREN_ONLY:
+		draw_rect(clip_rect, MASK_COLOR)
+
+
+## 实际布景绘制（画在子节点 _content 上，被本节点的模板裁进幕布）。
+## 结构与取数逻辑与旧版一致，只是绘制目标从 self 换成 _content。
+func _draw_items() -> void:
 	if _def == null:
 		return
 	for item in _def.items:
@@ -114,6 +163,9 @@ func _draw() -> void:
 ## 则贴图左上角应画在 `target - (fx, fy) * scale`，整张图以 `target` 为基准定位。
 ## 好处：贴图内的雨丝、水雾、桥面装饰都按同一比例随桥缩放，比例自洽；
 ## 调整大小只需改一个缩放数，anchor 不动。
+##
+## 裁剪：**不做几何裁剪**，整图直绘，越界部分由渲染器的 clip_children 裁掉
+## （draw_texture_rect_region 在 Compatibility 渲染器上画白块，见类头）。
 func _draw_texture_item(item: Dictionary, tex: Texture2D, anchor_x: float, anchor_y: float) -> void:
 	var target: Vector2 = _to_px(anchor_x, anchor_y)
 	var scale: float = DefScript.TEXTURE_SCALE_PX
@@ -122,7 +174,8 @@ func _draw_texture_item(item: Dictionary, tex: Texture2D, anchor_x: float, ancho
 	var foot: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
 	var size: Vector2 = Vector2(tex.get_width(), tex.get_height()) * scale
 	var top_left: Vector2 = target - foot * scale
-	draw_texture_rect(tex, Rect2(top_left, size), false, Color(1.0, 1.0, 1.0, BACKDROP_ALPHA))
+	_content.draw_texture_rect(tex, Rect2(top_left, size), false,
+		Color(1.0, 1.0, 1.0, BACKDROP_ALPHA))
 
 
 ## 柳树：树干 + 向左上展开的树冠。
@@ -149,22 +202,23 @@ func _draw_willow(anchor_x: float, anchor_y: float, params: Dictionary) -> void:
 		var spread := lerpf(-crown_rx, crown_rx, t)
 		var start: Vector2 = crown + Vector2(spread * 0.7, -crown_ry * 0.2)
 		var end: Vector2 = start + Vector2(spread * 0.35, crown_ry * 1.2)
-		draw_line(start, end, leaf_dark, 2.0)
+		_content.draw_line(start, end, leaf_dark, 2.0)
 
-	draw_circle(crown, crown_ry, leaf)
-	draw_circle(crown + Vector2(-crown_rx * 0.55, crown_ry * 0.15), crown_ry * 0.78, leaf)
-	draw_circle(crown + Vector2(crown_rx * 0.55, crown_ry * 0.15), crown_ry * 0.78, leaf)
-	draw_circle(crown + Vector2(0.0, -crown_ry * 0.5), crown_ry * 0.82, leaf)
+	_content.draw_circle(crown, crown_ry, leaf)
+	_content.draw_circle(crown + Vector2(-crown_rx * 0.55, crown_ry * 0.15), crown_ry * 0.78, leaf)
+	_content.draw_circle(crown + Vector2(crown_rx * 0.55, crown_ry * 0.15), crown_ry * 0.78, leaf)
+	_content.draw_circle(crown + Vector2(0.0, -crown_ry * 0.5), crown_ry * 0.82, leaf)
 
 	# 树干
 	var trunk_w: float = maxf(6.0, stage_size.y * 0.008)
 	var trunk: Color = COLOR_BRIDGE
 	trunk.a = BACKDROP_ALPHA
-	draw_line(base, top, trunk, trunk_w)
+	_content.draw_line(base, top, trunk, trunk_w)
 
 
 ## 拱桥：从 anchor_x 起拱，到 `arch_end_x` 到达拱顶高度，之后**水平延伸出画**。
 ## 用户 2026-10-08：「拱桥从 0.72 开始……不用画出完整拱桥，只画一半，平行延伸到画布外」。
+## （贴图接入后此画法只作无贴图时的回退占位；延伸出画的部分由裁剪收进幕布。）
 func _draw_arch_bridge(anchor_x: float, anchor_y: float, params: Dictionary) -> void:
 	var foot: Vector2 = _to_px(anchor_x, anchor_y)
 	var end_x: float = float(params.get("arch_end_x", 1.0))
@@ -188,18 +242,18 @@ func _draw_arch_bridge(anchor_x: float, anchor_y: float, params: Dictionary) -> 
 	for i in range(segs + 1):
 		pts.append(_quad(foot, ctrl, arch_end, float(i) / float(segs)))
 	for i in range(segs):
-		draw_line(pts[i], pts[i + 1], deck, thick)
-		draw_line(pts[i] + Vector2(0.0, -thick * 0.35),
+		_content.draw_line(pts[i], pts[i + 1], deck, thick)
+		_content.draw_line(pts[i] + Vector2(0.0, -thick * 0.35),
 			pts[i + 1] + Vector2(0.0, -thick * 0.35), deck_hi, 2.0)
 
-	# 水平延伸段：从拱顶一路平伸到画布右缘之外（`_to_px` 不裁剪，自然出画）
+	# 水平延伸段：从拱顶一路平伸到画布右缘之外（`_to_px` 不裁剪，渲染器裁剪收进幕布）
 	var off_canvas: Vector2 = Vector2(stage_size.x * 2.0, 0.0)
-	draw_line(arch_end, arch_end + off_canvas, deck, thick)
-	draw_line(arch_end + Vector2(0, -thick * 0.35),
+	_content.draw_line(arch_end, arch_end + off_canvas, deck, thick)
+	_content.draw_line(arch_end + Vector2(0, -thick * 0.35),
 		arch_end + off_canvas + Vector2(0, -thick * 0.35), deck_hi, 2.0)
 
 	# 拱脚一小段立墩（把桥「种」在接地线上）
-	draw_line(foot, foot + Vector2(0.0, -rise * 0.35), deck, pier_w)
+	_content.draw_line(foot, foot + Vector2(0.0, -rise * 0.35), deck, pier_w)
 
 
 ## 二次贝塞尔取点（纯几何工具，无状态）。
@@ -212,4 +266,5 @@ static func _quad(p0: Vector2, ctrl: Vector2, p1: Vector2, t: float) -> Vector2:
 static func usage_hint() -> String:
 	return "把 CSceneryView 作为舞台的子节点 add_child，并让它排在幕布之后、影人之前" \
 		+ "（z_index 设为负值，或作为影人节点之前的兄弟节点）。" \
+		+ "若贴图可能越出幕布，请在进树前把 clip_rect 设为幕布矩形（渲染器级裁剪）。" \
 		+ "切勿挂到影子缩放根之下——布景不随灯影缩放。"
