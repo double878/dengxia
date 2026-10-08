@@ -163,6 +163,9 @@ func _constants_consistency(t: RefCounted) -> void:
 		"树干高 0.25（用户定案「更高 0.05」）")
 	t.check_approx(float(bridge.get("params", {}).get("deck_thickness", 0.0)), 0.048, 1e-6,
 		"桥身厚 0.048（用户定案「厚度增加 0.03」）")
+	# 拱顶高（用户三次定案：0.10 → 0.13）
+	t.check_approx(float(bridge.get("params", {}).get("deck_rise", 0.0)), 0.13, 1e-6,
+		"拱顶高 0.13（用户定案）")
 
 
 func _find(def: CSceneryDef, id: String) -> Dictionary:
