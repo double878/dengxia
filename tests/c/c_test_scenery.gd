@@ -267,11 +267,23 @@ func _geometry_on_canvas(t: RefCounted) -> void:
 	var pad: float = willow_rect.position.x - cloth.position.x
 	t.check(pad >= 20.0 and pad <= 60.0,
 		"树左缘内边距 = %.0f px（要求 20~60，避免贴死或左侧空白过多）" % pad)
-	# ④ 树顶仍有留白（延续「幕布上方保留 1/5~1/6」构图口径，不顶满不出画）
+	# ④ 树顶仍有留白（用户 2026-10-09 16:51「树整体放大」定案：留 1/9 幕布高）
 	var top_gap: float = willow_rect.position.y - cloth.position.y
-	t.check(top_gap > 60.0,
-		"树顶留白 = %.0f px（>60，即幕布高的 1/%.1f，须留白不出画）" % [
-			top_gap, cloth.size.y / maxf(top_gap, 1.0)])
+	t.check_approx(top_gap, cloth.size.y / 9.0, 2.0,
+		"树顶留白 = %.1f px ≈ 幕布高 1/9（%.1f），树高占 %.1f%%" % [
+			top_gap, cloth.size.y / 9.0,
+			100.0 * willow_rect.size.y / cloth.size.y])
+	# ⑤ 树冠/树干比例协调：干基段（素材里树干露出部分）不得被放大到喧宾夺主。
+	# 素材实测：干右紧邻枝条最低点 y=1249，素材内容底 y=1843 → 干基段占全高 32.3%。
+	# 屏上对应高度应仍在树高的 25%~40% 区间（树下有支撑感、树冠仍是主体）。
+	var wimg2 := Image.load_from_file(ProjectSettings.globalize_path(DefScript.SCENERY_TEX_WILLOW))
+	if wimg2 != null:
+		var trunk_ratio: float = (1843.0 - 1249.0) / 1843.0   # ≈ 0.3225
+		var trunk_px: float = trunk_ratio * willow_rect.size.y
+		t.check(trunk_px >= willow_rect.size.y * 0.25
+			and trunk_px <= willow_rect.size.y * 0.40,
+			"树干露出段 %.0f px = 树高的 %.1f%%（要求 25%%~40%%，树冠仍为主体）" % [
+				trunk_px, 100.0 * trunk_ratio])
 
 
 ## 未知关卡返回空布景，而不是静默顶替成第一关的
@@ -289,14 +301,14 @@ func _constants_consistency(t: RefCounted) -> void:
 	var def: CSceneryDef = DefScript.make_level1()
 	var willow: Dictionary = _find(def, "willow_left")
 	var bridge: Dictionary = _find(def, "bridge_right")
-	t.check_approx(float(willow.get("anchor_x", 0.0)), 0.111687, 1e-6,
-		"LEVEL1_WILLOW_X 常量值 = 0.111687（树贴图左缘贴幕布左缘，内边距 30px）")
+	t.check_approx(float(willow.get("anchor_x", 0.0)), 0.116112, 1e-6,
+		"LEVEL1_WILLOW_X 常量值 = 0.116112（树贴图左缘 x=96＝幕布左 66 + 内边距 30px）")
 	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.73, 1e-6,
 		"LEVEL1_BRIDGE_CENTER_X 常量值 = 0.73（2026-10-09「桥头左移，完整拱」定案）")
-	t.check_approx(DefScript.LEVEL1_WILLOW_SCALE, 0.21, 1e-9,
-		"LEVEL1_WILLOW_SCALE = 0.21（底对齐把树基锁在 572.8px，0.26 会顶满/出画）")
-	t.check_approx(DefScript.LEVEL1_WILLOW_BASE_Y, 0.530389, 1e-6,
-		"LEVEL1_WILLOW_BASE_Y = 0.530389（与桥贴图底缘 572.8px 同线）")
+	t.check_approx(DefScript.LEVEL1_WILLOW_SCALE, 0.225063, 1e-6,
+		"LEVEL1_WILLOW_SCALE = 0.225063（底对齐+顶留白1/9 联立解；上限被底对齐锁死）")
+	t.check_approx(DefScript.LEVEL1_WILLOW_BASE_Y, 0.530162, 1e-6,
+		"LEVEL1_WILLOW_BASE_Y = 0.530162（与桥贴图底缘 572.8px 同线，随 scale 重算）")
 	t.check_approx(float(willow.get("anchor_y", 0.0)), DefScript.LEVEL1_WILLOW_BASE_Y, 1e-6,
 		"柳树 anchor_y = LEVEL1_WILLOW_BASE_Y（与桥底同线）")
 	# 接地线（用户二次定案：0.50 → 0.53；现容差已放宽至 0.5，0.53 不再是边界值）
