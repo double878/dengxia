@@ -30,6 +30,7 @@ func run_all() -> Dictionary:
 	_texture_contract(t)
 	_view_scripts_load(t)
 	_empty_stage_fallback(t)
+	_geometry_on_canvas(t)
 	_constants_consistency(t)
 
 	t.finish("布景数据契约（第一关 + 通用约束）")
@@ -216,6 +217,63 @@ func _view_scripts_load(t: RefCounted) -> void:
 		t.check(rain_res.can_instantiate(), "c_rain_overlay.gd 编译通过（可实例化）")
 
 
+## 贴图在画布上的**实际绘制矩形**（用户 2026-10-09 四条构图要求的可回归断言）。
+##
+## 为什么必须单独测：前面的断言只检查「数据填得对不对」，检查不了
+## 「贴图有没有被幕布裁掉半边」这类**画面级**问题——而用户恰恰是看画面提的需求
+## （「桥必须完整显示整张，不能只渲染左半边或右半边」）。
+## 断言直接复用 CSceneryView 的摆放公式（target − foot×scale → 整张 size），
+## 不做二次实现（复制粘贴公式 = 两处漂移的种子）；公式若改动，这里会同步失效提醒。
+##
+## 幕布矩形取 `level1_a_scene.gd` 同源版面：Rect2(66, 92, 1788, 588)。
+func _geometry_on_canvas(t: RefCounted) -> void:
+	t.begin("贴图绘制矩形（完整入幕布 / 底对齐 / 左边距）")
+	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
+	var def: CSceneryDef = DefScript.make_level1()
+	var rects: Dictionary = {}
+	for item in def.items:
+		var img := Image.load_from_file(
+			ProjectSettings.globalize_path(str(item.get("texture", ""))))
+		if img == null:
+			t.check(false, "%s 贴图可读（几何断言前置）" % item.get("id", "?"))
+			continue
+		var scale: float = DefScript.TEXTURE_SCALE_PX
+		if item.has("texture_scale_px"):
+			scale = float(item["texture_scale_px"])
+		var foot: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
+		var target := Vector2(float(item.get("anchor_x", 0.0)) * 1920.0,
+			float(item.get("anchor_y", 0.0)) * 1080.0)
+		# 与 CSceneryView._draw_texture_item 同式：左上角 = target − foot×scale
+		var r := Rect2(target - foot * scale,
+			Vector2(float(img.get_width()), float(img.get_height())) * scale)
+		rects[str(item.get("id", ""))] = r
+		# ① 完整显示：四边都不得越出幕布（越界 = 被 clip_children 裁掉 = 只剩半边）
+		var over_l: float = maxf(cloth.position.x - r.position.x, 0.0)
+		var over_r: float = maxf(r.end.x - cloth.end.x, 0.0)
+		var over_t: float = maxf(cloth.position.y - r.position.y, 0.0)
+		var over_b: float = maxf(r.end.y - cloth.end.y, 0.0)
+		t.check(over_l + over_r + over_t + over_b <= 0.5,
+			"%s 贴图完整入幕布（左%.0f 右%.0f 上%.0f 下%.0f 越界，应全为 0）" % [
+				item.get("id", "?"), over_l, over_r, over_t, over_b])
+
+	var willow_rect: Rect2 = rects.get("willow_left", Rect2())
+	var bridge_rect: Rect2 = rects.get("bridge_right", Rect2())
+	if willow_rect.size == Vector2.ZERO or bridge_rect.size == Vector2.ZERO:
+		return
+	# ② 树底与桥底同一条水平线（用户「树的纵向底部水平线与桥的纵向水平线对齐」）
+	t.check_approx(willow_rect.end.y, bridge_rect.end.y, 1.0,
+		"树底与桥底同线（树%.1f / 桥%.1f，容差 1px）" % [willow_rect.end.y, bridge_rect.end.y])
+	# ③ 树左缘贴画布左侧，留「适当内边距」（20~60px，不贴死也不留大片空白）
+	var pad: float = willow_rect.position.x - cloth.position.x
+	t.check(pad >= 20.0 and pad <= 60.0,
+		"树左缘内边距 = %.0f px（要求 20~60，避免贴死或左侧空白过多）" % pad)
+	# ④ 树顶仍有留白（延续「幕布上方保留 1/5~1/6」构图口径，不顶满不出画）
+	var top_gap: float = willow_rect.position.y - cloth.position.y
+	t.check(top_gap > 60.0,
+		"树顶留白 = %.0f px（>60，即幕布高的 1/%.1f，须留白不出画）" % [
+			top_gap, cloth.size.y / maxf(top_gap, 1.0)])
+
+
 ## 未知关卡返回空布景，而不是静默顶替成第一关的
 func _empty_stage_fallback(t: RefCounted) -> void:
 	t.begin("未知关卡返回空布景")
@@ -231,16 +289,16 @@ func _constants_consistency(t: RefCounted) -> void:
 	var def: CSceneryDef = DefScript.make_level1()
 	var willow: Dictionary = _find(def, "willow_left")
 	var bridge: Dictionary = _find(def, "bridge_right")
-	t.check_approx(float(willow.get("anchor_x", 0.0)), 0.27, 1e-6,
-		"LEVEL1_WILLOW_X 常量值 = 0.27（许仙右侧：树冠左缘 ≈372px 不遮许仙右缘 340px）")
+	t.check_approx(float(willow.get("anchor_x", 0.0)), 0.111687, 1e-6,
+		"LEVEL1_WILLOW_X 常量值 = 0.111687（树贴图左缘贴幕布左缘，内边距 30px）")
 	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.73, 1e-6,
 		"LEVEL1_BRIDGE_CENTER_X 常量值 = 0.73（2026-10-09「桥头左移，完整拱」定案）")
-	t.check_approx(DefScript.LEVEL1_WILLOW_SCALE, 0.26, 1e-9,
-		"LEVEL1_WILLOW_SCALE = 0.26（2026-10-09「再大一点」，由 0.20 上调）")
-	t.check_approx(DefScript.LEVEL1_WILLOW_BASE_Y, 0.6294, 1e-9,
-		"LEVEL1_WILLOW_BASE_Y = 0.6294（前景树基线：树顶留幕布高 1/5~1/6 的几何必然）")
+	t.check_approx(DefScript.LEVEL1_WILLOW_SCALE, 0.21, 1e-9,
+		"LEVEL1_WILLOW_SCALE = 0.21（底对齐把树基锁在 572.8px，0.26 会顶满/出画）")
+	t.check_approx(DefScript.LEVEL1_WILLOW_BASE_Y, 0.530389, 1e-6,
+		"LEVEL1_WILLOW_BASE_Y = 0.530389（与桥贴图底缘 572.8px 同线）")
 	t.check_approx(float(willow.get("anchor_y", 0.0)), DefScript.LEVEL1_WILLOW_BASE_Y, 1e-6,
-		"柳树 anchor_y = LEVEL1_WILLOW_BASE_Y（与桥接地线解耦）")
+		"柳树 anchor_y = LEVEL1_WILLOW_BASE_Y（与桥底同线）")
 	# 接地线（用户二次定案：0.50 → 0.53；现容差已放宽至 0.5，0.53 不再是边界值）
 	t.check_approx(DefScript.LEVEL1_GROUND_Y, 0.53, 1e-6,
 		"LEVEL1_GROUND_Y = 0.53（用户定案「再往下移动 0.03」）")
