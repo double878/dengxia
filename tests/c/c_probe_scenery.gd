@@ -89,27 +89,29 @@ func _build() -> void:
 	_root.add_child(rain)
 
 
-## 摆放选型开关（**仅探针用，不入正式数据**）：环境变量覆盖拱桥的 anchor_x 与贴图缩放，
+## 摆放选型开关（**仅探针用，不入正式数据**）：环境变量覆盖桥/柳树的锚点与贴图缩放，
 ## 用于一次性跑出多个摆放方案截图、供人眼挑选拍板。
-##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 1.00 = 幕布右缘）
-##   BRIDGE_SCALE     素材像素比（缺省用 DefScript.TEXTURE_SCALE_PX）
-## 「只露右半拱」已烘进资产本身（arch_bridge.png = 1024×726 右半），
-## 不再需要裁半开关；改「露多少」直接重裁资产并同步 texture_foot_px。
+##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 0.965625 = 幕布右缘）
+##   BRIDGE_SCALE     桥素材像素比（缺省用 DefScript.TEXTURE_SCALE_PX）
+##   WILLOW_SCALE     柳素材像素比（缺省用 DefScript.LEVEL1_WILLOW_SCALE）
 ## 选型定案后，把拍板数值写回 c_scenery_def.gd，此函数留作以后调型用。
 func _apply_bridge_override(def: CSceneryDef) -> void:
 	var ax := OS.get_environment("BRIDGE_ANCHOR_X")
 	var sc := OS.get_environment("BRIDGE_SCALE")
-	if ax.is_empty() and sc.is_empty():
+	var wsc := OS.get_environment("WILLOW_SCALE")
+	if ax.is_empty() and sc.is_empty() and wsc.is_empty():
 		return
 	for item in def.items:
-		if str(item.get("id", "")) != "bridge_right":
-			continue
-		if not ax.is_empty():
-			item["anchor_x"] = float(ax)
-		if not sc.is_empty():
-			# 探针级覆盖：直接改视图常量不行（const），改为把缩放写进 item，
-			# 由 CSceneryView 优先读 item 级 `texture_scale_px`（见视图端注释）。
-			item["texture_scale_px"] = float(sc)
+		var id := str(item.get("id", ""))
+		if id == "bridge_right":
+			if not ax.is_empty():
+				item["anchor_x"] = float(ax)
+			if not sc.is_empty():
+				# 探针级覆盖：直接改视图常量不行（const），改为把缩放写进 item，
+				# 由 CSceneryView 优先读 item 级 `texture_scale_px`（见视图端注释）。
+				item["texture_scale_px"] = float(sc)
+		elif id == "willow_left" and not wsc.is_empty():
+			item["texture_scale_px"] = float(wsc)
 
 
 ## 幕布与工作台（照 A 侧 `level1_a_scene.gd` 的版面，只画布景校验需要的部分）。
