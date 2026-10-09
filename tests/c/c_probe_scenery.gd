@@ -91,7 +91,7 @@ func _build() -> void:
 
 ## 摆放选型开关（**仅探针用，不入正式数据**）：环境变量覆盖桥/柳树的锚点与贴图缩放，
 ## 用于一次性跑出多个摆放方案截图、供人眼挑选拍板。
-##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 0.965625 = 幕布右缘）
+##   BRIDGE_ANCHOR_X  归一化 0~1（缺省用数据里的 0.73 = 完整拱桥基中心）
 ##   BRIDGE_SCALE     桥素材像素比（缺省用 DefScript.TEXTURE_SCALE_PX）
 ##   WILLOW_SCALE     柳素材像素比（缺省用 DefScript.LEVEL1_WILLOW_SCALE）
 ## 选型定案后，把拍板数值写回 c_scenery_def.gd，此函数留作以后调型用。

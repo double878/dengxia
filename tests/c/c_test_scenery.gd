@@ -7,9 +7,10 @@ class_name CTestScenery
 ##
 ## 断言依据（用户 2026-10-08 逐条定案）：
 ##   ① 第一关布景只有柳树 + 拱桥（无花草、无边界线）
-##   ② 柳树树干 x = 0.08；拱桥贴图锚点（拱心）x = 0.965625
-##      （用户 2026-10-09「桥完整展示」定案：贴图右缘=幕布右缘 1854px，
-##       修正 2026-10-08 误用舞台右缘 1.00 导致拱顶被裁 66px/15.3%）
+##   ② 柳树树干 x = 0.1354、基线 0.6294、缩放 0.26（2026-10-09 构图定案：
+##      再大一点 + 树冠完整入幕布 + 幕布上方留 1/5~1/6）；
+##      拱桥 = **完整拱**，桥基中心 x = 0.73（2026-10-09「桥头左移，使桥能够
+##      完整展现在幕布中」定案；半拱读作被裁断，完整解 = 恢复 woop 全拱）
 ##   ③ 纵轴容差口径：Y_TOLERANCE = 0.5（用户第三次定案「放宽至 0.5」），
 ##      [Y_MIN, Y_MAX] = [0.0, 1.0] 覆盖整个舞台高度；影人接地点仍为 0.5
 ##   ④ 景物只能左右平移：位置相关字段**只有** anchor_x / anchor_y / pan_x，
@@ -59,13 +60,13 @@ func _level1_shape(t: RefCounted) -> void:
 	t.check(not willow.is_empty(), "柳树元素存在（id=willow_left）")
 	t.check(not bridge.is_empty(), "拱桥元素存在（id=bridge_right）")
 
-	# 定位：柳树 0.08 / 拱心 0.965625（用户 2026-10-09「桥完整展示」定案）
+	# 定位：柳树 0.1354 / 桥基中心 0.73（2026-10-09 构图定案）
 	if not willow.is_empty():
 		t.check_approx(float(willow.get("anchor_x", -1.0)), DefScript.LEVEL1_WILLOW_X, 1e-6,
 			"柳树 anchor_x = LEVEL1_WILLOW_X")
 	if not bridge.is_empty():
-		t.check_approx(float(bridge.get("anchor_x", -1.0)), DefScript.LEVEL1_BRIDGE_START_X, 1e-6,
-			"拱桥 anchor_x = LEVEL1_BRIDGE_START_X")
+		t.check_approx(float(bridge.get("anchor_x", -1.0)), DefScript.LEVEL1_BRIDGE_CENTER_X, 1e-6,
+			"拱桥 anchor_x = LEVEL1_BRIDGE_CENTER_X")
 
 	# 锚点一律在舞台内
 	for item in def.items:
@@ -158,19 +159,20 @@ func _texture_contract(t: RefCounted) -> void:
 	t.check_eq(str(bridge.get("texture", "")), DefScript.SCENERY_TEX_BRIDGE,
 		"拱桥 texture 引用 SCENERY_TEX_BRIDGE 常量")
 	var foot: Vector2 = bridge.get("texture_foot_px", Vector2.ZERO)
-	t.check_approx(foot.x, 1024.0, 1e-6,
-		"贴图锚点 x = 1024（只露左半：贴图右缘=拱心，对齐 anchor_x=0.965625）")
-	t.check_approx(foot.y, 710.0, 1e-6, "贴图锚点 y = 710（=1410-700 裁雨后桥台底边）")
+	t.check_approx(foot.x, 921.0, 1e-6,
+		"贴图锚点 x = 921（完整拱桥基中心：底部 30 行 x 中心 920.8）")
+	t.check_approx(foot.y, 714.0, 1e-6,
+		"贴图锚点 y = 714（桥台底边=内容最底行；y>1423 的水雾已裁）")
 	var poly: String = str(bridge.get("polygon", ""))
-	t.check_eq(poly, DefScript.POLY_ARCH_SIDE,
-		"polygon = arch_side（只露一半，用户 2026-10-08 定案）")
-	# 资产裁切契约：arch_bridge.png = 左半拱 1024×726
-	# （裁掉右半、顶部雨丝带、底部水雾；改资产必须同步 foot 与这两条断言）
+	t.check_eq(poly, DefScript.POLY_ARCH_SPAN,
+		"polygon = arch_span（完整拱跨，2026-10-09「桥完整展现」定案）")
+	# 资产裁切契约：arch_bridge.png = **完整拱** 1842×715
+	# （woop 桥体 y 707~1423、x 106~1943；顶部雨丝带/底部水雾已裁）
 	var img := Image.load_from_file(ProjectSettings.globalize_path(DefScript.SCENERY_TEX_BRIDGE))
 	t.check(img != null, "拱桥贴图可读（Image.load_from_file，不依赖导入缓存）")
 	if img != null:
-		t.check_eq(img.get_width(), 1024, "桥贴图宽 1024（只含左半拱，拱心=右缘）")
-		t.check_eq(img.get_height(), 726, "桥贴图高 726（顶部雨丝带/底部水雾均已裁）")
+		t.check_eq(img.get_width(), 1842, "桥贴图宽 1842（完整拱全跨）")
+		t.check_eq(img.get_height(), 715, "桥贴图高 715（桥体全高，雨丝/水雾均已裁）")
 
 	# —— 柳树贴图契约（用户 2026-10-09 柳树.woop 接入）——
 	t.check(FileAccess.file_exists(DefScript.SCENERY_TEX_WILLOW),
@@ -184,10 +186,13 @@ func _texture_contract(t: RefCounted) -> void:
 		t.check_approx(wfoot.x, 564.0, 1e-6,
 			"柳树贴图锚点 x = 564（裁切后最底 10 行树干中心，实测 423~704）")
 		t.check_approx(wfoot.y, 1845.0, 1e-6,
-			"柳树贴图锚点 y = 1845（裁切图内容最底行，树干底部贴接地线）")
+			"柳树贴图锚点 y = 1845（裁切图内容最底行，树干底部贴基线）")
 		t.check_approx(float(willow.get("texture_scale_px", -1.0)),
 			DefScript.LEVEL1_WILLOW_SCALE, 1e-9,
 			"柳树 texture_scale_px = LEVEL1_WILLOW_SCALE（逐资产静态比例）")
+		t.check_approx(float(willow.get("anchor_y", -1.0)),
+			DefScript.LEVEL1_WILLOW_BASE_Y, 1e-9,
+			"柳树 anchor_y = LEVEL1_WILLOW_BASE_Y（前景树基线，与桥接地线解耦）")
 		var wimg := Image.load_from_file(ProjectSettings.globalize_path(DefScript.SCENERY_TEX_WILLOW))
 		t.check(wimg != null, "柳树贴图可读（Image.load_from_file，不依赖导入缓存）")
 		if wimg != null:
@@ -226,18 +231,19 @@ func _constants_consistency(t: RefCounted) -> void:
 	var def: CSceneryDef = DefScript.make_level1()
 	var willow: Dictionary = _find(def, "willow_left")
 	var bridge: Dictionary = _find(def, "bridge_right")
-	t.check_approx(float(willow.get("anchor_x", 0.0)), 0.08, 1e-6,
-		"LEVEL1_WILLOW_X 常量值 = 0.08（用户定案）")
-	# 拱心贴幕布右缘：1854/1920 = 0.965625，贴图右缘与幕布右缘重合、整半拱完整无裁
-	t.check_approx(float(bridge.get("anchor_x", 0.0)), 1854.0 / 1920.0, 1e-6,
-		"LEVEL1_BRIDGE_START_X 常量值 = 0.965625（幕布右缘 1854px，桥完整展示）")
-	t.check_approx(float(bridge.get("anchor_x", 0.0)), 1854.0 / 1920.0, 1e-6,
-		"拱心 0.965625 = 幕布右缘（贴图右缘 1854px 处收口，无一像素被裁）")
+	t.check_approx(float(willow.get("anchor_x", 0.0)), 0.27, 1e-6,
+		"LEVEL1_WILLOW_X 常量值 = 0.27（许仙右侧：树冠左缘 ≈372px 不遮许仙右缘 340px）")
+	t.check_approx(float(bridge.get("anchor_x", 0.0)), 0.73, 1e-6,
+		"LEVEL1_BRIDGE_CENTER_X 常量值 = 0.73（2026-10-09「桥头左移，完整拱」定案）")
+	t.check_approx(DefScript.LEVEL1_WILLOW_SCALE, 0.26, 1e-9,
+		"LEVEL1_WILLOW_SCALE = 0.26（2026-10-09「再大一点」，由 0.20 上调）")
+	t.check_approx(DefScript.LEVEL1_WILLOW_BASE_Y, 0.6294, 1e-9,
+		"LEVEL1_WILLOW_BASE_Y = 0.6294（前景树基线：树顶留幕布高 1/5~1/6 的几何必然）")
+	t.check_approx(float(willow.get("anchor_y", 0.0)), DefScript.LEVEL1_WILLOW_BASE_Y, 1e-6,
+		"柳树 anchor_y = LEVEL1_WILLOW_BASE_Y（与桥接地线解耦）")
 	# 接地线（用户二次定案：0.50 → 0.53；现容差已放宽至 0.5，0.53 不再是边界值）
 	t.check_approx(DefScript.LEVEL1_GROUND_Y, 0.53, 1e-6,
 		"LEVEL1_GROUND_Y = 0.53（用户定案「再往下移动 0.03」）")
-	t.check_approx(float(willow.get("anchor_y", 0.0)), DefScript.LEVEL1_GROUND_Y, 1e-6,
-		"柳树 anchor_y = LEVEL1_GROUND_Y")
 	t.check_approx(float(bridge.get("anchor_y", 0.0)), DefScript.LEVEL1_GROUND_Y, 1e-6,
 		"拱桥 anchor_y = LEVEL1_GROUND_Y")
 	# 纵轴容差（用户三次定案：放宽至 0.5）
