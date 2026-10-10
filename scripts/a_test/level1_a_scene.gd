@@ -84,6 +84,7 @@ var _stage_surface: StageSurface
 var _stage_backdrop: StageBackdrop
 var _entity_umbrella: UmbrellaVisual
 var _foreground: Node2D
+var _dialogue_label: Label
 @onready var _draw_canvas: Node2D = self
 
 
@@ -118,7 +119,15 @@ func _ready() -> void:
 		push_error("无法识别的关卡编号，请用 `-- stage=1..4`")
 		_shutdown_and_quit(1)
 		return
-	_harness = HarnessScript.new(self, _stage_def)
+	var audio_config: Dictionary = {}
+	var is_legacy_probe := OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG)
+	if _stage_def.id == 1 and not is_legacy_probe:
+		audio_config = Act1OperaAudio.read_config()
+		if audio_config.is_empty():
+			_shutdown_and_quit(1)
+			return
+		_stage_def = Act1OperaStage.make_stage(audio_config)
+	_harness = HarnessScript.new(self, _stage_def, audio_config)
 	if _harness.runtime == null:
 		_shutdown_and_quit(1)
 		return
@@ -150,6 +159,13 @@ func _ready() -> void:
 		view.render_mode = PlaceholderPuppet.RenderMode.ENTITY
 		view.z_index = 20
 	_pause_button.pressed.connect(_toggle_pause)
+	_dialogue_label = Label.new()
+	_dialogue_label.position = Vector2(220.0, 610.0)
+	_dialogue_label.size = Vector2(1480.0, 60.0)
+	_dialogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_dialogue_label.add_theme_font_size_override("font_size", 30)
+	_dialogue_label.add_theme_color_override("font_color", Color(0.16, 0.11, 0.07))
+	$Hud.add_child(_dialogue_label)
 	_refresh_ui()
 	if OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG):
 		_probe_mode = true
@@ -238,7 +254,7 @@ func _diag_process(delta: float) -> void:
 		return
 	var clock: MusicClock = _harness.clock
 	var metronome: Metronome = _harness.metronome
-	var player: AudioStreamPlayer = metronome.get_player()
+	var player: AudioStreamPlayer = clock.player
 	var position_s: float = player.get_playback_position() if player != null else -1.0
 	# win / scale 用来核对「实际开窗尺寸」与「1920x1080 画布的等比缩放」是否符合预期：
 	# 窗口尺寸不对或缩放出 1 时，画面会被裁切或变形，而这两种情况从读数上一眼可辨。
@@ -387,6 +403,8 @@ func _refresh_ui() -> void:
 	_status_label.text = _stage_def.title
 	if runtime.is_over():
 		_status_label.text += "　本折已收场"
+	elif _harness.opera_flow != null and _harness.opera_flow.is_waiting():
+		_status_label.text += "　等候交接 · 演出计时已暂停"
 	elif _harness.clock.is_song_frozen():
 		# 补救冻结期间歌曲时间停住、鼓点变成 0.1 倍速，这是玩家判断
 		# 「现在不是正常演出时间」的主要依据，所以必须写在画面上。
@@ -402,11 +420,23 @@ func _refresh_ui() -> void:
 		_cue_label.text = "已暂停 · 按 ESC 或点右上角继续"
 	else:
 		_cue_label.text = _active_cue_text()
+		if _harness.opera_flow != null:
+			match _harness.opera_flow.phase:
+				"opening", "return_dialogue": _cue_label.text = ""
+				"approach", "wait_arrival": _cue_label.text = "拖动胸签，走到许仙身旁"
+				"borrow_dialogue": _cue_label.text = "唱完后，抬起左手接伞"
+				"wait_take": _cue_label.text = "按 A 抬左手，与许仙的手相接"
+				"tour", "wait_return": _cue_label.text = "持伞走到小青身旁，再回许仙处还伞"
+	if _dialogue_label != null and _harness.opera_audio != null:
+		var line: Dictionary = _harness.opera_audio.current_line()
+		_dialogue_label.text = "%s：%s" % [str(line.get("role_name", "")), str(line.get("text", ""))] if not line.is_empty() else ""
 
 	var demo_id: String = runtime.director.remedy.current_demo_cue_id
 	var frozen: bool = _harness.clock.is_song_frozen()
 	_remedy_banner.visible = (not demo_id.is_empty() or frozen) and not _paused
-	if frozen:
+	if _harness.opera_flow != null and _harness.opera_flow.is_waiting():
+		_remedy_banner.text = "等候中　·　%s" % _cue_label.text
+	elif frozen:
 		var remedy_text: String = "跟着示范补做刚才漏掉的动作"
 		if not demo_id.is_empty():
 			remedy_text = _action_text(str(_find_cue(demo_id).get("action", "")))
