@@ -1,0 +1,477 @@
+{
+  "audio_version": "act1-natural-dialogue-v1",
+  "opening_end_ms": 19025,
+  "arrival_ms": 24525,
+  "singing_start_ms": 25025,
+  "singing_end_ms": 56377,
+  "take_ms": 56877,
+  "tour_start_ms": 56877,
+  "return_gate_ms": 74377,
+  "return_start_ms": 74977,
+  "closing_ms": 108061,
+  "duration_ms": 111811,
+  "lines": [
+    {
+      "line_id": "opening-01",
+      "role_id": "xiaoqing",
+      "role_name": "小青",
+      "text": "姐姐，你看，湖上人来人往，可比峨眉热闹多啦！",
+      "start_ms": 120,
+      "end_ms": 5449,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opening-02",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "青妹，你看，柳色映着湖波，果然是好风光。",
+      "start_ms": 5749,
+      "end_ms": 10602,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opening-03",
+      "role_id": "xiaoqing",
+      "role_name": "小青",
+      "text": "哎呀，雨来了！那边的君子，倒有一把好伞。",
+      "start_ms": 10902,
+      "end_ms": 15755,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opening-04",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "待我上前，借问一声。",
+      "start_ms": 16055,
+      "end_ms": 18725,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "borrow-1",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "湖边风急雨丝长，娘子莫教湿衣裳。",
+      "start_ms": 25025,
+      "end_ms": 36275,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "borrow-2",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "君子相怜情意厚，怎教你独受风凉。",
+      "start_ms": 36275,
+      "end_ms": 47575,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "borrow-3",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "些小风雨何须讲，请接此伞莫彷徨。",
+      "start_ms": 47575,
+      "end_ms": 56377,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "return-01",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "君子，雨住了。这伞，奉还。",
+      "start_ms": 74977,
+      "end_ms": 78158,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "return-02",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "些小之事，何劳娘子专程回来。",
+      "start_ms": 78458,
+      "end_ms": 82081,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "return-03",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "伞可以托青儿送来，谢意……还是我亲口说的好。",
+      "start_ms": 82381,
+      "end_ms": 87710,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "return-04",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "娘子言重了。",
+      "start_ms": 88010,
+      "end_ms": 89995,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "return-05",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "还未请教，君子高姓？",
+      "start_ms": 90295,
+      "end_ms": 92965,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "return-06",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "小生姓许，名仙。",
+      "start_ms": 93265,
+      "end_ms": 95460,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "return-07",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "小女子白素贞。许君子，明日若再游湖，可还认得我么？",
+      "start_ms": 95760,
+      "end_ms": 101797,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "return-08",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "白小姐……小生怎会不认得。",
+      "start_ms": 102097,
+      "end_ms": 105371,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "return-09",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "那就……莫忘了。",
+      "start_ms": 105671,
+      "end_ms": 107761,
+      "delivery": "speech"
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "opening-01",
+      "path": "res://assets/audio/act1-natural/opening-01.wav",
+      "sha256": "057d01d7a00572a695589dd9ed68766df0bc98bad45ad94683bcef2ee2871dfe",
+      "frames": 255792,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "opening-02",
+      "path": "res://assets/audio/act1-natural/opening-02.wav",
+      "sha256": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
+      "frames": 232943,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "opening-03",
+      "path": "res://assets/audio/act1-natural/opening-03.wav",
+      "sha256": "47a8323e1bc96ce5d13dc23a240b1ba723018e0aa6bc0361e9d7144b07f834dc",
+      "frames": 232943,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "opening-04",
+      "path": "res://assets/audio/act1-natural/opening-04.wav",
+      "sha256": "63f286d8c9fccae0936d34348278804ae1e64d6408368329857826ee9dd176cb",
+      "frames": 128175,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-01",
+      "path": "res://assets/audio/act1-natural/return-01.wav",
+      "sha256": "3aad4974f65a6bb06a35fe341921d7a7ad9824e29f9938546722830c71bb9868",
+      "frames": 152695,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-02",
+      "path": "res://assets/audio/act1-natural/return-02.wav",
+      "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+      "frames": 173872,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-03",
+      "path": "res://assets/audio/act1-natural/return-03.wav",
+      "sha256": "cd1f315f56b3863c7a3af6d1b27dc8c2948c3483ed8f8b494940379f6e16ad0b",
+      "frames": 255792,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-04",
+      "path": "res://assets/audio/act1-natural/return-04.wav",
+      "sha256": "689c89894daae0c86ae921e85a8f52cf4b79d90e9950bcd0c36d46efc1cb61eb",
+      "frames": 95295,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-05",
+      "path": "res://assets/audio/act1-natural/return-05.wav",
+      "sha256": "998d72617c249225b22c7afcaac8428784e3c07fbddab10e0ce2aae2e2b36744",
+      "frames": 128175,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-06",
+      "path": "res://assets/audio/act1-natural/return-06.wav",
+      "sha256": "37ae12ab01c5cc1fe46e1d50ae9cd70aa8c05b4385f2c07ead564407bd1cc978",
+      "frames": 105326,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-07",
+      "path": "res://assets/audio/act1-natural/return-07.wav",
+      "sha256": "7f68c38e760a9b8a4b1cde5b5b33283bfe99e710d046cbde642d62523956efd3",
+      "frames": 289786,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-08",
+      "path": "res://assets/audio/act1-natural/return-08.wav",
+      "sha256": "e5e9263e5b97b3a71551f4dc64adc85e9509d3b4a3b4713f5f62f127271dd17a",
+      "frames": 157153,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-09",
+      "path": "res://assets/audio/act1-natural/return-09.wav",
+      "sha256": "0509cc5b50911893affd0beda59e4f4e416a391d168f805eddbd5e7148251ff9",
+      "frames": 100311,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "main",
+      "path": "res://assets/audio/act1-natural/main.wav",
+      "sha256": "584fbc86945707f0bb4c4903d3cc25b0e89d6c65dce8caa515d7fb1873019008",
+      "frames": 5366917,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "wait_loop",
+      "path": "res://assets/audio/act1-natural/wait_loop.wav",
+      "sha256": "97fb429b18f9e538f86798774799dec49c338f7ec8f2b941f634191324edf664",
+      "frames": 104160,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "take_close",
+      "path": "res://assets/audio/act1-natural/take_close.wav",
+      "sha256": "5744854b80c3ff27ed028b9a8a3c76e55f4c45a1bdb9a88ced10bae22f6653c7",
+      "frames": 76800,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "remedy",
+      "path": "res://assets/audio/act1-natural/remedy.wav",
+      "sha256": "06ca5de627534f260608be923e1608b3e25828888bc2aedf52a232ed039452fb",
+      "frames": 240000,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    }
+  ],
+  "waiting_guard_ms": 500,
+  "ordinary_speech_background": "none",
+  "reference": "https://www.bilibili.com/video/BV1uD4y1R7jH",
+  "generation": "F5-TTS 1.1.22 (pinned weights) -> Seed-VC speech 25 steps CFG 0.7",
+  "new_lines_listening": "not_individually_reviewed; user requested direct integration",
+  "baseline_listening_user_reply": "自然、无电音，音色也一致",
+  "rights_status": "local_prototype_only; external reference permission unverified",
+  "models": [
+    {
+      "repository": "SWivid/F5-TTS",
+      "revision": "84e5a410d9cead4de2f847e7c9369a6440bdfaca",
+      "sha256": "670900fd14e6c458b95da6e9ed317cdb20dbaf7a1c02ac06a05475a9d32b6a38",
+      "package_version": "1.1.22",
+      "steps": 32,
+      "cfg": 2.0
+    },
+    {
+      "repository": "Plachta/Seed-VC",
+      "source_revision": "51383efd921027683c89e5348211d93ff12ac2a8",
+      "weight_revision": "257283f9f41585055e8f858fba4fd044e5caed6e",
+      "sha256": "8ec8841b20bb46df9f7e8e570a6946a4b87b940133c7f0e778487ff33841f720",
+      "steps": 25,
+      "cfg": 0.7,
+      "f0_condition": false
+    }
+  ],
+  "dialogue_generation": [
+    {
+      "line_id": "opening-01",
+      "seed": 2026101060,
+      "tts_sha256": "1f88977d8de44f49357876559fdd8bf465002046677c7f116f44a1505e9fcc38",
+      "converted_sha256": "2ea29530d065267af649933933ea34107e543eea00e088f29314045229213e48",
+      "timbre_reference_sha256": "170b33ff4cb7abb8c6f1ef02b35637c6245a68022f7736e6d2b8fcfad6349c61",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "opening-02",
+      "seed": 2026101061,
+      "tts_sha256": "a7d099dabffffd5911e555573d7c54cdadfab4a7d1de6e29270b8efa8506ee42",
+      "converted_sha256": "1a0c82dd2deb3464c340f777074fa9e2b4e9c7db824a83d7010a54315517fbbf",
+      "timbre_reference_sha256": "1f1b08f70311e8e8da3a14f61317499ea23f0d8aa7b3ab7f755d521c87d16276",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "opening-03",
+      "seed": 2026101062,
+      "tts_sha256": "7c695a96b61da94f2e73a0948c7e9948d745896017faaabfbe2c36b407b2fe4b",
+      "converted_sha256": "cb97eeca7f0aacf5c8ecce896b541fbde701f9c5df99f6681c01da6f00766b1c",
+      "timbre_reference_sha256": "170b33ff4cb7abb8c6f1ef02b35637c6245a68022f7736e6d2b8fcfad6349c61",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "opening-04",
+      "seed": 2026101063,
+      "tts_sha256": "dbb382af3743dff9dd57f84468edb8edf4555bb75c709cf883eb47653456cbcd",
+      "converted_sha256": "a3f5595d25443d2253d6ebb40203921e744e5d09240a8b5b33a4a294ba705dff",
+      "timbre_reference_sha256": "1f1b08f70311e8e8da3a14f61317499ea23f0d8aa7b3ab7f755d521c87d16276",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-01",
+      "seed": 2026101064,
+      "tts_sha256": "9dd700b7b6dd23c5d2e6b99ccf581d75385bbd563ecf720fcdcaa135ae59efd0",
+      "converted_sha256": "d6b56da0006c951e6ee09c8209cb88631fa97686e7ba46b44abf87e506bf6ca8",
+      "timbre_reference_sha256": "1f1b08f70311e8e8da3a14f61317499ea23f0d8aa7b3ab7f755d521c87d16276",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-02",
+      "seed": 2026101065,
+      "tts_sha256": "a0a373523b6843b240b73c9964bda69e4003a56b4f76c48f6f1c9c5647fac2e6",
+      "converted_sha256": "4bc004a5eceddcd6b4736fe304996acc8591f9fca266fcf954cff3fa75b00e9a",
+      "timbre_reference_sha256": "9da04aff1dc51e688edf6360e92b12fed27fa04f4207b5ba93622d3b925d36f6",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-03",
+      "seed": 2026101066,
+      "tts_sha256": "4673cef21e4763bbdfdcda25f35c064f1c86d16f6293f075e4aabdd2e8589a85",
+      "converted_sha256": "c738ce5d10a482929827c5a581a087dc5a269b6c37a4ecfce76007a0082ef59f",
+      "timbre_reference_sha256": "1f1b08f70311e8e8da3a14f61317499ea23f0d8aa7b3ab7f755d521c87d16276",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-04",
+      "seed": 2026101067,
+      "tts_sha256": "89a65f53f6d37c5e6eaf924fab5ad4725c32c06c5cf52def1ee0f71b5e9c501f",
+      "converted_sha256": "0146b4020bed83cf73548e17a375509989861ee3b8b8dff38b18d7ef3ce83a03",
+      "timbre_reference_sha256": "9da04aff1dc51e688edf6360e92b12fed27fa04f4207b5ba93622d3b925d36f6",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-05",
+      "seed": 2026101068,
+      "tts_sha256": "17a0677ae06ddb9e4aa52a9d02f013cbebbeb0b528cbc654e3cd652d5efbeaaa",
+      "converted_sha256": "f8be263c13ee8343723ce14e9a244b0c4906c4ea6014a85e7e602cbc397fce34",
+      "timbre_reference_sha256": "1f1b08f70311e8e8da3a14f61317499ea23f0d8aa7b3ab7f755d521c87d16276",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-06",
+      "seed": 2026101069,
+      "tts_sha256": "4de8b31c106eaa0f4f55a3b77c1b077db85521046daf4bed758aa0f9741e1398",
+      "converted_sha256": "2cf140737729842cf235c2810541ce2ab5cf75d98d197e7216c56ffe890c2091",
+      "timbre_reference_sha256": "9da04aff1dc51e688edf6360e92b12fed27fa04f4207b5ba93622d3b925d36f6",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-07",
+      "seed": 2026101070,
+      "tts_sha256": "fc63704fc89fb9c2d7feaee1ccb630dcb12c33d2eeddc7fcc3372983c5273883",
+      "converted_sha256": "417309e7a3ebb83c146c75de0e1f5f97188192d50871b2d210f4726b542cc42c",
+      "timbre_reference_sha256": "1f1b08f70311e8e8da3a14f61317499ea23f0d8aa7b3ab7f755d521c87d16276",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-08",
+      "seed": 2026101071,
+      "tts_sha256": "7ce6078c8d333afcdeed9fe6bf931ff9d6b6c6103c171d170dfcdf5e3852ab5f",
+      "converted_sha256": "7873481c1d52122645bcd1644862ed975c8beaca94ab3fe7979de4c736c560bc",
+      "timbre_reference_sha256": "9da04aff1dc51e688edf6360e92b12fed27fa04f4207b5ba93622d3b925d36f6",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    },
+    {
+      "line_id": "return-09",
+      "seed": 2026101072,
+      "tts_sha256": "557a44232a548e4cc4bc0416f61b66c7dbf18534253e5317069a3d50905390e6",
+      "converted_sha256": "46bf6b5bdea94e4796cb1379053229964c1c22c1bf5d8d325255565b4819fb15",
+      "timbre_reference_sha256": "1f1b08f70311e8e8da3a14f61317499ea23f0d8aa7b3ab7f755d521c87d16276",
+      "resample_only": true,
+      "pitch_shift": 0,
+      "reverb": false
+    }
+  ],
+  "singing_source_sha256": "71ae2a80fdfa9869a1ac401bdf32aa16f953f7e74af57322ab09fc8c11f3f375",
+  "main_path": "res://assets/audio/act1-natural/main.wav",
+  "wait_loop_path": "res://assets/audio/act1-natural/wait_loop.wav",
+  "take_close_path": "res://assets/audio/act1-natural/take_close.wav",
+  "remedy_path": "res://assets/audio/act1-natural/remedy.wav"
+}

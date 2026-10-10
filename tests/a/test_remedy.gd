@@ -99,8 +99,11 @@ func _test_01b_all_hits_no_remedy(t: ATestBase) -> void:
 	b.stand_up(8.0, 130)
 	b.end_drag()
 
-	# 向左移动（落点 5000）：走到 x≈0.34，仍在接伞区（0.07~0.19）右侧
-	b.advance_to(4950)
+	# 向左移动（落点 5000）：走到 x≈0.34，仍在交接窗口（0.176~0.296）右侧。
+	# 白素贞 2026-10-08 起改为与小青并肩立在 0.80，这一趟比原先（0.50 起步）长 0.30 个幕宽：
+	# 每步 16 px（= 1600 px/s）要走 55 步 = 550 ms，所以起步时刻必须从 4950 前移到 4460，
+	# 才在落点当刻踏进 x ≤ 0.35。原来那句 4950 是按 0.50 的距离算的，改站位后会整整差半拍。
+	b.advance_to(4460)
 	b.begin_drag()
 	b.drag_to_x(0.34, 16.0)
 	b.end_drag()
@@ -152,7 +155,7 @@ func _test_01c_borrow_and_return_journey(t: ATestBase) -> void:
 
 	# 前摇必须照做：少做一条落点就会开出一个 8 秒补救窗口，**歌曲时间随之冻结**，
 	# 后面每条落点的时刻全部错位（这条测试第一版就是漏了前摇，五条后半场落点一起判错）。
-	# 这也正是真实玩法顺序：蹲下 → 站起 → 左移 → 抬手 → 接伞 → 走到最右边 → 转身走回还伞。
+	# 这也正是真实玩法顺序：蹲下 → 站起 → 左移 → 抬手 → 接伞 → 走回小青身旁 → 转身走回还伞。
 	b.advance_to(1200)
 	b.begin_drag()
 	b.crouch_here()
@@ -161,7 +164,8 @@ func _test_01c_borrow_and_return_journey(t: ATestBase) -> void:
 	b.begin_drag()
 	b.stand_up(8.0, 130)
 	b.end_drag()
-	b.advance_to(4950)
+	# 左移（落点 5000）：与 01b 同一条，起步时刻同样按新的开局站位 0.80 前移（理由见 01b 的说明）。
+	b.advance_to(4460)
 	b.begin_drag()
 	b.drag_to_x(0.34, 16.0)
 	b.end_drag()

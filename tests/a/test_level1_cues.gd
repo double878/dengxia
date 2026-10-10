@@ -151,6 +151,34 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.check_approx(float(_find(def, "l1_c6_return_umbrella")["target_range"]["min"]),
 		float(take_band["min"]), 1e-9, "还伞目标带应与接伞同一段窗口")
 
+	# —— 开局站位与朝向（用户 2026-10-08 定案：白素贞与小青并肩立在台右）——
+	# 站位一动就会悄悄踩到四件事，因此全部在这里钉住：
+	var start: Array = def.initial["positions"][UmbrellaControllerScript.BAISUZHEN_ID]
+	var start_x: float = float(start[0])
+	# ① 起点**不能落在交接窗口里**——落进去就等于「一开局两只手就已相接」，
+	#    接伞会在第 0 帧触发，整条流程从起点就错。
+	t.check(start_x < float(take_band["min"]) or start_x > float(take_band["max"]),
+		"白素贞开局站位（%.2f）应落在交接窗口（%.2f~%.2f）之外"
+			% [start_x, float(take_band["min"]), float(take_band["max"])])
+	# ② 要站在小青**左侧**，且拉开到两具影身不叠（各宽约 0.026 个幕宽）。
+	t.check(start_x < StageDef.LEVEL1_XIAOPING_X,
+		"白素贞应站在小青左侧（%.2f < %.2f）" % [start_x, StageDef.LEVEL1_XIAOPING_X])
+	t.check(StageDef.LEVEL1_XIAOPING_X - start_x >= 0.05,
+		"两人间距应 ≥ 0.05 个幕宽（影身各宽约 0.026），实际 %.2f"
+			% (StageDef.LEVEL1_XIAOPING_X - start_x))
+	# ③ 小青这一折只作陪：双手放下，且**面向**白素贞。
+	#    facing 的约定是「-1 朝左、+1 朝右」；小青的参考原稿脸朝左，默认 +1 会把她镜像成朝右。
+	var xiaoqing_hands: Array = def.initial["hand_angles"][2]
+	t.check_approx(float(xiaoqing_hands[0]), 0.0, 1e-9, "小青开局左手应自然垂下")
+	t.check_approx(float(xiaoqing_hands[1]), 0.0, 1e-9, "小青开局右手应自然垂下")
+	t.check_approx(float(def.initial["facing"][2]), -1.0, 1e-9,
+		"小青开局应面向白素贞（facing = -1，即朝左）")
+	# ④ 白素贞**读出来**必须仍是 +1（朝右）——她右边就是小青，两人由此相对而立。
+	#    这里断言的是**有效值**，因此无论它由默认值给出、还是日后被显式写进数据都成立。
+	var baisuzhen_facing: float = float(def.initial.get("facing", {}).get(
+		UmbrellaControllerScript.BAISUZHEN_ID, 1.0))
+	t.check_approx(baisuzhen_facing, 1.0, 1e-9, "白素贞开局应朝右（朝向小青）")
+
 	# —— 长距离移动的时间预算（2026-10-04 教训，用户报「根本来不及向右走」）——
 	# 两次横移各走约 0.5~0.55 个舞台宽（960~1060 画布像素，拖动 1:1 映射），
 	# 按正常拖速 450~600 px/s 需 1.6~2.4 s，再加反应时间。曾经这两条按原地动作处理：

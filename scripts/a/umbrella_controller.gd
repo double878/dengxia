@@ -125,6 +125,9 @@ var _must_leave_zone: bool = false
 
 ## 鸭子类型时钟，只用来推进递伞过渡的时长（固定步长 = 1 / 物理帧率）。
 var clock: Object = null
+## 正式第一幕由剧情许可控制；旧关卡/测试默认保持原行为。
+var take_allowed: bool = true
+var return_allowed: bool = true
 
 var _events: Array[Dictionary] = []
 var _previous_x: float = 0.0
@@ -175,14 +178,15 @@ func update(song_time_ms: int, _frame_events: Array) -> void:
 	# 往它上面要物理帧率会让没实现该方法的时钟在演出中途报错（补救倒计时会因此卡住不走）。
 	var delta_s: float = 1.0 / maxf(float(Engine.physics_ticks_per_second), 1.0)
 	_advance_handoff(delta_s)
-	if _holder_id == XUXIAN_ID:
+	if _holder_id == XUXIAN_ID and take_allowed:
 		_try_take(song_time_ms)
 	elif _holder_id == BAISUZHEN_ID:
 		# 顺序要紧：先按此刻的位置更新「已到过左端」，再判还伞。
 		# 反过来的话，白素贞一帧内从左端挪回接伞位置时，还伞会读到上一帧的
 		# 「到过左端」，而她此刻明明还在接伞区右侧之外——还伞因此会提前在左端触发。
 		_note_turn_point()
-		_try_return(song_time_ms)
+		if return_allowed:
+			_try_return(song_time_ms)
 	_follow_hand()
 	_previous_x = _puppet_x(BAISUZHEN_ID)
 

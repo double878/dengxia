@@ -21,17 +21,21 @@ var director_log: Array = []          ## stage_* / remedy_* / cue_* 全部事件
 
 
 ## 按关卡数据的开演布景布置影人，与场景 `_configure_initial_stage` 同一口径：
-## 起始受控、挂起分布、站位与手角。
+## 起始受控、挂起分布、站位、手角与初始朝向。
 ## 第 2 关的「挂起/取回」判定依赖开局就有人挂在钩上、且留有一个空槽，
 ## 不摆布景的话这两条落点在本测试台下永远判不了。
 func apply_initial_puppets() -> void:
 	var positions: Dictionary = stage_def.initial.get("positions", {})
 	var hand_angles: Dictionary = stage_def.initial.get("hand_angles", {})
 	var hung: Dictionary = stage_def.initial.get("hung", {})
+	var facing: Dictionary = stage_def.initial.get("facing", {})
 	for state in controller.puppets:
 		var puppet_id: int = state.puppet_id
 		state.is_controlled = false
 		state.hook_slot = PuppetState.HOOK_SLOT_NONE
+		# 与场景同一口径：缺省 FACING_FRONT（+1，朝右），并把翻面过渡复位成「已停稳」。
+		state.facing = float(facing.get(puppet_id, PuppetState.FACING_FRONT))
+		state.turn_progress = 1.0
 		if positions.has(puppet_id):
 			var place: Array = positions[puppet_id]
 			state.stage_pos = Vector2(float(place[0]), float(place[1]))

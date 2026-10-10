@@ -98,5 +98,7 @@ func _initialize() -> void:
 	print("")
 	print("========================================")
 	print("A 范围测试总计：%d 条断言通过，%d 条失败" % [total_passed, total_failed])
+	var opera_result: Dictionary = preload("res://tests/a/test_act1_opera.gd").new().run_all()
+	exit_code = maxi(exit_code, int(opera_result.exit_code))
 	print("========================================")
 	quit(exit_code)
