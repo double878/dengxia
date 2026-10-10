@@ -19,6 +19,7 @@ class_name CTestScenery
 
 const ATestBaseScript := preload("res://tests/a/a_test_base.gd")
 const DefScript := preload("res://scripts/c/c_scenery_def.gd")
+const BindingScript := preload("res://scripts/c/c_stage_binding.gd")
 
 
 func run_all() -> Dictionary:
@@ -31,6 +32,7 @@ func run_all() -> Dictionary:
 	_view_scripts_load(t)
 	_empty_stage_fallback(t)
 	_geometry_on_canvas(t)
+	_binding_contract(t)
 	_constants_consistency(t)
 
 	t.finish("布景数据契约（第一关 + 通用约束）")
@@ -284,6 +286,45 @@ func _geometry_on_canvas(t: RefCounted) -> void:
 			and trunk_px <= willow_rect.size.y * 0.40,
 			"树干露出段 %.0f px = 树高的 %.1f%%（要求 25%%~40%%，树冠仍为主体）" % [
 				trunk_px, 100.0 * trunk_ratio])
+
+
+## 切幕绑定层（切片 2.1）：把「布景该挂到哪一层、裁到哪、拿哪个关卡的数据」
+## 钉成断言。这三条是本切片最容易在后续改动中被破坏的地方。
+func _binding_contract(t: RefCounted) -> void:
+	t.begin("切幕绑定层（接入演出场景）")
+	# ① 层级必须夹在「幕布表面」与「影人」之间：A 侧 z_index 是 -2/-1/20，
+	#    布景取 0、���幕取 15。层级写错会导致布景被幕布盖住、或雨丝盖住人物表演。
+	t.check(BindingScript.Z_SCENERY == 0,
+		"布景层 z_index = 0（须 >幕布表面 −1、< 影人 20，否则被盖住或盖住人）")
+	t.check(BindingScript.Z_RAIN == 15,
+		"雨幕层 z_index = 15（须 < 影人 20，雨丝不盖人物）")
+	t.check(BindingScript.Z_SCENERY > -1 and BindingScript.Z_SCENERY < 20,
+		"布层层级区间正确：−1 < %d < 20" % BindingScript.Z_SCENERY)
+	t.check(BindingScript.Z_RAIN > BindingScript.Z_SCENERY
+		and BindingScript.Z_RAIN < 20,
+		"雨幕在布景之上、影人之下：%d < %d < 20" % [BindingScript.Z_SCENERY, BindingScript.Z_RAIN])
+	# ② 幕布矩形必须与 A 侧 level1_a_scene.gd 的 CLOTH 同值。
+	#    这是**跨侧约定**：A 侧改了版面尺寸，这里必须跟着改，否则布景裁剪框错位。
+	t.check_approx(BindingScript.CLOTH.position.x, 66.0, 1e-6,
+		"幕布裁剪左边界 = 66（对齐 A 侧 CLOTH）")
+	t.check_approx(BindingScript.CLOTH.position.y, 92.0, 1e-6,
+		"幕布裁剪上边界 = 92（对齐 A 侧 CLOTH）")
+	t.check_approx(BindingScript.CLOTH.size.x, 1788.0, 1e-6,
+		"幕布裁剪宽 = 1788（对齐 A 侧 CLOTH）")
+	t.check_approx(BindingScript.CLOTH.size.y, 588.0, 1e-6,
+		"幕布裁剪高 = 588（对齐 A 侧 CLOTH）")
+	# ③ 舞台映射区与 A 侧同口径（1920×1080 归一化）
+	t.check_approx(BindingScript.CANVAS_SIZE.x, 1920.0, 1e-6,
+		"舞台映射宽 = 1920（与 A 侧同坐标系）")
+	t.check_approx(BindingScript.CANVAS_SIZE.y, 1080.0, 1e-6,
+		"舞台映射高 = 1080（与 A 侧同坐标系）")
+	# ④ 布景数据能按关卡取到，且第 1 关有两个元素（切幕流程按stage_id 换布景的前提）
+	var d1: CSceneryDef = DefScript.make_stage(1)
+	t.check(d1 != null and d1.items.size() == 2,
+		"按关卡取布景数据可用（第 1 关 2 个元素：柳树 + 拱桥）")
+	var d2: CSceneryDef = DefScript.make_stage(2)
+	t.check(d2 != null and d2.items.is_empty(),
+		"第 2 关无布景数据时返回空（绑定层应静默不画，不开天窗）")
 
 
 ## 未知关卡返回空布景，而不是静默顶替成第一关的
