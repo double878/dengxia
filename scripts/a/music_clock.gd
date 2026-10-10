@@ -235,6 +235,20 @@ func seek_ms(song_ms: int) -> void:
 	start(song_ms)
 
 
+## 剧情兜底只允许前向跳段，保留真实时间、暂停与冻结状态。
+func advance_to_ms(song_ms: int) -> void:
+	if song_ms < get_song_time_ms():
+		push_error("MusicClock.advance_to_ms 不允许倒退")
+		return
+	_free_s = float(song_ms) / 1000.0
+	_pause_song_ms = song_ms
+	_last_beat_index = get_beat_index()
+	_stall_s = 0.0
+	if player != null:
+		player.seek(_free_s)
+		_position_s = _free_s
+
+
 ## 仅供测试注入：把自由计时模式的歌曲时间设为确定值，
 ## 用于验证 beat_time_ms 与 get_beat_index 的互逆关系。
 func set_free_time_ms(value_ms: int) -> void:

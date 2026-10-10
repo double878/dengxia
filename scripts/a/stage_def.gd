@@ -38,6 +38,17 @@ const LEVEL1_XUXIAN_X: float = 0.13
 ## 小青的开局站位（整关不动）。白素贞接到伞后要走到她**身旁**当作折返点。
 ## 用户 2026-10-05 定案：原先要求走到舞台最右端（x≥0.95），实测太远、也没必要。
 const LEVEL1_XIAOPING_X: float = 0.86
+## 白素贞的开局站位。用户 2026-10-08 定案：开场她**与小青并肩而立**，不再单独立在场中。
+##
+## 取 0.80 而不是更右：两具影身各宽约 0.026 个幕宽，0.06 的间距正好并肩而不叠；
+## 再往右到 0.84 就只剩 0.02，画面上会叠在一起（与 LEVEL1_TURN_MAX 的上界同一条约束）。
+##
+## ⚠️ 这个值落在「走到小青身旁」的落点带 [TURN_POINT_X, 0.84] **之内**，这是有意接受的：
+## 那条落点的语义因此从「走到」变成「走回」。它不会让玩家白拿命中——要拿到伞她必须先向左
+## 走进交接窗口，而接伞那一刻折返点标记会被清零（`UmbrellaController._try_take` 里的
+## `_reached_turn_point = false`），所以「起点即在带内」不会把原地不动误判成走完一趟。
+## 由 `tests/a/test_level1_cues.gd` 的两条结构断言钉住（起点不在交接窗口内、与小青拉开距离）。
+const LEVEL1_BAISUZHEN_X: float = 0.80
 ## 「走到小青身旁」落点的目标带。两条硬约束：
 ##   ① 必须与交接窗口（0.176~0.296）不重叠，否则这一步会先经过交接窗口、
 ##      被还伞判定抢走伞（还伞要求已到过折返点，顺序一颠倒这一趟就白走）；
@@ -109,6 +120,7 @@ var summary: String = ""                  ## 戏单简介
 ##   "hung": {int: int}                影人编号 -> 挂钩槽位
 ##   "positions": {int: [float, float]} 接地点归一化 x/y
 ##   "hand_angles": {int: [float, float]} 左右手角（弧度，不得超过 hand_angle_max_rad）
+##   "facing": {int: float}            初始朝向；-1 朝左、+1 朝右，**缺省即 +1**
 ##   "distance" / "exposure" / "oil": float  灯的初值
 var initial: Dictionary = {}
 var segments: Array = []                  ## [{name: String, start_ms: int, end_ms: int}]
@@ -143,7 +155,7 @@ static func make_level1() -> StageDef:
 	def.act = "游湖借伞"
 	def.title = "第一折 · 入手"
 	def.roles = ["白素贞", "许仙"]
-	def.summary = "许仙立在湖边，右手举伞相候。白素贞走到他面前、左手抬到与他右手齐平——两只手碰到一起便接过伞；随后持伞走到小青身旁，转身走回原地把伞还回许仙右手，再放下手。本折学握胸签与双手。"
+	def.summary = "白素贞与小青并肩立在湖边，许仙在另一侧举伞相候。白素贞走到他面前、左手抬到与他右手齐平——两只手碰到一起便接过伞；随后持伞走回小青身旁，再转身走回把伞还回许仙右手，最后放下手。本折学握胸签与双手。"
 	# 本折的手角上限收到 90°（打伞位）。这一折没有「举过头顶」的姿势，收上限同时解决手感：
 	# 「抬到 90°」于是变成一个能停住的位置——按住 A 到顶就是 90°，不必掐角度、不会扫过头。
 	def.hand_angle_max_rad = LEVEL1_HAND_MAX_RAD
@@ -155,12 +167,20 @@ static func make_level1() -> StageDef:
 	# 所以她抬手到位就一定能接住伞，不会出现「拍点算到位、伞却不换手」。
 	# 白素贞（0 号）左手自然垂下；她要自己把左手抬起来才会接伞。
 	# 两个挂钩仍由许仙、小青占满，第一关因此不会产生挂起/取回事件（见交接文档第 7 节）。
+	# 站位（用户 2026-10-08 定案）：白素贞与小青并肩立在台右（0.80 / 0.86），许仙固定在台左举伞。
+	# 手角（同日定案）：小青**双手放下**（原先右手抬在 1.20 rad）；她这一折只作陪，不参与判定。
 	def.initial = {
 		"controlled": 0,
 		"on_stage": [0, 1, 2],
 		"hung": {1: 0, 2: 1},
-		"positions": {0: [0.50, 0.5], 1: [LEVEL1_XUXIAN_X, 0.5], 2: [LEVEL1_XIAOPING_X, 0.5]},
-		"hand_angles": {0: [0.0, 0.0], 1: [1.20, LEVEL1_HAND_MAX_RAD], 2: [0.10, 1.20]},
+		"positions": {0: [LEVEL1_BAISUZHEN_X, 0.5], 1: [LEVEL1_XUXIAN_X, 0.5],
+			2: [LEVEL1_XIAOPING_X, 0.5]},
+		"hand_angles": {0: [0.0, 0.0], 1: [1.20, LEVEL1_HAND_MAX_RAD], 2: [0.0, 0.0]},
+		# 开演朝向（facing：-1 朝左、+1 朝右；**缺省即 +1**，只写偏离默认的那一个）。
+		# 小青的参考原稿脸朝左（见 assets/puppets/puppet_assets.json 的 `reference_facing = -1`），
+		# 默认 +1 恰好把她镜像成**朝右**、即背对白素贞；用户 2026-10-08 定案要她面向白素贞，故写 -1。
+		# 白素贞沿用默认 +1：她右边就是小青，两人于是相对而立；许仙朝右正是他举伞朝向场中的方向。
+		"facing": {2: -1.0},
 		"distance": 0.5, "exposure": 1.0, "oil": 1.0,
 	}
 	# 段落连续覆盖整关、单调递增且不重复（TECH_DESIGN.md 2.2 的校验要求）。
@@ -203,6 +223,14 @@ static func make_level1_cues(def: StageDef) -> Array:
 	var join: Vector2 = UmbrellaController.join_window_x(LEVEL1_XUXIAN_X)
 	var cues: Array = [
 		# 第 2 拍：先蹲下（stance 落到接近 1.0），为第 4 拍的站起做准备
+		#
+		# ⚠️ 待办（2026-10-08，用户认可「先记着」）：用户认为「开局没有必要让白素贞蹲下」，
+		# 但本轮为**不动拍点表**（连带不动测试与段落表）而保留这两条。真要删时须一起处理三件事：
+		#   ① 删蹲下就必须**连站起一起删**——她本来就站着，stance 已在 [0, 0.05] 内，
+		#      留着站起会让开局白送一个命中；
+		#   ② 全四关只有这两条落点针对 `stance`，删掉后「蹲站」再没有任何教学落点；
+		#   ③ PRD 第 6.1 节第一幕明写教「移动、蹲站与翻面」，且最低可验收动作里写着
+		#      「两个影人**先后站起**」，与本文档必须同步修改。两笔账一起留到三幕落地时处理。
 		CueScript.make("l1_c0_crouch", def.beat_ms(2), CueScript.ACTION_CROUCH, 0,
 			{"key": "stance", "min": 0.85, "max": 1.0}, 250, "crouch"),
 		# 重音（第 4 拍）：站起。stance 0.0 = 完全站立，因此「站起」的到位范围是接近 0，
@@ -601,6 +629,15 @@ func validate() -> Array[String]:
 		used_slots[slot] = true
 		if not on_stage.is_empty() and not on_stage.has(int(puppet_id)):
 			problems.append("stage %d 开演布景：挂起的影人 %d 不在场" % [id, int(puppet_id)])
+	# 开演朝向：影人只有正反两面，facing 是二值量。写别的值会被 `PuppetState.clamp_continuous`
+	# 悄悄吸附成 ±1——数据错了却看不出来。这里把不合法的数据直接报出来，不静默通过。
+	for puppet_id in initial.get("facing", {}).keys():
+		var facing: float = float(initial["facing"][puppet_id])
+		if absf(absf(facing) - 1.0) > 1e-9:
+			problems.append("stage %d 开演布景：影人 %d 的朝向 %s 不是 ±1"
+				% [id, int(puppet_id), str(facing)])
+		if not on_stage.is_empty() and not on_stage.has(int(puppet_id)):
+			problems.append("stage %d 开演布景：设了朝向的影人 %d 不在场" % [id, int(puppet_id)])
 	# 本折的手角上限必须落在 PuppetState 的硬边界内，且开演布景不能超出它。
 	# 布景由显示端直接写进 PuppetState（不经控制器），所以这里必须查：
 	# 否则一个「上限 90°、布景却摆 180°」的关卡会让操控手感与开演姿势自相矛盾。

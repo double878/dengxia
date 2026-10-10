@@ -21,12 +21,12 @@ var _started: bool = false
 var _events: Array[Dictionary] = []
 
 
-func setup(p_clock: MusicClock, p_stage_id: int = 1) -> bool:
+func setup(p_clock: MusicClock, p_stage_id: int = 1, p_stage_def: StageDef = null) -> bool:
 	if p_clock == null:
 		push_error("Level1Runtime.setup 缺少 MusicClock")
 		return false
 	clock = p_clock
-	stage_def = StageDefScript.make_stage(p_stage_id)
+	stage_def = p_stage_def if p_stage_def != null else StageDefScript.make_stage(p_stage_id)
 	if stage_def == null:
 		push_error("Level1Runtime.setup 收到未知关卡编号：%d" % p_stage_id)
 		return false

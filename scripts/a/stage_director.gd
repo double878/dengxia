@@ -33,6 +33,7 @@ var remedy: RemedySystem = null
 ## `UmbrellaController.setup()` 在非第一关返回 false，这里据此把引用置空，
 ## 于是「本关有没有伞」在显示端只需判一个 null，不必各自去查 stage_id。
 var umbrella: UmbrellaController = null
+var opera: Act1OperaFlow = null
 
 var started: bool = false
 var ended: bool = false
@@ -85,6 +86,8 @@ func start() -> void:
 func update(controller_events: Array) -> void:
 	if not started or ended:
 		return
+	if opera != null:
+		opera.before_update()
 	var now_ms: int = song_time_ms()
 	var now_real_ms: int = real_time_ms()
 	# 借伞还伞先走：它只读影人状态，交接在同一帧产生 umbrella_take / umbrella_return 事件。
@@ -99,6 +102,10 @@ func update(controller_events: Array) -> void:
 		umbrella.update(now_ms, controller_events)
 		umbrella_events.append_array(umbrella.take_events())
 		_events.append_array(umbrella_events)
+	if opera != null:
+		opera.after_update(umbrella_events)
+		_events.append_array(opera.take_events())
+		now_ms = song_time_ms()
 	performance.update(now_ms, controller_events)
 	_events.append_array(performance.take_events())
 	for umbrella_event in umbrella_events:
@@ -170,11 +177,11 @@ func is_remedy_frozen() -> bool:
 ## 反复调用同值不做任何事，因此每帧直接调即可。
 func _sync_remedy_freeze(song_ms: int, real_ms: int) -> void:
 	var want: bool = remedy.has_open_windows()
+	if clock != null and clock.has_method("set_song_frozen"):
+		clock.call("set_song_frozen", want or (opera != null and opera.is_waiting()))
 	if want == _remedy_frozen:
 		return
 	_remedy_frozen = want
-	if clock != null and clock.has_method("set_song_frozen"):
-		clock.call("set_song_frozen", want)
 	if want:
 		_frozen_since_real_ms = real_ms
 		_emit_event(song_ms, KIND_FREEZE_BEGIN, {
