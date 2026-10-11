@@ -90,6 +90,15 @@ func _process(delta: float) -> void:
 		_content.queue_redraw()
 
 
+## 正式演出/回放用既有真实时间定位，暂停及重看不会让雨幕自行漂移。
+func set_visual_time(real_ms: int) -> void:
+	set_process(false)
+	_off_near = (VEL_NEAR * float(real_ms) / 1000.0).posmodv(Vector2(RAIN_NEAR.get_size()))
+	_off_far = (VEL_FAR * float(real_ms) / 1000.0).posmodv(Vector2(RAIN_FAR.get_size()))
+	if _content != null:
+		_content.queue_redraw()
+
+
 func _draw() -> void:
 	# 裁剪模板：不透明幕布矩形（自身不显示，只当子节点的裁剪区域用）。
 	draw_rect(Rect2(Vector2.ZERO, _rect_size), MASK_COLOR)

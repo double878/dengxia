@@ -10,6 +10,8 @@ class_name CSnapshot
 ##
 ## 本类是纯数据容器：不持有引擎对象，不回读 A 的状态，不做任何推导。
 ## C 侧唯一职责是把当帧状态原样存下来，回放时再原样取出来。
+## 正式入口由 CLiveCapture 在 Harness 固定步末采集；time_ms 为真实时间，
+## performance.song_ms 保留歌曲位置，等待/补救不被压缩。
 ##
 ## 静态工厂里用 preload 常量而不是类名自引用：godot --headless --script
 ## 不读全局类名缓存，写 CSnapshot.new() 会报 "Could not find type"。
@@ -40,6 +42,8 @@ var time_ms: int = 0
 var puppets: Array = []
 ## 四项均为 0.0-1.0；字段名与 A 端 LampState.to_dict() 一致。
 var lamp: Dictionary = {}
+## 正式演出的双时钟、在场名单、伞及音频读数；旧记录留空仍可播放。
+var performance: Dictionary = {}
 
 
 func _init(p_time_ms: int = 0) -> void:
@@ -64,6 +68,8 @@ static func _default_puppet_dict(puppet_id: int) -> Dictionary:
 		"head_id": -1,
 		"hook_slot": -1,
 		"is_controlled": false,
+		"walk_phase": 0.0,
+		"walk_amount": 0.0,
 	}
 
 
@@ -82,8 +88,9 @@ static func default_lamp_dict() -> Dictionary:
 ## p_puppet_views 必须是长度 3 的数组，每项是 A 端 PuppetState.to_dict() 的返回值。
 ## 字段名以 A 端实际实现为准，不做任何改名或单位换算——转换是 A 的职责。
 ## 缺失或类型不符时 push_error 并保留缺省值，不静默写入错误数据。
-static func from_views(p_time_ms: int, p_puppet_views: Array, p_lamp_view: Dictionary = {}) -> Variant:
+static func from_views(p_time_ms: int, p_puppet_views: Array, p_lamp_view: Dictionary = {}, p_performance: Dictionary = {}) -> Variant:
 	var snap := CSnapshotScript.new(p_time_ms)
+	snap.performance = p_performance.duplicate(true)
 	if p_puppet_views.size() != PUPPET_COUNT:
 		push_error("CSnapshot: puppets 长度应为 %d，实际 %d，缺失位置用缺省值"
 			% [PUPPET_COUNT, p_puppet_views.size()])
@@ -125,7 +132,7 @@ static func _sanitize_puppet_view(view: Variant, index: int) -> Dictionary:
 	else:
 		push_error("CSnapshot: puppets[%d].hand_angle 不是字典，保留缺省值" % index)
 
-	for key in ["stance", "facing", "turn_progress"]:
+	for key in ["stance", "facing", "turn_progress", "walk_phase", "walk_amount"]:
 		out[key] = float(view.get(key, base[key]))
 	for key in ["head_id", "hook_slot"]:
 		out[key] = int(view.get(key, base[key]))
@@ -154,6 +161,8 @@ func changed_fields(before: Variant) -> Array:
 	for i in PUPPET_COUNT:
 		out.append_array(_changed_puppet_fields(i, before.puppets[i], puppets[i]))
 	out.append_array(_changed_lamp_fields(before.lamp, lamp))
+	if _dict_differs(before.performance, performance):
+		out.append("performance")
 	return out
 
 
@@ -164,7 +173,7 @@ func _changed_puppet_fields(index: int, a: Dictionary, b: Dictionary) -> Array:
 		out.append(prefix + "stage_pos")
 	if _dict_differs(a.get("hand_angle"), b.get("hand_angle")):
 		out.append(prefix + "hand_angle")
-	for key in ["stance", "facing", "turn_progress"]:
+	for key in ["stance", "facing", "turn_progress", "walk_phase", "walk_amount"]:
 		if _float_differs(float(a.get(key, 0.0)), float(b.get(key, 0.0))):
 			out.append(prefix + key)
 	for key in ["head_id", "hook_slot"]:

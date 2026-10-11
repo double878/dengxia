@@ -20,6 +20,7 @@ var metronome_enabled: bool = true
 var paused: bool = false
 var opera_audio: Act1OperaAudio = null
 var opera_flow: Act1OperaFlow = null
+var capture: RefCounted = null
 
 var _accumulator: float = 0.0
 var _events: Array[Dictionary] = []
@@ -72,7 +73,7 @@ func advance(frame_delta: float) -> void:
 		return
 	_accumulator += maxf(frame_delta, 0.0)
 	var steps: int = 0
-	while _accumulator >= FIXED_DELTA and steps < MAX_STEPS_PER_FRAME:
+	while _accumulator >= FIXED_DELTA and steps < MAX_STEPS_PER_FRAME and not runtime.is_over():
 		_accumulator -= FIXED_DELTA
 		steps += 1
 		_step(FIXED_DELTA)
@@ -98,7 +99,9 @@ func _step(delta: float) -> void:
 	if opera_audio != null:
 		opera_audio.update(events, delta)
 		events.append_array(opera_audio.take_events())
-	_queue_events(events)
+	var queued: Array[Dictionary] = _queue_events(events)
+	if capture != null:
+		capture.capture(self, queued)
 	if runtime.is_over():
 		metronome.stop()
 		if opera_audio != null:
@@ -110,6 +113,11 @@ func take_events() -> Array[Dictionary]:
 	out.assign(_events)
 	_events.clear()
 	return out
+
+
+func start_recording(stage_id: int, on_stage: Array) -> void:
+	capture = preload("res://scripts/c/c_live_capture.gd").new(stage_id, on_stage)
+	capture.capture(self, take_events())
 
 
 func handle_input(event: InputEvent) -> bool:
@@ -145,10 +153,13 @@ func shutdown() -> void:
 		clock.set_player(null, clock.bpm)
 
 
-func _queue_events(events: Array) -> void:
+func _queue_events(events: Array) -> Array[Dictionary]:
+	var queued: Array[Dictionary] = []
 	for source: Dictionary in events:
 		var event := source.duplicate(true)
 		event.payload["real_time_ms"] = clock.get_real_time_ms()
 		event.payload["sequence"] = _sequence
 		_sequence += 1
 		_events.append(event)
+		queued.append(event)
+	return queued

@@ -57,7 +57,7 @@ const KIND_LAMP_FINISHED: StringName = &"lamp_finished"
 
 ## 本关允许的 kind 全集。出现集合外的 kind 时 push_error 并拒绝插入，
 ## 防止 A 端拼错字符串后静默写进记录。
-## 实测自 A 端代码的权威口径，共 25 个：
+## 旧原型为 25 个，正式宿主补充 9 个，共 34 个：
 ##   puppet_controller 5 / performance_system 4 / remedy_system 5 /
 ##   stage_director 4（stage_start/stage_end + 冻结区间起止）/
 ##   umbrella_controller 2 / lamp_controller 5
@@ -77,6 +77,9 @@ const KNOWN_KINDS: Array = [
 	KIND_UMBRELLA_TAKE, KIND_UMBRELLA_RETURN,
 	KIND_LAMP_STATE_CHANGED, KIND_LAMP_INPUT_CHANGED, KIND_LAMP_OIL_CHANGED,
 	KIND_LAMP_FEEDBACK_CHANGED, KIND_LAMP_FINISHED,
+	&"puppet_hook", &"puppet_take_back", &"head_swap",
+	&"opera_wait_begin", &"opera_wait_end", &"opera_take_close",
+	&"opera_score_skipped", &"opera_phase_changed", &"dialogue_line_changed",
 ]
 
 ## 灯事件的 object_id 命名空间。A 端 lamp_controller.gd:23 的常量值，
@@ -128,7 +131,8 @@ func _init(p_time_ms: int = 0, p_kind: StringName = &"", p_object_id: Variant = 
 ##
 ## object_id 按类型分支校验，不做跨类型数值比较：
 ##   - int    → 影人/无对象命名空间，须落在 [OBJECT_ID_NONE, PUPPET_COUNT-1]
-##   - String → 油灯命名空间，须等于 LAMP_OBJECT_ID
+##   - -1 仅允许判定/补救表达当前无人受控；具体影人操作仍须 0–2
+##   - String → lamp_main，或音频类别专用的 performance_audio
 ##   - 其他   → 直接拒绝，避免下游拿到无法解释的类型
 func validate() -> Array:
 	var problems: Array = []
@@ -147,12 +151,18 @@ func _validate_object_id() -> String:
 	var t: int = typeof(object_id)
 	if t == TYPE_INT:
 		var v: int = object_id
+		# target_object=-1 表示当前操控者；挂起后无人受控时，判定/补救仍会如实发 -1。
+		if v == -1 and kind in [KIND_CUE_HINT, KIND_CUE_FIRE, KIND_CUE_HIT, KIND_CUE_MISS,
+			KIND_REMEDY_OPEN, KIND_REMEDY_SUCCESS, KIND_REMEDY_TIMEOUT, KIND_REMEDY_SHOW, KIND_REMEDY_HIDE]:
+			return ""
 		if v < OBJECT_ID_NONE or v > CSnapshotScript.PUPPET_COUNT - 1:
 			return "object_id 越界（int）：%d" % v
 		return ""
 	if t == TYPE_STRING or t == TYPE_STRING_NAME:
 		var s: String = String(object_id)
-		if s != LAMP_OBJECT_ID:
+		if s != LAMP_OBJECT_ID and not (s == "performance_audio" and kind in [
+			&"opera_wait_begin", &"opera_wait_end", &"opera_take_close",
+			&"opera_score_skipped", &"opera_phase_changed", &"dialogue_line_changed"]):
 			return "object_id 未知灯对象（String）：%s" % s
 		return ""
 	return "object_id 类型不支持：%s（值 %s）" % [type_string(t), str(object_id)]

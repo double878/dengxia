@@ -1,4 +1,5 @@
 extends Node2D
+signal performance_finished(record: CPerformanceRecord, stage_id: int, title: String)
 ## 幕后演出画面（A 模块）。**前四关共用这一个场景**，只换 `StageDef` 数据：
 ##   godot.exe --path . res://scenes/a_test/level1_a.tscn -- stage=2
 ##
@@ -87,6 +88,8 @@ var _stage_backdrop: StageBackdrop
 var _entity_umbrella: UmbrellaVisual
 var _foreground: Node2D
 var _dialogue_label: Label
+var _stage_binding: CStageBinding
+var _finished_emitted: bool = false
 @onready var _draw_canvas: Node2D = self
 
 
@@ -134,6 +137,8 @@ func _ready() -> void:
 		_shutdown_and_quit(1)
 		return
 	_configure_initial_stage()
+	if not is_legacy_probe:
+		_harness.start_recording(_stage_def.id, _on_stage)
 	_diag = OS.get_cmdline_args().has("diag") or OS.get_cmdline_user_args().has("diag")
 	if _diag:
 		print("DIAG: 诊断开关已开启")
@@ -144,10 +149,10 @@ func _ready() -> void:
 	_stage_surface.z_index = -1
 	add_child(_stage_surface)
 	_stage_surface.configure(CLOTH)
-	var binding := StageBindingScript.new()
-	binding.name = "CStageBinding"
-	binding.stage_id = _stage_def.id
-	add_child(binding)
+	_stage_binding = StageBindingScript.new()
+	_stage_binding.name = "CStageBinding"
+	_stage_binding.stage_id = _stage_def.id
+	add_child(_stage_binding)
 	_entity_umbrella = UmbrellaVisualScript.new()
 	_entity_umbrella.views = _puppet_views
 	_entity_umbrella.z_index = 18
@@ -241,6 +246,18 @@ func _process(delta: float) -> void:
 	_harness.take_events()
 	_refresh_ui()
 	queue_redraw()
+	_check_finished()
+
+
+func _check_finished() -> void:
+	if _finished_emitted or _harness.capture == null or not _harness.capture.finished:
+		return
+	_finished_emitted = true
+	_harness.shutdown()
+	if _harness.capture.problems.is_empty():
+		performance_finished.emit(_harness.capture.record, _stage_def.id, _stage_def.title)
+	else:
+		_status_label.text = "本幕记录不完整，请再演一次；详细原因见日志"
 
 
 ## 诊断路径：与正常路径做同样的事，但每 30 帧打印一次读数与各段耗时。
@@ -258,6 +275,7 @@ func _diag_process(delta: float) -> void:
 	_refresh_ui()
 	var t3: int = Time.get_ticks_msec()
 	queue_redraw()
+	_check_finished()
 	if _frame_count % 30 != 0:
 		return
 	var clock: MusicClock = _harness.clock
@@ -391,6 +409,7 @@ func _refresh_ui() -> void:
 	_lamp.set_visual_time(_harness.clock.get_real_time_ms(), _harness.clock.get_song_time_ms(), _harness.clock.bpm)
 	_stage_surface.update_light(_lamp.lamp, _harness.clock.get_real_time_ms(), _harness.clock.get_song_time_ms(), _harness.clock.bpm)
 	_stage_surface.sync_puppets(runtime.puppet_controller.puppets, _on_stage, runtime.director.umbrella)
+	_stage_binding.set_visual_time(_harness.clock.get_real_time_ms())
 	_stage_backdrop.oil = _lamp.lamp.oil
 	_stage_backdrop.queue_redraw()
 	_entity_umbrella.umbrella = runtime.director.umbrella

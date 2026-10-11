@@ -44,7 +44,7 @@ const Z_RAIN: int = 15
 ## 关卡编号（1–4）。取布景数据用；缺省 1。
 @export var stage_id: int = 1
 
-## 是否挂雨幕氛围层。演出中默认开；幕前回放期由调用方关掉（回放画面另有构图）。
+## 是否挂雨幕氛围层。正式演出及回放均由 recorded real_ms 驱动。
 @export var enable_rain: bool = true
 
 var _scenery: Node2D = null
@@ -78,11 +78,14 @@ func _ready() -> void:
 	_rain.setup(CLOTH.size)
 
 
-## 关掉雨幕（幕前回放期用：回放画面有自己的构图，雨幕会干扰 1:1 还原）。
+## 可见性开关；计时由 set_visual_time 统一驱动。
 func set_rain_enabled(on: bool) -> void:
 	enable_rain = on
 	if _rain == null:
 		return
 	_rain.visible = on
-	# 雨幕靠 _process 自持滚动，隐藏即可停；不设 process=false 是为了让再次显示时
-	# 偏移连续（视觉上不跳变）。
+
+
+func set_visual_time(real_ms: int) -> void:
+	if _rain != null:
+		_rain.set_visual_time(real_ms)

@@ -28,6 +28,7 @@ func configure(rect: Rect2) -> void:
 	var white := ColorRect.new()
 	white.size = Vector2(1920, 1080)
 	white.color = Color.WHITE
+	white.z_index = -20
 	projection_viewport.add_child(white)
 	_umbrella = UmbrellaVisual.new()
 	var prop_material := ShaderMaterial.new()

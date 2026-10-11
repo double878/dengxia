@@ -4,7 +4,7 @@ class_name CResultFlow
 ##
 ## 链路见 PRD 第 42 行：入口 → 选关 → 演前戏单 → 幕后演出 → 幕前完整回放
 ## → 本关收场 → 下一关或选关。本类只管最后三段与它们的切换规则：
-##   演出结束 → 幕前回放 → 本关收场（结果页）→ 重看 或 离开
+##   演出结束 → 观看选择 → 幕前回放 / 本幕收场 → 重看 或 离开
 ##
 ## **本类不建场景、不碰画面、不碰音频。** 幕前画面由 B 侧渲染，锣鼓由 B 侧
 ## 按时间轴自行触发。本类只维护状态机与「现在该给谁看什么」的判定，
@@ -25,6 +25,7 @@ const CReplayPlayerScript := preload("res://scripts/c/c_replay_player.gd")
 
 ## 流程状态。整合了 PRD:42 的链路与任务书要求的十态中属于 C 侧的部分。
 const FLOW_RECORDING: StringName = &"recording"    ## 幕后演出中（录制期）
+const FLOW_CHOICE: StringName = &"choice"          ## 演出结束，等待观众决定是否观看
 const FLOW_REPLAYING: StringName = &"replaying"      ## 幕前完整回放中
 const FLOW_SKIPPED: StringName = &"skipped"          ## 被跳过，直接进结果
 const FLOW_RESULT: StringName = &"result"            ## 本关收场/结果页
@@ -52,8 +53,7 @@ var _stage_id: int = -1
 var _is_final_stage: bool = false
 ## 当前流程状态。
 var _flow_state: StringName = FLOW_RECORDING
-## 玩家是否已在本关看过至少一次回放。首次演出结束必然自动回放（PRD:122），
-## 之后才由玩家选择重看或离开。
+## 玩家是否已在本关主动开始过回放。
 var _seen_replay: bool = false
 ## 本关掌声段数。回放读记录里的 acts，不重新判定（PRD:122 回放不产生新分数）。
 var _applause_act_count: int = 0
@@ -91,9 +91,8 @@ func get_player() -> Variant:
 	return _player
 
 
-## PRD 122：「每关演出结束后，自动从幕后切至幕前，以本关实际时长 1:1 重演」。
-## **自动**是关键词——首次回放不由玩家选择，玩家只有暂停与跳过的权利。
-func begin_replay(p_record: Variant, p_stage_id: int) -> bool:
+## 演出结束只准备记录，不启动声音或幕前播放。
+func offer_replay(p_record: Variant, p_stage_id: int) -> bool:
 	if p_record == null:
 		push_error("CResultFlow.begin_replay: record 为 null")
 		return false
@@ -110,11 +109,30 @@ func begin_replay(p_record: Variant, p_stage_id: int) -> bool:
 		_record = null
 		_player = null
 		return false
-	_player.play()
-	_seen_replay = true
-	_flow_state = FLOW_REPLAYING
+	_seen_replay = false
+	_released = false
+	_flow_state = FLOW_CHOICE
 	_count_applause(p_record)
-	_emit(on_enter_replay, player_frame())
+	return true
+
+
+func choose_replay(watch: bool) -> void:
+	if _flow_state != FLOW_CHOICE:
+		return
+	if watch:
+		_player.play()
+		_seen_replay = true
+		_flow_state = FLOW_REPLAYING
+		_emit(on_enter_replay, player_frame())
+	else:
+		_enter_result()
+
+
+## 显式开始播放的兼容入口；正式 GameFlow 使用 offer_replay + choose_replay。
+func begin_replay(p_record: Variant, p_stage_id: int) -> bool:
+	if not offer_replay(p_record, p_stage_id):
+		return false
+	choose_replay(true)
 	return true
 
 
@@ -168,6 +186,7 @@ func rewatch() -> bool:
 		return false
 	_player.load(_record)
 	_player.play()
+	_seen_replay = true
 	_flow_state = FLOW_REPLAYING
 	_emit(on_enter_replay, player_frame())
 	return true
@@ -175,11 +194,13 @@ func rewatch() -> bool:
 
 ## 进入本关收场（结果页）。
 func _enter_result() -> void:
+	var was_replaying: bool = _flow_state == FLOW_REPLAYING
 	_flow_state = FLOW_RESULT
 	if _is_final_stage:
 		_ending = _judge_ending()
 	_emit(on_enter_result, build_summary())
-	_emit(on_replay_finished)
+	if was_replaying:
+		_emit(on_replay_finished)
 
 
 ## 离开本关。
