@@ -30,6 +30,7 @@ func run_all() -> Dictionary:
 	_texture_contract(t)
 	_view_scripts_load(t)
 	_empty_stage_fallback(t)
+	_level2_geometry(t)
 	_geometry_on_canvas(t)
 	_constants_consistency(t)
 
@@ -289,10 +290,116 @@ func _geometry_on_canvas(t: RefCounted) -> void:
 ## 未知关卡返回空布景，而不是静默顶替成第一关的
 func _empty_stage_fallback(t: RefCounted) -> void:
 	t.begin("未知关卡返回空布景")
-	var empty: CSceneryDef = DefScript.make_stage(2)
-	t.check(empty.items.is_empty(), "第 2 关布景为空（未实现就是未实现，不拿第一关顶替）")
-	t.check_eq(empty.stage_id, 2, "空布景仍携带 stage_id 供显示端报错用")
+	# 第 3 关仍未实现（不是拿已有关卡顶替）
+	var empty: CSceneryDef = DefScript.make_stage(3)
+	t.check(empty.items.is_empty(), "第 3 关布景为空（未实现就是未实现，不拿第一关顶替）")
+	t.check_eq(empty.stage_id, 3, "空布景仍携带 stage_id 供显示端报错用")
 	t.check(DefScript.make_stage(1).items.size() > 0, "第 1 关布景非空")
+	# 第 2 关自 2026-10-11 起有自己的布景（门楼 + 菊石 + 垂柳枝）
+	t.check_eq(DefScript.make_stage(2).items.size(), 3,
+		"第 2 关有自己的布景（3 件：门楼 / 菊花石 / 树）")
+
+
+## 第二关布景的几何契约（2026-10-11 用户定案）。
+## 三件布景的位置来自用户参考图目测，全部钉成断言防漂移。
+func _level2_geometry(t: RefCounted) -> void:
+	t.begin("第二关布景几何（门楼 / 菊石 / 垂柳）")
+	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
+	var def: CSceneryDef = DefScript.make_stage(2)
+	t.check_eq(def.stage_id, 2, "第 2 关 stage_id = 2")
+	t.check_eq(def.items.size(), 3, "共 3 件布景（门楼 / 菊石 / 树；花篮已撤下）")
+
+	# 逐件量出贴图绘制矩形（公式与 CSceneryView._draw_texture_item 一致）
+	for item in def.items:
+		var img := Image.load_from_file(
+			ProjectSettings.globalize_path(str(item.get("texture", ""))))
+		if img == null:
+			t.check(false, "%s 贴图可读（第二关几何断言前置）" % item.get("id", "?"))
+			continue
+		var scale: float = DefScript.TEXTURE_SCALE_PX
+		if item.has("texture_scale_px"):
+			scale = float(item["texture_scale_px"])
+		var foot: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
+		var target := Vector2(float(item.get("anchor_x", 0.0)) * 1920.0,
+			float(item.get("anchor_y", 0.0)) * 1080.0)
+		var r := Rect2(target - foot * scale,
+			Vector2(float(img.get_width()), float(img.get_height())) * scale)
+		# ① 三件都必须完整落在幕布里
+		t.check(r.position.x >= cloth.position.x - 0.5
+			and r.end.x <= cloth.end.x + 0.5
+			and r.position.y >= cloth.position.y - 0.5
+			and r.end.y <= cloth.end.y + 0.5,
+			"%s 完整入幕布（x %.0f~%.0f  y %.0f~%.0f）" % [
+				item.get("id", "?"), r.position.x, r.end.x, r.position.y, r.end.y])
+		# ② 只允许水平平移（第二关同样受这条约束）
+		t.check(item.has("pan_x"), "%s 有 pan_x 字段（水平平移口）" % item.get("id", "?"))
+	#③ 门楼与菊石「贴地」：底缘应贴近幕布底缘（参考图里它们站在地上）
+	var gate_rect: Rect2 = Rect2()
+	var chrs_rect: Rect2 = Rect2()
+	var basket_rect: Rect2 = Rect2()
+	var tree_rect: Rect2 = Rect2()
+	for item in def.items:
+		var img2 := Image.load_from_file(
+			ProjectSettings.globalize_path(str(item.get("texture", ""))))
+		if img2 == null:
+			continue
+		var sc: float = float(item.get("texture_scale_px", DefScript.TEXTURE_SCALE_PX))
+		var ft: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
+		var tg := Vector2(float(item.get("anchor_x", 0.0)) * 1920.0,
+			float(item.get("anchor_y", 0.0)) * 1080.0)
+		var rr := Rect2(tg - ft * sc,
+			Vector2(float(img2.get_width()), float(img2.get_height())) * sc)
+		match str(item.get("id", "")):
+			"gate": gate_rect = rr
+			"chrysanthemum": chrs_rect = rr
+			"flower_basket": basket_rect = rr
+			"willow_branch": tree_rect = rr
+	t.check_approx(gate_rect.end.y, 661.0, 3.0,
+		"门楼底缘 y=661px（贴地，参考图里门楼站在地上）")
+	# 门楼：549 → ×2/3=366 → **×1.25=458px**（用户 2026-10-11 三次调整）
+	t.check_approx(gate_rect.size.y, 458.0, 3.0,
+		"门楼高 458px（549 经 2/3 再 ×1.25）")
+	# 菊石与门楼**同一地平线**（用户 2026-10-11 定案；第一版 635 与门楼 661差 26px，已修）
+	t.check_approx(chrs_rect.end.y, 661.0, 3.0,
+		"菊石底缘 y=661px（与门楼同地平线）")
+	# 菊花：368 → 0.36=132 → **×1.25=165px**
+	t.check_approx(chrs_rect.size.y, 165.0, 3.0,
+		"菊花高 165px（132 再 ×1.25）")
+	# ④ 树是**右侧贴地的整株**（用户 2026-10-11 从「悬垂柳枝」改为整株，贴地不悬空）
+	t.check_approx(tree_rect.end.y, 661.0, 3.0,
+		"树底缘 y=661px（与门楼/菊石同一地平线，贴地）")
+	t.check(tree_rect.position.x > gate_rect.end.x,
+		"树左缘 %.0f > 门楼右缘 %.0f（树在门楼右侧）" % [
+			tree_rect.position.x, gate_rect.end.x])
+	# 树靠幕布右边界：右缘距幕布右 30px 左右
+	t.check(1788.0 + 66.0 - tree_rect.end.x <= 40.0
+		and 1788.0 + 66.0 - tree_rect.end.x >= 10.0,
+		"树右缘 %.0f 距幕布右 %.0f（内边距10~40px，贴边）" % [
+			tree_rect.end.x, 66.0 + 1788.0])
+	# ⑤ 树大小与房屋相当：高差不超过 10%
+	t.check(absf(tree_rect.size.y - gate_rect.size.y) <= gate_rect.size.y * 0.10,
+		"树高 %.0f 与门楼高 %.0f 相当（差 ≤10%%）" % [
+			tree_rect.size.y, gate_rect.size.y])
+	# ⑥ 菊石从门楼左侧露出（几何上无法完整放到门楼左侧，见 def 注释）
+	t.check(chrs_rect.position.x < gate_rect.position.x,
+		"菊石左缘 %.0f < 门楼左缘 %.0f（菊石在门楼左侧露出）" % [
+			chrs_rect.position.x, gate_rect.position.x])
+	var exposed: float = gate_rect.position.x - chrs_rect.position.x
+	t.check(exposed >= 20.0 and exposed <= 60.0,
+		"菊石在门楼左侧露出 %.0f px（要求 20~60，能辨认又不喧宾夺主）" % exposed)
+	# ⑦ 树右缘必须**贴住幕布右边界**（用户「靠近幕布边界」），
+	#    同时不越出幕布——越界会被渲染器裁掉，那不叫「靠边」叫「出界」。
+	t.check(tree_rect.end.x <= 66.0 + 1788.0 + 0.5,
+		"树右缘 %.0f 未越出幕布右缘 %.0f" % [tree_rect.end.x, 66.0 + 1788.0])
+	t.check(66.0 + 1788.0 - tree_rect.end.x <= 40.0,
+		"树右缘距幕布右仅 %.0fpx（贴边，符合「靠近幕布边界」）" % [
+			66.0 + 1788.0 - tree_rect.end.x])
+
+	# ⑧ 花篮已于 2026-10-11 用户定案撤下（加入当天即移除）。
+	#    这里留一条**反向断言**：确保它不会被人误加回来——门两侧摆两盆花读起来太满，
+	#    且与菊花的陪衬角色重复。若日后确实要复用花篮，先改这条断言再改数据。
+	t.check_eq(basket_rect.size, Vector2.ZERO,
+		"花篮已撤下（不在 items 里）")
 
 
 ## 常量与数据同源：改常量忘改数据（或反过来）必须被测试抓住
