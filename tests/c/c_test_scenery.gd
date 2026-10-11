@@ -354,15 +354,15 @@ func _level2_geometry(t: RefCounted) -> void:
 			"willow_branch": tree_rect = rr
 	t.check_approx(gate_rect.end.y, 661.0, 3.0,
 		"门楼底缘 y=661px（贴地，参考图里门楼站在地上）")
-	# 门楼缩到 2/3：高 549 → 366px（用户 2026-10-11 二次调整）
-	t.check_approx(gate_rect.size.y, 366.0, 3.0,
-		"门楼高366px（= 原 549 的 2/3）")
+	# 门楼：549 → ×2/3=366 → **×1.25=458px**（用户 2026-10-11 三次调整）
+	t.check_approx(gate_rect.size.y, 458.0, 3.0,
+		"门楼高 458px（549 经 2/3 再 ×1.25）")
 	# 菊石与门楼**同一地平线**（用户 2026-10-11 定案；第一版 635 与门楼 661差 26px，已修）
 	t.check_approx(chrs_rect.end.y, 661.0, 3.0,
 		"菊石底缘 y=661px（与门楼同地平线）")
-	# 菊花缩到 1/2~1/3 之间：高 368 → 132px（0.36）
-	t.check_approx(chrs_rect.size.y, 132.0, 3.0,
-		"菊花高 132px（原 368 的 0.36，落在用户要的 1/2~1/3 区间内）")
+	# 菊花：368 → 0.36=132 → **×1.25=165px**
+	t.check_approx(chrs_rect.size.y, 165.0, 3.0,
+		"菊花高 165px（132 再 ×1.25）")
 	# ④ 树是**右侧贴地的整株**（用户 2026-10-11 从「悬垂柳枝」改为整株，贴地不悬空）
 	t.check_approx(tree_rect.end.y, 661.0, 3.0,
 		"树底缘 y=661px（与门楼/菊石同一地平线，贴地）")
