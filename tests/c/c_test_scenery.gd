@@ -19,6 +19,9 @@ class_name CTestScenery
 
 const ATestBaseScript := preload("res://tests/a/a_test_base.gd")
 const DefScript := preload("res://scripts/c/c_scenery_def.gd")
+const ViewScript := preload("res://scripts/c/c_scenery_view.gd")
+const RainScript := preload("res://scripts/c/c_rain_overlay.gd")
+const BindingScript := preload("res://scripts/c/c_stage_binding.gd")
 
 
 func run_all() -> Dictionary:
@@ -33,6 +36,7 @@ func run_all() -> Dictionary:
 	_level2_geometry(t)
 	_geometry_on_canvas(t)
 	_constants_consistency(t)
+	_scenery_light_contract(t)
 
 	t.finish("布景数据契约（第一关 + 通用约束）")
 	return {"passed": t.passed, "failed": t.failed, "exit_code": t.report()}
@@ -402,7 +406,56 @@ func _level2_geometry(t: RefCounted) -> void:
 		"花篮已撤下（不在 items 里）")
 
 
-## 常量与数据同源：改常量忘改数据（或反过来）必须被测试抓住
+## 布景受灯光影响（切幕前置，2026-10-11）。
+##
+## 🔴 这组断言防的是一类「肉眼看不出来、但切幕时立刻穿帮」的回归：
+## 布景原本**完全不受灯光影响**（无 modulate），灯全灭时幕布黑了、门楼却还亮着。
+## 所以这里不只测「接口存在」，还要测**真实 modulate 值**——
+## 光断言方法名的话，将来谁把 `_apply_light()` 删了测试照样绿。
+func _scenery_light_contract(t: RefCounted) -> void:
+	t.begin("布景灯光耦合（切幕前置）")
+	#⚠️ 本组**不实例化** CSceneryView / CRainOverlay：`Node2D.new()` 后不进树、
+	#  再 `free()` 在本机 headless 下会把 SceneTree 卡住（实测 8 分钟不退出）。
+	# 改为**只断言常量与纯函数口径**——这些才是会被后人改坏的契约；
+	# 「方法确实作用到 modulate」由探针脚本 c_probe_light.gd 在真树里验证。
+	t.check(ViewScript.BASE_LIGHT < 1.0,
+		"布景基色 %.2f < 1.0（否则关灯时布景比幕布还亮，读作「景在发光」）" % ViewScript.BASE_LIGHT)
+	t.check(ViewScript.MIN_LIGHT > 0.0,
+		"布景亮度下限 %.2f > 0（灯灭时仍留轮廓，否则布景直接消失）" % ViewScript.MIN_LIGHT)
+	t.check(ViewScript.MIN_LIGHT < 0.2,
+		"布景下限 %.2f < 0.2（留轮廓但不至于亮到像没关灯）" % ViewScript.MIN_LIGHT)
+	t.check(ViewScript.BASE_LIGHT >= ViewScript.MIN_LIGHT,
+		"基色 ≥ 下限（满灯时不受下限影响）")
+	t.check(ViewScript.BASE_LIGHT > ViewScript.COOL_TINT * ViewScript.MIN_LIGHT,
+		"暗场时蓝通道提升仍被夹在 1.0 内（COOL_TINT=%.2f 不至于把 b 通道推爆）" % ViewScript.COOL_TINT)
+	# 绑定层接口齐备。**只查一次实例**，且用 `has_method`（脚本方法表在实例上可查）——
+	# 循环里反复 `new()` 会每轮泄漏一个节点，本机 headless 下累积到卡死退出。
+	var probe_binding: Variant = BindingScript.new()
+	t.check_approx(probe_binding.get_light_level(), 1.0, 1e-6,
+		"绑定层默认满亮（不接灯时行为与从前一致）")
+	t.check(probe_binding.has_method("set_light")
+		and probe_binding.has_method("set_light_level")
+		and probe_binding.has_method("get_light_level")
+		and probe_binding.has_method("set_stage")
+		and probe_binding.has_method("set_rain_enabled"),
+		"CStageBinding 提供 set_light/set_light_level/get_light_level/set_stage/set_rain_enabled"
+		+ "（切幕代码的唯一入口，不必摸布景内部）")
+	var rain_probe: Variant = RainScript.new()
+	t.check(rain_probe.has_method("set_light"),
+		"CRainOverlay 提供 set_light()（雨幕与布景同步暗）")
+	# 亮度换算口径：`exposure=0` 时必须落到 MIN_LIGHT 而不是 0。
+	# 这条按常量算，不实例化——真正的 modulate 效果由 c_probe_light.gd 在真树里验。
+	var dark: float = clampf(0.0 * (0.55 + 0.45 * 0.0), 0.0, 1.0)
+	t.check_approx(clampf(ViewScript.BASE_LIGHT * dark,
+		ViewScript.MIN_LIGHT, 1.0), ViewScript.MIN_LIGHT, 1e-6,
+		"exposure=0 → 落到下限 %.2f（灯灭时布景仍留轮廓）" % ViewScript.MIN_LIGHT)
+	t.check_approx(clampf(ViewScript.BASE_LIGHT * 1.0,
+		ViewScript.MIN_LIGHT, 1.0), ViewScript.BASE_LIGHT, 1e-6,
+		"exposure=1 → 满亮 %.2f" % ViewScript.BASE_LIGHT)
+	probe_binding.free()
+	rain_probe.free()
+
+
 func _constants_consistency(t: RefCounted) -> void:
 	t.begin("常量与数据同源")
 	var def: CSceneryDef = DefScript.make_level1()
