@@ -146,6 +146,62 @@ const SCENERY_TEX_BRIDGE: String = "res://assets/scenery/level1/arch_bridge.png"
 ## （皮影皮革质感：褐干 + 皮影绿树冠 + 青蓝分层 + 奶白雕边高光）。
 const SCENERY_TEX_WILLOW: String = "res://assets/scenery/level1/willow.png"
 
+## ══════════ 第二关「游园惊梦」布景贴图（用户 2026-10-11 提供三份woop） ══════════
+## 参考构图：用户手绘/AI 参考图——门楼居**左半幅**（带屋檐、门扇、花窗），
+## 菊石盆景在**最左**，柳枝从门右上垂下；三具影人在画面右侧。
+## 三份素材都是 woop@2、**单件整图**（joints=0，无需拆件），已从 webp 转 PNG
+## （Compatibility 渲染器上 webp 会画白块——与第一关同一条教训）。
+const SCENERY_TEX_GATE: String = "res://assets/scenery/level2/gate.png"
+const SCENERY_TEX_CHRYS: String = "res://assets/scenery/level2/chrysanthemum.png"
+## 花篮（用户 2026-10-11 提供 `皮影美术素材/花篮.woop`）：
+## `plant-ornamental-007` / style chinese，单件整图，裁到内容框 → **1403×1718**。
+## 🔴 **同日撤下**：加入当天用户即定案移除，不再进 `items`（复用说明见 make_level2 注释）。
+## 常量与贴图常量一并保留，便于日后复用。
+const SCENERY_TEX_BASKET: String = "res://assets/scenery/level2/flower_basket.png"
+const SCENERY_TEX_WILLOW_BRANCH: String = "res://assets/scenery/level2/willow_branch.png"
+
+## —— 第二关三件布景的定位常量（全部由「参考图目测 → 幕布归一化」推出）——
+##
+## 🔴 2026-10-11 用户三次调整：**门楼放大 1/4（×1.25），其余景物一同调整**
+## （即全组统一放大 1.25 倍，保持「树与房屋等高」的比例关系不变）。
+## 三次调整的沿革：门楼 549 → ×2/3=366 → ×1.25= **458px**。
+##
+## 门楼：`architecture-008`，素材 **1870×1314**（横式建筑，宽高比 1.423）。
+## 高 366 → **458px**，宽随之 651px。scale = 458/1314 = **0.348174**；
+## foot 取**底边左点**（建筑贴图的锚点惯例与树相反，建筑靠左对齐更可控）。
+## 左缘 x=109px（贴幕布左边距），底 y=661px（贴地）。
+const LEVEL2_GATE_SCALE: float = 0.348174
+const LEVEL2_GATE_X: float = 0.056700# 左缘 109px 归一化
+const LEVEL2_GATE_BASE_Y: float = 0.612037   ## 底座 y=661px（贴地，与菊石同一地平线）
+
+## 菊花：`plant-ornamental-005`（墨绿），素材 **1020×1807**（竖式，含底座山石）。
+## 原高 368 → 缩到 0.36 = 132 → **×1.25 = 165px**。scale = 165/1807 = **0.091312**；
+## foot 取**底边中心**（花盆正中，竖式花木与树同惯例）。
+const LEVEL2_CHRYS_SCALE: float = 0.091312
+## 菊石仍在门楼左侧露出（几何上限见下），但缩小后露出比例更明显。
+const LEVEL2_CHRYS_X: float = 0.061755        ## 左缘 72px（幕布左+6），露出 37px
+const LEVEL2_CHRYS_BASE_Y: float = 0.612037   ## 底座 y=661px（**与门楼同一地平线**）
+
+## 花篮（🔴 **已撤下**）：同日在门楼右侧试摆一版（放大 1.2 倍、间隙 15px），
+## 用户当日定案移除。素材与常量保留在仓库里不删（删了要重新找美术），
+## 要复用时把 `make_level2` 注释里的那段加回 `items` 即可。
+const LEVEL2_BASKET_SCALE: float = 0.115250
+const LEVEL2_BASKET_X: float = 0.445754# 底边中心 → 左缘 775、右缘 937
+const LEVEL2_BASKET_BASE_Y: float = 0.612037 ## 底 y=661px（贴地，与另三件同一线）
+
+## 柳树（第二关为**整株立树**，非第一关那种小垂枝）：`plant-ornamental-013`（粉绿），
+## 素材 **1377×1866**。
+## 🔴 2026-10-11 用户调整：从「悬垂柳枝」改为「**右侧靠幕布边界的整株树**」，
+## 大小与房屋相当；第三次随房屋一同放大 1.25 → 高 **458px**（= 门楼高度）、宽 338px。
+## 右缘贴幕布右内边距 30px（右缘 1824），base_y 与门楼同地平线（661px，**贴地**）。
+##
+## ⚠️ `anchor_x` 是**锚点（贴图底边中心）**的归一化，**不是左缘**——第一版误按左缘填，
+## 实测右缘只到 1689（差 135px），测试当场抓住。现按
+## 「右缘 1824 = 幕布右 1854 − 内边距 30」反推。
+const LEVEL2_TREE_SCALE: float = 0.245177   ## 458/1866
+const LEVEL2_TREE_X: float = 0.862017        ## 底边中心 → 左缘 1486、右缘 1824
+const LEVEL2_TREE_BASE_Y: float = 0.612037  ## 底 y=661px（贴地）
+
 ## 贴图统一像素比例：素材 1 像素 = 画布多少像素。
 ## 0.42 → 完整拱素材 1842 宽 = 774 画布像素（幕布宽 1788 的 43%），
 ## 桥基中心锚在 x = 0.73 时桥跨约 1016~1787px，整体完整落在幕布内。
@@ -257,6 +313,76 @@ static func make_stage(stage_id: int) -> CSceneryDef:
 	match stage_id:
 		1:
 			return make_level1()
+		2:
+			return make_level2()
 	var empty := CSceneryDef.new()
 	empty.stage_id = stage_id
 	return empty
+
+
+## 第二关「游园惊梦」布景（用户 2026-10-11 定案）：门楼 + 菊花石 + 垂柳枝。
+## 构图来自用户参考图：门楼占**左半幅**，菊石在最左，垂柳从门右上垂下；
+## 画面右侧留给三具影人（人物站位归 A 侧，本文件一概不动）。
+##
+## ⚠️ 与第一关的两点差异（决定了本关的锚点取向）：
+##   ① **不与桥同地平线**——第一关有桥，桥脚定义了 0.53 这条线；第二关没有桥，
+##      门楼/菊石改为**贴幕布底缘**（base_y ≈ 0.59~0.61），避免出现「悬空的建筑」。
+##   ② **柳枝是悬垂件**，底端不接地，故它的 base_y 明显高于另两件（0.3375）。
+static func make_level2() -> CSceneryDef:
+	var def := CSceneryDef.new()
+	def.stage_id = 2
+	def.items = [
+		{
+			"id": "gate",
+			"kind": KIND_ARCH_BRIDGE,   # 复用建筑类回退画法；贴图存在时不会走到
+			"anchor_x": LEVEL2_GATE_X,
+			"anchor_y": LEVEL2_GATE_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_GATE,
+			# 锚点 = 贴图**底边左点**（建筑惯例；树/花木用底边中心）。
+			# 素材 1870×1314，foot 与 anchor 对齐 → 整门楼左缘即anchor_x。
+			"texture_foot_px": Vector2(0.0, 1314.0),
+			"texture_scale_px": LEVEL2_GATE_SCALE,
+			"params": {"deck_rise": 0.10, "deck_thickness": 0.048, "arch_end_x": 0.45},
+		},
+		{
+			"id": "chrysanthemum",
+			"kind": KIND_WILLOW,        # 同上：有贴图不走回退
+			"anchor_x": LEVEL2_CHRYS_X,
+			"anchor_y": LEVEL2_CHRYS_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_CHRYS,
+			# 锚点 = 贴图底边中心（花盆正中）。素材 1020×1807。
+			"texture_foot_px": Vector2(510.0, 1807.0),
+			"texture_scale_px": LEVEL2_CHRYS_SCALE,
+			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
+				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+		},
+		# 🔴 花篮（flower_basket）已于 2026-11 用户定案**移除**：加入当天即撤下，
+		# 「门的两侧对称摆两盆花」读起来太满，且与菊花的陪衬角色重复。
+		# 素材 `assets/scenery/level2/flower_basket.png` 保留在仓库里（美术资产，
+		# 删了要重新找素材），只是不再进 `items` —— 复用时把下面这段加回即可：
+		#   {"id": "flower_basket", "kind": KIND_WILLOW,
+		#    "anchor_x": LEVEL2_BASKET_X, "anchor_y": LEVEL2_BASKET_BASE_Y, "pan_x": 0.0,
+		#    "texture": SCENERY_TEX_BASKET,
+		#    "texture_foot_px": Vector2(701.0, 1718.0),
+		#    "texture_scale_px": LEVEL2_BASKET_SCALE,
+		#    "params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
+		#      "crown_radius_y": 0.055, "crown_bias_x": 0.0}},
+		{
+			# id 沿用 `willow_branch` 以免探针/断言的取用键改名；实际已是**整株立树**
+			# （用户 2026-10-11 二次调整：从悬垂柳枝改为右侧靠幕布边界的树）。
+			"id": "willow_branch",
+			"kind": KIND_WILLOW,
+			"anchor_x": LEVEL2_TREE_X,
+			"anchor_y": LEVEL2_TREE_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_WILLOW_BRANCH,
+			# 锚点 = 贴图**底边中心**（树干接地点）。素材 1377×1866。
+			"texture_foot_px": Vector2(688.0, 1866.0),
+			"texture_scale_px": LEVEL2_TREE_SCALE,
+			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
+				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+		},
+	]
+	return def
