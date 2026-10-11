@@ -245,11 +245,7 @@ func _refresh_views() -> void:
 		)
 		if not _entrance_complete[controller.controlled_id]:
 			_hint.text = (
-				"正在接手：%s · 左键拖手边竹签%s · 空格换人 · 右键退场"
-				% [
-					CAST[controller.controlled_id],
-					"向左走出树后" if controller.controlled_id == 0 else "向右走出门洞"
-				]
+				"正在接手：%s · 左键拖手边竹签%s · 空格换人 · 右键退场" % [CAST[controller.controlled_id], "向左走出树后"]
 			)
 	for id in range(_cast_labels.size()):
 		_cast_labels[id].text = (

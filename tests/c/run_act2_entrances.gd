@@ -13,15 +13,12 @@ func _run() -> void:
 	key(KEY_2)
 	check(fahai.stage_pos.x * 1920 > 1655, "法海首次没有出现在树的右后方")
 	check(fahai.stage_pos.x * 1920 < 1824, "法海首次在幕布右缘之外")
-	check(xuxian.stage_pos.x * 1920 > 394 and xuxian.stage_pos.x * 1920 < 474, "许仙首次没有在门洞内")
+	check(absf(xuxian.stage_pos.x * 1920 - 434.4) < 2.0, "许仙首次没有在门洞中央")
 	check(fahai.facing == -1.0 and xuxian.facing == 1.0, "两人首次未面向出场方向")
 	check(controller.controlled_id == -1, "数字键自动接手")
 	click(Vector2(1770, 550), MOUSE_BUTTON_RIGHT)
 	check(opening.get("on_stage").has(0), "右键点树的遮挡区域误收走法海")
 	key(KEY_1)
-	click(Vector2(450, 600), MOUSE_BUTTON_RIGHT)
-	check(opening.get("on_stage").has(1), "右键点门内遮挡区域误收走许仙")
-	key(KEY_2)
 	var original_fahai: Vector2 = fahai.stage_pos
 	var original_xuxian: Vector2 = xuxian.stage_pos
 	opening._process(1.0)
@@ -29,13 +26,21 @@ func _run() -> void:
 	var views: Array = opening.get("_views")
 	var projection_views: Array = opening.get("_surface").projection_views
 	for id in range(2):
-		check(views[id].get("entrance_mask") != null, "首次上场没有布景遮挡")
-		if views[id].get("entrance_mask") != null:
+		if id == 0:
+			check(views[id].get("entrance_mask") != null, "法海首次上场没有树的遮挡")
 			check(
 				projection_views[id].get("entrance_mask") == views[id].get("entrance_mask"),
 				"实体与投影遮挡不一致"
 			)
-			await test_visible_sliver(opening, id)
+		else:
+			check(
+				(
+					views[id].get("entrance_mask") == null
+					and projection_views[id].get("entrance_mask") == null
+				),
+				"许仙首次上场仍被门遮挡"
+			)
+		await test_initial_visibility(opening, id)
 	key(KEY_SPACE)
 	check(controller.controlled_id == 0, "空格没有接手法海")
 	press(Vector2(1770, 550))
@@ -75,12 +80,11 @@ func _run() -> void:
 	key(KEY_SPACE)
 	check(controller.controlled_id == 1, "空格没有接手许仙")
 	press(Vector2(450, 600))
-	check(not controller.is_dragging(), "左键点门内遮挡区域误抓许仙胸签")
+	check(controller.is_dragging(), "门中直接上场的许仙不能抓胸签")
 	click(Vector2(450, 600), MOUSE_BUTTON_LEFT, false)
 	drag_hand(opening, 25)
 	check(xuxian.stage_pos.x > original_xuxian.x, "许仙不能手动向右出场")
-	check(views[1].get("entrance_mask") != null, "许仙只走出一点就提前解除了遮挡")
-	await capture("entrance-xuxian-partial")
+	check(views[1].get("entrance_mask") == null, "许仙移动后又被门遮挡")
 	drag_hand(opening, 200)
 	check(
 		views[1].get("entrance_mask") == null and projection_views[1].get("entrance_mask") == null,
@@ -115,7 +119,7 @@ func drag_hand(opening: Node, dx: float) -> void:
 	opening._refresh_views()
 
 
-func test_visible_sliver(opening: Node, id: int) -> void:
+func test_initial_visibility(opening: Node, id: int) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	var views: Array = opening.get("_views")
@@ -143,8 +147,11 @@ func test_visible_sliver(opening: Node, id: int) -> void:
 		var partial_pixels: int = changed_pixels(pair[0], pair[1], region)
 		var full_pixels: int = changed_pixels(pair[0], pair[2], region)
 		print("ENTRANCE_VISIBLE id=%d partial=%d full=%d" % [id, partial_pixels, full_pixels])
-		check(partial_pixels > 5, "初始完全隐藏，没有露出一点身体")
-		check(partial_pixels < full_pixels * 0.65, "初始露出大部分身体，布景没有遮挡")
+		check(partial_pixels > 5, "初始完全隐藏")
+		if id == 0:
+			check(partial_pixels < full_pixels * 0.65, "法海初始露出大部分身体，树没有遮挡")
+		else:
+			check(partial_pixels == full_pixels, "许仙在门中没有完整显示")
 	view.set("entrance_mask", mask)
 	projected.set("entrance_mask", mask)
 	await capture("entrance-%s-start" % ("fahai" if id == 0 else "xuxian"))

@@ -3,49 +3,34 @@ extends RefCounted
 
 const CANVAS_SIZE := Vector2(1920, 1080)
 const TreeTexture := preload("res://assets/scenery/level2/willow_branch.png")
-## 门洞在原图 x≈820–1050；靠右门框露出后，向右走到空地。
-const DOOR_RIGHT_PX: float = 1050.0
-const DOOR_START_PX: float = 1000.0
+## 门洞在原图 x≈820–1050；许仙直接在门洞中央完整上场。
+const DOOR_CENTER_PX: float = 935.0
 
 var masks: Array[Texture2D] = []
 var positions: Array[Vector2] = []
-var _exit_edges: Array[float] = []
+var _tree_exit_edge: float = 0.0
 var _mask_images: Array[Image] = []
 
 
 func setup(cloth: Rect2) -> void:
 	var gate_left: float = CSceneryDef.LEVEL2_GATE_X * CANVAS_SIZE.x
-	var door_edge: float = gate_left + DOOR_RIGHT_PX * CSceneryDef.LEVEL2_GATE_SCALE
 	var tree_ground := (
 		Vector2(CSceneryDef.LEVEL2_TREE_X, CSceneryDef.LEVEL2_TREE_BASE_Y) * CANVAS_SIZE
 	)
 	var tree_origin: Vector2 = tree_ground - Vector2(688, 1866) * CSceneryDef.LEVEL2_TREE_SCALE
-	var door_mask: Image = Image.create(1920, 1080, false, Image.FORMAT_R8)
-	door_mask.fill(Color.BLACK)
-	door_mask.fill_rect(
-		Rect2i(
-			int(cloth.position.x),
-			int(cloth.position.y),
-			ceili(door_edge - cloth.position.x),
-			int(cloth.size.y)
-		),
-		Color.WHITE
-	)
-	_mask_images = [_tree_mask(cloth, tree_origin), door_mask]
-	masks = [
-		ImageTexture.create_from_image(_mask_images[0]), ImageTexture.create_from_image(door_mask)
-	]
+	_mask_images = [_tree_mask(cloth, tree_origin), null]
+	masks = [ImageTexture.create_from_image(_mask_images[0]), null]
 	positions = [
 		(tree_ground + Vector2(115, 0)) / CANVAS_SIZE,
 		(
 			Vector2(
-				gate_left + DOOR_START_PX * CSceneryDef.LEVEL2_GATE_SCALE,
+				gate_left + DOOR_CENTER_PX * CSceneryDef.LEVEL2_GATE_SCALE,
 				CSceneryDef.LEVEL2_GATE_BASE_Y * CANVAS_SIZE.y
 			)
 			/ CANVAS_SIZE
 		),
 	]
-	_exit_edges = [tree_origin.x, door_edge]
+	_tree_exit_edge = tree_origin.x
 
 
 ## 每行取树的左右外轮廓，填实装饰镂空；避免人脸从树的花纹孔中提前出现。
@@ -82,13 +67,15 @@ func _tree_mask(cloth: Rect2, origin: Vector2) -> Image:
 
 ## 输入与实体使用同一遮罩，避免点击布景时抓到或收走藏在后面的影人。
 func blocks_point(id: int, at: Vector2) -> bool:
-	if not Rect2(Vector2.ZERO, CANVAS_SIZE).has_point(at):
+	if _mask_images[id] == null or not Rect2(Vector2.ZERO, CANVAS_SIZE).has_point(at):
 		return false
 	return _mask_images[id].get_pixel(int(at.x), int(at.y)).r > 0.5
 
 
 ## 连同灯距投影、手腕和冠帽预留一起离开入口，才永久切到布景前。
 func has_cleared(id: int, entity: PlaceholderPuppet, projection: PlaceholderPuppet) -> bool:
+	if masks[id] == null:
+		return true
 	for view: PlaceholderPuppet in [entity, projection]:
 		var ground: Vector2 = view.stage_to_screen(view.puppet_state.stage_pos)
 		var height: float = view.figure_px_height()
@@ -98,9 +85,6 @@ func has_cleared(id: int, entity: PlaceholderPuppet, projection: PlaceholderPupp
 		bounds = bounds.expand(view.hand_screen_position("left"))
 		bounds = bounds.expand(view.hand_screen_position("right")).grow(16)
 		bounds = view.transform * bounds
-		if (
-			(id == 0 and bounds.end.x >= _exit_edges[0])
-			or (id == 1 and bounds.position.x <= _exit_edges[1])
-		):
+		if bounds.end.x >= _tree_exit_edge:
 			return false
 	return true

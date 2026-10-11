@@ -117,3 +117,11 @@ A 套件的非法输入用例会故意输出 ERROR。完整第一关无头启动
 使用同一 `D:\Godot\4.7.2\godot.exe`，精确版本 `4.7.2.stable.official.ed1daf0bf`，同版本导出模板存在。窗口测试经真实 viewport 输入管线执行，比较遮挡、无遮挡和缺席三种画面的像素：法海初始可见面积约为无遮挡的 36%，许仙约为 17%，投影亦为部分可见；已检查实际截图。未执行人工完整试玩或重跑 A/C 其他完整套件，未验证尚未接入的第二关整关录放。
 
 日志在忽略的 `builds/stage-realism/logs/entrance-*`；截图在 `builds/act2-opening/entrance-fahai-start.png`、`entrance-xuxian-start.png`、`entrance-fahai-out.png`、`entrance-xuxian-partial.png` 和 `entrance-both-out.png`。导出产物为 `builds/dengxia.exe` 与同目录 `dengxia.pck`；正式回归测试及引擎生成的 UID 保留，无临时入口需要清理。
+
+## 2026-10-11 许仙改为门洞中央直接上场
+
+用户要求许仙直接在门的中间出场，覆盖上一版许仙从右门框逐渐露出的定案。现在按 2 时，许仙实体和投影在门洞中央（约 x=434.4 px）完整显示；仍需空格接手，退场再上场恢复原处。删除许仙专用门洞遮罩和右侧出场判据；法海沿用树后首次遮挡与手动走出。同步 PRD、技术设计、README 和第二关定案，原计划注明后续调整。
+
+更新既有出场回归后，旧实现先复现 6 项位置／完整显露／胸签抓取失败；修正后 Windows OpenGL 出场测试 40 项、两关衔接与操演 117 项全部通过。实体和投影的许仙初始可见像素与无遮挡画面完全一致，已检查 `builds/act2-opening/entrance-xuxian-start.png`，人物落在门洞中间。三个变动脚本解析、gdformat 和 gdlint 通过；资源导入、60 帧无头启动和 Windows Release 导出均退出 0，本次启动日志没有退出资源提示。不表示此前间歇出现的第一关退出资源提示已被修复。
+
+实际命令继续使用 `tools/run_godot.ps1`：`--headless --path . --check-only --script <三个变动脚本>`、`--path . --script res://tests/c/run_act2_entrances.gd`、`--path . --script res://tests/c/run_act2_opening.gd`、`--headless --path . --import`、`--headless --path . --quit-after 60`、`--headless --path . --export-release "Windows Desktop" builds/dengxia.exe`。本轮日志前缀 `door-center-*`，版本仍为 `4.7.2.stable.official.ed1daf0bf`。未重跑其他完整套件或人工完整试玩；没有新建临时测试入口，沿用现有分支和 PR #12。
