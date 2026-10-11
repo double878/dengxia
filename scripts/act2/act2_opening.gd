@@ -4,8 +4,10 @@ extends Node2D
 const PuppetView := preload("res://scripts/a_test/placeholder_puppet.gd")
 const PuppetInput := preload("res://scripts/a_test/input_reader.gd")
 const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
+const OperatorHand := preload("res://scripts/b/operator_hand.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HAND_ANCHOR := Vector2(960, 856)
+const HAND_AREA := Rect2(768, 712, 384, 256)
 const FIXED_DELTA: float = 1.0 / 60.0
 const CAST: Array[String] = ["法海", "许仙"]
 
@@ -18,6 +20,7 @@ var _lamp_input := LampInput.new()
 var _views: Array[PlaceholderPuppet] = []
 var _surface: StageSurface
 var _lamp: PlaceholderLamp
+var _foreground: Node2D
 var _status: Label
 var _hint: Label
 var _pause_button: Button
@@ -66,6 +69,10 @@ func _ready() -> void:
 	_lamp = PlaceholderLamp.new()
 	_lamp.z_index = 30
 	add_child(_lamp)
+	_foreground = Node2D.new()
+	_foreground.z_index = 80
+	_foreground.draw.connect(_draw_operator_hand)
+	add_child(_foreground)
 	_build_hud()
 	_refresh_views()
 
@@ -106,6 +113,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if _paused:
 		return
+	var puppet_event: InputEvent = event
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			var id: int = _puppet_at(event.position)
@@ -113,11 +121,26 @@ func _input(event: InputEvent) -> void:
 				_exit(id)
 			get_viewport().set_input_as_handled()
 			return
-		if event.button_index == MOUSE_BUTTON_LEFT and controller.controlled_id < 0:
-			return
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if controller.controlled_id < 0:
+				return
+			var translated := event.duplicate() as InputEventMouseButton
+			translated.position = _grab_position(event.position)
+			puppet_event = translated
 	_lamp_input.handle_event(event)
-	if _puppet_input.handle_event(event):
+	if _puppet_input.handle_event(puppet_event):
 		get_viewport().set_input_as_handled()
+
+
+func _grab_position(at: Vector2) -> Vector2:
+	var controlled: PuppetState = controller.get_controlled()
+	if controlled == null or not HAND_AREA.has_point(at):
+		return at
+	# 手边抓签映射到当前影人的胸签；影人移动或换人后仍能在手边抓住。
+	return (
+		controlled.stage_pos * PuppetController.STAGE_PIXEL_SIZE
+		- Vector2(0, PuppetController.CHEST_TAG_RADIUS_PX * 0.5)
+	)
 
 
 func _enter(id: int) -> void:
@@ -198,12 +221,15 @@ func _refresh_views() -> void:
 	elif controller.controlled_id < 0:
 		_hint.text = "按空格接手在场影人"
 	else:
-		_hint.text = "正在接手：%s    空格换人 · 左键拖胸签 · A/D 抬手 · 右键点影人下场" % CAST[controller.controlled_id]
+		_hint.text = (
+			"正在接手：%s    空格换人 · 左键拖胸签或手边竹签 · A/D 抬手 · 右键点影人下场" % CAST[controller.controlled_id]
+		)
 	for id in range(_cast_labels.size()):
 		_cast_labels[id].text = (
 			"%d    %s\n%s" % [id + 1, CAST[id], "已上场" if on_stage.has(id) else "待上场"]
 		)
 	queue_redraw()
+	_foreground.queue_redraw()
 
 
 func _build_hud() -> void:
@@ -242,6 +268,12 @@ func _label(parent: Node, at: Vector2, size: Vector2, font_size: int) -> Label:
 func _draw() -> void:
 	for id in range(2):
 		draw_style_box(_card_style(on_stage.has(id)), Rect2(1370 + id * 210, 760, 190, 130))
+
+
+func _draw_operator_hand() -> void:
+	OperatorHand.draw_on(
+		_foreground, HAND_ANCHOR, 0.65 + 0.35 * StageLight.unit(lamp_controller.lamp.oil)
+	)
 
 
 func _card_style(active: bool) -> StyleBoxFlat:

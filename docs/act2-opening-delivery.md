@@ -55,3 +55,11 @@ A 套件的非法输入用例会故意输出 ERROR。完整第一关无头启动
 日志：忽略的 `builds/stage-realism/logs/act2-*`；图形证据：`builds/act2-opening/fahai-onstage.png`、`fahai-turn-raised.png`、`fahai-close-lamp.png`。源素材预览：`docs/art/fahai-cutout.png`。
 
 本轮按用户要求由同一代理实施并自查，没有调用子智能体；未执行独立代理代码审查。自查覆盖第一关头架映射、上下场/接手不变量、旧状态泄漏、三条收场路径与发布资源加载。
+
+## 2026-10-11 操作手修复
+
+第二关开场遗漏了操作手绘制及手边抓签的输入换算。现将第一关原有手与短签绘制提取到 `scripts/b/operator_hand.gd`，两关共用；第二关用前景层显示，未接手时也保留操作手。空格接手后，左键拖操作手或短签可移动当前影人；移动、换人后仍映射到当前胸签，松开或暂停会结束拖动。底部提示同步说明手边竹签可拖动。
+
+定向测试先在旧实现复现 5 项手边拖动失败；修复后无头回归 70 项、Windows OpenGL 窗口回归 77 项通过，覆盖未接手不拖动、手掌/短签落点、移动后重抓、换人后的拖动对象、松开结束及手掌像素可见性。第一关 `tests/b/run_stage_walk.gd` 图形回归 24 项通过，已检查两关截图；未执行人工试玩或重跑其他完整套件。四个改动脚本解析、格式与 lint 通过；导入、60 帧启动、Windows Release 导出和 PCK 第二关启动均退出 0。默认第一关启动仍有前述 ObjectDB/resource 基线退出提示。
+
+本次命令沿用上方包装器：开场回归使用 `hand-headless-final` / `hand-graphics-final` 日志名，第一关图形回归使用 `hand-level1-graphics`；门禁使用 `hand-import` / `hand-startup` / `hand-export` / `hand-packed-opening`。日志保存在 `builds/stage-realism/logs/hand-*`，新增截图为 `builds/act2-opening/operator-hand-idle.png` 与 `operator-hand-dragged.png`。自查确认只涉及操作手绘制、输入映射和相应回归；没有调用子智能体。

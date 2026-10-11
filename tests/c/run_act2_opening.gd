@@ -86,12 +86,16 @@ func test_transition(route: String) -> void:
 func test_controls(opening: Node) -> void:
 	opening.set_process(false)
 	var controller: PuppetController = opening.get("controller")
+	await capture("operator-hand-idle")
 	key(KEY_1)
 	key(KEY_1)
 	key(KEY_2)
 	key(KEY_3)
 	check(opening.get("on_stage") == [0, 1], "数字键上场/重复上场/空槽")
 	check(controller.controlled_id == -1, "数字键不应自动接手")
+	press(Vector2(960, 856))
+	check(not controller.is_dragging() and controller.controlled_id == -1, "点操作手不应代替空格接手")
+	click(Vector2(960, 856), MOUSE_BUTTON_LEFT, false)
 	key(KEY_SPACE)
 	check(controller.controlled_id == 0, "空格先接手法海")
 	var fahai: PuppetState = controller.get_puppet(0)
@@ -101,8 +105,9 @@ func test_controls(opening: Node) -> void:
 	check(not opening.get("_surface").front_view, "开场误显示幕前")
 	fahai.hand_angle = Vector2(0.4, 1.2)
 	var pose: Vector2 = fahai.hand_angle
-	controller.begin_drag(0, view.chest_tag_screen())
-	controller.drag_to(Vector2(20, 0))
+	await test_hand_drag(opening)
+	press(Vector2(960, 856))
+	check(controller.is_dragging(), "移动后仍应能从操作手抓签")
 	key(KEY_SPACE)
 	check(not controller.is_dragging(), "接手没有结束旧胸签拖动")
 	check(controller.controlled_id == 1 and fahai.hand_angle == pose, "切换没保持原姿势")
@@ -115,6 +120,17 @@ func test_controls(opening: Node) -> void:
 	check(
 		controller.get_puppet(1).turn_progress == 1.0 and controller.get_puppet(1).facing == -1.0,
 		"法海的翻面目标泄漏到许仙"
+	)
+	press(Vector2(960, 856))
+	check(controller.is_dragging(), "换人后手边竹签没有接到许仙")
+	var fahai_position: Vector2 = fahai.stage_pos
+	motion.relative = Vector2(-40, 0)
+	root.push_input(motion, true)
+	controller.tick(1.0 / 60.0)
+	click(Vector2(920, 856), MOUSE_BUTTON_LEFT, false)
+	check(
+		controller.get_puppet(1).stage_pos.x < xu_position.x and fahai.stage_pos == fahai_position,
+		"换人后手边拖动仍作用于旧影人"
 	)
 	key(KEY_SPACE)
 	check(controller.controlled_id == 0, "空格没有循环回法海")
@@ -155,6 +171,42 @@ func test_controls(opening: Node) -> void:
 	await capture("fahai-close-lamp")
 
 
+func test_hand_drag(opening: Node) -> void:
+	var controller: PuppetController = opening.get("controller")
+	var state: PuppetState = controller.get_controlled()
+	var other: Vector2 = controller.get_puppet(1).stage_pos
+	var pose: Vector2 = state.hand_angle
+	for at: Vector2 in [Vector2(960, 856), Vector2(960, 750)]:
+		var before: Vector2 = state.stage_pos
+		press(at)
+		check(controller.is_dragging(), "操作手/手边竹签没有抓住胸签")
+		var motion := InputEventMouseMotion.new()
+		motion.position = at + Vector2(80, 0)
+		motion.relative = Vector2(80, 0)
+		root.push_input(motion, true)
+		controller.tick(1.0 / 60.0)
+		check(state.stage_pos.x > before.x, "从操作手拖动没有移动当前影人")
+		check(
+			state.hand_angle == pose and controller.get_puppet(1).stage_pos == other,
+			"拖动改变了姿势或未接手影人"
+		)
+		click(motion.position, MOUSE_BUTTON_LEFT, false)
+		check(not controller.is_dragging(), "松开操作手没有结束拖动")
+	press(Vector2(1250, 900))
+	check(not controller.is_dragging(), "操作手外的桌面也能抓住胸签")
+	click(Vector2(1250, 900), MOUSE_BUTTON_LEFT, false)
+	opening._refresh_views()
+	await capture("operator-hand-dragged")
+
+
+func press(at: Vector2) -> void:
+	var event := InputEventMouseButton.new()
+	event.position = at
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = true
+	root.push_input(event, true)
+
+
 func key(code: Key) -> void:
 	var event := InputEventKey.new()
 	event.keycode = code
@@ -184,7 +236,10 @@ func capture(label: String) -> void:
 		await process_frame
 		await RenderingServer.frame_post_draw
 	DirAccess.make_dir_recursive_absolute("res://builds/act2-opening")
-	check(
-		root.get_texture().get_image().save_png("res://builds/act2-opening/%s.png" % label) == OK,
-		"保存舞台截图"
-	)
+	var screen := root.get_texture().get_image()
+	if label in ["operator-hand-idle", "fahai-onstage"]:
+		var scale: Vector2 = Vector2(screen.get_size()) / Vector2(1920, 1080)
+		var at: Vector2 = Vector2(960, 856) * scale
+		var palm: Color = screen.get_pixel(int(at.x), int(at.y))
+		check(palm.r > 0.5 and palm.g > 0.35 and palm.b > 0.2, "操作手缺失或被长签遮挡：" + label)
+	check(screen.save_png("res://builds/act2-opening/%s.png" % label) == OK, "保存舞台截图")

@@ -32,6 +32,7 @@ const BackdropScript := preload("res://scripts/b/stage_backdrop.gd")
 const UmbrellaVisualScript := preload("res://scripts/b/umbrella_visual.gd")
 const StageBindingScript := preload("res://scripts/c/c_stage_binding.gd")
 const WalkPathScript := preload("res://scripts/a/stage_walk_path.gd")
+const OperatorHand := preload("res://scripts/b/operator_hand.gd")
 
 const CANVAS_SIZE := Vector2(1920.0, 1080.0)
 
@@ -771,45 +772,7 @@ static func umbrella_canopy_drop(figure_height: float) -> float:
 
 ## 「你的手边 · 手与三根签」：签手握住的三根签，也是鼠标抓胸签的落点。
 func _draw_hands_and_tags() -> void:
-	var brightness: float = _environment()
-	var wood := Color("#c08f4a") * brightness
-	var skin := Color("#e0b783") * brightness
-	var edge := Color("#6d4224") * brightness
-	# 三根签的杆身
-	for i in 3:
-		var x: float = HAND_ANCHOR.x - 34.0 + float(i) * 34.0
-		_draw_canvas.draw_line(
-			Vector2(x, HAND_ANCHOR.y - 122.0),
-			Vector2(x, HAND_ANCHOR.y + 6.0),
-			Color("#4a3419"),
-			11.0
-		)
-		_draw_canvas.draw_line(
-			Vector2(x, HAND_ANCHOR.y - 122.0), Vector2(x, HAND_ANCHOR.y + 6.0), wood, 7.0
-		)
-	# 手：掌 + 四指 + 拇指
-	_draw_canvas.draw_circle(HAND_ANCHOR, 40.0, skin)
-	_draw_canvas.draw_arc(HAND_ANCHOR, 40.0, 0.0, TAU, 36, edge, 3.0)
-	for i in 4:
-		var x: float = HAND_ANCHOR.x - 30.0 + float(i) * 20.0
-		_draw_canvas.draw_line(
-			Vector2(x, HAND_ANCHOR.y - 18.0),
-			Vector2(x - 2.0, HAND_ANCHOR.y - 74.0 - float(i % 2) * 10.0),
-			edge,
-			16.0
-		)
-		_draw_canvas.draw_line(
-			Vector2(x, HAND_ANCHOR.y - 18.0),
-			Vector2(x - 2.0, HAND_ANCHOR.y - 74.0 - float(i % 2) * 10.0),
-			skin,
-			12.0
-		)
-	_draw_canvas.draw_line(
-		HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0), edge, 20.0
-	)
-	_draw_canvas.draw_line(
-		HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0), skin, 15.0
-	)
+	OperatorHand.draw_on(_draw_canvas, HAND_ANCHOR, _environment())
 
 
 func _environment() -> float:
