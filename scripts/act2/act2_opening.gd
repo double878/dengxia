@@ -8,6 +8,8 @@ const OperatorHand := preload("res://scripts/b/operator_hand.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HAND_ANCHOR := Vector2(960, 856)
 const HAND_AREA := Rect2(768, 712, 384, 256)
+## 冠帽计入实际轮廓后接近房门上沿，实体与投影共用站立尺寸。
+const FIGURE_HEIGHT: float = 200.0
 const FIXED_DELTA: float = 1.0 / 60.0
 const CAST: Array[String] = ["法海", "许仙"]
 
@@ -55,7 +57,7 @@ func _ready() -> void:
 	_surface.configure(CLOTH)
 	_surface.projection_views[0].skin_override = 3
 	for projection: PlaceholderPuppet in _surface.projection_views:
-		projection.figure_height = 300.0
+		projection.figure_height = FIGURE_HEIGHT
 	var binding := CStageBinding.new()
 	binding.name = "CStageBinding"
 	binding.stage_id = 2
@@ -65,7 +67,7 @@ func _ready() -> void:
 		var view: PlaceholderPuppet = PuppetView.new()
 		view.name = "Fahai" if id == 0 else "Xuxian"
 		view.render_mode = PlaceholderPuppet.RenderMode.ENTITY
-		view.figure_height = 300.0
+		view.figure_height = FIGURE_HEIGHT
 		view.skin_override = 3 if id == 0 else -1
 		view.hand_anchor = HAND_ANCHOR
 		view.z_index = 20

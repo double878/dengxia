@@ -85,3 +85,9 @@ A 套件的非法输入用例会故意输出 ERROR。完整第一关无头启动
 | 导出 PCK 中第二关开场启动 | 退出 0 |
 
 命令仍为上方 `tools/run_godot.ps1` 包装器，测试入口见表中套件；本轮日志前缀为 `scenery-integration-*`。实际窗口截图见 `builds/act2-opening/act2-scenery-onstage.png` 与 `operator-hand-idle.png`。已检查窗口画面；键鼠通过 viewport 输入管线自动验证，未执行人工完整试玩。非法输入测试按预期输出 ERROR；默认第一关启动与 A 套件仍有已知 ObjectDB/resource 退出提示。未调用子智能体，已直接审查集成差异、双方布景数据与状态边界。
+
+## 2026-10-11 人物缩小至房门高度
+
+按用户要求，许仙与法海的站立身高参数从 300 调为 200，缩小约三分之一；两者实体与幕布投影共用 `FIGURE_HEIGHT`，实际冠帽轮廓高度接近门楼的房门上沿。脚点沿用 661 px 地面，锡杖和竹签连接跟随现有视图缩放。
+
+本次只调整显示尺寸并记录交付。脚本解析、gdformat、gdlint 通过；`tests/c/run_act2_opening.gd` 在 Windows 窗口中 117 项通过，已检查 `act2-scenery-onstage.png`。导入、60 帧无头启动、Windows Release 导出均退出 0，默认第一关启动仍有原有 ObjectDB/resource 退出提示；未重跑其他完整套件、未新增尺寸常量的镜像测试。命令沿用上方包装器，日志为 `act2-scale-parse` / `act2-scale-graphics` / `act2-scale-import` / `act2-scale-startup` / `act2-scale-export`。
