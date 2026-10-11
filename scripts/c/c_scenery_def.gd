@@ -153,6 +153,10 @@ const SCENERY_TEX_WILLOW: String = "res://assets/scenery/level1/willow.png"
 ## （Compatibility 渲染器上 webp 会画白块——与第一关同一条教训）。
 const SCENERY_TEX_GATE: String = "res://assets/scenery/level2/gate.png"
 const SCENERY_TEX_CHRYS: String = "res://assets/scenery/level2/chrysanthemum.png"
+## 花篮（用户 2026-10-11 提供 `皮影美术素材/花篮.woop`）：
+## `plant-ornamental-007` / style chinese，单件整图，裁到内容框 → **1403×1718**。
+## 形态：朱红瓷花篮（描金缠枝 + 红菊绿叶），与菊花的素雅形成对比，两者一左一右对称。
+const SCENERY_TEX_BASKET: String = "res://assets/scenery/level2/flower_basket.png"
 const SCENERY_TEX_WILLOW_BRANCH: String = "res://assets/scenery/level2/willow_branch.png"
 
 ## —— 第二关三件布景的定位常量（全部由「参考图目测 → 幕布归一化」推出）——
@@ -176,6 +180,18 @@ const LEVEL2_CHRYS_SCALE: float = 0.091312
 ## 菊石仍在门楼左侧露出（几何上限见下），但缩小后露出比例更明显。
 const LEVEL2_CHRYS_X: float = 0.061755        ## 左缘 72px（幕布左+6），露出 37px
 const LEVEL2_CHRYS_BASE_Y: float = 0.612037   ## 底座 y=661px（**与门楼同一地平线**）
+
+## 花篮（用户 2026-10-11 加入）：放在**门楼右侧，与菊花左右对称**。
+## 素材 **1403×1718**（宽高比 0.817）。高 165px（**与菊花同高**，取对称）→
+## 宽 135px，scale = 165/1718 = **0.096042**；foot 取**底边中心**。
+##
+## 位置口径：菊花是「贴幕布左、露头 37px 在门楼左侧」；花篮取「门楼右缘 + 45px
+## 间隙、完整可见」——若严格镜像（露头 37px），花篮会整体落在门楼**内部**被遮住
+## （门楼跨 109~760），那不叫对称、叫看不见。故取「与门楼的间隙与菊花的露出量同量级
+## （45px vs 37px）、完整可见」，视觉上仍读作左右对称的一对。
+const LEVEL2_BASKET_SCALE: float = 0.096042
+const LEVEL2_BASKET_X: float = 0.454361      ## 底边中心 → 左缘 805、右缘 940
+const LEVEL2_BASKET_BASE_Y: float = 0.612037 ## 底 y=661px（贴地，与另三件同一线）
 
 ## 柳树（第二关为**整株立树**，非第一关那种小垂枝）：`plant-ornamental-013`（粉绿），
 ## 素材 **1377×1866**。
@@ -341,6 +357,20 @@ static func make_level2() -> CSceneryDef:
 			# 锚点 = 贴图底边中心（花盆正中）。素材 1020×1807。
 			"texture_foot_px": Vector2(510.0, 1807.0),
 			"texture_scale_px": LEVEL2_CHRYS_SCALE,
+			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
+				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+		},
+		{
+			# 花篮：与门楼左侧的菊花**左右对称**（用户 2026-10-11）。
+			"id": "flower_basket",
+			"kind": KIND_WILLOW,
+			"anchor_x": LEVEL2_BASKET_X,
+			"anchor_y": LEVEL2_BASKET_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BASKET,
+			# 锚点 = 贴图底边中心（花篮底足正中）。素材 1403×1718。
+			"texture_foot_px": Vector2(701.0, 1718.0),
+			"texture_scale_px": LEVEL2_BASKET_SCALE,
 			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
 				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
 		},

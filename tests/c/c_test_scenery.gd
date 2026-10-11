@@ -296,8 +296,8 @@ func _empty_stage_fallback(t: RefCounted) -> void:
 	t.check_eq(empty.stage_id, 3, "空布景仍携带 stage_id 供显示端报错用")
 	t.check(DefScript.make_stage(1).items.size() > 0, "第 1 关布景非空")
 	# 第 2 关自 2026-10-11 起有自己的布景（门楼 + 菊石 + 垂柳枝）
-	t.check_eq(DefScript.make_stage(2).items.size(), 3,
-		"第 2 关有自己的布景（3 件：门楼 / 菊花石 / 垂柳枝）")
+	t.check_eq(DefScript.make_stage(2).items.size(), 4,
+		"第 2 关有自己的布景（4 件：门楼 / 菊花石 / 花篮 / 树）")
 
 
 ## 第二关布景的几何契约（2026-10-11 用户定案）。
@@ -307,7 +307,7 @@ func _level2_geometry(t: RefCounted) -> void:
 	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
 	var def: CSceneryDef = DefScript.make_stage(2)
 	t.check_eq(def.stage_id, 2, "第 2 关 stage_id = 2")
-	t.check_eq(def.items.size(), 3, "共 3 件布景")
+	t.check_eq(def.items.size(), 4, "共 4 件布景（门楼 / 菊石 / 花篮 / 树）")
 
 	# 逐件量出贴图绘制矩形（公式与 CSceneryView._draw_texture_item 一致）
 	for item in def.items:
@@ -336,6 +336,7 @@ func _level2_geometry(t: RefCounted) -> void:
 	#③ 门楼与菊石「贴地」：底缘应贴近幕布底缘（参考图里它们站在地上）
 	var gate_rect: Rect2 = Rect2()
 	var chrs_rect: Rect2 = Rect2()
+	var basket_rect: Rect2 = Rect2()
 	var tree_rect: Rect2 = Rect2()
 	for item in def.items:
 		var img2 := Image.load_from_file(
@@ -351,6 +352,7 @@ func _level2_geometry(t: RefCounted) -> void:
 		match str(item.get("id", "")):
 			"gate": gate_rect = rr
 			"chrysanthemum": chrs_rect = rr
+			"flower_basket": basket_rect = rr
 			"willow_branch": tree_rect = rr
 	t.check_approx(gate_rect.end.y, 661.0, 3.0,
 		"门楼底缘 y=661px（贴地，参考图里门楼站在地上）")
@@ -392,6 +394,26 @@ func _level2_geometry(t: RefCounted) -> void:
 	t.check(66.0 + 1788.0 - tree_rect.end.x <= 40.0,
 		"树右缘距幕布右仅 %.0fpx（贴边，符合「靠近幕布边界」）" % [
 			66.0 + 1788.0 - tree_rect.end.x])
+
+	# ⑧ 花篮（2026-10-11 加入）：与门楼左侧的菊花**左右对称**，且在门楼右侧、贴地同线。
+	t.check_approx(basket_rect.end.y, 661.0, 3.0,
+		"花篮底缘 y=661px（四件同地平线，贴地）")
+	#与菊花同高 → 视觉上是一对
+	t.check(absf(basket_rect.size.y - chrs_rect.size.y) <= 3.0,
+		"花篮高 %.0f 与菊花高 %.0f 同高（对称的一对）" % [
+			basket_rect.size.y, chrs_rect.size.y])
+	# 在门楼右侧且完整可见（不被门楼遮住）
+	t.check(basket_rect.position.x >= gate_rect.end.x,
+		"花篮左缘 %.0f ≥ 门楼右缘 %.0f（在门楼右侧）" % [
+			basket_rect.position.x, gate_rect.end.x])
+	var gap_b: float = basket_rect.position.x - gate_rect.end.x
+	t.check(gap_b >= 20.0 and gap_b <= 80.0,
+		"花篮与门楼间隙 %.0f px（20~80，对称于菊花的 37px 露出量）" % gap_b)
+	# 不与树挤在一起
+	t.check(tree_rect.position.x - basket_rect.end.x >= 100.0,
+		"花篮右缘 %.0f 与树左缘 %.0f 留 %.0f px（不挤在一起）" % [
+			basket_rect.end.x, tree_rect.position.x,
+			tree_rect.position.x - basket_rect.end.x])
 
 
 ## 常量与数据同源：改常量忘改数据（或反过来）必须被测试抓住
