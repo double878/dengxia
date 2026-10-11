@@ -135,6 +135,25 @@ func get_controlled() -> PuppetState:
 	return get_puppet(controlled_id)
 
 
+## 第二关直接接手/放手，不占挂钩。动作瞬态属于旧影人，不能传给接手者。
+func set_controlled_puppet(puppet_id: int) -> bool:
+	if puppet_id < -1 or puppet_id >= puppets.size():
+		push_error("接手影人编号越界：%d" % puppet_id)
+		return false
+	if puppet_id >= 0 and puppets[puppet_id].hook_slot != PuppetStateScript.HOOK_SLOT_NONE:
+		return false
+	end_drag()
+	for state: PuppetState in puppets:
+		state.is_controlled = state.puppet_id == puppet_id
+	controlled_id = puppet_id
+	set_input_map({})
+	_facing_target = 0.0
+	_flip_target = 0.0
+	_stance_moving = false
+	_hand_dir = Vector2i.ZERO
+	return true
+
+
 ## 找一个空闲的挂钩槽位；返回 -1 表示两个槽都被占着。
 ##
 ## 之所以做成公开方法，是为了让 HUD 能按**实际可用性**提示玩家：挂钩满的时候

@@ -1,6 +1,6 @@
 # 灯下
 
-Godot 4.7.2 Standard 的 Windows 皮影戏 Demo。正式入口为 `scenes/game_flow.tscn`，包含第一幕幕后演出、观众选择、幕前回放与本幕收场。
+Godot 4.7.2 Standard 的 Windows 皮影戏 Demo。正式入口为 `scenes/game_flow.tscn`，包含第一幕幕后演出、观众选择、幕前回放，以及点击收场页进入第二关开场。
 
 开始修改前阅读 [AGENTS.md](AGENTS.md)、[PRD.md](PRD.md) 与 [TECH_DESIGN.md](TECH_DESIGN.md)。当前录放行为以 [录放契约顶部的正式入口补充](docs/REPLAY_CONTRACT.md) 和当前代码为准；`docs/handoff/`、早期计划中的参数属于历史交接记录。
 
@@ -63,6 +63,7 @@ py -3.13 -m venv .venv
 | `tests/b/run_performance_audio.gd` | 音频时间轴与状态 |
 | `tests/b/run_act1_game_audio.gd` | 正式第一幕音源、等待与暂停 |
 | `tests/b/run_stage_walk.gd` | 桥面、距离驱动步态与正式入口 |
+| `tests/c/run_act2_opening.gd` | 三条第一关收场路径、点击切关、法海外观绑定、第二关开场键鼠与暂停 |
 | `tests/c/run_game_replay.gd` | 实际记录与选择/重看/跳过/再演 |
 | `tests/c/run_game_replay_success.gd` | 完整接还伞与回放 |
 | `tests/c/run_tutorial_replay.gd`（追加 `-- stage=2`） | 旧教学关挂起、取回、换头与节拍回放 |
@@ -71,7 +72,17 @@ py -3.13 -m venv .venv
 
 ## 第二幕开发基线
 
-准备分支：`feat-act2`。目标为 PRD 第 6.2 节的 **105 秒《端阳惊变（酒变）》**：灯位缩放、换头、倾灯显露及两个影子同时受灯位影响。
+开发分支：`feat-act2`。用户已确认 [第二关两场设计](docs/superpowers/specs/2026-10-10-act2-design.md)：法海劝酒、端阳惊变；改用数字键上场、空格循环接手、右键退场，完整白蛇替身与灯光显形。时长按实际对白和音乐编排决定，取消固定 105 秒。
+
+当前切片提供法海独立分件、持杖操演，以及第一关收场点击进入第二关开场。直接查看开场：
+
+```powershell
+& 'D:\Godot\4.7.2\godot.exe' --path . 'res://scenes/act2/opening.tscn'
+```
+
+按 `1` 法海上场、`2` 许仙上场，空格循环接手；左键拖胸签，`A/D` 抬手，`Shift+A/D` 落手，`W/S` 双手抬落，右键点影人下场，滚轮与 `Q/E` 调灯，`ESC` 暂停。当前开场没有对白、递酒、变蛇、惊倒、整关计分与第二关录放，不会按旧教学时长自动结束。
+
+`tools/build_fahai_assets.py` 用 Pillow 和 NumPy 重建 atlas；原图保留在 `assets/puppets/source/`，该目录由 `.gdignore` 排除导入和导出。透明整身预览在 `docs/art/fahai-cutout.png`。不需要图像生成 API，也不增加游戏运行依赖。
 
 现有 `StageDef.make_level2()` / `-- stage=2` 是 **45 秒的旧双人教学关**，并非正式第二幕。第一幕由 `level1_a_scene.gd` 选择 `Act1OperaStage` 与真实音源配置；新幕接入应继续复用唯一 `MusicClock`、`Level1Harness`、`CLiveCapture` 和 `GameFlow`，画面只读状态，回放不重新判定。
 

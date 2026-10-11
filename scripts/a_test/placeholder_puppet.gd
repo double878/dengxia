@@ -15,6 +15,8 @@ const SKIN_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/puppets/xuxian.png"),
 	preload("res://assets/puppets/xiaoqing.png"),
 ]
+## 额外角色只通过显式覆盖使用，不能改变第一关原来六个头的映射。
+const EXTRA_SKIN_TEXTURES: Dictionary = {3: preload("res://assets/puppets/fahai.png")}
 const SKIN_MANIFEST_PATH: String = "res://assets/puppets/puppet_assets.json"
 const SKIN_MANIFEST: JSON = preload("res://assets/puppets/puppet_assets.json")
 var _skins: Dictionary = _read_skins()
@@ -32,6 +34,8 @@ var _held_prop_hand: String = ""
 @export var hand_anchor: Vector2 = Vector2(960.0, 852.0)
 ## 画面上画出的胸签热区。前四关允许出现操作图标（PRD 第 3、8 节）。
 @export var show_chest_tag: bool = false
+## 角色外观与运行影人编号分开。第二关的 0 号影人使用法海（3），不改第一关资产。
+@export var skin_override: int = -1
 ## 旧 A 测试保留 0；游戏实体使用 1；幕面离屏透射使用 2。
 enum RenderMode { LEGACY, ENTITY, PROJECTION }
 @export var render_mode: RenderMode = RenderMode.LEGACY
@@ -104,6 +108,7 @@ func _process(_delta: float) -> void:
 		puppet_state.hook_slot,
 		puppet_state.is_controlled,
 		puppet_state.puppet_id,
+		skin_override,
 		stage_origin,
 		stage_size,
 		figure_height,
@@ -194,7 +199,7 @@ static func half_width_px(height: float, flip_width: float) -> float:
 func shoulder_half_width_px(height: float, flip_width: float) -> float:
 	if not _has_body_skin():
 		return half_width_px(height, flip_width)
-	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+	var skin: Dictionary = _skins[str(_body_skin_id())]
 	return maxf(
 		height * float(skin.get("shoulder_half_width_ratio", HALF_W_RATIO)) * flip_width, 3.0
 	)
@@ -248,7 +253,7 @@ func hand_screen_position(hand: String) -> Vector2:
 func _skin_figure_transform(ground: Vector2) -> Transform2D:
 	if not _has_body_skin():
 		return Transform2D.IDENTITY
-	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+	var skin: Dictionary = _skins[str(_body_skin_id())]
 	var width: float = flip_width_ratio() * puppet_state.facing / float(skin["reference_facing"])
 	return Transform2D(
 		Vector2(width, 0.0), Vector2(0.0, 1.0), Vector2(ground.x * (1.0 - width), 0.0)
@@ -377,6 +382,7 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 			draw_circle(knee, height * 0.021, joint)
 
 	# 躯干
+	_draw_skin_accessories(ground, height, alpha)
 	var torso := PackedVector2Array(
 		[
 			Vector2(hip.x - half_w * 0.82, hip.y),
@@ -467,13 +473,13 @@ var _right_wrist: Vector2 = Vector2.ZERO
 func _draw_head(
 	centre: Vector2, radius: float, showing_front: bool, body: Color, rim: Color, alpha: float
 ) -> void:
-	var skin_id: int = puppet_state.head_id
-	if _skins.has(str(skin_id)):
+	var skin_id: int = skin_override if skin_override >= 0 else puppet_state.head_id
+	if _skins.has(str(skin_id)) and (skin_override >= 0 or skin_id < SKIN_TEXTURES.size()):
 		var skin: Dictionary = _skins[str(skin_id)]
 		var size: float = radius * float(skin["head_size_per_radius"])
 		var facing: float = 1.0 if showing_front else -1.0
 		if _has_body_skin():
-			facing = float(_skins[str(puppet_state.puppet_id)]["reference_facing"])
+			facing = float(_skins[str(_body_skin_id())]["reference_facing"])
 		var mirror: float = facing / float(skin["reference_facing"])
 		_draw_skin_tile(skin_id, "head", centre, 0.0, Vector2(size * mirror, size), alpha)
 		return
@@ -537,13 +543,13 @@ func _read_skins() -> Dictionary:
 		push_error("影人美术清单无效：%s" % SKIN_MANIFEST_PATH)
 		return {}
 	var skins: Dictionary = {}
-	for character: String in ["baisuzhen", "xuxian", "xiaoqing"]:
+	for character: String in ["baisuzhen", "xuxian", "xiaoqing", "fahai"]:
 		var skin: Dictionary = parsed.get("characters", {}).get(character, {}).duplicate()
 		var parts: Dictionary = skin.get("parts", {})
-		var id: int = int(skin.get("puppet_id", -1))
+		var id: int = int(skin.get("skin_id", skin.get("puppet_id", -1)))
 		if (
 			id < 0
-			or id >= SKIN_TEXTURES.size()
+			or (id >= SKIN_TEXTURES.size() and not EXTRA_SKIN_TEXTURES.has(id))
 			or float(skin.get("head_size_per_radius", 0.0)) <= 0.0
 		):
 			push_error("影人美术定义无效：%s (%s)" % [character, SKIN_MANIFEST_PATH])
@@ -589,7 +595,39 @@ func _read_skins() -> Dictionary:
 
 
 func _has_body_skin() -> bool:
-	return _skins.has(str(puppet_state.puppet_id))
+	return _skins.has(str(_body_skin_id()))
+
+
+func _body_skin_id() -> int:
+	return skin_override if skin_override >= 0 else puppet_state.puppet_id
+
+
+## 饰带随躯干，锡杖随右腕；同一个翻面矩阵用于实体、投影和附件。
+func _draw_skin_accessories(ground: Vector2, height: float, alpha: float) -> void:
+	if not _has_body_skin():
+		return
+	var id: int = _body_skin_id()
+	var skin: Dictionary = _skins[str(id)]
+	var shoulder := ground + Vector2(0.0, -height * SHOULDER_RATIO + walk_body_offset(height))
+	if skin["parts"].has("ribbons"):
+		var ribbon_size: float = height * float(skin["ribbons_size_ratio"])
+		_draw_skin_tile(
+			id,
+			"ribbons",
+			shoulder + Vector2(-height * 0.04, -height * 0.10),
+			0.0,
+			Vector2.ONE * ribbon_size,
+			alpha
+		)
+	if skin["parts"].has("staff"):
+		var wrist: Vector2 = arm_wrist(
+			shoulder + Vector2(shoulder_half_width_px(height, 1.0), 0),
+			puppet_state.hand_angle.y,
+			true,
+			height
+		)
+		var staff_size: float = height * float(skin["staff_size_ratio"])
+		_draw_skin_tile(id, "staff", wrist, 0.0, Vector2.ONE * staff_size, alpha)
 
 
 func _draw_skin_tile(
@@ -605,7 +643,7 @@ func _draw_skin_tile(
 	)
 	draw_set_transform_matrix(_skin_canvas_transform * tile_transform)
 	draw_texture_rect_region(
-		SKIN_TEXTURES[skin_id],
+		SKIN_TEXTURES[skin_id] if skin_id < SKIN_TEXTURES.size() else EXTRA_SKIN_TEXTURES[skin_id],
 		Rect2(-offset * source.size, source.size),
 		source,
 		Color(1.0, 1.0, 1.0, alpha)
@@ -616,7 +654,7 @@ func _draw_skin_tile(
 func _draw_skin_segment(
 	part_name: String, start: Vector2, end: Vector2, width_ratio: float, alpha: float
 ) -> void:
-	var skin_id: int = puppet_state.puppet_id
+	var skin_id: int = _body_skin_id()
 	var skin: Dictionary = _skins[str(skin_id)]
 	var part: Dictionary = skin["parts"][part_name]
 	var length: float = start.distance_to(end)
@@ -640,14 +678,14 @@ func _draw_skin_hand(
 	right_side: bool,
 	alpha: float
 ) -> void:
-	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+	var skin: Dictionary = _skins[str(_body_skin_id())]
 	var size: float = height * float(skin["hand_size_ratio"])
 	var mirror: float = 1.0 if right_side else -1.0
 	var side: String = "right" if right_side else "left"
 	if _held_prop_hand == side and skin["parts"].has(part_name + "_grip"):
 		part_name += "_grip"
 	_draw_skin_tile(
-		puppet_state.puppet_id,
+		_body_skin_id(),
 		part_name,
 		wrist,
 		direction.angle() - PI * 0.5,
@@ -657,7 +695,7 @@ func _draw_skin_hand(
 
 
 func _draw_skin_joint(at: Vector2, radius: float, alpha: float) -> void:
-	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+	var skin: Dictionary = _skins[str(_body_skin_id())]
 	var ink: Color = skin["ink_color"]
 	var gold: Color = skin["joint_color"]
 	ink.a = alpha

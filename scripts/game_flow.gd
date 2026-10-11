@@ -2,6 +2,7 @@ extends Node
 ## 正式入口：幕后演出 → 观众选择 → 幕前回放 / 本幕收场。
 
 const PERFORMANCE_SCENE := preload("res://scenes/a_test/level1_a.tscn")
+const ACT2_SCENE := preload("res://scenes/act2/opening.tscn")
 const ReplayView := preload("res://scripts/b/performance_replay.gd")
 var _level: Node = null
 var _replay: Node = null
@@ -9,6 +10,7 @@ var _page: Control = null
 var _flow: CResultFlow = null
 var _stage_id: int = 1
 var _title: String = ""
+var _advancing: bool = false
 
 
 func _ready() -> void:
@@ -16,6 +18,10 @@ func _ready() -> void:
 
 
 func _start_performance() -> void:
+	if _stage_id == 2:
+		_level = ACT2_SCENE.instantiate()
+		add_child(_level)
+		return
 	_level = PERFORMANCE_SCENE.instantiate()
 	_level.performance_finished.connect(_performance_finished)
 	add_child(_level)
@@ -36,13 +42,16 @@ func _performance_finished(record: CPerformanceRecord, stage_id: int, title: Str
 func _show_page(choice: bool) -> void:
 	_clear_page()
 	_page = Control.new()
+	_page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_page)
 	var background := ColorRect.new()
 	background.size = Vector2(1920, 1080)
 	background.color = Color("#1d2422")
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_page.add_child(background)
 	var heading := Label.new()
 	heading.text = _title + " · 本幕收场"
+	heading.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	heading.position = Vector2(200, 280)
 	heading.size = Vector2(1520, 80)
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -51,11 +60,15 @@ func _show_page(choice: bool) -> void:
 	_page.add_child(heading)
 	var detail := Label.new()
 	detail.text = "想从幕前看看刚才的演出吗？" if choice else "这一幕已经落下帷幕。"
+	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	detail.position = Vector2(200, 400)
 	detail.size = Vector2(1520, 70)
 	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detail.add_theme_font_size_override("font_size", 32)
 	_page.add_child(detail)
+	if not choice and _stage_id == 1:
+		detail.text = "点击任意位置，进入第二关《端阳惊变》"
+		return
 	_add_button(
 		"观看幕前回放",
 		Vector2(480, 550),
@@ -142,6 +155,28 @@ func _clear_page() -> void:
 		_page.hide()
 		_page.queue_free()
 		_page = null
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _advancing or _stage_id != 1 or _flow == null or _flow.get_flow_state() != &"result":
+		return
+	if not event is InputEventMouseButton or not event.pressed:
+		return
+	if event.button_index not in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]:
+		return
+	get_viewport().set_input_as_handled()
+	_advancing = true
+	_advance_to_act2.call_deferred()
+
+
+func _advance_to_act2() -> void:
+	_clear_page()
+	if _flow != null:
+		_flow.leave_stage()
+		_flow = null
+	_stage_id = 2
+	_start_performance()
+	_advancing = false
 
 
 func _exit_tree() -> void:

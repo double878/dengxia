@@ -1,0 +1,57 @@
+# 法海与两关衔接交付
+
+## 实际改动
+
+- 法海按用户参考原图制作 14 件透明 atlas：身体 12 件、饰带、锡杖。毗卢帽、卷须、红色田相袈裟、花袖与法器保留源图颜色和纹样；手工轮廓与原稿可追溯。
+- 显示端用独立 skin_override，不占用第一关的六个头映射。锡杖跟随右腕，实体与投影共用骨架和翻面。
+- 第二关独立开场：`1/2` 仅上场，空格按编号循环接手，右键退场。重复上场不重置姿势；接手清空旧拖动和翻面目标；ESC 与按钮暂停。
+- 第一关仍先询问是否观看回放。不看、跳过、看完三条路径都进入无重演/重看按钮的收场页；左/中/右键点任意位置进入第二关，排除滚轮和释放、阻止重复加载与输入穿透、释放旧记录和旧场景。
+- 同步 PRD、TECH_DESIGN、README 与用户已确认的第二关设计。
+
+## 当前边界
+
+本次只有第二关开场操演。两场对白音源、交杯与饮酒、完整白蛇、惊倒、整关计分与第二关录放尚未接入；不能把开场称为完整第二关。原图 JPEG 的 alpha 是白底估算，背面是同一分件镜像。
+
+## 验证结果
+
+使用 `D:\Godot\4.7.2\godot.exe`，版本 `4.7.2.stable.official.ed1daf0bf`。
+
+| 检查 | 结果 |
+| --- | --- |
+| gdformat 全部 scripts/tests | 104 文件无需改动 |
+| gdlint 全部 scripts/tests | 无问题 |
+| 五个变动 GDScript 的 --check-only | 全部退出 0 |
+| tests/a/run_tests.gd | 1284 + 22 条断言通过 |
+| tests/b/run_stage_visuals.gd | 379 条断言通过 |
+| tests/c/run_game_replay.gd | 37 项通过 |
+| tests/c/run_game_replay_success.gd | 12 项通过 |
+| tests/c/run_act2_opening.gd，无头 | 57 项通过 |
+| 同一开场回归，实际 Windows OpenGL 窗口 | 60 项通过，含 3 张截图 |
+| atlas/source | 14 件、RGBA、2048×2048、透明边角/水印区域、原稿 SHA256 一致 |
+| 既有三角色 manifest | 去掉新法海条目后与原提交完全一致 |
+| 资源导入、60 帧无头启动、Windows Release 导出 | 全部退出 0 |
+| 导出 PCK 中第二关独立开场启动 | 退出 0 |
+| 实际导出 dengxia.exe 默认入口启动 | 退出 0 |
+
+定向回归先观察到旧版本缺少第二关、收场仍有两个按钮；另一个定向测试先复现了切换影人时翻面目标泄漏，修复后均通过。测试通过 viewport 输入管线验证键鼠事件和 GUI 消费，并非人工完整试玩或对白听感验收。
+
+A 套件的非法输入用例会故意输出 ERROR。完整第一关无头启动/套件退出仍有基线已有的 ObjectDB/resource 释放提示；不将退出码 0 描述成无警告通过。第二关独立开场启动没有该提示。
+
+## 复核命令
+
+```powershell
+& 'C:\Temp\dengxia-normalize-py313\Scripts\gdformat.exe' --check scripts tests
+& 'C:\Temp\dengxia-normalize-py313\Scripts\gdlint.exe' scripts tests
+& .\tools\run_godot.ps1 -LogName act2-release-headless -GodotArgs @('--headless','--path','.','--script','res://tests/c/run_act2_opening.gd')
+& .\tools\run_godot.ps1 -LogName act2-release-graphics -GodotArgs @('--path','.','--script','res://tests/c/run_act2_opening.gd')
+& .\tools\run_godot.ps1 -LogName act2-gate-import -GodotArgs @('--headless','--path','.','--import')
+& .\tools\run_godot.ps1 -LogName act2-gate-startup -GodotArgs @('--headless','--path','.','--quit-after','60')
+& .\tools\run_godot.ps1 -LogName act2-gate-export-fixed -GodotArgs @('--headless','--path','.','--export-release','"Windows Desktop"','builds/dengxia.exe')
+& .\tools\run_godot.ps1 -LogName act2-packed-opening -GodotArgs @('--headless','--path','builds','--main-pack','dengxia.pck','res://scenes/act2/opening.tscn','--quit-after','60')
+```
+
+工具包装器使用 Start-Process，含空格的导出预设需要保留双引号；第一次未加引号得到 `Invalid export preset name: Windows`，修正命令后导出成功。发布模板禁止命令行替换 scene path，故直接给导出 exe 传第二关场景的探针被模板拒绝；改用同版本编辑器读取实际 PCK 验证第二关资源，并单独验证导出 exe 默认入口。
+
+日志：忽略的 `builds/stage-realism/logs/act2-*`；图形证据：`builds/act2-opening/fahai-onstage.png`、`fahai-turn-raised.png`、`fahai-close-lamp.png`。源素材预览：`docs/art/fahai-cutout.png`。
+
+本轮按用户要求由同一代理实施并自查，没有调用子智能体；未执行独立代理代码审查。自查覆盖第一关头架映射、上下场/接手不变量、旧状态泄漏、三条收场路径与发布资源加载。
