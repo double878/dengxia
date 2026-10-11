@@ -63,15 +63,22 @@ func update_light(lamp: LampState, real_ms: int, song_ms: int, bpm: float) -> vo
 	cloth_material.set_shader_parameter("distance", StageLight.unit(lamp.distance))
 	cloth_material.set_shader_parameter("flicker", light["cloth_flicker"])
 	cloth_material.set_shader_parameter("visual_seconds", light["visual_seconds"])
-	cloth_material.set_shader_parameter("softness", lerpf(0.65, 1.65, StageLight.unit(lamp.distance)) + extra_softness)
+	cloth_material.set_shader_parameter(
+		"softness", lerpf(0.65, 1.65, StageLight.unit(lamp.distance)) + extra_softness
+	)
 	cloth_material.set_shader_parameter("front_view", front_view)
 	var shear: float = lerpf(-0.008, 0.008, StageLight.unit(lamp.distance))
-	var shift := Vector2(shear * -cloth.get_center().y + float(light["tip_x"]) * 0.10, lerpf(1.5, -2.0, StageLight.unit(lamp.distance)))
+	var shift := Vector2(
+		shear * -cloth.get_center().y + float(light["tip_x"]) * 0.10,
+		lerpf(1.5, -2.0, StageLight.unit(lamp.distance))
+	)
 	var magnification: float = clampf(extra_projection_scale, 1.0, 1.15)
 	shift += cloth.get_center() * (1.0 - magnification)
 	for view: PlaceholderPuppet in projection_views:
 		view.lamp_state = lamp
-		view.transform = Transform2D(Vector2(magnification, 0), Vector2(shear * magnification, magnification), shift)
+		view.transform = Transform2D(
+			Vector2(magnification, 0), Vector2(shear * magnification, magnification), shift
+		)
 	_umbrella.transform = projection_views[0].transform
 	_umbrella.queue_redraw()
 
@@ -82,7 +89,9 @@ func sync_puppets(states: Array, on_stage: Array, umbrella: UmbrellaController =
 		var view: PlaceholderPuppet = projection_views[id]
 		view.puppet_state = states[id] if id < states.size() else null
 		view.visible = on_stage.has(id) and view.puppet_state != null
-		view._held_prop_hand = umbrella.holder_hand_of() if umbrella != null and umbrella.holder_id_of() == id else ""
+		view._held_prop_hand = (
+			umbrella.holder_hand_of() if umbrella != null and umbrella.holder_id_of() == id else ""
+		)
 
 
 func projected_hand_position(id: int, hand: String) -> Vector2:

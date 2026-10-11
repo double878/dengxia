@@ -56,12 +56,24 @@ func _show_page(choice: bool) -> void:
 	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detail.add_theme_font_size_override("font_size", 32)
 	_page.add_child(detail)
-	_add_button("观看幕前回放", Vector2(480, 550), func() -> void:
-		if choice: _choose_replay(true)
-		else: _watch_replay())
-	_add_button("不看回放" if choice else "再演一遍", Vector2(1010, 550), func() -> void:
-		if choice: _choose_replay(false)
-		else: _restart())
+	_add_button(
+		"观看幕前回放",
+		Vector2(480, 550),
+		func() -> void:
+			if choice:
+				_choose_replay(true)
+			else:
+				_watch_replay()
+	)
+	_add_button(
+		"不看回放" if choice else "再演一遍",
+		Vector2(1010, 550),
+		func() -> void:
+			if choice:
+				_choose_replay(false)
+			else:
+				_restart()
+	)
 
 
 func _add_button(text: String, at: Vector2, action: Callable) -> void:

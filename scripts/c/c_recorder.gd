@@ -121,7 +121,8 @@ func capture_states(p_runtime: Variant, p_now_ms: int = -1) -> bool:
 
 	var views: Dictionary = _collect_views(p_runtime)
 	var candidate: Variant = CSnapshotScript.from_views(
-		now_ms, views.get("puppets", []), views.get("lamp", {}))
+		now_ms, views.get("puppets", []), views.get("lamp", {})
+	)
 	if not _record.should_sample(now_ms, candidate):
 		return false
 	return _record.append_snapshot(candidate)

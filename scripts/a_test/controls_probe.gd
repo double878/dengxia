@@ -33,8 +33,15 @@ func _init() -> void:
 func run() -> int:
 	print("")
 	print("================ 图形环境脚本化实测（a_controls_probe）================")
-	print("Godot %s  渲染后端: %s" % [
-		Engine.get_version_info().get("string", "?"), RenderingServer.get_video_adapter_name()])
+	print(
+		(
+			"Godot %s  渲染后端: %s"
+			% [
+				Engine.get_version_info().get("string", "?"),
+				RenderingServer.get_video_adapter_name()
+			]
+		)
+	)
 	_check_chest_tag_hit_test()
 	_reset()
 	_check_drag_horizontal_and_turn()
@@ -48,8 +55,7 @@ func run() -> int:
 	_check_bounds_stress()
 	_check_music_clock()
 	print("")
-	print("实测结论：%s" % ("全部符合预期" if _failures.is_empty()
-		else "%d 项不符合预期" % _failures.size()))
+	print("实测结论：%s" % ("全部符合预期" if _failures.is_empty() else "%d 项不符合预期" % _failures.size()))
 	for line in _failures:
 		print("  不符合预期：%s" % line)
 	print("=====================================================================")
@@ -79,8 +85,10 @@ func _press(input_map: Dictionary) -> void:
 
 func _chest_tag_px() -> Vector2:
 	var s: PuppetState = _state()
-	return Vector2(s.stage_pos.x * STAGE_W,
-		s.stage_pos.y * STAGE_H - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5)
+	return Vector2(
+		s.stage_pos.x * STAGE_W,
+		s.stage_pos.y * STAGE_H - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5
+	)
 
 
 func _expect(condition: bool, message: String) -> void:
@@ -94,15 +102,16 @@ func _check_chest_tag_hit_test() -> void:
 	print("")
 	print("[1] 胸签命中判定：只有按在胸签圆圈内才开始拖动")
 	var far_click: bool = _harness.controller.begin_drag(0, _chest_tag_px() + Vector2(400.0, 0.0))
-	_expect(not far_click, "按在胸签之外不进入拖动，is_dragging=%s"
-		% _harness.input_reader.is_drag_active())
+	_expect(not far_click, "按在胸签之外不进入拖动，is_dragging=%s" % _harness.input_reader.is_drag_active())
 	_reset()
 	var near_click: bool = _harness.controller.begin_drag(0, _chest_tag_px())
 	_expect(near_click, "按在胸签正中心进入拖动")
 	_expect(_harness.controller.is_dragging(), "控制器报告拖动中")
 	var events: Array[Dictionary] = _harness.controller.take_events()
-	_expect(_events_have(events, "drag_begin"), "发出 drag_begin 事件（time_ms=%d）"
-		% (events[0]["time_ms"] if events.size() > 0 else -1))
+	_expect(
+		_events_have(events, "drag_begin"),
+		"发出 drag_begin 事件（time_ms=%d）" % (events[0]["time_ms"] if events.size() > 0 else -1)
+	)
 	_harness.controller.end_drag()
 
 
@@ -115,10 +124,8 @@ func _check_drag_horizontal_and_turn() -> void:
 	_expect(_state().facing == PuppetState.FACING_FRONT, "开局为正面朝外")
 	_harness.controller.drag_to(Vector2(-100.0, 0.0))
 	_step(1)
-	_expect(_state().facing == PuppetState.FACING_FRONT,
-		"翻面第一帧仍在正面（有过渡，不是瞬间翻面）")
-	_expect(_state().turn_progress < 1.0,
-		"翻面已开始：turn_progress = %.4f" % _state().turn_progress)
+	_expect(_state().facing == PuppetState.FACING_FRONT, "翻面第一帧仍在正面（有过渡，不是瞬间翻面）")
+	_expect(_state().turn_progress < 1.0, "翻面已开始：turn_progress = %.4f" % _state().turn_progress)
 
 	var progress_samples: Array[String] = ["%.3f" % _state().turn_progress]
 	var swap_frames: int = 1
@@ -135,16 +142,18 @@ func _check_drag_horizontal_and_turn() -> void:
 		_harness.controller.drag_to(Vector2(-100.0, 0.0))
 		_step(1)
 		total_frames += 1
-	_expect(is_equal_approx(_state().turn_progress, 1.0) and total_frames <= 8,
-		"整个翻面 %d 帧完成（期望 ≤ 8 帧 = 0.1 s）；进度序列 %s"
-			% [total_frames, ", ".join(progress_samples)])
+	_expect(
+		is_equal_approx(_state().turn_progress, 1.0) and total_frames <= 8,
+		"整个翻面 %d 帧完成（期望 ≤ 8 帧 = 0.1 s）；进度序列 %s" % [total_frames, ", ".join(progress_samples)]
+	)
 	_expect(_state().stage_pos.x < x0, "stage_pos.x 减小：%.4f -> %.4f" % [x0, _state().stage_pos.x])
 
 	var x_after_left: float = _state().stage_pos.x
 	_harness.controller.end_drag()
 	_step(20)
-	_expect(is_equal_approx(_state().stage_pos.x, x_after_left),
-		"松开后停在新位置：%.4f" % _state().stage_pos.x)
+	_expect(
+		is_equal_approx(_state().stage_pos.x, x_after_left), "松开后停在新位置：%.4f" % _state().stage_pos.x
+	)
 
 	# 反向：向右拖动应翻回正面，第一帧同样仍停在反面
 	_harness.controller.begin_drag(0, _chest_tag_px())
@@ -154,8 +163,7 @@ func _check_drag_horizontal_and_turn() -> void:
 	for _i in 10:
 		_harness.controller.drag_to(Vector2(300.0, 0.0))
 		_step(1)
-	_expect(_state().facing == PuppetState.FACING_FRONT,
-		"向右拖动后翻回正面（实际 %.1f）" % _state().facing)
+	_expect(_state().facing == PuppetState.FACING_FRONT, "向右拖动后翻回正面（实际 %.1f）" % _state().facing)
 	_harness.controller.end_drag()
 
 
@@ -169,12 +177,16 @@ func _check_drag_vertical_stance() -> void:
 		_step(1)
 		if i % 8 == 0:
 			stance_samples.append("%.3f" % _state().stance)
-	_expect(is_equal_approx(_state().stance, 1.0), "持续向下拖到达 stance = 1.0（采样 %s）"
-		% ", ".join(stance_samples))
+	_expect(
+		is_equal_approx(_state().stance, 1.0),
+		"持续向下拖到达 stance = 1.0（采样 %s）" % ", ".join(stance_samples)
+	)
 	for _i in 40:
 		_harness.controller.drag_to(Vector2(0.0, -90.0))
 		_step(1)
-	_expect(is_equal_approx(_state().stance, 0.0), "持续向上拖回到 stance = 0.0（实际 %.4f）" % _state().stance)
+	_expect(
+		is_equal_approx(_state().stance, 0.0), "持续向上拖回到 stance = 0.0（实际 %.4f）" % _state().stance
+	)
 	_harness.controller.end_drag()
 
 
@@ -186,7 +198,9 @@ func _check_hands() -> void:
 	_press({"left_raise": true})
 	_step(6)
 	_expect(_state().hand_angle.x > left0, "按住 A：左手 %.4f -> %.4f" % [left0, _state().hand_angle.x])
-	_expect(is_equal_approx(_state().hand_angle.y, right0), "按住 A 时右手不动：%.4f" % _state().hand_angle.y)
+	_expect(
+		is_equal_approx(_state().hand_angle.y, right0), "按住 A 时右手不动：%.4f" % _state().hand_angle.y
+	)
 	var held: float = _state().hand_angle.x
 	_press({})
 	_step(30)
@@ -194,13 +208,16 @@ func _check_hands() -> void:
 
 	_press({"both_raise": true})
 	_step(6)
-	_expect(_state().hand_angle.x > held, "按住 W：左手继续抬起 %.4f -> %.4f"
-		% [held, _state().hand_angle.x])
+	_expect(
+		_state().hand_angle.x > held, "按住 W：左手继续抬起 %.4f -> %.4f" % [held, _state().hand_angle.x]
+	)
 	var before_lower: float = _state().hand_angle.x
 	_press({"both_lower": true})
 	_step(6)
-	_expect(_state().hand_angle.x < before_lower, "按住 S：双手转为落下 %.4f -> %.4f"
-		% [before_lower, _state().hand_angle.x])
+	_expect(
+		_state().hand_angle.x < before_lower,
+		"按住 S：双手转为落下 %.4f -> %.4f" % [before_lower, _state().hand_angle.x]
+	)
 	_press({})
 
 
@@ -213,15 +230,18 @@ func _check_conflict() -> void:
 	_harness.controller.take_events()
 	_press({"left_raise": true, "left_lower": true})
 	_step(40)
-	_expect(is_equal_approx(_state().hand_angle.x, locked),
-		"A+Shift+A 同按 40 帧后左手仍为 %.4f" % _state().hand_angle.x)
+	_expect(
+		is_equal_approx(_state().hand_angle.x, locked),
+		"A+Shift+A 同按 40 帧后左手仍为 %.4f" % _state().hand_angle.x
+	)
 	var events: Array[Dictionary] = _harness.controller.take_events()
 	_expect(_events_have_hand_dir(events, "left", 0), "冲突时发出 left dir=0 事件")
 	_press({})
 	_press({"left_raise": true})
 	_step(4)
-	_expect(_state().hand_angle.x > locked, "冲突解除后恢复动作：%.4f -> %.4f"
-		% [locked, _state().hand_angle.x])
+	_expect(
+		_state().hand_angle.x > locked, "冲突解除后恢复动作：%.4f -> %.4f" % [locked, _state().hand_angle.x]
+	)
 	_press({})
 
 
@@ -243,17 +263,28 @@ func _check_bounds_stress() -> void:
 		c = s.stance
 		l = s.hand_angle.x
 		r = s.hand_angle.y
-		if x > 1.0 or x < 0.0 or c > 1.0 or c < 0.0 \
-				or l < PuppetState.HAND_ANGLE_MIN - 1e-6 or l > PuppetState.HAND_ANGLE_MAX + 1e-6 \
-				or r < PuppetState.HAND_ANGLE_MIN - 1e-6 or r > PuppetState.HAND_ANGLE_MAX + 1e-6:
+		if (
+			x > 1.0
+			or x < 0.0
+			or c > 1.0
+			or c < 0.0
+			or l < PuppetState.HAND_ANGLE_MIN - 1e-6
+			or l > PuppetState.HAND_ANGLE_MAX + 1e-6
+			or r < PuppetState.HAND_ANGLE_MIN - 1e-6
+			or r > PuppetState.HAND_ANGLE_MAX + 1e-6
+		):
 			oob = "x=%.6f stance=%.6f hand=(%.6f,%.6f)" % [x, c, l, r]
 			break
 	_expect(oob == "", "240 帧后无越界%s" % ("" if oob == "" else "：" + oob))
 	_expect(is_equal_approx(x, 1.0), "横向停在右边界 x = %.4f" % x)
 	_expect(is_equal_approx(c, 1.0), "站蹲停在完全蹲下 stance = %.4f" % c)
-	_expect(is_equal_approx(l, PuppetState.HAND_ANGLE_MAX)
-		and is_equal_approx(r, PuppetState.HAND_ANGLE_MAX),
-		"双手角停在上限 180° = %.4f rad (%.4f, %.4f)" % [PuppetState.HAND_ANGLE_MAX, l, r])
+	_expect(
+		(
+			is_equal_approx(l, PuppetState.HAND_ANGLE_MAX)
+			and is_equal_approx(r, PuppetState.HAND_ANGLE_MAX)
+		),
+		"双手角停在上限 180° = %.4f rad (%.4f, %.4f)" % [PuppetState.HAND_ANGLE_MAX, l, r]
+	)
 	_harness.controller.end_drag()
 	_press({})
 
@@ -269,8 +300,9 @@ func _check_music_clock() -> void:
 		return
 	_expect(stage_def.duration_ms == 35000, "第一关时长为 35000 ms（实际 %d）" % stage_def.duration_ms)
 	var problems: Array[String] = stage_def.validate()
-	_expect(problems.is_empty(), "第一关数据校验通过%s"
-		% ("" if problems.is_empty() else "：" + str(problems)))
+	_expect(
+		problems.is_empty(), "第一关数据校验通过%s" % ("" if problems.is_empty() else "：" + str(problems))
+	)
 
 
 func _events_have(events: Array[Dictionary], kind: String) -> bool:
@@ -282,7 +314,10 @@ func _events_have(events: Array[Dictionary], kind: String) -> bool:
 
 func _events_have_hand_dir(events: Array[Dictionary], hand: String, dir: int) -> bool:
 	for e in events:
-		if e["kind"] == "hand_motion" and e["payload"]["hand"] == hand \
-				and int(e["payload"]["dir"]) == dir:
+		if (
+			e["kind"] == "hand_motion"
+			and e["payload"]["hand"] == hand
+			and int(e["payload"]["dir"]) == dir
+		):
 			return true
 	return false

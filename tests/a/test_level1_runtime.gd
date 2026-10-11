@@ -11,8 +11,9 @@ func run_all() -> Dictionary:
 	if not ResourceLoader.exists(RUNTIME_PATH):
 		t.begin("第一关 A 侧运行编排")
 		t.check(false, "缺少 Level1Runtime")
-		return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
-			"failures": t.failures}
+		return {
+			"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures
+		}
 	_test_start_to_end(t)
 	_test_hit_and_offbeat(t)
 	_test_miss_and_remedy(t)
@@ -21,8 +22,7 @@ func run_all() -> Dictionary:
 	_test_cues_belong_to_timeline_segments(t)
 	_test_mixed_event_stream_object_ids(t)
 	_test_hand_angle_cap_is_wired(t)
-	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
-		"failures": t.failures}
+	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}
 
 
 func _new_run() -> Dictionary:
@@ -59,7 +59,10 @@ func _steps(run: Dictionary, count: int) -> void:
 func _events(run: Dictionary, kind: String, cue_id: String = "") -> Array:
 	var found: Array = []
 	for event in run["events"]:
-		if event.get("kind", "") == kind and (cue_id.is_empty() or event.get("cue_id", "") == cue_id):
+		if (
+			event.get("kind", "") == kind
+			and (cue_id.is_empty() or event.get("cue_id", "") == cue_id)
+		):
 			found.append(event)
 	return found
 
@@ -75,15 +78,18 @@ func _test_start_to_end(t: ATestBase) -> void:
 	t.check(runtime.is_over(), "35 秒（歌曲时间）时结束")
 	t.check(runtime.lamp_controller.is_finished(), "油灯随关卡结束停止")
 	t.check_eq(_events(run, "stage_end").size(), 1, "关卡结束事件只发一次")
-	t.check_eq(_events(run, "stage_end")[0]["time_ms"], 35000,
-		"stage_end 使用歌曲时间 35000 ms")
+	t.check_eq(_events(run, "stage_end")[0]["time_ms"], 35000, "stage_end 使用歌曲时间 35000 ms")
 	t.check(_events(run, "cue_hint").size() > 0, "有落点前提示事件")
 	t.check(_events(run, "cue_miss").size() > 0, "空场漏做仍有结果事件")
 	t.check(_events(run, "remedy_freeze_begin").size() > 0, "空场跑应有补救冻结")
 	t.check(_events(run, "remedy_freeze_end").size() > 0, "补救结束应解冻")
-	t.check(run["clock"].get_real_time_ms() > 35000,
-		"补救冻结使真实耗时长于歌曲时长（真实 %d ms / 歌曲 %d ms）"
-			% [run["clock"].get_real_time_ms(), run["clock"].get_song_time_ms()])
+	t.check(
+		run["clock"].get_real_time_ms() > 35000,
+		(
+			"补救冻结使真实耗时长于歌曲时长（真实 %d ms / 歌曲 %d ms）"
+			% [run["clock"].get_real_time_ms(), run["clock"].get_song_time_ms()]
+		)
+	)
 	t.check(_events(run, "lamp_oil_changed").size() > 0, "油灯状态持续可读")
 	var finished_oil: float = runtime.lamp_controller.lamp.oil
 	_advance(run, 36000)
@@ -96,22 +102,16 @@ func _test_hit_and_offbeat(t: ATestBase) -> void:
 	var hit_run: Dictionary = _new_run()
 	_advance(hit_run, 1120)
 	_crouch(hit_run)
-	t.check(_events(hit_run, "cue_hit", "l1_c0_crouch").size() > 0,
-		"容差窗内蹲下应命中")
-	t.check(hit_run["runtime"].puppet_controller.get_controlled().stance >= 0.85,
-		"命中时物理姿态到位")
+	t.check(_events(hit_run, "cue_hit", "l1_c0_crouch").size() > 0, "容差窗内蹲下应命中")
+	t.check(hit_run["runtime"].puppet_controller.get_controlled().stance >= 0.85, "命中时物理姿态到位")
 	var miss_run: Dictionary = _new_run()
 	_advance(miss_run, 100)
 	var feedback_before: float = miss_run["runtime"].lamp_controller.lamp.flame_feedback
 	_crouch(miss_run)
-	t.check(_events(miss_run, "cue_fire", "l1_c0_crouch").size() > 0,
-		"提前错拍仍发出物理动作事件")
-	t.check(_events(miss_run, "cue_miss", "l1_c0_crouch").size() > 0,
-		"提前错拍应记为未命中")
-	t.check(miss_run["runtime"].puppet_controller.get_controlled().stance >= 0.85,
-		"错拍时物理姿态照常到位")
-	t.check(miss_run["runtime"].lamp_controller.lamp.flame_feedback < feedback_before,
-		"错拍后油灯反馈下降")
+	t.check(_events(miss_run, "cue_fire", "l1_c0_crouch").size() > 0, "提前错拍仍发出物理动作事件")
+	t.check(_events(miss_run, "cue_miss", "l1_c0_crouch").size() > 0, "提前错拍应记为未命中")
+	t.check(miss_run["runtime"].puppet_controller.get_controlled().stance >= 0.85, "错拍时物理姿态照常到位")
+	t.check(miss_run["runtime"].lamp_controller.lamp.flame_feedback < feedback_before, "错拍后油灯反馈下降")
 	t.finish("命中与错拍经同一运行时可观察")
 
 
@@ -119,8 +119,10 @@ func _crouch(run: Dictionary) -> void:
 	var runtime: Object = run["runtime"]
 	var controller: PuppetController = runtime.puppet_controller
 	var state: PuppetState = controller.get_controlled()
-	var chest := Vector2(state.stage_pos.x * 1920.0,
-		state.stage_pos.y * 1080.0 - PuppetController.CHEST_TAG_RADIUS_PX * 0.5)
+	var chest := Vector2(
+		state.stage_pos.x * 1920.0,
+		state.stage_pos.y * 1080.0 - PuppetController.CHEST_TAG_RADIUS_PX * 0.5
+	)
 	controller.begin_drag(0, chest)
 	for _i in 8:
 		controller.drag_to(Vector2(0.0, 120.0))
@@ -141,7 +143,7 @@ func _test_miss_and_remedy(t: ATestBase) -> void:
 	var runtime: Object = run["runtime"]
 	var clock: MusicClock = run["clock"]
 	_advance(run, 1400)
-	_steps(run, 20)                       # 跨过 cue0 的判定窗上界（1500）
+	_steps(run, 20)  # 跨过 cue0 的判定窗上界（1500）
 	var cue_id: String = "l1_c0_crouch"
 	t.check(_events(run, "cue_miss", cue_id).size() > 0, "漏做先产生 cue_miss")
 	t.check(_events(run, "remedy_open", cue_id).size() > 0, "漏做打开补救窗口")
@@ -158,24 +160,26 @@ func _test_miss_and_remedy(t: ATestBase) -> void:
 	# 否则「补救期间歌曲时间一分不走」就会被结算本身的那一帧破坏。
 	var controller: PuppetController = runtime.puppet_controller
 	var state: PuppetState = controller.get_controlled()
-	controller.begin_drag(0, Vector2(state.stage_pos.x * 1920.0,
-		state.stage_pos.y * 1080.0 - PuppetController.CHEST_TAG_RADIUS_PX * 0.5))
+	controller.begin_drag(
+		0,
+		Vector2(
+			state.stage_pos.x * 1920.0,
+			state.stage_pos.y * 1080.0 - PuppetController.CHEST_TAG_RADIUS_PX * 0.5
+		)
+	)
 	var fix_steps: int = 0
 	while runtime.director.remedy.is_open(cue_id) and fix_steps < 30:
 		controller.drag_to(Vector2(0.0, 120.0))
 		_steps(run, 1)
 		fix_steps += 1
 	t.check(fix_steps > 0, "拖动应最终把蹲下做到位（用了 %d 步）" % fix_steps)
-	t.check(_events(run, "remedy_success", cue_id).size() > 0,
-		"窗口内补做动作应产生 remedy_success")
-	t.check_eq(clock.get_song_time_ms(), song_frozen,
-		"结算成功的那一帧歌曲时间仍是冻结值")
+	t.check(_events(run, "remedy_success", cue_id).size() > 0, "窗口内补做动作应产生 remedy_success")
+	t.check_eq(clock.get_song_time_ms(), song_frozen, "结算成功的那一帧歌曲时间仍是冻结值")
 	controller.end_drag()
 	_steps(run, 1)
 	t.check(not runtime.director.remedy.is_open(cue_id), "成功后关闭补救窗口")
 	t.check(runtime.director.remedy.get_records().size() > 0, "原失误留在记录中")
-	t.check(runtime.lamp_controller.lamp.flame_feedback != feedback_before,
-		"判定和补救结果已驱动油灯火苗")
+	t.check(runtime.lamp_controller.lamp.flame_feedback != feedback_before, "判定和补救结果已驱动油灯火苗")
 	t.check(not runtime.director.is_remedy_frozen(), "补做成功后应解冻")
 	_advance(run, 3000)
 	t.check(clock.get_song_time_ms() >= 3000, "解冻后歌曲时间恢复推进")
@@ -221,8 +225,7 @@ func _test_end_event_boundary(t: ATestBase) -> void:
 	t.check_eq(end_events.size(), 1, "只收到一次结束事件")
 	if end_events.size() == 1:
 		t.check_eq(end_events[0]["time_ms"], 35000, "结束事件时间固定为 35000 ms")
-		t.check_eq(end_events[0]["payload"]["song_time_ms"], 35000,
-			"结束载荷时间固定为 35000 ms")
+		t.check_eq(end_events[0]["payload"]["song_time_ms"], 35000, "结束载荷时间固定为 35000 ms")
 	var out_of_range: int = 0
 	for event in run["events"]:
 		if int(event["time_ms"]) > 35000:
@@ -237,9 +240,11 @@ func _test_cues_belong_to_timeline_segments(t: ATestBase) -> void:
 	for cue in stage.cues:
 		var matched: bool = false
 		for segment in stage.segments:
-			if str(cue["segment"]) == str(segment["name"]) \
-				and int(cue["beat_time_ms"]) >= int(segment["start_ms"]) \
-				and int(cue["beat_time_ms"]) < int(segment["end_ms"]):
+			if (
+				str(cue["segment"]) == str(segment["name"])
+				and int(cue["beat_time_ms"]) >= int(segment["start_ms"])
+				and int(cue["beat_time_ms"]) < int(segment["end_ms"])
+			):
 				matched = true
 				break
 		t.check(matched, "%s 的段落归属与落点一致" % str(cue["cue_id"]))
@@ -276,9 +281,14 @@ func _test_mixed_event_stream_object_ids(t: ATestBase) -> void:
 	for event in lamp_events:
 		if str(event.get("object_id", "")) == LampController.LAMP_OBJECT_ID:
 			lamp_id_matches += 1
-	t.check_eq(lamp_id_matches, lamp_events.size(),
-		"油灯事件的 object_id 应全为 %s（%d / %d）"
-			% [LampController.LAMP_OBJECT_ID, lamp_id_matches, lamp_events.size()])
+	t.check_eq(
+		lamp_id_matches,
+		lamp_events.size(),
+		(
+			"油灯事件的 object_id 应全为 %s（%d / %d）"
+			% [LampController.LAMP_OBJECT_ID, lamp_id_matches, lamp_events.size()]
+		)
+	)
 
 	# 接收端必须只拿油灯事件去校验：混入影人事件会被判成畸形
 	var parsed: Array = LampController.receive_events(lamp_events)
@@ -293,12 +303,21 @@ func _test_hand_angle_cap_is_wired(t: ATestBase) -> void:
 	t.begin("第一关的手角上限（90° 打伞位）接进了操控控制器")
 	var run: Dictionary = _new_run()
 	var runtime: Object = run["runtime"]
-	t.check_approx(runtime.stage_def.hand_angle_max_rad, StageDef.LEVEL1_HAND_MAX_RAD, 1e-9,
-		"第一关数据的手角上限应是 90°")
-	t.check_approx(runtime.puppet_controller.hand_angle_max,
-		runtime.stage_def.hand_angle_max_rad, 1e-9, "运行编排应把它交给操控控制器")
+	t.check_approx(
+		runtime.stage_def.hand_angle_max_rad, StageDef.LEVEL1_HAND_MAX_RAD, 1e-9, "第一关数据的手角上限应是 90°"
+	)
+	t.check_approx(
+		runtime.puppet_controller.hand_angle_max,
+		runtime.stage_def.hand_angle_max_rad,
+		1e-9,
+		"运行编排应把它交给操控控制器"
+	)
 	runtime.puppet_controller.set_input_map({"both_raise": true})
 	_steps(run, 60)
-	t.check_approx(runtime.puppet_controller.get_controlled().hand_angle.x,
-		StageDef.LEVEL1_HAND_MAX_RAD, 1e-6, "按住抬手键到顶应停在 90°，不再举到 180°")
+	t.check_approx(
+		runtime.puppet_controller.get_controlled().hand_angle.x,
+		StageDef.LEVEL1_HAND_MAX_RAD,
+		1e-6,
+		"按住抬手键到顶应停在 90°，不再举到 180°"
+	)
 	t.finish("90° 是能停住的打伞位，且由关卡数据驱动")

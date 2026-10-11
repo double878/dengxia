@@ -45,7 +45,10 @@ func _run() -> void:
 		check(false, "影人缺少可记录步态")
 	else:
 		var hands := bai.hand_angle
-		check(controller.begin_drag(0, Vector2(bai.stage_pos.x * 1920, bai.stage_pos.y * 1080 - 45)), "桥上胸签无法拖动")
+		check(
+			controller.begin_drag(0, Vector2(bai.stage_pos.x * 1920, bai.stage_pos.y * 1080 - 45)),
+			"桥上胸签无法拖动"
+		)
 		controller.drag_to(Vector2(-18, 0))
 		controller.tick(1.0 / 60.0)
 		check(bai.walk_amount > 0.0 and bai.walk_phase > 0.0, "横向拖动没有迈步")
@@ -78,4 +81,7 @@ func capture(level: Node, label: String) -> void:
 		await process_frame
 		await RenderingServer.frame_post_draw
 	DirAccess.make_dir_recursive_absolute("res://builds/stage-walk")
-	check(root.get_texture().get_image().save_png("res://builds/stage-walk/%s.png" % label) == OK, "截图保存失败")
+	check(
+		root.get_texture().get_image().save_png("res://builds/stage-walk/%s.png" % label) == OK,
+		"截图保存失败"
+	)

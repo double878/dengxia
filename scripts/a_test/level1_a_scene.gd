@@ -125,7 +125,9 @@ func _ready() -> void:
 		_shutdown_and_quit(1)
 		return
 	var audio_config: Dictionary = {}
-	var is_legacy_probe := OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG)
+	var is_legacy_probe := (
+		OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG)
+	)
 	if _stage_def.id == 1 and not is_legacy_probe:
 		audio_config = Act1OperaAudio.read_config()
 		if audio_config.is_empty():
@@ -285,13 +287,30 @@ func _diag_process(delta: float) -> void:
 	# win / scale 用来核对「实际开窗尺寸」与「1920x1080 画布的等比缩放」是否符合预期：
 	# 窗口尺寸不对或缩放出 1 时，画面会被裁切或变形，而这两种情况从读数上一眼可辨。
 	var window: Window = get_window()
-	print("DIAG ticks=%d frame=%d fps=%d song=%dms real=%dms frozen=%s beat=%d audio_driven=%s playing=%s pos=%.3fs active=%s advance=%dms ui=%dms delta=%.1fms win=%dx%d canvas_scale=%.3f" % [
-		Time.get_ticks_msec(), _frame_count, Engine.get_frames_per_second(),
-		clock.get_song_time_ms(), clock.get_real_time_ms(), clock.is_song_frozen(),
-		clock.get_beat_index(), clock.is_audio_driven(),
-		player.playing if player != null else false, position_s,
-		metronome.is_active(), t1 - t0, t3 - t2, delta * 1000.0,
-		window.size.x, window.size.y, get_viewport_transform().get_scale().x])
+	print(
+		(
+			"DIAG ticks=%d frame=%d fps=%d song=%dms real=%dms frozen=%s beat=%d audio_driven=%s playing=%s pos=%.3fs active=%s advance=%dms ui=%dms delta=%.1fms win=%dx%d canvas_scale=%.3f"
+			% [
+				Time.get_ticks_msec(),
+				_frame_count,
+				Engine.get_frames_per_second(),
+				clock.get_song_time_ms(),
+				clock.get_real_time_ms(),
+				clock.is_song_frozen(),
+				clock.get_beat_index(),
+				clock.is_audio_driven(),
+				player.playing if player != null else false,
+				position_s,
+				metronome.is_active(),
+				t1 - t0,
+				t3 - t2,
+				delta * 1000.0,
+				window.size.x,
+				window.size.y,
+				get_viewport_transform().get_scale().x
+			]
+		)
+	)
 
 
 func _input(event: InputEvent) -> void:
@@ -365,9 +384,10 @@ func _grab_position(position: Vector2) -> Vector2:
 		return position
 	if not HAND_AREA.has_point(position):
 		return position
-	return Vector2(controlled.stage_pos.x * CANVAS_SIZE.x,
-		controlled.stage_pos.y * CANVAS_SIZE.y
-			- PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5)
+	return Vector2(
+		controlled.stage_pos.x * CANVAS_SIZE.x,
+		controlled.stage_pos.y * CANVAS_SIZE.y - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5
+	)
 
 
 func _try_swap_head(slot: int) -> void:
@@ -406,14 +426,25 @@ func _refresh_ui() -> void:
 		return
 	var runtime: Level1Runtime = _harness.runtime
 	_lamp.lamp = runtime.lamp_controller.lamp
-	_lamp.set_visual_time(_harness.clock.get_real_time_ms(), _harness.clock.get_song_time_ms(), _harness.clock.bpm)
-	_stage_surface.update_light(_lamp.lamp, _harness.clock.get_real_time_ms(), _harness.clock.get_song_time_ms(), _harness.clock.bpm)
-	_stage_surface.sync_puppets(runtime.puppet_controller.puppets, _on_stage, runtime.director.umbrella)
+	_lamp.set_visual_time(
+		_harness.clock.get_real_time_ms(), _harness.clock.get_song_time_ms(), _harness.clock.bpm
+	)
+	_stage_surface.update_light(
+		_lamp.lamp,
+		_harness.clock.get_real_time_ms(),
+		_harness.clock.get_song_time_ms(),
+		_harness.clock.bpm
+	)
+	_stage_surface.sync_puppets(
+		runtime.puppet_controller.puppets, _on_stage, runtime.director.umbrella
+	)
 	_stage_binding.set_visual_time(_harness.clock.get_real_time_ms())
 	_stage_backdrop.oil = _lamp.lamp.oil
 	_stage_backdrop.queue_redraw()
 	_entity_umbrella.umbrella = runtime.director.umbrella
-	(_entity_umbrella.material as ShaderMaterial).set_shader_parameter("environment", 0.58 + 0.42 * StageLight.unit(_lamp.lamp.oil))
+	(_entity_umbrella.material as ShaderMaterial).set_shader_parameter(
+		"environment", 0.58 + 0.42 * StageLight.unit(_lamp.lamp.oil)
+	)
 	_entity_umbrella.queue_redraw()
 	_foreground.queue_redraw()
 	for i in _puppet_views.size():
@@ -425,7 +456,11 @@ func _refresh_ui() -> void:
 		view.hand_anchor = HAND_ANCHOR
 		view.stage_origin = Vector2.ZERO
 		view.stage_size = CANVAS_SIZE
-		view._held_prop_hand = runtime.director.umbrella.holder_hand_of() if runtime.director.umbrella != null and runtime.director.umbrella.holder_id_of() == i else ""
+		view._held_prop_hand = (
+			runtime.director.umbrella.holder_hand_of()
+			if runtime.director.umbrella != null and runtime.director.umbrella.holder_id_of() == i
+			else ""
+		)
 
 	_status_label.text = _stage_def.title
 	if runtime.is_over():
@@ -449,14 +484,23 @@ func _refresh_ui() -> void:
 		_cue_label.text = _active_cue_text()
 		if _harness.opera_flow != null:
 			match _harness.opera_flow.phase:
-				"opening", "return_dialogue": _cue_label.text = ""
-				"approach", "wait_arrival": _cue_label.text = "拖动胸签，走到许仙身旁"
-				"borrow_dialogue": _cue_label.text = "唱完后，抬起左手接伞"
-				"wait_take": _cue_label.text = "按 A 抬左手，与许仙的手相接"
-				"tour", "wait_return": _cue_label.text = "持伞走到小青身旁，再回许仙处还伞"
+				"opening", "return_dialogue":
+					_cue_label.text = ""
+				"approach", "wait_arrival":
+					_cue_label.text = "拖动胸签，走到许仙身旁"
+				"borrow_dialogue":
+					_cue_label.text = "唱完后，抬起左手接伞"
+				"wait_take":
+					_cue_label.text = "按 A 抬左手，与许仙的手相接"
+				"tour", "wait_return":
+					_cue_label.text = "持伞走到小青身旁，再回许仙处还伞"
 	if _dialogue_label != null and _harness.opera_audio != null:
 		var line: Dictionary = _harness.opera_audio.current_line()
-		_dialogue_label.text = "%s：%s" % [str(line.get("role_name", "")), str(line.get("text", ""))] if not line.is_empty() else ""
+		_dialogue_label.text = (
+			"%s：%s" % [str(line.get("role_name", "")), str(line.get("text", ""))]
+			if not line.is_empty()
+			else ""
+		)
 
 	var demo_id: String = runtime.director.remedy.current_demo_cue_id
 	var frozen: bool = _harness.clock.is_song_frozen()
@@ -469,8 +513,7 @@ func _refresh_ui() -> void:
 			remedy_text = _action_text(str(_find_cue(demo_id).get("action", "")))
 		_remedy_banner.text = "补救中　·　演出已暂停　·　%s" % remedy_text
 	elif not demo_id.is_empty():
-		_remedy_banner.text = "师父示范　·　%s" % _action_text(
-			str(_find_cue(demo_id).get("action", "")))
+		_remedy_banner.text = "师父示范　·　%s" % _action_text(str(_find_cue(demo_id).get("action", "")))
 
 	var controller: PuppetController = runtime.puppet_controller
 	_hook_label.text = hook_hint_text(controller, _selected_puppet)
@@ -527,24 +570,39 @@ func _find_cue(cue_id: String) -> Dictionary:
 
 func _action_text(action: String) -> String:
 	match action:
-		CueScript.ACTION_CROUCH: return "向下拖动胸签，蹲下"
-		CueScript.ACTION_STAND_UP: return "向上拖动胸签，站起"
-		CueScript.ACTION_HAND_RAISE: return "按 A 抬起左手"
-		CueScript.ACTION_HAND_LOWER: return "按 Shift+A 放下左手"
-		CueScript.ACTION_MOVE_LEFT: return "向左拖动胸签，走向许仙"
-		CueScript.ACTION_MOVE_RIGHT: return "向右拖动胸签，走回小青身旁"
-		CueScript.ACTION_REACH: return "把影人带回幕布中央"
-		CueScript.ACTION_HOOK: return "按空格挂起当前影人"
-		CueScript.ACTION_TAKE_BACK: return "点选挂起的影人，按空格取回"
-		CueScript.ACTION_HEAD_SWAP: return "按 1 / 2 / 3 与备用头架换头"
-		CueScript.ACTION_LAMP_DISTANCE: return "滚轮推拉灯，让全场影子同步缩放"
-		CueScript.ACTION_LAMP_EXPOSURE: return "按 Q / E 调整影子的显露"
-		CueScript.ACTION_UMBRELLA_TAKE: return "走到许仙面前，按 A 抬左手到 90°，两只手碰到就接伞"
-		CueScript.ACTION_UMBRELLA_RETURN: return "向左走回许仙身旁，把伞还回他的右手"
+		CueScript.ACTION_CROUCH:
+			return "向下拖动胸签，蹲下"
+		CueScript.ACTION_STAND_UP:
+			return "向上拖动胸签，站起"
+		CueScript.ACTION_HAND_RAISE:
+			return "按 A 抬起左手"
+		CueScript.ACTION_HAND_LOWER:
+			return "按 Shift+A 放下左手"
+		CueScript.ACTION_MOVE_LEFT:
+			return "向左拖动胸签，走向许仙"
+		CueScript.ACTION_MOVE_RIGHT:
+			return "向右拖动胸签，走回小青身旁"
+		CueScript.ACTION_REACH:
+			return "把影人带回幕布中央"
+		CueScript.ACTION_HOOK:
+			return "按空格挂起当前影人"
+		CueScript.ACTION_TAKE_BACK:
+			return "点选挂起的影人，按空格取回"
+		CueScript.ACTION_HEAD_SWAP:
+			return "按 1 / 2 / 3 与备用头架换头"
+		CueScript.ACTION_LAMP_DISTANCE:
+			return "滚轮推拉灯，让全场影子同步缩放"
+		CueScript.ACTION_LAMP_EXPOSURE:
+			return "按 Q / E 调整影子的显露"
+		CueScript.ACTION_UMBRELLA_TAKE:
+			return "走到许仙面前，按 A 抬左手到 90°，两只手碰到就接伞"
+		CueScript.ACTION_UMBRELLA_RETURN:
+			return "向左走回许仙身旁，把伞还回他的右手"
 	return "跟着鼓点继续演出"
 
 
 ## —— 以下全是只读的画面表现 ——
+
 
 func _draw() -> void:
 	_draw_canvas = self
@@ -552,8 +610,12 @@ func _draw() -> void:
 	_draw_hooks()
 	_draw_head_rack()
 	_draw_canvas.draw_rect(FOOTER, Color("#222927"))
-	_draw_canvas.draw_line(Vector2(0.0, FOOTER.position.y), Vector2(CANVAS_SIZE.x, FOOTER.position.y),
-		Color("#ad8147"), 2.0)
+	_draw_canvas.draw_line(
+		Vector2(0.0, FOOTER.position.y),
+		Vector2(CANVAS_SIZE.x, FOOTER.position.y),
+		Color("#ad8147"),
+		2.0
+	)
 	_draw_beat_indicator()
 
 
@@ -595,8 +657,9 @@ func _draw_head_rack() -> void:
 	if _harness == null:
 		return
 	var wood := Color("#b07a41") * _environment()
-	_draw_canvas.draw_line(Vector2(RACK_SLOT_X[0] - 62.0, 764.0),
-		Vector2(RACK_SLOT_X[2] + 62.0, 764.0), wood, 11.0)
+	_draw_canvas.draw_line(
+		Vector2(RACK_SLOT_X[0] - 62.0, 764.0), Vector2(RACK_SLOT_X[2] + 62.0, 764.0), wood, 11.0
+	)
 	for i in RACK_SLOT_X.size():
 		var x: float = RACK_SLOT_X[i]
 		_draw_canvas.draw_line(Vector2(x, 764.0), Vector2(x, 804.0), wood, 5.0)
@@ -604,9 +667,18 @@ func _draw_head_rack() -> void:
 		if head_id >= 0:
 			_draw_spare_head(Vector2(x, RACK_Y), head_id)
 		else:
-			_draw_canvas.draw_arc(Vector2(x, RACK_Y), 20.0, 0.0, TAU, 24, Color(0.42, 0.36, 0.28), 3.0)
-		_draw_canvas.draw_string(ThemeDB.fallback_font, Vector2(x - 6.0, RACK_Y + 48.0),
-			str(i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.85, 0.75, 0.55))
+			_draw_canvas.draw_arc(
+				Vector2(x, RACK_Y), 20.0, 0.0, TAU, 24, Color(0.42, 0.36, 0.28), 3.0
+			)
+		_draw_canvas.draw_string(
+			ThemeDB.fallback_font,
+			Vector2(x - 6.0, RACK_Y + 48.0),
+			str(i + 1),
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1,
+			22,
+			Color(0.85, 0.75, 0.55)
+		)
 
 
 ## 备用头的形状按 head_id 变化，与影人头上的头饰同一套映射，
@@ -622,9 +694,12 @@ func _draw_spare_head(centre: Vector2, head_id: int) -> void:
 				var size: float = 21.0 * float(skin["head_size_per_radius"])
 				var mirror: float = 1.0 / float(skin["reference_facing"])
 				_draw_canvas.draw_set_transform(centre, 0.0, Vector2(mirror, 1.0))
-				_draw_canvas.draw_texture_rect_region(PuppetViewScript.SKIN_TEXTURES[head_id],
+				_draw_canvas.draw_texture_rect_region(
+					PuppetViewScript.SKIN_TEXTURES[head_id],
 					Rect2(Vector2(-size * 0.5, -size * 0.5), Vector2(size, size)),
-					Rect2(0.0, 0.0, 512.0, 512.0), Color(1, 1, 1, 1) * _environment())
+					Rect2(0.0, 0.0, 512.0, 512.0),
+					Color(1, 1, 1, 1) * _environment()
+				)
 				_draw_canvas.draw_set_transform(Vector2.ZERO)
 				return
 	var accents: Array = PuppetViewScript.HEAD_ACCENTS
@@ -680,6 +755,7 @@ const CANOPY_RADIUS_RATIO: float = UmbrellaVisualScript.RADIUS
 const CANOPY_DROP_RATIO: float = UmbrellaVisualScript.DROP
 ## 伞杆粗细与「伞在谁手上」的标记也按身高走，灯距推拉时与影人一起缩放（原来是写死的像素）。
 
+
 ## 伞面中心：**手腕正上方** `CANOPY_LIFT_RATIO` 个身高处（伞杆因此是竖直的）。
 static func umbrella_canopy_centre(hand: Vector2, figure_height: float) -> Vector2:
 	return hand + Vector2(0.0, -figure_height * CANOPY_LIFT_RATIO)
@@ -702,23 +778,38 @@ func _draw_hands_and_tags() -> void:
 	# 三根签的杆身
 	for i in 3:
 		var x: float = HAND_ANCHOR.x - 34.0 + float(i) * 34.0
-		_draw_canvas.draw_line(Vector2(x, HAND_ANCHOR.y - 122.0), Vector2(x, HAND_ANCHOR.y + 6.0),
-			Color("#4a3419"), 11.0)
-		_draw_canvas.draw_line(Vector2(x, HAND_ANCHOR.y - 122.0), Vector2(x, HAND_ANCHOR.y + 6.0),
-			wood, 7.0)
+		_draw_canvas.draw_line(
+			Vector2(x, HAND_ANCHOR.y - 122.0),
+			Vector2(x, HAND_ANCHOR.y + 6.0),
+			Color("#4a3419"),
+			11.0
+		)
+		_draw_canvas.draw_line(
+			Vector2(x, HAND_ANCHOR.y - 122.0), Vector2(x, HAND_ANCHOR.y + 6.0), wood, 7.0
+		)
 	# 手：掌 + 四指 + 拇指
 	_draw_canvas.draw_circle(HAND_ANCHOR, 40.0, skin)
 	_draw_canvas.draw_arc(HAND_ANCHOR, 40.0, 0.0, TAU, 36, edge, 3.0)
 	for i in 4:
 		var x: float = HAND_ANCHOR.x - 30.0 + float(i) * 20.0
-		_draw_canvas.draw_line(Vector2(x, HAND_ANCHOR.y - 18.0),
-			Vector2(x - 2.0, HAND_ANCHOR.y - 74.0 - float(i % 2) * 10.0), edge, 16.0)
-		_draw_canvas.draw_line(Vector2(x, HAND_ANCHOR.y - 18.0),
-			Vector2(x - 2.0, HAND_ANCHOR.y - 74.0 - float(i % 2) * 10.0), skin, 12.0)
-	_draw_canvas.draw_line(HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0),
-		edge, 20.0)
-	_draw_canvas.draw_line(HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0),
-		skin, 15.0)
+		_draw_canvas.draw_line(
+			Vector2(x, HAND_ANCHOR.y - 18.0),
+			Vector2(x - 2.0, HAND_ANCHOR.y - 74.0 - float(i % 2) * 10.0),
+			edge,
+			16.0
+		)
+		_draw_canvas.draw_line(
+			Vector2(x, HAND_ANCHOR.y - 18.0),
+			Vector2(x - 2.0, HAND_ANCHOR.y - 74.0 - float(i % 2) * 10.0),
+			skin,
+			12.0
+		)
+	_draw_canvas.draw_line(
+		HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0), edge, 20.0
+	)
+	_draw_canvas.draw_line(
+		HAND_ANCHOR + Vector2(-30.0, 10.0), HAND_ANCHOR + Vector2(-72.0, -26.0), skin, 15.0
+	)
 
 
 func _environment() -> float:
@@ -733,8 +824,11 @@ func _draw_beat_indicator() -> void:
 	for i in 4:
 		var x: float = 1372.0 + float(i) * 66.0
 		var active: bool = i == beat and not _paused and not _harness.runtime.is_over()
-		_draw_canvas.draw_circle(Vector2(x, FOOTER.position.y + 48.0), 15.0 if active else 10.0,
-			Color("#ef9f27") if active else Color("#776857"))
+		_draw_canvas.draw_circle(
+			Vector2(x, FOOTER.position.y + 48.0),
+			15.0 if active else 10.0,
+			Color("#ef9f27") if active else Color("#776857")
+		)
 
 
 ## 当前线索的目标范围。前四关允许出现目标边界图标，但不泄露精确拍号（PRD 第 5.1 节）。
@@ -756,11 +850,17 @@ func _draw_target_marker() -> void:
 	if key == "x":
 		var x0: float = CLOTH.position.x + float(bounds.get("min", 0.0)) * CLOTH.size.x
 		var x1: float = CLOTH.position.x + float(bounds.get("max", 1.0)) * CLOTH.size.x
-		_draw_canvas.draw_rect(Rect2(x0, CLOTH.position.y + 8.0, x1 - x0, CLOTH.size.y - 16.0),
-			Color(0.98, 0.72, 0.25, 0.12))
+		_draw_canvas.draw_rect(
+			Rect2(x0, CLOTH.position.y + 8.0, x1 - x0, CLOTH.size.y - 16.0),
+			Color(0.98, 0.72, 0.25, 0.12)
+		)
 		for x in range(int(x0), int(x1), 34):
-			_draw_canvas.draw_line(Vector2(float(x), CLOTH.end.y - 10.0),
-				Vector2(float(x), CLOTH.end.y - 34.0), Color(0.98, 0.72, 0.25, 0.55), 3.0)
+			_draw_canvas.draw_line(
+				Vector2(float(x), CLOTH.end.y - 10.0),
+				Vector2(float(x), CLOTH.end.y - 34.0),
+				Color(0.98, 0.72, 0.25, 0.55),
+				3.0
+			)
 	elif key == "distance" or key == "exposure":
 		_draw_lamp_marker(key, bounds)
 	elif CueScript.EVENT_ACTIONS.has(action):
@@ -780,8 +880,9 @@ func _draw_lamp_marker(key: String, bounds: Dictionary) -> void:
 	var hi: float = float(bounds.get("max", 1.0))
 	var y0: float = track.end.y - hi * track.size.y
 	var y1: float = track.end.y - lo * track.size.y
-	_draw_canvas.draw_rect(Rect2(track.position.x, y0, track.size.x, maxf(y1 - y0, 4.0)),
-		Color(0.98, 0.72, 0.25, 0.55))
+	_draw_canvas.draw_rect(
+		Rect2(track.position.x, y0, track.size.x, maxf(y1 - y0, 4.0)), Color(0.98, 0.72, 0.25, 0.55)
+	)
 	_draw_canvas.draw_rect(track, Color(0.98, 0.72, 0.25, 0.90), false, 2.0)
 
 
@@ -792,15 +893,23 @@ func _draw_key_hint(action: String) -> void:
 	var controlled: PuppetState = controller.get_controlled()
 	var base := Vector2(CANVAS_SIZE.x * 0.5, 320.0)
 	if controlled != null:
-		base = Vector2(controlled.stage_pos.x * CANVAS_SIZE.x,
-			controlled.stage_pos.y * CANVAS_SIZE.y - 258.0)
+		base = Vector2(
+			controlled.stage_pos.x * CANVAS_SIZE.x, controlled.stage_pos.y * CANVAS_SIZE.y - 258.0
+		)
 	var label: String = "1·2·3" if action == CueScript.ACTION_HEAD_SWAP else "空格"
 	var colour := Color(0.98, 0.72, 0.25, 0.90)
 	var box := Rect2(base.x - 54.0, base.y - 27.0, 108.0, 54.0)
 	_draw_canvas.draw_rect(box, Color(0.10, 0.08, 0.06, 0.78))
 	_draw_canvas.draw_rect(box, colour, false, 3.0)
-	_draw_canvas.draw_string(ThemeDB.fallback_font, Vector2(box.position.x, base.y + 11.0), label,
-		HORIZONTAL_ALIGNMENT_CENTER, box.size.x, 30, colour)
+	_draw_canvas.draw_string(
+		ThemeDB.fallback_font,
+		Vector2(box.position.x, base.y + 11.0),
+		label,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		box.size.x,
+		30,
+		colour
+	)
 
 
 ## 姿势类动作（站起/蹲下/抬手/落手）用影人身旁的方向箭头提示，不写数字。
@@ -809,8 +918,10 @@ func _draw_pose_arrow(action: String) -> void:
 	var controlled: PuppetState = controller.get_controlled()
 	if controlled == null:
 		return
-	var base := Vector2(controlled.stage_pos.x * CANVAS_SIZE.x + 118.0,
-		controlled.stage_pos.y * CANVAS_SIZE.y - 190.0)
+	var base := Vector2(
+		controlled.stage_pos.x * CANVAS_SIZE.x + 118.0,
+		controlled.stage_pos.y * CANVAS_SIZE.y - 190.0
+	)
 	var up: bool = action == CueScript.ACTION_STAND_UP or action == CueScript.ACTION_HAND_RAISE
 	var tip := base + Vector2(0.0, -58.0 if up else 58.0)
 	var colour := Color(0.98, 0.72, 0.25, 0.85)
@@ -844,8 +955,14 @@ const HAND_REMEDY: int = 2
 ## 两类提示手的显示判定。做成**静态纯函数**，这样互斥规则可以被无头测试直接断言，
 ## 不必靠跑图形界面去看「画面上到底有几只手」。
 ## 优先级：补救手 > 教学手；补救冻结期间一律不出手（教学手被压制，补救手本就来自窗口）。
-static func hint_hand_choice(paused: bool, over: bool, is_tutorial: bool, frozen: bool,
-		remedy_demo_cue_id: String, active_cue_id: String) -> int:
+static func hint_hand_choice(
+	paused: bool,
+	over: bool,
+	is_tutorial: bool,
+	frozen: bool,
+	remedy_demo_cue_id: String,
+	active_cue_id: String
+) -> int:
 	if paused or over:
 		return HAND_NONE
 	if not remedy_demo_cue_id.is_empty():
@@ -862,10 +979,14 @@ static func hint_hand_choice(paused: bool, over: bool, is_tutorial: bool, frozen
 func _hand_choice() -> int:
 	if _harness == null or _stage_def == null:
 		return HAND_NONE
-	return hint_hand_choice(_paused, _harness.runtime.is_over(), _stage_def.is_tutorial(),
+	return hint_hand_choice(
+		_paused,
+		_harness.runtime.is_over(),
+		_stage_def.is_tutorial(),
 		_harness.clock.is_song_frozen(),
 		_harness.runtime.director.remedy.current_demo_cue_id,
-		str(_active_cue().get("cue_id", "")))
+		str(_active_cue().get("cue_id", ""))
+	)
 
 
 ## 教学提示手：每个关键动作**发生之前**出现，示范「该做什么」（PRD 第 5.1 节）。
@@ -876,8 +997,9 @@ func _draw_teaching_hand() -> void:
 		return
 	var now_s: float = _harness.clock.get_song_time_s()
 	var sway: float = sin(now_s * 4.0) * 16.0
-	var base: Vector2 = HAND_ANCHOR + Vector2(-186.0, 4.0) \
-		+ _action_motion(str(cue.get("action", "")), sway)
+	var base: Vector2 = (
+		HAND_ANCHOR + Vector2(-186.0, 4.0) + _action_motion(str(cue.get("action", "")), sway)
+	)
 	_draw_hand_shape(base, true, 0.62)
 
 
@@ -886,8 +1008,9 @@ func _draw_remedy_hand() -> void:
 	# 用真实时间驱动示范手的摆动：补救期间歌曲时间是冻结的，用它会得到一只僵住的手，
 	# 而这只手的作用恰恰是「让玩家看出该补做什么动作」。
 	var now_s: float = _harness.clock.get_real_time_s()
-	var action: String = str(_find_cue(
-		_harness.runtime.director.remedy.current_demo_cue_id).get("action", ""))
+	var action: String = str(
+		_find_cue(_harness.runtime.director.remedy.current_demo_cue_id).get("action", "")
+	)
 	var sway: float = sin(now_s * 7.0) * 20.0
 	var base: Vector2 = HAND_ANCHOR + Vector2(-186.0, 4.0) + _action_motion(action, sway)
 	# 外圈光晕：让「纠正」比「预告」更重，两类手一眼可分。
@@ -899,16 +1022,26 @@ func _draw_remedy_hand() -> void:
 ## 两类提示手共用，保证「手指的方向」与「落点要求的动作」永远一致。
 func _action_motion(action: String, sway: float) -> Vector2:
 	match action:
-		CueScript.ACTION_MOVE_LEFT: return Vector2(-sway, 0.0)
-		CueScript.ACTION_MOVE_RIGHT, CueScript.ACTION_REACH: return Vector2(sway, 0.0)
-		CueScript.ACTION_CROUCH, CueScript.ACTION_HAND_LOWER: return Vector2(0.0, sway)
-		CueScript.ACTION_LAMP_DISTANCE: return Vector2(sway, 0.0)
-		CueScript.ACTION_LAMP_EXPOSURE: return Vector2(0.0, -sway)
-		CueScript.ACTION_HOOK, CueScript.ACTION_TAKE_BACK: return Vector2(0.0, -sway * 0.6)
-		CueScript.ACTION_HEAD_SWAP: return Vector2(sway * 0.5, -sway * 0.5)
-		CueScript.ACTION_UMBRELLA_TAKE: return Vector2(0.0, -sway)
-		CueScript.ACTION_UMBRELLA_RETURN: return Vector2(sway, 0.0)
-		_: return Vector2(0.0, -sway)
+		CueScript.ACTION_MOVE_LEFT:
+			return Vector2(-sway, 0.0)
+		CueScript.ACTION_MOVE_RIGHT, CueScript.ACTION_REACH:
+			return Vector2(sway, 0.0)
+		CueScript.ACTION_CROUCH, CueScript.ACTION_HAND_LOWER:
+			return Vector2(0.0, sway)
+		CueScript.ACTION_LAMP_DISTANCE:
+			return Vector2(sway, 0.0)
+		CueScript.ACTION_LAMP_EXPOSURE:
+			return Vector2(0.0, -sway)
+		CueScript.ACTION_HOOK, CueScript.ACTION_TAKE_BACK:
+			return Vector2(0.0, -sway * 0.6)
+		CueScript.ACTION_HEAD_SWAP:
+			return Vector2(sway * 0.5, -sway * 0.5)
+		CueScript.ACTION_UMBRELLA_TAKE:
+			return Vector2(0.0, -sway)
+		CueScript.ACTION_UMBRELLA_RETURN:
+			return Vector2(sway, 0.0)
+		_:
+			return Vector2(0.0, -sway)
 
 
 ## 一只手。`outlined` 为 true 时只描边（教学手），false 时实色填充（补救手）。
@@ -949,8 +1082,7 @@ func _hung_puppet_at(position: Vector2) -> int:
 	for state in controller.puppets:
 		if state.hook_slot == PuppetState.HOOK_SLOT_NONE:
 			continue
-		var ground := Vector2(state.stage_pos.x * CANVAS_SIZE.x,
-			state.stage_pos.y * CANVAS_SIZE.y)
+		var ground := Vector2(state.stage_pos.x * CANVAS_SIZE.x, state.stage_pos.y * CANVAS_SIZE.y)
 		if position.distance_to(ground - Vector2(0.0, 110.0)) <= PUPPET_HIT_RADIUS:
 			return state.puppet_id
 	return -1

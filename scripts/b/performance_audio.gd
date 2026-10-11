@@ -166,18 +166,38 @@ func _set_state(value: String) -> void:
 	if _state == value:
 		return
 	_state = value
-	_emit("audio_state_changed", {"state": value, "recordings_ready": _ready_audio,
-		"slow_transition_ms": 180, "main_transition_ms": 120})
+	_emit(
+		"audio_state_changed",
+		{
+			"state": value,
+			"recordings_ready": _ready_audio,
+			"slow_transition_ms": 180,
+			"main_transition_ms": 120
+		}
+	)
 
 
 func _emit(kind: String, extra: Dictionary) -> void:
 	var payload: Dictionary = extra.duplicate(true)
-	payload.merge({"real_time_ms": clock.get_real_time_ms(), "sequence": _sequence,
-		"audio_version": score.audio_version, "stage_id": score.stage_id}, true)
+	payload.merge(
+		{
+			"real_time_ms": clock.get_real_time_ms(),
+			"sequence": _sequence,
+			"audio_version": score.audio_version,
+			"stage_id": score.stage_id
+		},
+		true
+	)
 	_sequence += 1
-	_events.append({"time_ms": mini(clock.get_song_time_ms(), score.duration_ms),
-		"kind": kind, "object_id": "performance_audio", "cue_id": str(extra.get("cue_id", "")),
-		"payload": payload})
+	_events.append(
+		{
+			"time_ms": mini(clock.get_song_time_ms(), score.duration_ms),
+			"kind": kind,
+			"object_id": "performance_audio",
+			"cue_id": str(extra.get("cue_id", "")),
+			"payload": payload
+		}
+	)
 
 
 func take_events() -> Array[Dictionary]:

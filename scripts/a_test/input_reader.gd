@@ -32,14 +32,19 @@ func poll_keys() -> void:
 	if controller == null or not enabled:
 		return
 	var shift: bool = Input.is_key_pressed(KEY_SHIFT)
-	controller.set_input_map({
-		"left_raise": Input.is_key_pressed(KEY_A) and not shift,
-		"left_lower": Input.is_key_pressed(KEY_A) and shift,
-		"right_raise": Input.is_key_pressed(KEY_D) and not shift,
-		"right_lower": Input.is_key_pressed(KEY_D) and shift,
-		"both_raise": Input.is_key_pressed(KEY_W),
-		"both_lower": Input.is_key_pressed(KEY_S),
-	})
+	(
+		controller
+		. set_input_map(
+			{
+				"left_raise": Input.is_key_pressed(KEY_A) and not shift,
+				"left_lower": Input.is_key_pressed(KEY_A) and shift,
+				"right_raise": Input.is_key_pressed(KEY_D) and not shift,
+				"right_lower": Input.is_key_pressed(KEY_D) and shift,
+				"both_raise": Input.is_key_pressed(KEY_W),
+				"both_lower": Input.is_key_pressed(KEY_S),
+			}
+		)
+	)
 
 
 ## 处理一个鼠标事件。返回 true 表示该事件被本读取器消费。

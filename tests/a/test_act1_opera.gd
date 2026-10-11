@@ -2,10 +2,19 @@ extends RefCounted
 
 const TestBase := preload("res://tests/a/a_test_base.gd")
 const FLOW_PATH := "res://scripts/a/act1_opera_flow.gd"
-const CONFIG := {"audio_version": "test-natural-v1", "opening_end_ms": 1000,
-	"arrival_ms": 2000, "singing_start_ms": 2400, "singing_end_ms": 3500,
-	"take_ms": 3900, "tour_start_ms": 3900, "return_gate_ms": 8000,
-	"return_start_ms": 8500, "closing_ms": 11000, "duration_ms": 12000}
+const CONFIG := {
+	"audio_version": "test-natural-v1",
+	"opening_end_ms": 1000,
+	"arrival_ms": 2000,
+	"singing_start_ms": 2400,
+	"singing_end_ms": 3500,
+	"take_ms": 3900,
+	"tour_start_ms": 3900,
+	"return_gate_ms": 8000,
+	"return_start_ms": 8500,
+	"closing_ms": 11000,
+	"duration_ms": 12000
+}
 
 
 func run_all() -> Dictionary:

@@ -6,7 +6,9 @@ const Backdrop := preload("res://scripts/b/stage_backdrop.gd")
 const PuppetView := preload("res://scripts/a_test/placeholder_puppet.gd")
 const LampView := preload("res://scripts/a_test/placeholder_lamp.gd")
 const PropView := preload("res://scripts/b/umbrella_visual.gd")
-const CASES: Array[String] = ["normal", "near", "far", "low", "overlap", "head", "turn", "offscreen", "lifted"]
+const CASES: Array[String] = [
+	"normal", "near", "far", "low", "overlap", "head", "turn", "offscreen", "lifted"
+]
 var surface: StageSurface
 var backdrop: StageBackdrop
 var lamp_view: PlaceholderLamp
@@ -61,7 +63,11 @@ func set_case(value: String) -> void:
 		var state := PuppetState.new(id)
 		state.head_id = id
 		state.stage_pos = Vector2([0.28, 0.51, 0.76][id], 0.55)
-		state.hand_angle = [Vector2(PI * 0.62, PI * 0.12), Vector2(PI * 0.05, PI * 0.5), Vector2(PI * 0.78, PI * 0.28)][id]
+		state.hand_angle = [
+			Vector2(PI * 0.62, PI * 0.12),
+			Vector2(PI * 0.05, PI * 0.5),
+			Vector2(PI * 0.78, PI * 0.28)
+		][id]
 		state.facing = -1.0 if id == 0 else 1.0
 		state.is_controlled = id == 0
 		state.hook_slot = id - 1 if id > 0 else -1
@@ -73,8 +79,10 @@ func set_case(value: String) -> void:
 	surface.extra_softness = 0.0
 	surface.extra_projection_scale = 1.0
 	match case_name:
-		"near": lamp.distance = 1.0
-		"far": lamp.distance = 0.0
+		"near":
+			lamp.distance = 1.0
+		"far":
+			lamp.distance = 0.0
 		"low":
 			lamp.oil = 0.0
 			lamp.exposure = 0.0
@@ -86,7 +94,8 @@ func set_case(value: String) -> void:
 		"head":
 			states[0].head_id = 2
 			states[2].head_id = 0
-		"turn": states[0].turn_progress = 0.5
+		"turn":
+			states[0].turn_progress = 0.5
 		"offscreen":
 			states[0].stage_pos = Vector2(0.025, 0.23)
 			states[2].stage_pos = Vector2(0.98, 0.15)
@@ -130,10 +139,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	match event.keycode:
-		KEY_TAB: front = not front
-		KEY_SPACE: paused = not paused
-		KEY_RIGHT: set_case(CASES[(CASES.find(case_name) + 1) % CASES.size()])
-		KEY_LEFT: set_case(CASES[posmod(CASES.find(case_name) - 1, CASES.size())])
+		KEY_TAB:
+			front = not front
+		KEY_SPACE:
+			paused = not paused
+		KEY_RIGHT:
+			set_case(CASES[(CASES.find(case_name) + 1) % CASES.size()])
+		KEY_LEFT:
+			set_case(CASES[posmod(CASES.find(case_name) - 1, CASES.size())])
 	refresh()
 
 
@@ -142,5 +155,21 @@ func _draw() -> void:
 	if front:
 		draw_rect(Rect2(0, 712, 1920, 368), Color("#171a17"))
 	draw_rect(Rect2(0, 0, 1920, 58), Color("#171a17"))
-	draw_string(ThemeDB.fallback_font, Vector2(76, 40), "开发验收 · %s · %s" % ["幕前" if front else "幕后", case_name], HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#d7c7a6"))
-	draw_string(ThemeDB.fallback_font, Vector2(76, 1040), "Tab 两面切换    ← → 样例    空格 %s    固定样例，不是演出回放" % ["播放" if paused else "暂停"], HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("#a5977b"))
+	draw_string(
+		ThemeDB.fallback_font,
+		Vector2(76, 40),
+		"开发验收 · %s · %s" % ["幕前" if front else "幕后", case_name],
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		25,
+		Color("#d7c7a6")
+	)
+	draw_string(
+		ThemeDB.fallback_font,
+		Vector2(76, 1040),
+		"Tab 两面切换    ← → 样例    空格 %s    固定样例，不是演出回放" % ["播放" if paused else "暂停"],
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		24,
+		Color("#a5977b")
+	)

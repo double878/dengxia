@@ -21,7 +21,7 @@ var metronome_enabled: bool = true
 var paused: bool = false
 var step_count: int = 0
 
-var _events: Array[Dictionary] = []      ## 本帧产出的油灯事件，供接收端消费
+var _events: Array[Dictionary] = []  ## 本帧产出的油灯事件，供接收端消费
 var _parent: Node = null
 
 
@@ -75,13 +75,26 @@ func take_events() -> Array[Dictionary]:
 
 ## 直接注入一个表现事件（命中/错拍演示）：只驱动 flame_feedback，不推进歌曲时间。
 func inject_performance_event(kind: String, cue_id: String) -> void:
-	_events.append_array(lamp.update(0.0, [{
-		"time_ms": clock.get_song_time_ms(),
-		"kind": kind,
-		"object_id": 0,
-		"cue_id": cue_id,
-		"payload": {"kind": kind},
-	}]))
+	(
+		_events
+		. append_array(
+			(
+				lamp
+				. update(
+					0.0,
+					[
+						{
+							"time_ms": clock.get_song_time_ms(),
+							"kind": kind,
+							"object_id": 0,
+							"cue_id": cue_id,
+							"payload": {"kind": kind},
+						}
+					]
+				)
+			)
+		)
+	)
 
 
 func set_paused(value: bool) -> void:

@@ -31,8 +31,13 @@ func run_all() -> Dictionary:
 	return t.report()
 
 
-func _mk(time_ms: int, kind: StringName, object_id: Variant = 0,
-		cue_id: String = "", payload: Dictionary = {}) -> Variant:
+func _mk(
+	time_ms: int,
+	kind: StringName,
+	object_id: Variant = 0,
+	cue_id: String = "",
+	payload: Dictionary = {}
+) -> Variant:
 	return CTimedEventScript.new(time_ms, kind, object_id, cue_id, payload)
 
 
@@ -61,8 +66,14 @@ func _test_formal_audio_and_prop_kinds(t: Variant) -> void:
 	t.begin("正式音频和道具事件可录制，音频对象仍受类型约束")
 	for kind: StringName in [&"puppet_hook", &"puppet_take_back", &"head_swap"]:
 		t.check(_mk(100, kind, 0).validate().is_empty(), "%s 可录制" % kind)
-	for kind: StringName in [&"opera_wait_begin", &"opera_wait_end", &"opera_take_close",
-			&"opera_score_skipped", &"opera_phase_changed", &"dialogue_line_changed"]:
+	for kind: StringName in [
+		&"opera_wait_begin",
+		&"opera_wait_end",
+		&"opera_take_close",
+		&"opera_score_skipped",
+		&"opera_phase_changed",
+		&"dialogue_line_changed"
+	]:
 		t.check(_mk(100, kind, "performance_audio").validate().is_empty(), "%s 可录制" % kind)
 	t.check(not _mk(100, &"head_swap", "performance_audio").validate().is_empty(), "不能将头架事件伪装成音频对象")
 	t.check(_mk(100, &"cue_miss", -1).validate().is_empty(), "无人受控时仍保留动作未完成事件")
@@ -74,8 +85,10 @@ func _test_formal_audio_and_prop_kinds(t: Variant) -> void:
 func _test_01b_new_kinds_present(t: Variant) -> void:
 	t.begin("KNOWN_KINDS：2026-10-05 新增的 4 个 kind 已补齐")
 	var expected: Array = [
-		&"remedy_freeze_begin", &"remedy_freeze_end",
-		&"umbrella_take", &"umbrella_return",
+		&"remedy_freeze_begin",
+		&"remedy_freeze_end",
+		&"umbrella_take",
+		&"umbrella_return",
 	]
 	for k in expected:
 		t.check(CTimedEventScript.KNOWN_KINDS.has(k), "含 %s" % k)
@@ -89,8 +102,11 @@ func _test_01b_new_kinds_present(t: Variant) -> void:
 func _test_02_all_lamp_kinds_present(t: Variant) -> void:
 	t.begin("KNOWN_KINDS：5 个 lamp_* kind 已补齐")
 	var expected: Array = [
-		&"lamp_state_changed", &"lamp_input_changed", &"lamp_oil_changed",
-		&"lamp_feedback_changed", &"lamp_finished",
+		&"lamp_state_changed",
+		&"lamp_input_changed",
+		&"lamp_oil_changed",
+		&"lamp_feedback_changed",
+		&"lamp_finished",
 	]
 	for k in expected:
 		t.check(CTimedEventScript.KNOWN_KINDS.has(k), "含 %s" % k)
@@ -106,7 +122,7 @@ func _test_03_puppet_event_int_object_id(t: Variant) -> void:
 
 
 func _test_04_lamp_event_string_object_id(t: Variant) -> void:
-	t.begin("油灯事件：object_id 是 String \"lamp_main\"")
+	t.begin('油灯事件：object_id 是 String "lamp_main"')
 	var ev: Variant = _mk(100, &"lamp_oil_changed", "lamp_main")
 	t.check_eq(ev.validate().size(), 0, "灯事件 String object_id 通过校验")
 	t.check_eq(typeof(ev.object_id), TYPE_STRING, "object_id 保持 String 类型")

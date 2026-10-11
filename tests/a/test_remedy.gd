@@ -17,8 +17,8 @@ const RemedySystemScript := preload("res://scripts/a/remedy_system.gd")
 const StageDirectorScript := preload("res://scripts/a/stage_director.gd")
 const UmbrellaControllerScript := preload("res://scripts/a/umbrella_controller.gd")
 
-const CROUCH_ID: String = "l1_c0_crouch"     ## 落点 1250 ms，判定窗 1000-1500
-const STAND_ID: String = "l1_c1_stand"       ## 落点 2500 ms，判定窗 2250-2750
+const CROUCH_ID: String = "l1_c0_crouch"  ## 落点 1250 ms，判定窗 1000-1500
+const STAND_ID: String = "l1_c1_stand"  ## 落点 2500 ms，判定窗 2250-2750
 const WINDOW_MS: int = 8000
 
 
@@ -44,8 +44,7 @@ func run_all() -> Dictionary:
 	_test_11_low_sync_triggers_remedy(t)
 	_test_12_invalid_input_robustness(t)
 	_test_13_freeze_holds_song_time(t)
-	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
-		"failures": t.failures}
+	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}
 
 
 func _test_01_normal_run_no_remedy(t: ATestBase) -> void:
@@ -56,21 +55,32 @@ func _test_01_normal_run_no_remedy(t: ATestBase) -> void:
 	t.check_eq(b.director.end_reason, StageDirectorScript.END_REASON_DURATION, "结束原因为到时")
 	t.check(b.events_of("stage_start").size() >= 1, "应发出 stage_start")
 	t.check_eq(b.events_of("stage_end").size(), 1, "应只发出一次 stage_end")
-	t.check_in_range(float(b.director.song_time_ms()), 35000.0, 35010.0,
-		"结束时歌曲时间恰为 35000 ms（实际 %d）" % b.director.song_time_ms())
+	t.check_in_range(
+		float(b.director.song_time_ms()),
+		35000.0,
+		35010.0,
+		"结束时歌曲时间恰为 35000 ms（实际 %d）" % b.director.song_time_ms()
+	)
 	var missed: int = b.director.performance.missed_outright_cue_ids().size()
-	t.check_eq(missed, b.stage_def.cues.size(),
-		"未做的关键动作应全部记为「完全没做」（%d / %d）" % [missed, b.stage_def.cues.size()])
-	t.check_eq(b.events_of("remedy_open").size(), b.stage_def.cues.size(),
-		"每条漏做应各开一次补救窗口（实际 %d）" % b.events_of("remedy_open").size())
+	t.check_eq(
+		missed,
+		b.stage_def.cues.size(),
+		"未做的关键动作应全部记为「完全没做」（%d / %d）" % [missed, b.stage_def.cues.size()]
+	)
+	t.check_eq(
+		b.events_of("remedy_open").size(),
+		b.stage_def.cues.size(),
+		"每条漏做应各开一次补救窗口（实际 %d）" % b.events_of("remedy_open").size()
+	)
 	var open_ids: Array[String] = []
 	for e in b.events_of("remedy_open"):
 		open_ids.append(str(e.get("cue_id", "")))
 	print("DBGOPEN %s" % str(open_ids))
 	# 冻结的核心证据：真实时间被六条补救各拉长 8 秒
-	t.check(b.real_ms() > b.director.song_time_ms() + 30000,
-		"六条补救各冻结 8 秒，真实耗时应明显长于歌曲时间（真实 %d ms / 歌曲 %d ms）"
-			% [b.real_ms(), b.director.song_time_ms()])
+	t.check(
+		b.real_ms() > b.director.song_time_ms() + 30000,
+		"六条补救各冻结 8 秒，真实耗时应明显长于歌曲时间（真实 %d ms / 歌曲 %d ms）" % [b.real_ms(), b.director.song_time_ms()]
+	)
 	t.check(steps_used > 6000, "真实步数应远多于 35 秒（实际用了 %d 步）" % steps_used)
 	t.finish("空场跑完：歌曲时间按时到 35 秒，真实耗时被补救拉长")
 
@@ -123,15 +133,20 @@ func _test_01b_all_hits_no_remedy(t: ATestBase) -> void:
 	b.drag_to_x(0.28, 18.0)
 	b.end_drag()
 
-	for cue_id in ["l1_c0_crouch", "l1_c1_stand", "l1_c2_move_left",
-			"l1_c3_hand_raise", "l1_c4_take_umbrella"]:
+	for cue_id in [
+		"l1_c0_crouch", "l1_c1_stand", "l1_c2_move_left", "l1_c3_hand_raise", "l1_c4_take_umbrella"
+	]:
 		var outcome: Dictionary = b.director.performance.get_outcome(cue_id)
-		t.check_eq(bool(outcome.get("hit", false)), true,
-			"「%s」应在容差内命中（实际 offset=%s，x=%.4f）"
-				% [cue_id, str(outcome.get("offset_ms", "无判定")), b.state().stage_pos.x])
+		t.check_eq(
+			bool(outcome.get("hit", false)),
+			true,
+			(
+				"「%s」应在容差内命中（实际 offset=%s，x=%.4f）"
+				% [cue_id, str(outcome.get("offset_ms", "无判定")), b.state().stage_pos.x]
+			)
+		)
 	t.check_eq(b.events_of("remedy_open").size(), 0, "前半场全部做对时不应开出补救窗口")
-	t.check_eq(b.events_of(StageDirectorScript.KIND_FREEZE_BEGIN).size(), 0,
-		"前半场不应冻结过时间轴")
+	t.check_eq(b.events_of(StageDirectorScript.KIND_FREEZE_BEGIN).size(), 0, "前半场不应冻结过时间轴")
 	t.finish("前半场五条落点全部命中，没有补救窗口与冻结")
 
 
@@ -177,8 +192,7 @@ func _test_01c_borrow_and_return_journey(t: ATestBase) -> void:
 	b.begin_drag()
 	b.drag_to_x(0.28, 18.0)
 	b.end_drag()
-	t.check_eq(umb.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID,
-		"两只手相接后应已接过伞")
+	t.check_eq(umb.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "两只手相接后应已接过伞")
 
 	# 向右走，走到**小青身旁**（落点 16250，目标带 x ∈ [0.74, 0.84]）。
 	# `drag_to_x(target_x, step_px)` 的第二个参数是**每步位移量（像素）**：从 0.28 走到 0.74
@@ -214,18 +228,29 @@ func _test_01c_borrow_and_return_journey(t: ATestBase) -> void:
 	b.idle(1)
 
 	var hits: Array[String] = []
-	for cue_id in ["l1_c0_crouch", "l1_c1_stand", "l1_c2_move_left", "l1_c3_hand_raise",
-			"l1_c4_take_umbrella", "l1_c5_move_to_xiaoping", "l1_c6_return_umbrella",
-			"l1_c7_hand_lower"]:
+	for cue_id in [
+		"l1_c0_crouch",
+		"l1_c1_stand",
+		"l1_c2_move_left",
+		"l1_c3_hand_raise",
+		"l1_c4_take_umbrella",
+		"l1_c5_move_to_xiaoping",
+		"l1_c6_return_umbrella",
+		"l1_c7_hand_lower"
+	]:
 		var outcome: Dictionary = b.director.performance.get_outcome(cue_id)
 		if bool(outcome.get("hit", false)):
 			hits.append(cue_id)
 		else:
-			t.check(false, "「%s」应在容差内命中（实际 offset=%s，x=%.4f）"
-				% [cue_id, str(outcome.get("offset_ms", "无判定")), b.state().stage_pos.x])
+			t.check(
+				false,
+				(
+					"「%s」应在容差内命中（实际 offset=%s，x=%.4f）"
+					% [cue_id, str(outcome.get("offset_ms", "无判定")), b.state().stage_pos.x]
+				)
+			)
 	t.check_eq(hits.size(), 8, "八条关键动作应全部命中（实际命中 %d 条）" % hits.size())
-	t.check_eq(b.events_of("remedy_open").size(), 0,
-		"整条借伞还伞做对时不应开出任何补救窗口")
+	t.check_eq(b.events_of("remedy_open").size(), 0, "整条借伞还伞做对时不应开出任何补救窗口")
 	t.finish("接到伞、走到最右边、转身走回、按拍还伞、放手收势全部命中")
 
 
@@ -233,17 +258,23 @@ func _test_02_miss_opens_window_and_freezes(t: ATestBase) -> void:
 	t.begin("02 漏做：落点过后立刻开窗并冻结时间轴，原失误记为「完全没做」")
 	var b: DirectorTestBench = _bench()
 	b.advance_to(1400)
-	b.advance(20)                        # 跨过 cue0 的判定窗上界（1500）
+	b.advance(20)  # 跨过 cue0 的判定窗上界（1500）
 	t.check(b.director.performance.has_outcome(CROUCH_ID), "漏做应先产生判定结果")
-	t.check_eq(bool(b.director.performance.get_outcome(CROUCH_ID).get("missed_outright", false)),
-		true, "应标记为「完全没做」")
+	t.check_eq(
+		bool(b.director.performance.get_outcome(CROUCH_ID).get("missed_outright", false)),
+		true,
+		"应标记为「完全没做」"
+	)
 	t.check(b.director.remedy.is_open(CROUCH_ID), "落点 + 容差刚过就应开出补救窗口")
 	var window: Dictionary = b.director.remedy.get_window(CROUCH_ID)
 	t.check_eq(str(window["reason"]), RemedySystemScript.REASON_MISSED, "开窗原因为错过落点")
 	t.check_eq(int(window["started_song_ms"]), 1510, "开窗时的歌曲时间应是判定窗刚过的那一帧")
 	t.check_eq(int(window["started_ms"]), 1510, "此时真实时间与歌曲时间尚未分离")
-	t.check_eq(b.director.remedy.remaining_ms(CROUCH_ID, int(window["started_ms"])), WINDOW_MS,
-		"窗口长度应为 8 秒")
+	t.check_eq(
+		b.director.remedy.remaining_ms(CROUCH_ID, int(window["started_ms"])),
+		WINDOW_MS,
+		"窗口长度应为 8 秒"
+	)
 	t.check(b.has_event("remedy_open", CROUCH_ID), "应发出 remedy_open")
 	t.check(b.has_event("remedy_show"), "应发出 remedy_show")
 	# 冻结：歌曲时间停住，真实时间照走
@@ -255,7 +286,7 @@ func _test_02_miss_opens_window_and_freezes(t: ATestBase) -> void:
 	b.advance_real(2000)
 	t.check_eq(b.director.song_time_ms(), song_now, "冻结期间歌曲时间一分不走")
 	t.check(b.real_ms() >= 3500, "冻结期间真实时间照常推进")
-	b.advance_real(7000)                 # 让窗口超时，测试结束前恢复干净
+	b.advance_real(7000)  # 让窗口超时，测试结束前恢复干净
 	t.check(not b.director.is_remedy_frozen(), "窗口关闭后应解冻")
 	t.finish("漏做开窗、冻结时间轴，且冻结与菜单暂停是两回事")
 
@@ -268,20 +299,32 @@ func _test_02b_two_windows_single_demo(t: ATestBase) -> void:
 	b.advance_to(1400)
 	b.advance(20)
 	t.check(b.director.remedy.is_open(CROUCH_ID), "第一条错误应已开窗")
-	t.check(b.director.remedy.open(STAND_ID, RemedySystemScript.REASON_MISSED,
-		b.director.song_time_ms(), b.real_ms()), "第二条错误应能各自开窗")
+	t.check(
+		b.director.remedy.open(
+			STAND_ID, RemedySystemScript.REASON_MISSED, b.director.song_time_ms(), b.real_ms()
+		),
+		"第二条错误应能各自开窗"
+	)
 	t.check_eq(b.director.remedy.open_count(), 2, "应有两条窗口并存")
 
 	var real_now: int = b.real_ms()
-	t.check(b.director.remedy.remaining_ms(CROUCH_ID, real_now)
-		< b.director.remedy.remaining_ms(STAND_ID, real_now),
-		"先开的窗口剩余时间应更少")
-	t.check_eq(b.director.remedy.current_demo_cue_id, _earliest_deadline_id(b),
-		"当前示范应是开着窗口里最早到期的那一个")
+	t.check(
+		(
+			b.director.remedy.remaining_ms(CROUCH_ID, real_now)
+			< b.director.remedy.remaining_ms(STAND_ID, real_now)
+		),
+		"先开的窗口剩余时间应更少"
+	)
+	t.check_eq(
+		b.director.remedy.current_demo_cue_id, _earliest_deadline_id(b), "当前示范应是开着窗口里最早到期的那一个"
+	)
 	var shows: Array = b.events_of("remedy_show")
 	t.check(shows.size() >= 1, "应发出 remedy_show")
-	t.check_eq(str(shows[shows.size() - 1]["cue_id"]), b.director.remedy.current_demo_cue_id,
-		"最后一条示范事件应指向当前示范")
+	t.check_eq(
+		str(shows[shows.size() - 1]["cue_id"]),
+		b.director.remedy.current_demo_cue_id,
+		"最后一条示范事件应指向当前示范"
+	)
 
 	# 让第一条到期：只要第二条还开着，冻结就要继续
 	var first: Dictionary = b.director.remedy.get_window(CROUCH_ID)
@@ -289,18 +332,21 @@ func _test_02b_two_windows_single_demo(t: ATestBase) -> void:
 	t.check(not b.director.remedy.is_open(CROUCH_ID), "第一条窗口应已到期关闭")
 	t.check(b.director.remedy.is_open(STAND_ID), "第二条窗口应仍开着")
 	t.check(b.director.is_remedy_frozen(), "只要还有窗口开着就应继续冻结")
-	t.check_eq(b.director.remedy.current_demo_cue_id, _earliest_deadline_id(b),
-		"示范应切换到只剩的那条窗口")
-	t.check_eq(b.events_of(StageDirectorScript.KIND_FREEZE_BEGIN).size(), 1,
-		"并存窗口不应重复冻结（只应有一次 freeze_begin）")
+	t.check_eq(b.director.remedy.current_demo_cue_id, _earliest_deadline_id(b), "示范应切换到只剩的那条窗口")
+	t.check_eq(
+		b.events_of(StageDirectorScript.KIND_FREEZE_BEGIN).size(),
+		1,
+		"并存窗口不应重复冻结（只应有一次 freeze_begin）"
+	)
 
 	# 第二条也到期之后才解冻
 	var second: Dictionary = b.director.remedy.get_window(STAND_ID)
 	b.advance_real(int(second["deadline_ms"]) - b.real_ms() + 20)
 	t.check_eq(b.director.remedy.has_open_windows(), false, "两条窗口都应已关闭")
 	t.check(not b.director.is_remedy_frozen(), "窗口全部关闭后应解冻")
-	t.check_eq(b.events_of(StageDirectorScript.KIND_FREEZE_END).size(), 1,
-		"整段冻结只应发出一次 remedy_freeze_end")
+	t.check_eq(
+		b.events_of(StageDirectorScript.KIND_FREEZE_END).size(), 1, "整段冻结只应发出一次 remedy_freeze_end"
+	)
 	t.check(b.director.song_time_ms() > 1510, "解冻后歌曲时间应恢复推进")
 	t.finish("并存窗口只示范最早到期的一条，且冻结延续到最后一个窗口关闭")
 
@@ -315,15 +361,15 @@ func _test_03_out_of_sync_action_still_happens(t: ATestBase) -> void:
 	b.stand_up(15.0, 69)
 	var outcome: Dictionary = b.director.performance.get_outcome(STAND_ID)
 	t.check(b.director.performance.has_outcome(STAND_ID), "应产生判定结果")
-	t.check_eq(bool(outcome.get("hit", true)), false,
-		"错拍站起应记为未命中（offset=%d ms）" % int(outcome.get("offset_ms", 0)))
-	t.check_eq(bool(outcome.get("missed_outright", false)), false,
-		"错拍做了不算「完全没做」")
-	t.check(b.state().stance <= 0.05,
-		"错拍时姿势照常到位（stance=%.4f）" % b.state().stance)
+	t.check_eq(
+		bool(outcome.get("hit", true)),
+		false,
+		"错拍站起应记为未命中（offset=%d ms）" % int(outcome.get("offset_ms", 0))
+	)
+	t.check_eq(bool(outcome.get("missed_outright", false)), false, "错拍做了不算「完全没做」")
+	t.check(b.state().stance <= 0.05, "错拍时姿势照常到位（stance=%.4f）" % b.state().stance)
 	t.check(b.has_event("cue_fire", STAND_ID), "仍应发出 cue_fire")
-	t.check(not b.director.remedy.is_open(STAND_ID),
-		"错拍做了不重复开补救窗口（该错误已记录）")
+	t.check(not b.director.remedy.is_open(STAND_ID), "错拍做了不重复开补救窗口（该错误已记录）")
 	t.check(not b.director.is_remedy_frozen(), "没有窗口时不应冻结时间轴")
 	t.finish("错拍动作照常发生、记为未命中，不重复开窗、不冻结")
 
@@ -331,7 +377,7 @@ func _test_03_out_of_sync_action_still_happens(t: ATestBase) -> void:
 func _test_04_make_up_in_window_keeps_failure(t: ATestBase) -> void:
 	t.begin("04 补做：窗口内完成动作即恢复，原失误仍保留在记录里")
 	var b: DirectorTestBench = _bench()
-	_crouch_on_beat(b)                   # 让蹲下在容差内命中，于是第一个漏做是站起
+	_crouch_on_beat(b)  # 让蹲下在容差内命中，于是第一个漏做是站起
 	b.advance_to(2760)
 	t.check(b.director.remedy.is_open(STAND_ID), "站起漏做应已开出窗口")
 	t.check(b.director.is_remedy_frozen(), "补救期间应冻结歌曲时间轴")
@@ -350,18 +396,19 @@ func _test_04_make_up_in_window_keeps_failure(t: ATestBase) -> void:
 	var success: Dictionary = {}
 	for e in b.events_for("remedy_success", STAND_ID):
 		success = e
-	t.check_eq(bool(success["payload"]["still_missed"]), true,
-		"补救成功不抹去原失误（still_missed 应为 true）")
+	t.check_eq(bool(success["payload"]["still_missed"]), true, "补救成功不抹去原失误（still_missed 应为 true）")
 	var record: Dictionary = {}
 	for r in b.director.remedy.get_records():
 		if str(r.get("cue_id", "")) == STAND_ID:
 			record = r
 	t.check(not record.is_empty(), "记录里应留有这次失误")
 	t.check_eq(bool(record.get("missed", false)), true, "记录里的失误标记应保留")
-	t.check_eq(str(record.get("close_reason", "")), RemedySystemScript.CLOSE_SUCCESS,
-		"记录的关窗原因为补救成功")
-	t.check_eq(bool(b.director.performance.get_outcome(STAND_ID).get("hit", true)), false,
-		"原判定结果仍是未命中")
+	t.check_eq(
+		str(record.get("close_reason", "")), RemedySystemScript.CLOSE_SUCCESS, "记录的关窗原因为补救成功"
+	)
+	t.check_eq(
+		bool(b.director.performance.get_outcome(STAND_ID).get("hit", true)), false, "原判定结果仍是未命中"
+	)
 	t.check(not b.director.is_remedy_frozen(), "窗口关完应解冻")
 	t.check(b.has_event(StageDirectorScript.KIND_FREEZE_END), "应发出 remedy_freeze_end")
 
@@ -381,7 +428,7 @@ func _test_05_timeout_keeps_show_going(t: ATestBase) -> void:
 	b.advance_real(WINDOW_MS - 100)
 	t.check(b.director.remedy.is_open(CROUCH_ID), "不到 8 秒窗口应仍开着")
 	t.check_eq(b.director.song_time_ms(), song_frozen, "这 7.9 秒里歌曲时间应一直冻结")
-	b.advance_real(200)                  # 跨过 8 秒
+	b.advance_real(200)  # 跨过 8 秒
 	t.check(not b.director.remedy.is_open(CROUCH_ID), "8 秒到期后窗口应关闭")
 	t.check(b.has_event("remedy_timeout", CROUCH_ID), "应发出 remedy_timeout")
 	t.check(b.has_event("remedy_hide", CROUCH_ID), "应结束当前示范")
@@ -395,9 +442,12 @@ func _test_05_timeout_keeps_show_going(t: ATestBase) -> void:
 	var timeout: Dictionary = {}
 	for e in b.events_for("remedy_timeout", CROUCH_ID):
 		timeout = e
-	t.check_in_range(float(timeout["payload"]["elapsed_ms"]), 8000.0, 8010.0,
-		"超时事件应按真实时间记录恰好 8 秒（实际 %d ms）"
-			% int(timeout["payload"]["elapsed_ms"]))
+	t.check_in_range(
+		float(timeout["payload"]["elapsed_ms"]),
+		8000.0,
+		8010.0,
+		"超时事件应按真实时间记录恰好 8 秒（实际 %d ms）" % int(timeout["payload"]["elapsed_ms"])
+	)
 	t.finish("超时按真实时间计、记录未完成、解冻后演出继续并按时收尾")
 
 
@@ -413,8 +463,9 @@ func _test_06_no_reopen_for_same_cue(t: ATestBase) -> void:
 	# 反复尝试对同一条 cue 开窗，应全部被拒绝
 	var accepted: int = 0
 	for _i in 20:
-		if b.director.remedy.open(CROUCH_ID, RemedySystemScript.REASON_MISSED,
-				b.director.song_time_ms(), b.real_ms()):
+		if b.director.remedy.open(
+			CROUCH_ID, RemedySystemScript.REASON_MISSED, b.director.song_time_ms(), b.real_ms()
+		):
 			accepted += 1
 	t.check_eq(accepted, 0, "重复 open 应全部被拒绝")
 	t.check_eq(b.director.remedy.open_count(), opened_count, "窗口数量不应增加")
@@ -423,8 +474,7 @@ func _test_06_no_reopen_for_same_cue(t: ATestBase) -> void:
 
 	b.advance_real(deadline - b.real_ms() + 20)
 	t.check(not b.director.remedy.is_open(CROUCH_ID), "到期后关闭，而不是被刷新")
-	t.check_eq(b.events_for("remedy_open", CROUCH_ID).size(), 1,
-		"整场只应产出一次 remedy_open")
+	t.check_eq(b.events_for("remedy_open", CROUCH_ID).size(), 1, "整场只应产出一次 remedy_open")
 	t.finish("同一错误不刷窗口，截止时刻不被重置")
 
 
@@ -439,18 +489,22 @@ func _test_07_pause_freezes_countdown(t: ATestBase) -> void:
 	var real_before: int = b.real_ms()
 
 	b.set_paused(true)
-	b.advance(600)                        # 暂停期间推进 600 帧（6 秒）
+	b.advance(600)  # 暂停期间推进 600 帧（6 秒）
 	t.check_eq(b.director.song_time_ms(), song_before, "暂停期间歌曲时间应冻结")
 	t.check_eq(b.real_ms(), real_before, "菜单暂停连真实时间也一起冻结")
 	t.check(b.director.remedy.is_open(CROUCH_ID), "暂停期间窗口应仍开着")
-	t.check_eq(b.director.remedy.remaining_ms(CROUCH_ID, b.real_ms()), remaining_before,
-		"暂停期间补救倒计时不应减少")
+	t.check_eq(
+		b.director.remedy.remaining_ms(CROUCH_ID, b.real_ms()), remaining_before, "暂停期间补救倒计时不应减少"
+	)
 
 	b.set_paused(false)
-	b.advance(50)                         # 恢复后推进 500 ms 真实时间
+	b.advance(50)  # 恢复后推进 500 ms 真实时间
 	t.check_eq(b.real_ms(), real_before + 500, "恢复后真实时间继续推进")
-	t.check_eq(b.director.remedy.remaining_ms(CROUCH_ID, b.real_ms()), remaining_before - 500,
-		"恢复后补救倒计时从冻结值继续递减")
+	t.check_eq(
+		b.director.remedy.remaining_ms(CROUCH_ID, b.real_ms()),
+		remaining_before - 500,
+		"恢复后补救倒计时从冻结值继续递减"
+	)
 
 	var frozen_song: int = b.director.song_time_ms()
 	b.advance_real(remaining_before - 500)
@@ -472,8 +526,12 @@ func _test_08_stage_ends_on_time(t: ATestBase) -> void:
 	b.advance(2)
 	t.check(b.director.is_over(), "跨过 35000 ms 后应结束")
 	t.check_eq(b.director.end_reason, StageDirectorScript.END_REASON_DURATION, "结束原因为到时")
-	t.check_in_range(float(b.director.song_time_ms()), 35000.0, 35010.0,
-		"结束时歌曲时间应恰好到达 35 秒（实际 %d）" % b.director.song_time_ms())
+	t.check_in_range(
+		float(b.director.song_time_ms()),
+		35000.0,
+		35010.0,
+		"结束时歌曲时间应恰好到达 35 秒（实际 %d）" % b.director.song_time_ms()
+	)
 	var end_event: Dictionary = {}
 	for e in b.events_of("stage_end"):
 		end_event = e
@@ -506,13 +564,15 @@ func _test_09_window_at_stage_end(t: ATestBase) -> void:
 	for e in b.events_for("remedy_timeout", CROUCH_ID):
 		timeout = e
 	t.check(not timeout.is_empty(), "随结束关闭也要留记录")
-	t.check_eq(str(timeout["payload"].get("reason", "")), RemedySystemScript.CLOSE_STAGE_END,
-		"关窗原因应为 stage_end")
+	t.check_eq(
+		str(timeout["payload"].get("reason", "")),
+		RemedySystemScript.CLOSE_STAGE_END,
+		"关窗原因应为 stage_end"
+	)
 	var end_event: Dictionary = {}
 	for e in b.events_of("stage_end"):
 		end_event = e
-	t.check_eq(int(end_event["payload"]["remedy_open_count"]), 1,
-		"结束时应报告仍有 1 个窗口未到期")
+	t.check_eq(int(end_event["payload"]["remedy_open_count"]), 1, "结束时应报告仍有 1 个窗口未到期")
 	t.finish("收场时窗口随演出关闭并留记录，冻结一并解除")
 
 
@@ -523,27 +583,37 @@ func _test_10_single_demo_and_separate_records(t: ATestBase) -> void:
 	b.advance(20)
 	t.check(b.director.remedy.is_open(CROUCH_ID), "第一条错误应已开窗")
 	# 再人为补两条不同错误的窗口，检验「不同错误各自留记录」与示范优先级
-	t.check(b.director.remedy.open(STAND_ID, RemedySystemScript.REASON_MISSED,
-		b.director.song_time_ms(), b.real_ms()), "第二条错误应能开窗")
-	t.check(b.director.remedy.open("l1_c2_move_left", RemedySystemScript.REASON_MISSED,
-		b.director.song_time_ms(), b.real_ms()), "第三条错误应能开窗")
+	t.check(
+		b.director.remedy.open(
+			STAND_ID, RemedySystemScript.REASON_MISSED, b.director.song_time_ms(), b.real_ms()
+		),
+		"第二条错误应能开窗"
+	)
+	t.check(
+		b.director.remedy.open(
+			"l1_c2_move_left",
+			RemedySystemScript.REASON_MISSED,
+			b.director.song_time_ms(),
+			b.real_ms()
+		),
+		"第三条错误应能开窗"
+	)
 	t.check_eq(b.director.remedy.open_count(), 3, "应有三个错误各自开着窗口")
 	t.check_eq(b.director.remedy.get_records().size(), 3, "每个错误各自留一条记录")
 	t.check(b.director.remedy.current_demo_cue_id != "", "应有当前示范")
-	t.check_eq(b.director.remedy.current_demo_cue_id, _earliest_deadline_id(b),
-		"当前示范应是所有开着窗口里最早到期的那一个")
+	t.check_eq(
+		b.director.remedy.current_demo_cue_id, _earliest_deadline_id(b), "当前示范应是所有开着窗口里最早到期的那一个"
+	)
 	t.check_eq(b.events_of("remedy_show").size(), 1, "示范只应发布一次（同屏唯一）")
 
 	# 让最早的那条超时，示范应切换到下一条
 	b.advance_real(120)
-	t.check_eq(b.director.remedy.current_demo_cue_id, _earliest_deadline_id(b),
-		"示范仍应指向最早到期的窗口")
+	t.check_eq(b.director.remedy.current_demo_cue_id, _earliest_deadline_id(b), "示范仍应指向最早到期的窗口")
 	var still_open: Array[String] = []
 	for cue_id in b.director.remedy.windows.keys():
 		still_open.append(str(cue_id))
 	t.check(still_open.size() >= 1, "仍应有窗口开着")
-	t.check(still_open.has(b.director.remedy.current_demo_cue_id),
-		"当前示范必须是仍开着的窗口之一")
+	t.check(still_open.has(b.director.remedy.current_demo_cue_id), "当前示范必须是仍开着的窗口之一")
 	t.finish("多个错误各自留记录，同屏只展示一个当前示范")
 
 
@@ -566,12 +636,42 @@ func _test_11_low_sync_triggers_remedy(t: ATestBase) -> void:
 	def.bpm = StageDefScript.LEVEL1_BPM
 	def.segments = [{"name": "低协", "start_ms": 0, "end_ms": 20000}]
 	def.cues = [
-		_segment(CueScript.make("t_m1", 6000, CueScript.ACTION_MOVE_LEFT, 0,
-			{"key": "x", "min": 0.0, "max": 0.35}, 250, "move_left"), "低协"),
-		_segment(CueScript.make("t_m2", 9000, CueScript.ACTION_MOVE_RIGHT, 0,
-			{"key": "x", "min": 0.65, "max": 1.0}, 250, "move_right"), "低协"),
-		_segment(CueScript.make("t_l", 12000, CueScript.ACTION_HAND_LOWER, 0,
-			{"key": "angle", "min": -PI * 0.5, "max": -1.2}, 250, "hand_lower"), "低协"),
+		_segment(
+			CueScript.make(
+				"t_m1",
+				6000,
+				CueScript.ACTION_MOVE_LEFT,
+				0,
+				{"key": "x", "min": 0.0, "max": 0.35},
+				250,
+				"move_left"
+			),
+			"低协"
+		),
+		_segment(
+			CueScript.make(
+				"t_m2",
+				9000,
+				CueScript.ACTION_MOVE_RIGHT,
+				0,
+				{"key": "x", "min": 0.65, "max": 1.0},
+				250,
+				"move_right"
+			),
+			"低协"
+		),
+		_segment(
+			CueScript.make(
+				"t_l",
+				12000,
+				CueScript.ACTION_HAND_LOWER,
+				0,
+				{"key": "angle", "min": -PI * 0.5, "max": -1.2},
+				250,
+				"hand_lower"
+			),
+			"低协"
+		),
 	]
 	t.check_eq(def.validate().size(), 0, "构造的数据应通过校验")
 
@@ -584,33 +684,35 @@ func _test_11_low_sync_triggers_remedy(t: ATestBase) -> void:
 	b.drag(Vector2(-260.0, 0.0), 8)
 	b.end_drag()
 	t.check(b.director.performance.has_outcome("t_m1"), "左移落点应已被判定")
-	t.check_eq(bool(b.director.performance.get_outcome("t_m1").get("hit", true)), false,
-		"窗外做应记为错拍")
+	t.check_eq(bool(b.director.performance.get_outcome("t_m1").get("hit", true)), false, "窗外做应记为错拍")
 	b.advance_to(8400)
 	b.begin_drag()
 	b.drag(Vector2(260.0, 0.0), 6)
 	b.end_drag()
 	t.check(b.director.performance.has_outcome("t_m2"), "右移落点应已被判定")
-	t.check_eq(b.director.performance.segment_graded_count("低协") >= 2, true,
-		"该段应已有至少两条判定（实际 %d）"
-			% b.director.performance.segment_graded_count("低协"))
-	t.check(b.director.performance.segment_score("低协") < b.director.remedy.sync_threshold,
-		"该段合拍度应已跌破警戒线（实际 %.3f）"
-			% b.director.performance.segment_score("低协"))
+	t.check_eq(
+		b.director.performance.segment_graded_count("低协") >= 2,
+		true,
+		"该段应已有至少两条判定（实际 %d）" % b.director.performance.segment_graded_count("低协")
+	)
+	t.check(
+		b.director.performance.segment_score("低协") < b.director.remedy.sync_threshold,
+		"该段合拍度应已跌破警戒线（实际 %.3f）" % b.director.performance.segment_score("低协")
+	)
 
 	var low_sync_events: Array = []
 	for e in b.events_of("remedy_open"):
 		if str(e["payload"].get("reason", "")) == RemedySystemScript.REASON_LOW_SYNC:
 			low_sync_events.append(e)
-	t.check_eq(low_sync_events.size(), 1, "跌破警戒线后应开出恰好一个低合拍窗口（实际 %d）"
-		% low_sync_events.size())
+	t.check_eq(low_sync_events.size(), 1, "跌破警戒线后应开出恰好一个低合拍窗口（实际 %d）" % low_sync_events.size())
 	var low_sync_id: String = ""
 	if low_sync_events.size() == 1:
 		low_sync_id = str(low_sync_events[0]["cue_id"])
 	t.check_eq(low_sync_id, "t_l", "低合拍示范应指向段内还没做过、也没开窗的那条落点")
 	t.check(b.director.remedy.is_open(low_sync_id), "该低合拍窗口应开着")
-	t.check(not b.director.performance.has_outcome(low_sync_id),
-		"低合拍示范应指向段内还没做过的落点「%s」" % low_sync_id)
+	t.check(
+		not b.director.performance.has_outcome(low_sync_id), "低合拍示范应指向段内还没做过的落点「%s」" % low_sync_id
+	)
 	t.check(b.director.is_remedy_frozen(), "低合拍补救同样应冻结歌曲时间轴")
 
 	# 窗口内按示范补做落手，窗口应关闭。先落到目标角之外，确认这段时间歌曲时间没走。
@@ -621,8 +723,10 @@ func _test_11_low_sync_triggers_remedy(t: ATestBase) -> void:
 	t.check_eq(b.director.song_time_ms(), song_frozen, "补救期间歌曲时间不应前进")
 	t.check(b.director.remedy.is_open(low_sync_id), "还没落到目标角时窗口应仍开着")
 	b.advance(10, {"left_lower": true})
-	t.check(b.director.performance.has_outcome(low_sync_id),
-		"补做后该落点应产生新的判定（实际 hand_angle.x=%.4f）" % b.state().hand_angle.x)
+	t.check(
+		b.director.performance.has_outcome(low_sync_id),
+		"补做后该落点应产生新的判定（实际 hand_angle.x=%.4f）" % b.state().hand_angle.x
+	)
 	t.check(not b.director.remedy.is_open(low_sync_id), "补做示范动作后低合拍窗口应关闭")
 	var success: Dictionary = {}
 	for e in b.events_of("remedy_success"):
@@ -630,15 +734,13 @@ func _test_11_low_sync_triggers_remedy(t: ATestBase) -> void:
 			success = e
 	t.check(not success.is_empty(), "补做后应发出 remedy_success（%s）" % low_sync_id)
 	if not success.is_empty():
-		t.check_eq(bool(success["payload"].get("still_missed", false)), true,
-			"合拍度已经跌破，补救成功也不抹去原失误")
+		t.check_eq(bool(success["payload"].get("still_missed", false)), true, "合拍度已经跌破，补救成功也不抹去原失误")
 	var record: Dictionary = {}
 	for r in b.director.remedy.get_records():
 		if str(r.get("cue_id", "")) == low_sync_id:
 			record = r
 	t.check(not record.is_empty(), "低合拍补救也应留记录")
-	t.check_eq(str(record.get("reason", "")), RemedySystemScript.REASON_LOW_SYNC,
-		"记录里的开窗理由应为低合拍")
+	t.check_eq(str(record.get("reason", "")), RemedySystemScript.REASON_LOW_SYNC, "记录里的开窗理由应为低合拍")
 	var before_more: int = _count_low_sync_opens(b)
 	b.advance_real(300)
 	t.check_eq(_count_low_sync_opens(b), before_more, "低合拍补救每段只开一次，不反复刷窗口")
@@ -671,42 +773,53 @@ func _test_12_invalid_input_robustness(t: ATestBase) -> void:
 		var before_outcomes: int = b.director.performance.get_outcomes().size()
 		var batch: Array = case["events"].duplicate()
 		b.director.update(batch)
-		t.check_eq(b.director.performance.get_outcomes().size(), before_outcomes,
-			"喂入「%s」不应凭空产生判定结果" % str(case["label"]))
-		t.check(b.director.remedy.open_count() == before_windows,
-			"喂入「%s」不应凭空增开补救窗口" % str(case["label"]))
+		t.check_eq(
+			b.director.performance.get_outcomes().size(),
+			before_outcomes,
+			"喂入「%s」不应凭空产生判定结果" % str(case["label"])
+		)
+		t.check(
+			b.director.remedy.open_count() == before_windows,
+			"喂入「%s」不应凭空增开补救窗口" % str(case["label"])
+		)
 		# 灌完畸形事件后仍能正常跑完并按时结束（补救冻结不影响收场）
 		b.run_to_end()
 		t.check(b.director.is_over(), "喂入「%s」后仍应按时结束" % str(case["label"]))
-		t.check_eq(b.director.end_reason, StageDirectorScript.END_REASON_DURATION,
-			"喂入「%s」后结束原因仍为到时" % str(case["label"]))
-		t.check_eq(b.events_of("stage_end").size(), 1,
-			"喂入「%s」后仍只结束一次" % str(case["label"]))
+		t.check_eq(
+			b.director.end_reason,
+			StageDirectorScript.END_REASON_DURATION,
+			"喂入「%s」后结束原因仍为到时" % str(case["label"])
+		)
+		t.check_eq(b.events_of("stage_end").size(), 1, "喂入「%s」后仍只结束一次" % str(case["label"]))
 
 	# 非法 cue_id 的查询与开窗都是安全失败，不留下半开状态
 	var b2: DirectorTestBench = _bench()
 	b2.advance_to(1510)
 	var known_windows: int = b2.director.remedy.open_count()
-	t.check_eq(b2.director.remedy.open("不存在的 cue", RemedySystemScript.REASON_MISSED,
-		b2.director.song_time_ms(), b2.real_ms()), false,
-		"非法 cue_id 开窗应失败并返回 false")
-	t.check_eq(b2.director.remedy.open("", RemedySystemScript.REASON_MISSED,
-		b2.director.song_time_ms(), b2.real_ms()), false,
-		"空 cue_id 开窗应失败并返回 false")
+	t.check_eq(
+		b2.director.remedy.open(
+			"不存在的 cue", RemedySystemScript.REASON_MISSED, b2.director.song_time_ms(), b2.real_ms()
+		),
+		false,
+		"非法 cue_id 开窗应失败并返回 false"
+	)
+	t.check_eq(
+		b2.director.remedy.open(
+			"", RemedySystemScript.REASON_MISSED, b2.director.song_time_ms(), b2.real_ms()
+		),
+		false,
+		"空 cue_id 开窗应失败并返回 false"
+	)
 	t.check_eq(b2.director.remedy.open_count(), known_windows, "非法 cue_id 不应改变已开窗口数")
 	t.check_eq(b2.director.remedy.is_open("不存在的 cue"), false, "非法 cue_id 不应被当作已开窗")
-	t.check(b2.director.remedy.get_window("不存在的 cue").is_empty(),
-		"非法 cue_id 不应返回窗口数据")
-	t.check_eq(b2.director.remedy.remaining_ms("不存在的 cue", b2.real_ms()), 0,
-		"非法 cue_id 的剩余时间应为 0 而不是报错")
-	t.check(b2.director.performance.get_outcome("不存在的 cue").is_empty(),
-		"非法 cue_id 不应返回判定结果")
-	t.check_eq(b2.director.performance.segment_score("不存在的段"), -1.0,
-		"无落点的段合拍度应为 -1.0")
-	t.check_eq(b2.director.performance.segment_graded_count("不存在的段"), 0,
-		"无落点的段判定数应为 0")
-	t.check_eq(b2.director.performance.has_outcome("不存在的 cue"), false,
-		"非法 cue_id 不应被当作已有判定")
+	t.check(b2.director.remedy.get_window("不存在的 cue").is_empty(), "非法 cue_id 不应返回窗口数据")
+	t.check_eq(
+		b2.director.remedy.remaining_ms("不存在的 cue", b2.real_ms()), 0, "非法 cue_id 的剩余时间应为 0 而不是报错"
+	)
+	t.check(b2.director.performance.get_outcome("不存在的 cue").is_empty(), "非法 cue_id 不应返回判定结果")
+	t.check_eq(b2.director.performance.segment_score("不存在的段"), -1.0, "无落点的段合拍度应为 -1.0")
+	t.check_eq(b2.director.performance.segment_graded_count("不存在的段"), 0, "无落点的段判定数应为 0")
+	t.check_eq(b2.director.performance.has_outcome("不存在的 cue"), false, "非法 cue_id 不应被当作已有判定")
 	t.finish("畸形事件与非法 cue_id 均安全失败，演出照常按时结束")
 
 
@@ -728,11 +841,13 @@ func _test_13_freeze_holds_song_time(t: ATestBase) -> void:
 	t.check_eq(b.director.song_time_ms(), song_before, "3 秒真实时间里歌曲时间应完全不动")
 	t.check_eq(b.clock.get_beat_index(), beat_before, "拍点应停在同一拍")
 	t.check_eq(b.real_ms(), real_before + 3000, "真实时间应推进了 3 秒")
-	t.check_eq(b.director.remedy.remaining_ms(CROUCH_ID, b.real_ms()),
-		remaining_before - 3000, "补救倒计时应按真实时间递减")
+	t.check_eq(
+		b.director.remedy.remaining_ms(CROUCH_ID, b.real_ms()),
+		remaining_before - 3000,
+		"补救倒计时应按真实时间递减"
+	)
 	t.check(not b.director.is_over(), "冻结期间关卡不应结束")
-	t.check(b.director.duration_ms() - b.director.song_time_ms() > 33000,
-		"关卡剩余时间（歌曲时间口径）不应被补救吃掉")
+	t.check(b.director.duration_ms() - b.director.song_time_ms() > 33000, "关卡剩余时间（歌曲时间口径）不应被补救吃掉")
 	t.finish("冻结只作用于歌曲时间与判定，真实时间与 8 秒倒计时照走")
 
 

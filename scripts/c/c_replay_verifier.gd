@@ -78,9 +78,13 @@ func verify(p_record: Variant, p_step_ms: int = DEFAULT_STEP_MS) -> Dictionary:
 
 	# ---- 1. 记录自检 ----
 	var invariant_problems: Array = p_record.validate_invariants()
-	_append_check(checks, problems, "记录自检",
-		invariant_problems, "不变量成立（快照 %d / 事件 %d）"
-			% [p_record.snapshots.size(), p_record.events.size()])
+	_append_check(
+		checks,
+		problems,
+		"记录自检",
+		invariant_problems,
+		"不变量成立（快照 %d / 事件 %d）" % [p_record.snapshots.size(), p_record.events.size()]
+	)
 
 	# 记录不合法时继续比对没有意义：基准本身是错的，
 	# 后面每一项都会报错，反而看不出真正的原因。
@@ -89,8 +93,7 @@ func verify(p_record: Variant, p_step_ms: int = DEFAULT_STEP_MS) -> Dictionary:
 
 	# ---- 2. 采样保真 ----
 	var fidelity: Dictionary = _check_sampling_fidelity(p_record)
-	_append_check(checks, problems, "采样保真（不漏动作·不换错头·非预制）",
-		fidelity["problems"], fidelity["detail"])
+	_append_check(checks, problems, "采样保真（不漏动作·不换错头·非预制）", fidelity["problems"], fidelity["detail"])
 
 	# ---- 走一遍完整回放，收集帧与事件 ----
 	var walk: Dictionary = _walk(p_record, p_step_ms)
@@ -101,23 +104,19 @@ func verify(p_record: Variant, p_step_ms: int = DEFAULT_STEP_MS) -> Dictionary:
 
 	# ---- 3. 时间轴 ----
 	var timeline: Dictionary = _check_timeline(p_record, frames, duration_ms)
-	_append_check(checks, problems, "时间轴（时长覆盖·单调·末尾对齐）",
-		timeline["problems"], timeline["detail"])
+	_append_check(checks, problems, "时间轴（时长覆盖·单调·末尾对齐）", timeline["problems"], timeline["detail"])
 
 	# ---- 4. 离散跳变顺序 ----
 	var order: Dictionary = _check_discrete_order(p_record, frames, p_step_ms)
-	_append_check(checks, problems, "离散跳变顺序（换头/挂起不合并）",
-		order["problems"], order["detail"])
+	_append_check(checks, problems, "离散跳变顺序（换头/挂起不合并）", order["problems"], order["detail"])
 
 	# ---- 5. 关键事件时间 ----
 	var events: Dictionary = _check_events(p_record, dispatched, p_step_ms)
-	_append_check(checks, problems, "关键事件时间（不漏·不重·不早不晚）",
-		events["problems"], events["detail"])
+	_append_check(checks, problems, "关键事件时间（不漏·不重·不早不晚）", events["problems"], events["detail"])
 
 	# ---- 6. 掌声与结局 ----
 	var applause: Dictionary = _check_applause_and_ending(p_record, stage_id, p_step_ms)
-	_append_check(checks, problems, "掌声与结局（不改变结局）",
-		applause["problems"], applause["detail"])
+	_append_check(checks, problems, "掌声与结局（不改变结局）", applause["problems"], applause["detail"])
 
 	var stats: Dictionary = _base_stats(p_record)
 	stats["replay_frames"] = frames.size()
@@ -140,8 +139,7 @@ func _check_sampling_fidelity(p_record: Variant) -> Dictionary:
 	var problems: Array = []
 	var player: Variant = CReplayPlayerScript.new()
 	if not player.load(p_record):
-		return {"problems": ["回放器拒绝装载记录，无法比对采样保真"],
-			"detail": "装载失败"}
+		return {"problems": ["回放器拒绝装载记录，无法比对采样保真"], "detail": "装载失败"}
 
 	var mismatches: int = 0
 	var compared: int = 0
@@ -167,31 +165,50 @@ func _check_sampling_fidelity(p_record: Variant) -> Dictionary:
 	return {"problems": problems, "detail": detail}
 
 
-func _diff_puppet(t: int, index: int, want: Dictionary, got: Dictionary,
-		p_problems: Array) -> int:
+func _diff_puppet(t: int, index: int, want: Dictionary, got: Dictionary, p_problems: Array) -> int:
 	var bad: int = 0
 	for f in DISCRETE_FIELDS:
 		if int(want.get(f, -1)) != int(got.get(f, -1)):
 			bad += 1
-			_push_problem(p_problems, "t=%dms puppets[%d].%s 记录 %d，回放 %d（离散量必须精确相等）"
-				% [t, index, f, int(want.get(f, -1)), int(got.get(f, -1))])
+			_push_problem(
+				p_problems,
+				(
+					"t=%dms puppets[%d].%s 记录 %d，回放 %d（离散量必须精确相等）"
+					% [t, index, f, int(want.get(f, -1)), int(got.get(f, -1))]
+				)
+			)
 	for f in PUPPET_SCALAR_FIELDS:
 		if absf(float(want.get(f, 0.0)) - float(got.get(f, 0.0))) > CONTINUOUS_EPSILON:
 			bad += 1
-			_push_problem(p_problems, "t=%dms puppets[%d].%s 记录 %.6f，回放 %.6f"
-				% [t, index, f, float(want.get(f, 0.0)), float(got.get(f, 0.0))])
+			_push_problem(
+				p_problems,
+				(
+					"t=%dms puppets[%d].%s 记录 %.6f，回放 %.6f"
+					% [t, index, f, float(want.get(f, 0.0)), float(got.get(f, 0.0))]
+				)
+			)
 	for f in PUPPET_VECTOR_FIELDS:
 		var a: Dictionary = want.get(f, {})
 		var b: Dictionary = got.get(f, {})
 		for axis in a.keys():
 			if absf(float(a.get(axis, 0.0)) - float(b.get(axis, 0.0))) > CONTINUOUS_EPSILON:
 				bad += 1
-				_push_problem(p_problems, "t=%dms puppets[%d].%s.%s 记录 %.6f，回放 %.6f"
-					% [t, index, f, axis, float(a.get(axis, 0.0)), float(b.get(axis, 0.0))])
+				_push_problem(
+					p_problems,
+					(
+						"t=%dms puppets[%d].%s.%s 记录 %.6f，回放 %.6f"
+						% [t, index, f, axis, float(a.get(axis, 0.0)), float(b.get(axis, 0.0))]
+					)
+				)
 	if bool(want.get("is_controlled", false)) != bool(got.get("is_controlled", false)):
 		bad += 1
-		_push_problem(p_problems, "t=%dms puppets[%d].is_controlled 记录 %s，回放 %s"
-			% [t, index, str(want.get("is_controlled")), str(got.get("is_controlled"))])
+		_push_problem(
+			p_problems,
+			(
+				"t=%dms puppets[%d].is_controlled 记录 %s，回放 %s"
+				% [t, index, str(want.get("is_controlled")), str(got.get("is_controlled"))]
+			)
+		)
 	return bad
 
 
@@ -200,8 +217,13 @@ func _diff_lamp(t: int, want: Dictionary, got: Dictionary, p_problems: Array) ->
 	for f in LAMP_FIELDS:
 		if absf(float(want.get(f, 0.0)) - float(got.get(f, 0.0))) > CONTINUOUS_EPSILON:
 			bad += 1
-			_push_problem(p_problems, "t=%dms lamp.%s 记录 %.6f，回放 %.6f"
-				% [t, f, float(want.get(f, 0.0)), float(got.get(f, 0.0))])
+			_push_problem(
+				p_problems,
+				(
+					"t=%dms lamp.%s 记录 %.6f，回放 %.6f"
+					% [t, f, float(want.get(f, 0.0)), float(got.get(f, 0.0))]
+				)
+			)
 	return bad
 
 
@@ -216,8 +238,7 @@ func _walk(p_record: Variant, p_step_ms: int) -> Dictionary:
 	# 这不是放宽验收——插值与事件派发逻辑与时钟源无关，只改节奏。
 	player.set_clock_source(CReplayPlayerScript.CLOCK_SOURCE_DELTA)
 	if not player.load(p_record):
-		return {"problems": ["回放器拒绝装载记录"], "detail": "装载失败",
-			"frames": [], "dispatched": []}
+		return {"problems": ["回放器拒绝装载记录"], "detail": "装载失败", "frames": [], "dispatched": []}
 	player.play()
 
 	var duration_ms: int = int(p_record.get_replay_duration_ms())
@@ -237,11 +258,9 @@ func _walk(p_record: Variant, p_step_ms: int) -> Dictionary:
 
 	var detail: String = "推进 %d 步走完全场" % frames.size()
 	if guard >= max_frames and not player.is_finished():
-		problems.append("回放推进 %d 步仍未结束（时长 %dms），播放头可能卡住"
-			% [guard, duration_ms])
+		problems.append("回放推进 %d 步仍未结束（时长 %dms），播放头可能卡住" % [guard, duration_ms])
 		detail = "推进超限未结束"
-	return {"problems": problems, "detail": detail,
-		"frames": frames, "dispatched": dispatched}
+	return {"problems": problems, "detail": detail, "frames": frames, "dispatched": dispatched}
 
 
 ## 时间轴：跑满整段、播放头单调、末尾精确对齐。
@@ -255,8 +274,7 @@ func _check_timeline(p_record: Variant, p_frames: Array, p_duration_ms: int) -> 
 
 	var record_duration: int = int(p_record.duration_ms)
 	if record_duration != p_duration_ms:
-		problems.append("记录 duration_ms=%d 与回放时长口径 %d 不一致"
-			% [record_duration, p_duration_ms])
+		problems.append("记录 duration_ms=%d 与回放时长口径 %d 不一致" % [record_duration, p_duration_ms])
 
 	var prev: int = -1
 	var first_backwards: int = -1
@@ -270,8 +288,7 @@ func _check_timeline(p_record: Variant, p_frames: Array, p_duration_ms: int) -> 
 
 	var last: int = int(p_frames[-1]["now_ms"])
 	if last != p_duration_ms:
-		problems.append("末帧 %dms 未对齐到时长 %dms，尾部画面会缺一段"
-			% [last, p_duration_ms])
+		problems.append("末帧 %dms 未对齐到时长 %dms，尾部画面会缺一段" % [last, p_duration_ms])
 
 	var detail: String = "末帧 %dms = 时长 %dms，%d 帧单调不减" % [last, p_duration_ms, p_frames.size()]
 	return {"problems": problems, "detail": detail}
@@ -302,11 +319,21 @@ func _check_discrete_order(p_record: Variant, p_frames: Array, p_step_ms: int) -
 		var a: Dictionary = want[i]
 		var b: Dictionary = got[i]
 		if str(a["key"]) != str(b["key"]):
-			_push_problem(problems, "第 %d 个离散跳变不一致：记录 %s@%dms，回放 %s@%dms"
-				% [i, str(a["key"]), int(a["t"]), str(b["key"]), int(b["t"])])
+			_push_problem(
+				problems,
+				(
+					"第 %d 个离散跳变不一致：记录 %s@%dms，回放 %s@%dms"
+					% [i, str(a["key"]), int(a["t"]), str(b["key"]), int(b["t"])]
+				)
+			)
 		elif absi(int(a["t"]) - int(b["t"])) > p_step_ms:
-			_push_problem(problems, "第 %d 个离散跳变 %s 时刻偏移过大：记录 %dms，回放 %dms"
-				% [i, str(a["key"]), int(a["t"]), int(b["t"])])
+			_push_problem(
+				problems,
+				(
+					"第 %d 个离散跳变 %s 时刻偏移过大：记录 %dms，回放 %dms"
+					% [i, str(a["key"]), int(a["t"]), int(b["t"])]
+				)
+			)
 
 	var detail: String = "两侧各 %d 次离散跳变，次序与时刻一致" % want.size()
 	if not problems.is_empty():
@@ -324,8 +351,12 @@ func _discrete_tokens(p_pairs: Array) -> Array:
 		var puppets: Array = pair[1]
 		var cur: Array = []
 		for p in puppets:
-			cur.append([int((p as Dictionary).get("head_id", -1)),
-				int((p as Dictionary).get("hook_slot", -1))])
+			cur.append(
+				[
+					int((p as Dictionary).get("head_id", -1)),
+					int((p as Dictionary).get("hook_slot", -1))
+				]
+			)
 		if not prev.is_empty():
 			for i in mini(prev.size(), cur.size()):
 				if int(prev[i][0]) != int(cur[i][0]):
@@ -354,27 +385,49 @@ func _check_events(p_record: Variant, p_dispatched: Array, p_step_ms: int) -> Di
 		var b: Variant = got[i]["ev"]
 		var at: int = int(got[i]["at_ms"])
 		if str(a.kind) != str(b.kind):
-			_push_problem(problems, "第 %d 条事件 kind 不一致：记录 %s，回放 %s"
-				% [i, str(a.kind), str(b.kind)])
+			_push_problem(problems, "第 %d 条事件 kind 不一致：记录 %s，回放 %s" % [i, str(a.kind), str(b.kind)])
 			continue
 		if str(a.cue_id) != str(b.cue_id):
-			_push_problem(problems, "第 %d 条 %s 的 cue_id 不一致：记录 %s，回放 %s"
-				% [i, str(a.kind), str(a.cue_id), str(b.cue_id)])
+			_push_problem(
+				problems,
+				(
+					"第 %d 条 %s 的 cue_id 不一致：记录 %s，回放 %s"
+					% [i, str(a.kind), str(a.cue_id), str(b.cue_id)]
+				)
+			)
 		if int(a.time_ms) != int(b.time_ms):
-			_push_problem(problems, "第 %d 条 %s 的 time_ms 被改写：记录 %dms，回放 %dms"
-				% [i, str(a.kind), int(a.time_ms), int(b.time_ms)])
+			_push_problem(
+				problems,
+				(
+					"第 %d 条 %s 的 time_ms 被改写：记录 %dms，回放 %dms"
+					% [i, str(a.kind), int(a.time_ms), int(b.time_ms)]
+				)
+			)
 		if typeof(a.object_id) != typeof(b.object_id) or a.object_id != b.object_id:
-			_push_problem(problems, "第 %d 条 %s 的 object_id 不一致：记录 %s(%s)，回放 %s(%s)"
-				% [i, str(a.kind), str(a.object_id), type_string(typeof(a.object_id)),
-					str(b.object_id), type_string(typeof(b.object_id))])
+			_push_problem(
+				problems,
+				(
+					"第 %d 条 %s 的 object_id 不一致：记录 %s(%s)，回放 %s(%s)"
+					% [
+						i,
+						str(a.kind),
+						str(a.object_id),
+						type_string(typeof(a.object_id)),
+						str(b.object_id),
+						type_string(typeof(b.object_id))
+					]
+				)
+			)
 		# 当帧派发：事件在到达 its time_ms 的那一帧内应用，最多晚一个步长。
 		var lag: int = at - int(a.time_ms)
 		if lag < 0:
-			_push_problem(problems, "第 %d 条 %s 被提前派发：记录 %dms，实际 %dms"
-				% [i, str(a.kind), int(a.time_ms), at])
+			_push_problem(
+				problems, "第 %d 条 %s 被提前派发：记录 %dms，实际 %dms" % [i, str(a.kind), int(a.time_ms), at]
+			)
 		elif lag > p_step_ms:
-			_push_problem(problems, "第 %d 条 %s 派发滞后 %dms（超过一个步长 %dms）"
-				% [i, str(a.kind), lag, p_step_ms])
+			_push_problem(
+				problems, "第 %d 条 %s 派发滞后 %dms（超过一个步长 %dms）" % [i, str(a.kind), lag, p_step_ms]
+			)
 
 	var detail: String = "派发 %d 条 / 记录 %d 条，逐条 kind·对象·时刻一致" % [got.size(), want.size()]
 	return {"problems": problems, "detail": detail}
@@ -385,8 +438,7 @@ func _check_events(p_record: Variant, p_dispatched: Array, p_step_ms: int) -> Di
 ## 掌声在记录里由 acts 的 has_applause 承载（21 个事件 kind 里没有掌声），
 ## 结果页据此判两档结局。回放不重新判定合拍度、不产生新分数，
 ## 所以正确的行为是「读同一份 acts、得同一个结局」。
-func _check_applause_and_ending(p_record: Variant, p_stage_id: int,
-		p_step_ms: int) -> Dictionary:
+func _check_applause_and_ending(p_record: Variant, p_stage_id: int, p_step_ms: int) -> Dictionary:
 	var problems: Array = []
 	var acts_before: Array = p_record.acts.duplicate(true)
 	var expected_applause: int = 0
@@ -398,9 +450,12 @@ func _check_applause_and_ending(p_record: Variant, p_stage_id: int,
 	# 同 _walk：离线批跑用 delta 时钟源，否则回放永远推不完。
 	flow.set_clock_source(CReplayPlayerScript.CLOCK_SOURCE_DELTA)
 	if not flow.begin_replay(p_record, p_stage_id):
-		return {"problems": ["结果页拒绝进入回放，无法核对掌声与结局"],
-			"detail": "进入回放失败", "applause_act_count": expected_applause,
-			"ending": &""}
+		return {
+			"problems": ["结果页拒绝进入回放，无法核对掌声与结局"],
+			"detail": "进入回放失败",
+			"applause_act_count": expected_applause,
+			"ending": &""
+		}
 
 	var duration_ms: int = int(p_record.get_replay_duration_ms())
 	var max_steps: int = int(ceil(float(duration_ms) / float(p_step_ms))) + 16
@@ -411,8 +466,12 @@ func _check_applause_and_ending(p_record: Variant, p_stage_id: int,
 
 	var summary: Dictionary = flow.build_summary()
 	if int(summary.get("applause_act_count", -1)) != expected_applause:
-		problems.append("掌声段数被改写：记录 %d 段，结果页 %d 段"
-			% [expected_applause, int(summary.get("applause_act_count", -1))])
+		problems.append(
+			(
+				"掌声段数被改写：记录 %d 段，结果页 %d 段"
+				% [expected_applause, int(summary.get("applause_act_count", -1))]
+			)
+		)
 
 	if p_record.acts != acts_before:
 		problems.append("回放改写了记录的 acts——回放必须只读，不得回写记录")
@@ -420,16 +479,23 @@ func _check_applause_and_ending(p_record: Variant, p_stage_id: int,
 	var expected_ending: StringName = _expected_ending(p_stage_id, expected_applause)
 	var got_ending: StringName = StringName(summary.get("ending", &""))
 	if got_ending != expected_ending:
-		problems.append("结局被改变：记录推出 %s，回放判出 %s"
-			% [str(expected_ending), str(got_ending)])
+		problems.append("结局被改变：记录推出 %s，回放判出 %s" % [str(expected_ending), str(got_ending)])
 
 	if int(summary.get("replay_duration_ms", -1)) != duration_ms:
-		problems.append("结果页回放时长 %dms 与本关时长 %dms 不一致"
-			% [int(summary.get("replay_duration_ms", -1)), duration_ms])
+		problems.append(
+			(
+				"结果页回放时长 %dms 与本关时长 %dms 不一致"
+				% [int(summary.get("replay_duration_ms", -1)), duration_ms]
+			)
+		)
 
 	var detail: String = "掌声 %d 段，结局 %s，与本关记录一致" % [expected_applause, str(got_ending)]
-	return {"problems": problems, "detail": detail,
-		"applause_act_count": expected_applause, "ending": got_ending}
+	return {
+		"problems": problems,
+		"detail": detail,
+		"applause_act_count": expected_applause,
+		"ending": got_ending
+	}
 
 
 ## 由记录的掌声段数推出应有结局。阈值与常量取自 CResultFlow，不另立一套。
@@ -442,8 +508,9 @@ func _expected_ending(p_stage_id: int, p_applause_count: int) -> StringName:
 
 
 ## 把一项检查的结论记进 checks 与 problems。问题列表为空即通过。
-func _append_check(p_checks: Array, p_problems: Array, p_name: String,
-		p_check_problems: Array, p_detail: String) -> void:
+func _append_check(
+	p_checks: Array, p_problems: Array, p_name: String, p_check_problems: Array, p_detail: String
+) -> void:
 	var ok: bool = p_check_problems.is_empty()
 	p_checks.append(_check_result(p_name, ok, p_detail))
 	for msg in p_check_problems:
@@ -470,8 +537,9 @@ func _base_stats(p_record: Variant) -> Dictionary:
 	}
 
 
-func _report(p_problems: Array, p_checks: Array, p_stats: Dictionary,
-		p_stage_id: int, p_duration_ms: int) -> Dictionary:
+func _report(
+	p_problems: Array, p_checks: Array, p_stats: Dictionary, p_stage_id: int, p_duration_ms: int
+) -> Dictionary:
 	return {
 		"ok": p_problems.is_empty(),
 		"stage_id": p_stage_id,
@@ -485,8 +553,12 @@ func _report(p_problems: Array, p_checks: Array, p_stats: Dictionary,
 ## 把报告渲染成可读文本。供无头探针直接打印。
 func describe_report(p_report: Dictionary) -> String:
 	var lines: Array = []
-	lines.append("回放验收 · 第 %d 关 · 时长 %dms" % [int(p_report.get("stage_id", -1)),
-		int(p_report.get("duration_ms", 0))])
+	lines.append(
+		(
+			"回放验收 · 第 %d 关 · 时长 %dms"
+			% [int(p_report.get("stage_id", -1)), int(p_report.get("duration_ms", 0))]
+		)
+	)
 	lines.append("")
 	for check in p_report.get("checks", []):
 		var mark: String = "通过" if bool(check["ok"]) else "未过"
@@ -494,10 +566,19 @@ func describe_report(p_report: Dictionary) -> String:
 	lines.append("")
 	var stats: Dictionary = p_report.get("stats", {})
 	if not stats.is_empty():
-		lines.append("实测：快照 %d 帧 / 事件 %d 条 / 幕 %d 段 / 回放帧 %d / 派发 %d / 离散跳变 %d"
-			% [int(stats.get("snapshot_count", 0)), int(stats.get("event_count", 0)),
-				int(stats.get("act_count", 0)), int(stats.get("replay_frames", 0)),
-				int(stats.get("dispatched_events", 0)), int(stats.get("discrete_tokens", 0))])
+		lines.append(
+			(
+				"实测：快照 %d 帧 / 事件 %d 条 / 幕 %d 段 / 回放帧 %d / 派发 %d / 离散跳变 %d"
+				% [
+					int(stats.get("snapshot_count", 0)),
+					int(stats.get("event_count", 0)),
+					int(stats.get("act_count", 0)),
+					int(stats.get("replay_frames", 0)),
+					int(stats.get("dispatched_events", 0)),
+					int(stats.get("discrete_tokens", 0))
+				]
+			)
+		)
 	var problems: Array = p_report.get("problems", [])
 	if problems.is_empty():
 		lines.append("结论：通过 —— 回放与原演出是同一场戏。")

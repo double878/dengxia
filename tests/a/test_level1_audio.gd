@@ -20,8 +20,6 @@ func run_all() -> Dictionary:
 			energies.append(energy / 300.0)
 		for energy in energies:
 			t.check(energy > 0.001, "每个时间段都应输出可听量级的信号")
-		t.check(absf(energies[0] - energies[1]) > 0.0001,
-			"节拍位置不同，音轨能量应变化")
+		t.check(absf(energies[0] - energies[1]) > 0.0001, "节拍位置不同，音轨能量应变化")
 	t.finish("第一关有持续的临时音乐信号")
-	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
-		"failures": t.failures}
+	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}

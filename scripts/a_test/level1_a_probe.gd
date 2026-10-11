@@ -47,10 +47,14 @@ func run(harness: Object) -> int:
 	var events: Array = harness.take_events()
 	_expect(harness.runtime.is_over(), "运行到 35 秒（歌曲时间）后结束")
 	_expect(guard < 8000, "补救冻结拉长了真实耗时但不应无上限（实际用了 %d 步）" % guard)
-	_expect(harness.clock.get_song_time_ms() <= 35010,
-		"歌曲时间应停在 35 秒（实际 %d ms）" % harness.clock.get_song_time_ms())
-	_expect(harness.clock.get_real_time_ms() > 40000,
-		"真实耗时应长于歌曲时长（真实 %d ms）" % harness.clock.get_real_time_ms())
+	_expect(
+		harness.clock.get_song_time_ms() <= 35010,
+		"歌曲时间应停在 35 秒（实际 %d ms）" % harness.clock.get_song_time_ms()
+	)
+	_expect(
+		harness.clock.get_real_time_ms() > 40000,
+		"真实耗时应长于歌曲时长（真实 %d ms）" % harness.clock.get_real_time_ms()
+	)
 	_expect(_count_kind(events, "stage_end") == 1, "收到 stage_end")
 	_expect(_count_kind(events, "cue_hint") > 0, "收到 cue_hint")
 	_expect(_count_kind(events, "remedy_open") > 0, "漏做收到 remedy_open")

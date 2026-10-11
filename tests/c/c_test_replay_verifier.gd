@@ -88,8 +88,9 @@ func _test_03_stage5_applause_curtain_call(t: Variant) -> void:
 	var report: Dictionary = CReplayVerifierScript.new().verify(_clean(5, true))
 	t.check(bool(report["ok"]), "整体通过")
 	t.check_eq(int(report["stats"]["applause_act_count"]), 2, "掌声段数为 2")
-	t.check_eq(StringName(report["stats"]["ending"]),
-		CResultFlowScript.ENDING_CURTAIN_CALL, "结局满堂彩")
+	t.check_eq(
+		StringName(report["stats"]["ending"]), CResultFlowScript.ENDING_CURTAIN_CALL, "结局满堂彩"
+	)
 	t.finish("结局与文案一致")
 
 
@@ -98,8 +99,7 @@ func _test_04_stage5_no_applause_played_out(t: Variant) -> void:
 	var report: Dictionary = CReplayVerifierScript.new().verify(_clean(5, false))
 	t.check(bool(report["ok"]), "整体通过")
 	t.check_eq(int(report["stats"]["applause_act_count"]), 0, "掌声段数为 0")
-	t.check_eq(StringName(report["stats"]["ending"]),
-		CResultFlowScript.ENDING_PLAYED_OUT, "结局戏散了")
+	t.check_eq(StringName(report["stats"]["ending"]), CResultFlowScript.ENDING_PLAYED_OUT, "结局戏散了")
 	t.finish("两档结局都能判对")
 
 
@@ -208,8 +208,12 @@ func _test_12_event_time_rewritten_caught(t: Variant) -> void:
 	var original: Variant = record.events[idx]
 	# 换一条「同一事件、时刻被改」的副本：模拟回放改写了记录的时刻
 	var tampered: Variant = CTimedEventScript.new(
-		int(original.time_ms) + 500, original.kind, original.object_id,
-		original.cue_id, original.payload.duplicate(true))
+		int(original.time_ms) + 500,
+		original.kind,
+		original.object_id,
+		original.cue_id,
+		original.payload.duplicate(true)
+	)
 	tampered.seq = int(original.seq)
 	dispatched[idx] = {"ev": tampered, "at_ms": int(original.time_ms) + 500}
 	var r: Dictionary = v._check_events(record, dispatched, 17)
@@ -272,9 +276,14 @@ func _test_17_puppet_mismatch_detected(t: Variant) -> void:
 	t.begin("检测器：影人离散量不符会被逐字段抓出")
 	var v: Variant = CReplayVerifierScript.new()
 	var want: Dictionary = {
-		"head_id": 3, "hook_slot": 0, "stance": 0.0, "facing": 1.0,
-		"turn_progress": 1.0, "stage_pos": {"x": 0.2, "y": 0.0},
-		"hand_angle": {"left": -0.5, "right": 0.45}, "is_controlled": true,
+		"head_id": 3,
+		"hook_slot": 0,
+		"stance": 0.0,
+		"facing": 1.0,
+		"turn_progress": 1.0,
+		"stage_pos": {"x": 0.2, "y": 0.0},
+		"hand_angle": {"left": -0.5, "right": 0.45},
+		"is_controlled": true,
 	}
 	var got: Dictionary = want.duplicate(true)
 	got["head_id"] = 4

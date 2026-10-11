@@ -88,25 +88,34 @@ func _test_female_shoulders(t: ATestBase) -> void:
 				var left: Vector2 = view.hand_screen_position("left")
 				var right: Vector2 = view.hand_screen_position("right")
 				# 垂臂时腕间距就是肩间距，不依赖绘制端内部的比例配置。
-				t.check_in_range(absf(right.x - left.x) / height, 0.10, 0.17,
-					"白素贞和小青应有窄肩，站蹲与三种显示口径一致")
+				t.check_in_range(
+					absf(right.x - left.x) / height, 0.10, 0.17, "白素贞和小青应有窄肩，站蹲与三种显示口径一致"
+				)
 				var centre: Vector2 = view.stage_to_screen(view.puppet_state.stage_pos)
 				for angle in [-PI * 0.5, 0.0, PI * 0.5, PI]:
 					view.puppet_state.hand_angle = Vector2(angle, angle)
 					for hand: String in ["left", "right"]:
 						var wrist: Vector2 = view.hand_screen_position(hand)
-						var shoulder := Vector2(left.x if hand == "left" else right.x,
-							centre.y - height * 0.80)
-						t.check_approx(wrist.distance_to(shoulder) / height, 0.31, 0.001,
-							"收肩不能拉长、缩短或断开手腕运动链")
+						var shoulder := Vector2(
+							left.x if hand == "left" else right.x, centre.y - height * 0.80
+						)
+						t.check_approx(
+							wrist.distance_to(shoulder) / height, 0.31, 0.001, "收肩不能拉长、缩短或断开手腕运动链"
+						)
 				view.puppet_state.hand_angle = Vector2.ZERO
 			view.free()
 	var male: PlaceholderPuppet = _view(1)
 	male.puppet_state.puppet_id = 1
 	male.puppet_state.hand_angle = Vector2.ZERO
-	t.check_approx(male.hand_screen_position("left").distance_to(
-		male.hand_screen_position("right")) / male.figure_px_height(), 0.21, 0.001,
-		"许仙仍使用原肩间距")
+	t.check_approx(
+		(
+			male.hand_screen_position("left").distance_to(male.hand_screen_position("right"))
+			/ male.figure_px_height()
+		),
+		0.21,
+		0.001,
+		"许仙仍使用原肩间距"
+	)
 	male.free()
 	t.finish("美术收肩不改变臂长、手角及原状态语义")
 
@@ -172,7 +181,10 @@ func _test_prop_attachments(t: ATestBase) -> void:
 			for view: PlaceholderPuppet in views:
 				view.lamp_state.distance = distance
 			var data: Dictionary = prop.geometry()
-			t.check((data["hand"] as Vector2).is_equal_approx(views[1].hand_screen_position("right")), "两种灯距下伞柄握点与相应腕点一致")
+			t.check(
+				(data["hand"] as Vector2).is_equal_approx(views[1].hand_screen_position("right")),
+				"两种灯距下伞柄握点与相应腕点一致"
+			)
 	controller.update(8750, [])
 	t.check_eq(controller.holder_id_of(), 0, "样例确实通过原控制器接伞")
 	states[0].stage_pos.x = UmbrellaController.TURN_POINT_X
@@ -187,7 +199,10 @@ func _test_prop_attachments(t: ATestBase) -> void:
 		var data: Dictionary = prop.geometry()
 		var from: Vector2 = views[0].hand_screen_position("left")
 		var to: Vector2 = views[1].hand_screen_position("right")
-		t.check((data["hand"] as Vector2).is_equal_approx(from.lerp(to, controller.handoff_blend())), "交接时实体与投影各自在对应腕点间过渡")
+		t.check(
+			(data["hand"] as Vector2).is_equal_approx(from.lerp(to, controller.handoff_blend())),
+			"交接时实体与投影各自在对应腕点间过渡"
+		)
 	prop.free()
 	for view: PlaceholderPuppet in views:
 		view.free()

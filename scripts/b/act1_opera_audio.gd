@@ -43,9 +43,15 @@ static func read_config() -> Dictionary:
 		var id := str(item.get("line_id", ""))
 		var begin := int(item.get("start_ms", -1))
 		var end := int(item.get("end_ms", -1))
-		if id.is_empty() or ids.has(id) or str(item.get("text", "")).is_empty() \
-				or begin < previous_end or end <= begin or end > int(value.duration_ms) \
-				or str(item.get("delivery", "")) not in ["speech", "singing"]:
+		if (
+			id.is_empty()
+			or ids.has(id)
+			or str(item.get("text", "")).is_empty()
+			or begin < previous_end
+			or end <= begin
+			or end > int(value.duration_ms)
+			or str(item.get("delivery", "")) not in ["speech", "singing"]
+		):
 			push_error("第一幕台词缺失、重叠或时间越界：%s" % id)
 			return {}
 		ids[id] = true
@@ -67,8 +73,11 @@ func setup(value: Dictionary, p_clock: MusicClock, p_flow: Act1OperaFlow) -> boo
 			problems.append("须为 PCM WAV：%s" % path)
 			continue
 		var wav: AudioStreamWAV = stream
-		if wav.mix_rate != 48000 or wav.format != AudioStreamWAV.FORMAT_16_BITS \
-				or wav.loop_mode != AudioStreamWAV.LOOP_DISABLED:
+		if (
+			wav.mix_rate != 48000
+			or wav.format != AudioStreamWAV.FORMAT_16_BITS
+			or wav.loop_mode != AudioStreamWAV.LOOP_DISABLED
+		):
 			problems.append("须为无循环 48k/16-bit WAV：%s" % path)
 		if key == "main" and absf(wav.get_length() * 1000.0 - float(config.duration_ms)) > 1.0:
 			problems.append("主轨长度与时间表不一致")
@@ -82,10 +91,14 @@ func setup(value: Dictionary, p_clock: MusicClock, p_flow: Act1OperaFlow) -> boo
 			player.stream = loop
 		add_child(player)
 		match key:
-			"main": _main = player
-			"wait_loop": _wait = player
-			"take_close": _gong = player
-			"remedy": _slow = player
+			"main":
+				_main = player
+			"wait_loop":
+				_wait = player
+			"take_close":
+				_gong = player
+			"remedy":
+				_slow = player
 	return problems.is_empty()
 
 
@@ -94,13 +107,20 @@ func get_player() -> AudioStreamPlayer:
 
 
 func recorded_view() -> Dictionary:
-	return {"main": _player_view(_main), "wait": _player_view(_wait),
-		"slow": _player_view(_slow), "wait_gain": _wait_gain}
+	return {
+		"main": _player_view(_main),
+		"wait": _player_view(_wait),
+		"slow": _player_view(_slow),
+		"wait_gain": _wait_gain
+	}
 
 
 func _player_view(player: AudioStreamPlayer) -> Dictionary:
-	return {"playing": player.playing, "paused": player.stream_paused,
-		"position_ms": player.get_playback_position() * 1000.0}
+	return {
+		"playing": player.playing,
+		"paused": player.stream_paused,
+		"position_ms": player.get_playback_position() * 1000.0
+	}
 
 
 func setup_replay(value: Dictionary) -> bool:
@@ -178,10 +198,22 @@ func update(events: Array = [], delta: float = 1.0 / 60.0) -> void:
 			break
 	if str(next.get("line_id", "")) != str(_line.get("line_id", "")):
 		_line = next.duplicate(true)
-		_events.append({"time_ms": now, "kind": "dialogue_line_changed",
-			"object_id": "performance_audio", "cue_id": "", "payload":
-			_line.merged({"real_time_ms": clock.get_real_time_ms(),
-			"audio_version": config.audio_version, "stage_id": 1})})
+		_events.append(
+			{
+				"time_ms": now,
+				"kind": "dialogue_line_changed",
+				"object_id": "performance_audio",
+				"cue_id": "",
+				"payload":
+				_line.merged(
+					{
+						"real_time_ms": clock.get_real_time_ms(),
+						"audio_version": config.audio_version,
+						"stage_id": 1
+					}
+				)
+			}
+		)
 
 
 func current_line() -> Dictionary:

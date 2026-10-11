@@ -11,7 +11,7 @@ const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 ## 这样窗口缩放不会改变操控手感。
 const STAGE_PIXEL_SIZE: Vector2 = Vector2(1920.0, 1080.0)
 
-const STANCE_SPEED_PER_S: float = 1.5    ## 站蹲速度（stance/s），站→蹲约 0.67 s
+const STANCE_SPEED_PER_S: float = 1.5  ## 站蹲速度（stance/s），站→蹲约 0.67 s
 ## 翻面过渡时长。影人只有正反两面，翻一次就是一张纸片翻过去，所以这里很短：
 ## 0.1 s 既明显快于原来 0.5 s 的慢压扁，又仍留有过渡，不平白跳变。
 const TURN_DURATION_S: float = 0.1
@@ -24,8 +24,8 @@ const HAND_SPEED_RAD_PER_S: float = 4.5
 ## 双手初始角：0 弧度 = 手臂自然垂下，与 PuppetState.HAND_ANGLE_MIN 一致。
 const HAND_ANGLE_INITIAL: float = 0.0
 const CHEST_TAG_RADIUS_PX: float = 90.0  ## 胸签拖动热区（以虚拟舞台像素计）
-const FACING_DEADZONE_PX: float = 2.0    ## 横向位移小于此值不改变转身目标
-const STANCE_EPSILON: float = 0.000001   ## 站蹲「是否仍在变化」的比较阈值
+const FACING_DEADZONE_PX: float = 2.0  ## 横向位移小于此值不改变转身目标
+const STANCE_EPSILON: float = 0.000001  ## 站蹲「是否仍在变化」的比较阈值
 
 ## 事件类型。cue_id 非判定事件一律为空字符串。
 const KIND_POSE_STANCE: String = "pose_stance"
@@ -53,22 +53,22 @@ var clock: Object = null
 ## 由 Level1Runtime.setup 按 StageDef.hand_angle_max_rad 赋值。
 var hand_angle_max: float = PuppetStateScript.HAND_ANGLE_MAX
 
-var puppets: Array = []                  ## Array[PuppetState]，下标即 puppet_id
-var controlled_id: int = -1              ## 当前唯一受控影人；-1 表示无人受控
+var puppets: Array = []  ## Array[PuppetState]，下标即 puppet_id
+var controlled_id: int = -1  ## 当前唯一受控影人；-1 表示无人受控
 ## 头架上每个槽位当前放着哪个头。与 puppets 的 head_id 合起来，
 ## 六个头各出现恰好一次（不变量 2），换头因此只是「交换」而不是复制。
 var rack_heads: Array = []
 
-var _events: Array[Dictionary] = []      ## 待取走的事件队列
-var _input_map: Dictionary = {}          ## 本帧生效的输入快照
+var _events: Array[Dictionary] = []  ## 待取走的事件队列
+var _input_map: Dictionary = {}  ## 本帧生效的输入快照
 var _drag_active: bool = false
 var _drag_puppet_id: int = -1
 var _drag_accum_px: Vector2 = Vector2.ZERO
-var _facing_target: float = 0.0          ## 0.0 表示不翻面，+/-1.0 表示要翻到哪一面
+var _facing_target: float = 0.0  ## 0.0 表示不翻面，+/-1.0 表示要翻到哪一面
 ## 只在运动方向变化与停稳时发事件，避免每帧噪声撑大 C 的录制
 var _stance_moving: bool = false
 var _stance_last_emitted: float = 0.0
-var _flip_target: float = 0.0            ## 当前这次翻面的目标面；0.0 表示还没翻过面
+var _flip_target: float = 0.0  ## 当前这次翻面的目标面；0.0 表示还没翻过面
 var _hand_dir: Vector2i = Vector2i.ZERO
 var walk_path: RefCounted = null
 
@@ -110,7 +110,7 @@ func setup(puppet_count: int = 3) -> void:
 		state.facing = PuppetStateScript.FACING_FRONT
 		state.turn_progress = PuppetStateScript.TURN_PROGRESS_MAX
 		state.hand_angle = Vector2(HAND_ANGLE_INITIAL, HAND_ANGLE_INITIAL)
-		state.head_id = i                      ## 前三个头分配给三个影人
+		state.head_id = i  ## 前三个头分配给三个影人
 		state.hook_slot = PuppetStateScript.HOOK_SLOT_NONE
 		state.is_controlled = false
 		puppets.append(state)
@@ -197,8 +197,9 @@ func swap_head(slot: int, puppet_id: int = -1) -> bool:
 	var outgoing: int = target.head_id
 	target.head_id = incoming
 	rack_heads[slot] = outgoing
-	_emit(KIND_HEAD_SWAP, target.puppet_id,
-		{"slot": slot, "head_from": outgoing, "head_to": incoming})
+	_emit(
+		KIND_HEAD_SWAP, target.puppet_id, {"slot": slot, "head_from": outgoing, "head_to": incoming}
+	)
 	return true
 
 
@@ -234,7 +235,8 @@ func begin_drag(puppet_id: int, mouse_pos: Vector2) -> bool:
 		return false
 	var chest_tag_px := Vector2(
 		target.stage_pos.x * STAGE_PIXEL_SIZE.x,
-		target.stage_pos.y * STAGE_PIXEL_SIZE.y - CHEST_TAG_RADIUS_PX * 0.5)
+		target.stage_pos.y * STAGE_PIXEL_SIZE.y - CHEST_TAG_RADIUS_PX * 0.5
+	)
 	if mouse_pos.distance_to(chest_tag_px) > CHEST_TAG_RADIUS_PX:
 		return false
 	_drag_active = true
@@ -309,7 +311,9 @@ func _apply_drag(controlled: PuppetState) -> void:
 	var before_x: float = controlled.stage_pos.x
 	controlled.stage_pos.x = clampf(
 		controlled.stage_pos.x + dpx.x / STAGE_PIXEL_SIZE.x,
-		PuppetStateScript.STAGE_POS_MIN, PuppetStateScript.STAGE_POS_MAX)
+		PuppetStateScript.STAGE_POS_MIN,
+		PuppetStateScript.STAGE_POS_MAX
+	)
 	var moved_px: float = absf(controlled.stage_pos.x - before_x) * STAGE_PIXEL_SIZE.x
 	if moved_px > 0.01:
 		controlled.walk_phase += moved_px * TAU / 96.0
@@ -320,7 +324,9 @@ func _apply_drag(controlled: PuppetState) -> void:
 	var before_stance: float = controlled.stance
 	controlled.stance = clampf(
 		controlled.stance + dpx.y / STAGE_PIXEL_SIZE.y,
-		PuppetStateScript.STANCE_MIN, PuppetStateScript.STANCE_MAX)
+		PuppetStateScript.STANCE_MIN,
+		PuppetStateScript.STANCE_MAX
+	)
 	if not is_equal_approx(before_stance, controlled.stance):
 		if not _stance_moving:
 			_stance_moving = true
@@ -334,18 +340,31 @@ func _apply_drag(controlled: PuppetState) -> void:
 
 func _apply_hands(controlled: PuppetState, delta: float) -> void:
 	var step: float = HAND_SPEED_RAD_PER_S * maxf(delta, 0.0)
-	var left_dir: int = _net_dir(_input_map["left_raise"], _input_map["left_lower"],
-		_input_map["both_raise"], _input_map["both_lower"])
-	var right_dir: int = _net_dir(_input_map["right_raise"], _input_map["right_lower"],
-		_input_map["both_raise"], _input_map["both_lower"])
+	var left_dir: int = _net_dir(
+		_input_map["left_raise"],
+		_input_map["left_lower"],
+		_input_map["both_raise"],
+		_input_map["both_lower"]
+	)
+	var right_dir: int = _net_dir(
+		_input_map["right_raise"],
+		_input_map["right_lower"],
+		_input_map["both_raise"],
+		_input_map["both_lower"]
+	)
 	if left_dir != 0:
 		controlled.hand_angle.x += float(left_dir) * step
 	if right_dir != 0:
 		controlled.hand_angle.y += float(right_dir) * step
-	var ceiling: float = clampf(hand_angle_max,
-		PuppetStateScript.HAND_ANGLE_MIN, PuppetStateScript.HAND_ANGLE_MAX)
-	controlled.hand_angle.x = clampf(controlled.hand_angle.x, PuppetStateScript.HAND_ANGLE_MIN, ceiling)
-	controlled.hand_angle.y = clampf(controlled.hand_angle.y, PuppetStateScript.HAND_ANGLE_MIN, ceiling)
+	var ceiling: float = clampf(
+		hand_angle_max, PuppetStateScript.HAND_ANGLE_MIN, PuppetStateScript.HAND_ANGLE_MAX
+	)
+	controlled.hand_angle.x = clampf(
+		controlled.hand_angle.x, PuppetStateScript.HAND_ANGLE_MIN, ceiling
+	)
+	controlled.hand_angle.y = clampf(
+		controlled.hand_angle.y, PuppetStateScript.HAND_ANGLE_MIN, ceiling
+	)
 	_emit_hand_if_changed(controlled, left_dir, right_dir)
 
 
@@ -361,11 +380,13 @@ func _apply_facing(controlled: PuppetState, delta: float) -> void:
 		# 所以这里只重置进度，不动 facing。
 		_flip_target = _facing_target
 		controlled.turn_progress = PuppetStateScript.TURN_PROGRESS_MIN
-		_emit(KIND_FACING_TURN, controlled.puppet_id,
-			{"from": controlled.facing, "to": _flip_target})
+		_emit(
+			KIND_FACING_TURN, controlled.puppet_id, {"from": controlled.facing, "to": _flip_target}
+		)
 	controlled.turn_progress = minf(
 		controlled.turn_progress + TURN_SPEED_PER_S * maxf(delta, 0.0),
-		PuppetStateScript.TURN_PROGRESS_MAX)
+		PuppetStateScript.TURN_PROGRESS_MAX
+	)
 	if controlled.turn_progress >= FLIP_SWAP_POINT:
 		controlled.facing = _flip_target
 
@@ -381,11 +402,17 @@ func _emit_hand_if_changed(controlled: PuppetState, left_dir: int, right_dir: in
 	if dir == _hand_dir:
 		return
 	if dir.x != _hand_dir.x:
-		_emit(KIND_HAND_MOTION, controlled.puppet_id,
-			{"hand": "left", "dir": left_dir, "angle": controlled.hand_angle.x})
+		_emit(
+			KIND_HAND_MOTION,
+			controlled.puppet_id,
+			{"hand": "left", "dir": left_dir, "angle": controlled.hand_angle.x}
+		)
 	if dir.y != _hand_dir.y:
-		_emit(KIND_HAND_MOTION, controlled.puppet_id,
-			{"hand": "right", "dir": right_dir, "angle": controlled.hand_angle.y})
+		_emit(
+			KIND_HAND_MOTION,
+			controlled.puppet_id,
+			{"hand": "right", "dir": right_dir, "angle": controlled.hand_angle.y}
+		)
 	_hand_dir = dir
 
 
@@ -405,10 +432,15 @@ func _emit(kind: String, object_id: int, payload_extra: Dictionary) -> void:
 	var stamp: int = 0
 	if clock != null:
 		stamp = int(clock.call("get_song_time_ms"))
-	_events.append({
-		"time_ms": stamp,
-		"kind": kind,
-		"object_id": object_id,
-		"cue_id": "",
-		"payload": payload,
-	})
+	(
+		_events
+		. append(
+			{
+				"time_ms": stamp,
+				"kind": kind,
+				"object_id": object_id,
+				"cue_id": "",
+				"payload": payload,
+			}
+		)
+	)

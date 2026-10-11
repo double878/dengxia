@@ -49,12 +49,17 @@ func handle_event(event: InputEvent) -> void:
 func poll_keys() -> void:
 	if lamp == null or not enabled:
 		return
-	lamp.set_input_map({
-		"distance_increase": _wheel_distance_direction > 0,
-		"distance_decrease": _wheel_distance_direction < 0,
-		"exposure_increase": Input.is_key_pressed(KEY_EXPOSURE_INCREASE),
-		"exposure_decrease": Input.is_key_pressed(KEY_EXPOSURE_DECREASE),
-	})
+	(
+		lamp
+		. set_input_map(
+			{
+				"distance_increase": _wheel_distance_direction > 0,
+				"distance_decrease": _wheel_distance_direction < 0,
+				"exposure_increase": Input.is_key_pressed(KEY_EXPOSURE_INCREASE),
+				"exposure_decrease": Input.is_key_pressed(KEY_EXPOSURE_DECREASE),
+			}
+		)
+	)
 	_wheel_distance_direction = 0
 
 

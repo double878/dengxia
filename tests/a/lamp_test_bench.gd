@@ -17,7 +17,7 @@ const STEP_S: float = 0.01
 var clock: MusicClock = null
 var lamp: LampController = null
 var time_ms: int = 0
-var log: Array = []                    ## 油灯 controller 产出的全部事件
+var log: Array = []  ## 油灯 controller 产出的全部事件
 
 
 func _init() -> void:
@@ -52,7 +52,7 @@ func advance_ms(ms: int = 0) -> void:
 	for _i in steps:
 		_set_song_ms(time_ms + STEP_MS)
 		_collect(lamp.update(STEP_S, []))
-	_collect(lamp.take_events())        ## 收走 update 之外产生的事件（如 lamp_finished）
+	_collect(lamp.take_events())  ## 收走 update 之外产生的事件（如 lamp_finished）
 
 
 ## 设置输入快照并推进 ms 毫秒。
