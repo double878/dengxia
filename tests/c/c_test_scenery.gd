@@ -336,7 +336,7 @@ func _level2_geometry(t: RefCounted) -> void:
 	#③ 门楼与菊石「贴地」：底缘应贴近幕布底缘（参考图里它们站在地上）
 	var gate_rect: Rect2 = Rect2()
 	var chrs_rect: Rect2 = Rect2()
-	var branch_rect: Rect2 = Rect2()
+	var tree_rect: Rect2 = Rect2()
 	for item in def.items:
 		var img2 := Image.load_from_file(
 			ProjectSettings.globalize_path(str(item.get("texture", ""))))
@@ -351,32 +351,47 @@ func _level2_geometry(t: RefCounted) -> void:
 		match str(item.get("id", "")):
 			"gate": gate_rect = rr
 			"chrysanthemum": chrs_rect = rr
-			"willow_branch": branch_rect = rr
+			"willow_branch": tree_rect = rr
 	t.check_approx(gate_rect.end.y, 661.0, 3.0,
 		"门楼底缘 y=661px（贴地，参考图里门楼站在地上）")
+	# 门楼缩到 2/3：高 549 → 366px（用户 2026-10-11 二次调整）
+	t.check_approx(gate_rect.size.y, 366.0, 3.0,
+		"门楼高366px（= 原 549 的 2/3）")
 	# 菊石与门楼**同一地平线**（用户 2026-10-11 定案；第一版 635 与门楼 661差 26px，已修）
 	t.check_approx(chrs_rect.end.y, 661.0, 3.0,
 		"菊石底缘 y=661px（与门楼同地平线）")
-	# ④ 垂柳枝是**悬垂件**：底缘明显高于门楼（不接地）
-	t.check(branch_rect.end.y < gate_rect.end.y - 100.0,
-		"垂柳枝悬垂不接地（底缘 %.0f，比门楼底 %.0f 高 %.0f px）" % [
-			branch_rect.end.y, gate_rect.end.y, gate_rect.end.y - branch_rect.end.y])
-	# ⑤ 菊石从门楼左侧露出（几何上无法完整放到门楼左侧：门楼左缘 109 − 幕布左 66 = 35px
-	#    < 菊花最小宽约 46px），故按参考图取「被门楼遮住大部、左侧露出约 37px」
+	# 菊花缩到 1/2~1/3 之间：高 368 → 132px（0.36）
+	t.check_approx(chrs_rect.size.y, 132.0, 3.0,
+		"菊花高 132px（原 368 的 0.36，落在用户要的 1/2~1/3 区间内）")
+	# ④ 树是**右侧贴地的整株**（用户 2026-10-11 从「悬垂柳枝」改为整株，贴地不悬空）
+	t.check_approx(tree_rect.end.y, 661.0, 3.0,
+		"树底缘 y=661px（与门楼/菊石同一地平线，贴地）")
+	t.check(tree_rect.position.x > gate_rect.end.x,
+		"树左缘 %.0f > 门楼右缘 %.0f（树在门楼右侧）" % [
+			tree_rect.position.x, gate_rect.end.x])
+	# 树靠幕布右边界：右缘距幕布右 30px 左右
+	t.check(1788.0 + 66.0 - tree_rect.end.x <= 40.0
+		and 1788.0 + 66.0 - tree_rect.end.x >= 10.0,
+		"树右缘 %.0f 距幕布右 %.0f（内边距10~40px，贴边）" % [
+			tree_rect.end.x, 66.0 + 1788.0])
+	# ⑤ 树大小与房屋相当：高差不超过 10%
+	t.check(absf(tree_rect.size.y - gate_rect.size.y) <= gate_rect.size.y * 0.10,
+		"树高 %.0f 与门楼高 %.0f 相当（差 ≤10%%）" % [
+			tree_rect.size.y, gate_rect.size.y])
+	# ⑥ 菊石从门楼左侧露出（几何上无法完整放到门楼左侧，见 def 注释）
 	t.check(chrs_rect.position.x < gate_rect.position.x,
 		"菊石左缘 %.0f < 门楼左缘 %.0f（菊石在门楼左侧露出）" % [
 			chrs_rect.position.x, gate_rect.position.x])
 	var exposed: float = gate_rect.position.x - chrs_rect.position.x
 	t.check(exposed >= 20.0 and exposed <= 60.0,
 		"菊石在门楼左侧露出 %.0f px（要求 20~60，能辨认又不喧宾夺主）" % exposed)
-	#⑥ 垂柳在门楼右侧
-	t.check(branch_rect.position.x > gate_rect.end.x,
-		"垂柳左缘 %.0f >门楼右缘 %.0f（柳在门右侧）" % [
-			branch_rect.position.x, gate_rect.end.x])
-	# ⑦ 画面右半留给影人：布景整体不得越到 0.60 以右
-	t.check(gate_rect.end.x < 1920.0 * 0.60,
-		"门楼右缘 %.0f < 0.60幕宽（%.0f），右侧留给影人" % [
-			gate_rect.end.x, 1920.0 * 0.60])
+	# ⑦ 树右缘必须**贴住幕布右边界**（用户「靠近幕布边界」），
+	#    同时不越出幕布——越界会被渲染器裁掉，那不叫「靠边」叫「出界」。
+	t.check(tree_rect.end.x <= 66.0 + 1788.0 + 0.5,
+		"树右缘 %.0f 未越出幕布右缘 %.0f" % [tree_rect.end.x, 66.0 + 1788.0])
+	t.check(66.0 + 1788.0 - tree_rect.end.x <= 40.0,
+		"树右缘距幕布右仅 %.0fpx（贴边，符合「靠近幕布边界」）" % [
+			66.0 + 1788.0 - tree_rect.end.x])
 
 
 ## 常量与数据同源：改常量忘改数据（或反过来）必须被测试抓住
