@@ -155,7 +155,8 @@ const SCENERY_TEX_GATE: String = "res://assets/scenery/level2/gate.png"
 const SCENERY_TEX_CHRYS: String = "res://assets/scenery/level2/chrysanthemum.png"
 ## 花篮（用户 2026-10-11 提供 `皮影美术素材/花篮.woop`）：
 ## `plant-ornamental-007` / style chinese，单件整图，裁到内容框 → **1403×1718**。
-## 形态：朱红瓷花篮（描金缠枝 + 红菊绿叶），与菊花的素雅形成对比，两者一左一右对称。
+## 🔴 **同日撤下**：加入当天用户即定案移除，不再进 `items`（复用说明见 make_level2 注释）。
+## 常量与贴图常量一并保留，便于日后复用。
 const SCENERY_TEX_BASKET: String = "res://assets/scenery/level2/flower_basket.png"
 const SCENERY_TEX_WILLOW_BRANCH: String = "res://assets/scenery/level2/willow_branch.png"
 
@@ -181,19 +182,9 @@ const LEVEL2_CHRYS_SCALE: float = 0.091312
 const LEVEL2_CHRYS_X: float = 0.061755        ## 左缘 72px（幕布左+6），露出 37px
 const LEVEL2_CHRYS_BASE_Y: float = 0.612037   ## 底座 y=661px（**与门楼同一地平线**）
 
-## 花篮（用户 2026-10-11 加入）：放在**门楼右侧，与菊花左右对称**。
-## 素材 **1403×1718**（宽高比 0.817）。原高 165px → **放大 1.2 倍 = 198px**
-## （仍略高于菊花 165px，读作「主花篮 + 陪衬菊石」的主次），宽 162px，
-## scale = 198/1718 = **0.115250**；foot 取**底边中心**。
-##
-## 🔴 2026-10-11 用户再调「位置放在门的旁边、稍微大一点、往左移一点」：
-## 间隙 45px → **15px**（紧贴门楼右柱），左缘 805 → **775**，anchor_x 相应重算
-## （0.454361 → **0.445754**；贴图放大+ 左移都会改变 `(W−foot)×scale` 偏移，锚点必须重算）。
-##
-## 位置口径（重要取舍）：菊花是「贴幕布左、露头 37px 在门楼左侧」；若对花篮
-## **严格镜像**（也只露头 37px），花篮会整体落在门楼**内部**被遮住
-## （门楼跨 109~760），那不叫对称、叫看不见。故取「贴着门楼右柱、完整可见」，
-## 与菊花的露出量同量级，视觉上仍读作左右对称的一对。
+## 花篮（🔴 **已撤下**）：同日在门楼右侧试摆一版（放大 1.2 倍、间隙 15px），
+## 用户当日定案移除。素材与常量保留在仓库里不删（删了要重新找美术），
+## 要复用时把 `make_level2` 注释里的那段加回 `items` 即可。
 const LEVEL2_BASKET_SCALE: float = 0.115250
 const LEVEL2_BASKET_X: float = 0.445754# 底边中心 → 左缘 775、右缘 937
 const LEVEL2_BASKET_BASE_Y: float = 0.612037 ## 底 y=661px（贴地，与另三件同一线）
@@ -365,20 +356,17 @@ static func make_level2() -> CSceneryDef:
 			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
 				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
 		},
-		{
-			# 花篮：与门楼左侧的菊花**左右对称**（用户 2026-10-11）。
-			"id": "flower_basket",
-			"kind": KIND_WILLOW,
-			"anchor_x": LEVEL2_BASKET_X,
-			"anchor_y": LEVEL2_BASKET_BASE_Y,
-			"pan_x": 0.0,
-			"texture": SCENERY_TEX_BASKET,
-			# 锚点 = 贴图底边中心（花篮底足正中）。素材 1403×1718。
-			"texture_foot_px": Vector2(701.0, 1718.0),
-			"texture_scale_px": LEVEL2_BASKET_SCALE,
-			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
-				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
-		},
+		# 🔴 花篮（flower_basket）已于 2026-11 用户定案**移除**：加入当天即撤下，
+		# 「门的两侧对称摆两盆花」读起来太满，且与菊花的陪衬角色重复。
+		# 素材 `assets/scenery/level2/flower_basket.png` 保留在仓库里（美术资产，
+		# 删了要重新找素材），只是不再进 `items` —— 复用时把下面这段加回即可：
+		#   {"id": "flower_basket", "kind": KIND_WILLOW,
+		#    "anchor_x": LEVEL2_BASKET_X, "anchor_y": LEVEL2_BASKET_BASE_Y, "pan_x": 0.0,
+		#    "texture": SCENERY_TEX_BASKET,
+		#    "texture_foot_px": Vector2(701.0, 1718.0),
+		#    "texture_scale_px": LEVEL2_BASKET_SCALE,
+		#    "params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
+		#      "crown_radius_y": 0.055, "crown_bias_x": 0.0}},
 		{
 			# id 沿用 `willow_branch` 以免探针/断言的取用键改名；实际已是**整株立树**
 			# （用户 2026-10-11 二次调整：从悬垂柳枝改为右侧靠幕布边界的树）。

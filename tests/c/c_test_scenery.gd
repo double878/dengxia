@@ -296,8 +296,8 @@ func _empty_stage_fallback(t: RefCounted) -> void:
 	t.check_eq(empty.stage_id, 3, "空布景仍携带 stage_id 供显示端报错用")
 	t.check(DefScript.make_stage(1).items.size() > 0, "第 1 关布景非空")
 	# 第 2 关自 2026-10-11 起有自己的布景（门楼 + 菊石 + 垂柳枝）
-	t.check_eq(DefScript.make_stage(2).items.size(), 4,
-		"第 2 关有自己的布景（4 件：门楼 / 菊花石 / 花篮 / 树）")
+	t.check_eq(DefScript.make_stage(2).items.size(), 3,
+		"第 2 关有自己的布景（3 件：门楼 / 菊花石 / 树）")
 
 
 ## 第二关布景的几何契约（2026-10-11 用户定案）。
@@ -307,7 +307,7 @@ func _level2_geometry(t: RefCounted) -> void:
 	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
 	var def: CSceneryDef = DefScript.make_stage(2)
 	t.check_eq(def.stage_id, 2, "第 2 关 stage_id = 2")
-	t.check_eq(def.items.size(), 4, "共 4 件布景（门楼 / 菊石 / 花篮 / 树）")
+	t.check_eq(def.items.size(), 3, "共 3 件布景（门楼 / 菊石 / 树；花篮已撤下）")
 
 	# 逐件量出贴图绘制矩形（公式与 CSceneryView._draw_texture_item 一致）
 	for item in def.items:
@@ -395,27 +395,11 @@ func _level2_geometry(t: RefCounted) -> void:
 		"树右缘距幕布右仅 %.0fpx（贴边，符合「靠近幕布边界」）" % [
 			66.0 + 1788.0 - tree_rect.end.x])
 
-	# ⑧ 花篮（2026-10-11 加入）：与门楼左侧的菊花**左右对称**，且在门楼右侧、贴地同线。
-	t.check_approx(basket_rect.end.y, 661.0, 3.0,
-		"花篮底缘 y=661px（四件同地平线，贴地）")
-	# 花篮 2026-10-11 放大 1.2 倍（165→198），略高于菊花读作「主花篮 + 陪衬菊石」，
-	# 但仍须与菊花同一量级（不超过 1.5 倍），否则左右对称读不出来。
-	t.check(basket_rect.size.y > chrs_rect.size.y
-		and basket_rect.size.y <= chrs_rect.size.y * 1.5,
-		"花篮高 %.0f 略大于菊花 %.0f（主次分明，≤1.5 倍）" % [
-			basket_rect.size.y, chrs_rect.size.y])
-	# 在门楼右侧且完整可见（不被门楼遮住）
-	t.check(basket_rect.position.x >= gate_rect.end.x,
-		"花篮左缘 %.0f ≥ 门楼右缘 %.0f（在门楼右侧）" % [
-			basket_rect.position.x, gate_rect.end.x])
-	var gap_b: float = basket_rect.position.x - gate_rect.end.x
-	t.check(gap_b >= 8.0 and gap_b <= 30.0,
-		"花篮紧贴门楼右柱，间隙 %.0f px（8~30，用户「放在门的旁边」）" % gap_b)
-	# 不与树挤在一起
-	t.check(tree_rect.position.x - basket_rect.end.x >= 100.0,
-		"花篮右缘 %.0f 与树左缘 %.0f 留 %.0f px（不挤在一起）" % [
-			basket_rect.end.x, tree_rect.position.x,
-			tree_rect.position.x - basket_rect.end.x])
+	# ⑧ 花篮已于 2026-10-11 用户定案撤下（加入当天即移除）。
+	#    这里留一条**反向断言**：确保它不会被人误加回来——门两侧摆两盆花读起来太满，
+	#    且与菊花的陪衬角色重复。若日后确实要复用花篮，先改这条断言再改数据。
+	t.check_eq(basket_rect.size, Vector2.ZERO,
+		"花篮已撤下（不在 items 里）")
 
 
 ## 常量与数据同源：改常量忘改数据（或反过来）必须被测试抓住
