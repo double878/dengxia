@@ -65,13 +65,29 @@ func _run() -> void:
 	check(record.validate_invariants().is_empty(), "实际记录不合法")
 	check(record.snapshots[-1].time_ms == harness.clock.get_real_time_ms(), "末尾等待被截掉")
 	check(record.duration_ms == harness.clock.get_real_time_ms(), "实际时长不一致")
-	check(record.events.any(func(e: Variant) -> bool: return str(e.kind) == "opera_wait_begin"), "缺少等待事件")
-	check(record.events.any(func(e: Variant) -> bool: return str(e.kind) == "opera_score_skipped"), "缺少跳段事件")
-	check(record.events.any(func(e: Variant) -> bool: return str(e.kind) == "dialogue_line_changed"), "缺少对白事件")
+	check(
+		record.events.any(func(e: Variant) -> bool: return str(e.kind) == "opera_wait_begin"),
+		"缺少等待事件"
+	)
+	check(
+		record.events.any(func(e: Variant) -> bool: return str(e.kind) == "opera_score_skipped"),
+		"缺少跳段事件"
+	)
+	check(
+		record.events.any(func(e: Variant) -> bool: return str(e.kind) == "dialogue_line_changed"),
+		"缺少对白事件"
+	)
 	for kind: String in ["head_swap"]:
 		check(record.events.any(func(e: Variant) -> bool: return str(e.kind) == kind), "缺少 " + kind)
-	check(record.snapshots.any(func(s: Variant) -> bool: return int(s.puppets[0].head_id) == switched_head), "快照漏掉换头")
-	var waits: Array = record.snapshots.filter(func(s: Variant) -> bool: return bool(s.performance.get("waiting", false)))
+	check(
+		record.snapshots.any(
+			func(s: Variant) -> bool: return int(s.puppets[0].head_id) == switched_head
+		),
+		"快照漏掉换头"
+	)
+	var waits: Array = record.snapshots.filter(
+		func(s: Variant) -> bool: return bool(s.performance.get("waiting", false))
+	)
 	check(waits.size() > 100, "等待没有真实帧")
 	check(waits[-1].time_ms - waits[0].time_ms >= 7900, "8 秒等待被压缩")
 	check(waits[0].performance.song_ms == waits[-1].performance.song_ms, "等待期间歌曲未冻结")
@@ -90,15 +106,29 @@ func _run() -> void:
 	player.set_clock_source(CReplayPlayer.CLOCK_SOURCE_DELTA)
 	var snapshot: CSnapshot = waits[0]
 	var frame: Dictionary = player.sample(snapshot.time_ms)
-	check(frame.performance.waiting and frame.performance.song_ms == snapshot.performance.song_ms, "回放未还原等待")
+	check(
+		frame.performance.waiting and frame.performance.song_ms == snapshot.performance.song_ms,
+		"回放未还原等待"
+	)
 	replay.apply_frame(frame)
 	check(replay.get("_surface").front_view, "回放未启用幕前镜像")
-	check(replay.get("_surface").projection_views[0].puppet_state.stage_pos.y == float(frame.puppets[0].stage_pos.y), "回放脚点变了")
+	check(
+		(
+			replay.get("_surface").projection_views[0].puppet_state.stage_pos.y
+			== float(frame.puppets[0].stage_pos.y)
+		),
+		"回放脚点变了"
+	)
 	check(replay.get("_umbrella").holder_id_of() == 1, "未接伞的回放凭空换手")
 	await capture("front-final")
-	check(record.snapshots.all(func(s: Variant) -> bool:
+	var matches_snapshot: Callable = func(s: Variant) -> bool:
 		var sampled: Dictionary = player.sample(s.time_ms)
-		return sampled.puppets == s.puppets and sampled.lamp == s.lamp and sampled.performance == s.performance), "回放在原采样点没有逐字段还原")
+		return (
+			sampled.puppets == s.puppets
+			and sampled.lamp == s.lamp
+			and sampled.performance == s.performance
+		)
+	check(record.snapshots.all(matches_snapshot), "回放在原采样点没有逐字段还原")
 	player.play()
 	flow.advance(0.25)
 	replay.toggle_pause()
@@ -128,12 +158,18 @@ func _run() -> void:
 	check(game.get("_level") != null and game.get("_replay") == null, "再演没有回幕后")
 	game.queue_free()
 	await process_frame
-	print("GAME_REPLAY checks=%d failures=%d duration=%d snapshots=%d events=%d" % [checks, failures, record.duration_ms, record.snapshots.size(), record.events.size()])
+	print(
+		(
+			"GAME_REPLAY checks=%d failures=%d duration=%d snapshots=%d events=%d"
+			% [checks, failures, record.duration_ms, record.snapshots.size(), record.events.size()]
+		)
+	)
 	quit(1 if failures else 0)
 
 
 func capture(label: String) -> Image:
-	if DisplayServer.get_name() == "headless": return null
+	if DisplayServer.get_name() == "headless":
+		return null
 	for _i in range(4):
 		await process_frame
 		await RenderingServer.frame_post_draw

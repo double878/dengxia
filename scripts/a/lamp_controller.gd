@@ -44,7 +44,10 @@ const FEEDBACK_MISS_DELTA: float = -0.18
 
 ## 输入快照的键。同一控制轴的两个方向同时按住时净方向为 0（保持原值）。
 const INPUT_KEYS: Array[String] = [
-	"distance_increase", "distance_decrease", "exposure_increase", "exposure_decrease",
+	"distance_increase",
+	"distance_decrease",
+	"exposure_increase",
+	"exposure_decrease",
 ]
 
 ## 提高火焰反馈的事件类型
@@ -59,11 +62,11 @@ var lamp: LampState = null
 
 var _events: Array[Dictionary] = []
 var _input_map: Dictionary = {}
-var _oil_song_ms: int = 0            ## 上次结算灯油时的歌曲时间
-var _oil_start: float = 1.0          ## 初始化时的灯油基准
+var _oil_song_ms: int = 0  ## 上次结算灯油时的歌曲时间
+var _oil_start: float = 1.0  ## 初始化时的灯油基准
 var _finished: bool = false
 var _was_paused: bool = false
-var _seen_feedback_keys: Dictionary = {}   ## 已处理过的表现事件，避免重复叠加
+var _seen_feedback_keys: Dictionary = {}  ## 已处理过的表现事件，避免重复叠加
 
 
 ## 建立油灯。必须在 clock 赋值之后调用。
@@ -155,28 +158,38 @@ static func receive_events(events: Array) -> Array:
 		if not (raw is Dictionary):
 			continue
 		var event: Dictionary = raw
-		var complete: bool = event.has("time_ms") and event.has("kind") \
-			and event.has("object_id") and event.has("cue_id") and event.has("payload")
+		var complete: bool = (
+			event.has("time_ms")
+			and event.has("kind")
+			and event.has("object_id")
+			and event.has("cue_id")
+			and event.has("payload")
+		)
 		if not complete:
 			push_error("LampController.receive_events 收到字段不全的事件：%s" % str(event))
 			continue
 		if not (event["payload"] is Dictionary):
 			push_error("LampController.receive_events 收到 payload 不是字典的事件：%s" % str(event))
 			continue
-		received.append({
-			"time_ms": int(event["time_ms"]),
-			"kind": str(event["kind"]),
-			"object_id": str(event["object_id"]),
-			"cue_id": str(event["cue_id"]),
-			"payload": (event["payload"] as Dictionary).duplicate(true),
-		})
+		(
+			received
+			. append(
+				{
+					"time_ms": int(event["time_ms"]),
+					"kind": str(event["kind"]),
+					"object_id": str(event["object_id"]),
+					"cue_id": str(event["cue_id"]),
+					"payload": (event["payload"] as Dictionary).duplicate(true),
+				}
+			)
+		)
 	return received
 
 
 ## 单轴净方向：+1 增加、-1 减少、0 保持（含同轴相反输入同时按住）。
 static func net_dir(increase: bool, decrease: bool) -> int:
 	if increase == decrease:
-		return 0                       ## 都按或都没按 → 保持当前值
+		return 0  ## 都按或都没按 → 保持当前值
 	return 1 if increase else -1
 
 
@@ -190,11 +203,9 @@ func _apply_input(delta: float) -> void:
 	var dist_dir: int = net_dir(_input_map["distance_increase"], _input_map["distance_decrease"])
 	var expo_dir: int = net_dir(_input_map["exposure_increase"], _input_map["exposure_decrease"])
 	if dist_dir != 0:
-		lamp.distance = clamp_unit(
-			lamp.distance + float(dist_dir) * DISTANCE_SPEED_PER_S * delta)
+		lamp.distance = clamp_unit(lamp.distance + float(dist_dir) * DISTANCE_SPEED_PER_S * delta)
 	if expo_dir != 0:
-		lamp.exposure = clamp_unit(
-			lamp.exposure + float(expo_dir) * EXPOSURE_SPEED_PER_S * delta)
+		lamp.exposure = clamp_unit(lamp.exposure + float(expo_dir) * EXPOSURE_SPEED_PER_S * delta)
 
 
 ## 灯油只随歌曲时间推进消耗。同一歌曲时间重复更新差值为 0，因此天然幂等；
@@ -216,7 +227,7 @@ func _consume_oil(now_ms: int) -> void:
 ##
 ## 事件来自判定/补救系统，但也可能来自录制回放或测试注入，因此逐字段判类型，
 ## 不假设 kind / payload / cue_id / time_ms 的形状；畸形事件一律跳过而不是抛错。
-func _apply_feedback(now_ms: int, performance_events: Array) -> void:
+func _apply_feedback(_now_ms: int, performance_events: Array) -> void:
 	for raw in performance_events:
 		if not (raw is Dictionary):
 			continue
@@ -280,10 +291,15 @@ func _drain_events() -> Array[Dictionary]:
 func _emit(kind: String, time_ms: int, cue_id: String, payload_extra: Dictionary) -> void:
 	var payload := {"kind": kind}
 	payload.merge(payload_extra, true)
-	_events.append({
-		"time_ms": time_ms,
-		"kind": kind,
-		"object_id": LAMP_OBJECT_ID,
-		"cue_id": cue_id,
-		"payload": payload,
-	})
+	(
+		_events
+		. append(
+			{
+				"time_ms": time_ms,
+				"kind": kind,
+				"object_id": LAMP_OBJECT_ID,
+				"cue_id": cue_id,
+				"payload": payload,
+			}
+		)
+	)

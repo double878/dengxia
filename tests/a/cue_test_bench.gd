@@ -16,8 +16,8 @@ var controller: PuppetController = null
 var performance: PerformanceSystem = null
 var stage_def: StageDef = null
 var time_ms: int = 0
-var controller_log: Array = []        ## 控制器事件日志（drag_* / pose_* / hand_* / facing_*）
-var judge_log: Array = []             ## 判定事件日志（cue_*）
+var controller_log: Array = []  ## 控制器事件日志（drag_* / pose_* / hand_* / facing_*）
+var judge_log: Array = []  ## 判定事件日志（cue_*）
 
 
 func _init() -> void:
@@ -42,8 +42,10 @@ func state() -> PuppetState:
 
 func chest_tag() -> Vector2:
 	var s: PuppetState = state()
-	return Vector2(s.stage_pos.x * STAGE_W,
-		s.stage_pos.y * STAGE_H - PuppetController.CHEST_TAG_RADIUS_PX * 0.5)
+	return Vector2(
+		s.stage_pos.x * STAGE_W,
+		s.stage_pos.y * STAGE_H - PuppetController.CHEST_TAG_RADIUS_PX * 0.5
+	)
 
 
 ## 推进 steps 步。每步：推进时钟（并取回它的读数）→ tick 控制器 → 把控制器事件喂给判定系统。

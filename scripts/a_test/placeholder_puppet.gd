@@ -15,6 +15,8 @@ const SKIN_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/puppets/xuxian.png"),
 	preload("res://assets/puppets/xiaoqing.png"),
 ]
+## 额外角色只通过显式覆盖使用，不能改变第一关原来六个头的映射。
+const EXTRA_SKIN_TEXTURES: Dictionary = {3: preload("res://assets/puppets/fahai.png")}
 const SKIN_MANIFEST_PATH: String = "res://assets/puppets/puppet_assets.json"
 const SKIN_MANIFEST: JSON = preload("res://assets/puppets/puppet_assets.json")
 var _skins: Dictionary = _read_skins()
@@ -32,6 +34,8 @@ var _held_prop_hand: String = ""
 @export var hand_anchor: Vector2 = Vector2(960.0, 852.0)
 ## 画面上画出的胸签热区。前四关允许出现操作图标（PRD 第 3、8 节）。
 @export var show_chest_tag: bool = false
+## 角色外观与运行影人编号分开。第二关的 0 号影人使用法海（3），不改第一关资产。
+@export var skin_override: int = -1
 ## 旧 A 测试保留 0；游戏实体使用 1；幕面离屏透射使用 2。
 enum RenderMode { LEGACY, ENTITY, PROJECTION }
 @export var render_mode: RenderMode = RenderMode.LEGACY
@@ -52,11 +56,11 @@ const EXPOSURE_ALPHA_MIN: float = 0.20
 ## 因此「挂在手上的道具」（第一关的伞）只要问 `hand_screen_position()` 就与画出来的手
 ## 对齐，不必在别处再算一遍——2026-10-04 之前伞就是因为在别处按另一套公式算，
 ## 被画到了幕布底部（详见 A→B 交接文档 6.2 节）。
-const SHOULDER_RATIO: float = 0.80    ## 肩在接地点上方 0.80 个身高
-const HIP_RATIO: float = 0.44         ## 髋在接地点上方 0.44 个身高
-const HALF_W_RATIO: float = 0.105     ## 半身宽
-const UPPER_ARM_RATIO: float = 0.16   ## 上臂长（与下臂合计 0.31 个身高）
-const LOWER_ARM_RATIO: float = 0.15   ## 下臂长
+const SHOULDER_RATIO: float = 0.80  ## 肩在接地点上方 0.80 个身高
+const HIP_RATIO: float = 0.44  ## 髋在接地点上方 0.44 个身高
+const HALF_W_RATIO: float = 0.105  ## 半身宽
+const UPPER_ARM_RATIO: float = 0.16  ## 上臂长（与下臂合计 0.31 个身高）
+const LOWER_ARM_RATIO: float = 0.15  ## 下臂长
 ## 头：中心在肩上方 0.115 个身高、半径 0.105 个身高。
 ## 抽成常量是因为**伞面要罩住头**（用户 2026-10-05）：伞的定位读
 ## `head_top_screen_position()`，与这里画出来的头共用同一套数，不会各算一套。
@@ -72,11 +76,16 @@ const STICK: Color = Color(0.78, 0.58, 0.30)
 
 ## 六个头（三个初始头 + 三个备用头）各自的头饰形状与点缀色。
 ## 换头必须能在画面上看出来，所以外形而非仅仅是颜色发生变化。
-const HEAD_SHAPES: Array[String] = ["bun_high", "bun_twin", "cap_flat",
-	"bun_high", "bun_twin", "cap_flat"]
+const HEAD_SHAPES: Array[String] = [
+	"bun_high", "bun_twin", "cap_flat", "bun_high", "bun_twin", "cap_flat"
+]
 const HEAD_ACCENTS: Array[Color] = [
-	Color(0.86, 0.24, 0.24), Color(0.22, 0.55, 0.62), Color(0.86, 0.62, 0.20),
-	Color(0.62, 0.26, 0.62), Color(0.26, 0.66, 0.38), Color(0.36, 0.40, 0.72),
+	Color(0.86, 0.24, 0.24),
+	Color(0.22, 0.55, 0.62),
+	Color(0.86, 0.62, 0.20),
+	Color(0.62, 0.26, 0.62),
+	Color(0.26, 0.66, 0.38),
+	Color(0.36, 0.40, 0.72),
 ]
 
 
@@ -88,11 +97,27 @@ func _process(_delta: float) -> void:
 			queue_redraw()
 		return
 	# 自定义绘制命令由 Godot 保留；灯晃动可直接改节点变换/材质，不重建静止分件。
-	var draw_state: Array = [render_mode, puppet_state.stage_pos, puppet_state.stance,
-		puppet_state.facing, puppet_state.turn_progress, puppet_state.hand_angle,
-		puppet_state.head_id, puppet_state.hook_slot, puppet_state.is_controlled,
-		puppet_state.puppet_id, stage_origin, stage_size, figure_height, hand_anchor,
-		show_chest_tag, _held_prop_hand, puppet_state.walk_phase, puppet_state.walk_amount]
+	var draw_state: Array = [
+		render_mode,
+		puppet_state.stage_pos,
+		puppet_state.stance,
+		puppet_state.facing,
+		puppet_state.turn_progress,
+		puppet_state.hand_angle,
+		puppet_state.head_id,
+		puppet_state.hook_slot,
+		puppet_state.is_controlled,
+		puppet_state.puppet_id,
+		skin_override,
+		stage_origin,
+		stage_size,
+		figure_height,
+		hand_anchor,
+		show_chest_tag,
+		_held_prop_hand,
+		puppet_state.walk_phase,
+		puppet_state.walk_amount
+	]
 	if render_mode != RenderMode.ENTITY and lamp_state != null:
 		draw_state.append(lamp_state.distance)
 	if render_mode == RenderMode.LEGACY and lamp_state != null:
@@ -106,36 +131,41 @@ func _update_view_material() -> void:
 	if render_mode == RenderMode.LEGACY:
 		material = null
 		return
-	var shader: Shader = preload("res://shaders/puppet_back.gdshader") if render_mode == RenderMode.ENTITY else preload("res://shaders/puppet_transmission.gdshader")
+	var shader: Shader = (
+		preload("res://shaders/puppet_back.gdshader")
+		if render_mode == RenderMode.ENTITY
+		else preload("res://shaders/puppet_transmission.gdshader")
+	)
 	if _view_material == null or _view_material.shader != shader:
 		_view_material = ShaderMaterial.new()
 		_view_material.shader = shader
 	material = _view_material
 	if render_mode == RenderMode.ENTITY:
-		_view_material.set_shader_parameter("environment", 0.58 + 0.42 * StageLight.unit(lamp_state.oil) if lamp_state != null else 1.0)
+		_view_material.set_shader_parameter(
+			"environment",
+			0.58 + 0.42 * StageLight.unit(lamp_state.oil) if lamp_state != null else 1.0
+		)
 
 
 ## 归一化舞台坐标（0-1）→ 屏幕像素。y=0 在幕布最深处（画面上方），y=1 最靠玩家。
 func stage_to_screen(normalized: Vector2) -> Vector2:
 	return Vector2(
-		stage_origin.x + normalized.x * stage_size.x,
-		stage_origin.y + normalized.y * stage_size.y)
+		stage_origin.x + normalized.x * stage_size.x, stage_origin.y + normalized.y * stage_size.y
+	)
 
 
 ## 胸签中心的屏幕位置。与 PuppetController.begin_drag 使用同一公式，
 ## 保证「看到的圆圈」就是「拖得到的区域」。
 func chest_tag_screen() -> Vector2:
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
-	return Vector2(ground.x,
-		ground.y - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5)
+	return Vector2(ground.x, ground.y - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5)
 
 
 ## 滚轮推拉灯 → 全场影子同步缩放的倍率
 func shadow_scale() -> float:
 	if lamp_state == null:
 		return 1.0
-	return lerpf(SHADOW_SCALE_MIN, SHADOW_SCALE_MAX,
-		clampf(lamp_state.distance, 0.0, 1.0))
+	return lerpf(SHADOW_SCALE_MIN, SHADOW_SCALE_MAX, clampf(lamp_state.distance, 0.0, 1.0))
 
 
 ## Q/E 倾灯 → 影子显露程度
@@ -169,8 +199,10 @@ static func half_width_px(height: float, flip_width: float) -> float:
 func shoulder_half_width_px(height: float, flip_width: float) -> float:
 	if not _has_body_skin():
 		return half_width_px(height, flip_width)
-	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
-	return maxf(height * float(skin.get("shoulder_half_width_ratio", HALF_W_RATIO)) * flip_width, 3.0)
+	var skin: Dictionary = _skins[str(_body_skin_id())]
+	return maxf(
+		height * float(skin.get("shoulder_half_width_ratio", HALF_W_RATIO)) * flip_width, 3.0
+	)
 
 
 ## 手臂方向（单位向量）。手角以「自然垂下」为 0、+π/2 水平前伸、+π 举过头顶；
@@ -181,16 +213,20 @@ static func arm_direction(hand_angle: float, right_side: bool) -> Vector2:
 
 
 ## 肘点：肩 + 上臂。
-static func arm_elbow(shoulder: Vector2, hand_angle: float, right_side: bool,
-		height: float) -> Vector2:
+static func arm_elbow(
+	shoulder: Vector2, hand_angle: float, right_side: bool, height: float
+) -> Vector2:
 	return shoulder + arm_direction(hand_angle, right_side) * height * UPPER_ARM_RATIO
 
 
 ## 腕点（= 手的位置）：肩 → 肘 → 腕走完，与 `_draw_arm` 画的完全同一条链。
-static func arm_wrist(shoulder: Vector2, hand_angle: float, right_side: bool,
-		height: float) -> Vector2:
-	return arm_elbow(shoulder, hand_angle, right_side, height) \
+static func arm_wrist(
+	shoulder: Vector2, hand_angle: float, right_side: bool, height: float
+) -> Vector2:
+	return (
+		arm_elbow(shoulder, hand_angle, right_side, height)
 		+ arm_direction(hand_angle, right_side) * height * LOWER_ARM_RATIO
+	)
 
 
 ## 某只手此刻画在屏幕上的位置（像素）。**只读状态，不改任何东西。**
@@ -199,11 +235,15 @@ func hand_screen_position(hand: String) -> Vector2:
 	if puppet_state == null:
 		return Vector2.ZERO
 	var height: float = figure_px_height()
-	var half_w: float = shoulder_half_width_px(height, 1.0 if _has_body_skin() else flip_width_ratio())
+	var half_w: float = shoulder_half_width_px(
+		height, 1.0 if _has_body_skin() else flip_width_ratio()
+	)
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
 	var right_side: bool = hand != "left"
-	var shoulder := Vector2(ground.x + (half_w if right_side else -half_w),
-		ground.y - height * SHOULDER_RATIO + walk_body_offset(height))
+	var shoulder := Vector2(
+		ground.x + (half_w if right_side else -half_w),
+		ground.y - height * SHOULDER_RATIO + walk_body_offset(height)
+	)
 	var angle: float = puppet_state.hand_angle.y if right_side else puppet_state.hand_angle.x
 	return _skin_figure_transform(ground) * arm_wrist(shoulder, angle, right_side, height)
 
@@ -213,10 +253,11 @@ func hand_screen_position(hand: String) -> Vector2:
 func _skin_figure_transform(ground: Vector2) -> Transform2D:
 	if not _has_body_skin():
 		return Transform2D.IDENTITY
-	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+	var skin: Dictionary = _skins[str(_body_skin_id())]
 	var width: float = flip_width_ratio() * puppet_state.facing / float(skin["reference_facing"])
-	return Transform2D(Vector2(width, 0.0), Vector2(0.0, 1.0),
-		Vector2(ground.x * (1.0 - width), 0.0))
+	return Transform2D(
+		Vector2(width, 0.0), Vector2(0.0, 1.0), Vector2(ground.x * (1.0 - width), 0.0)
+	)
 
 
 ## 头半径（像素）。翻面压扁时头也收窄，但不小于 4 px——侧对观众那一瞬头不能消失。
@@ -232,8 +273,10 @@ func head_top_screen_position() -> Vector2:
 		return Vector2.ZERO
 	var height: float = figure_px_height()
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
-	var centre := Vector2(ground.x,
-		ground.y - height * (SHOULDER_RATIO + HEAD_CENTRE_RATIO) + walk_body_offset(height))
+	var centre := Vector2(
+		ground.x,
+		ground.y - height * (SHOULDER_RATIO + HEAD_CENTRE_RATIO) + walk_body_offset(height)
+	)
 	return Vector2(centre.x, centre.y - head_radius_px(height))
 
 
@@ -250,7 +293,10 @@ func _draw() -> void:
 
 	if render_mode == RenderMode.LEGACY:
 		_draw_contact_shadow(ground, height, alpha)
-	if render_mode != RenderMode.PROJECTION and puppet_state.hook_slot != PuppetStateScript.HOOK_SLOT_NONE:
+	if (
+		render_mode != RenderMode.PROJECTION
+		and puppet_state.hook_slot != PuppetStateScript.HOOK_SLOT_NONE
+	):
 		_draw_hook_marker(ground, height, alpha)
 	_draw_figure(ground, height, alpha)
 	if render_mode != RenderMode.PROJECTION and puppet_state.is_controlled:
@@ -278,10 +324,21 @@ func _draw_contact_shadow(ground: Vector2, height: float, alpha: float) -> void:
 ## 挂起标记：挂在挂钩上的影人不再受控，用一个钩环示意（PRD 第 4.2 节）。
 func _draw_hook_marker(ground: Vector2, height: float, alpha: float) -> void:
 	var top := Vector2(ground.x, ground.y - height * 1.06)
-	draw_arc(top + Vector2(0.0, height * 0.05), height * 0.07, 0.0, PI, 20,
-		Color(0.85, 0.66, 0.32, alpha), 4.0)
-	draw_line(top + Vector2(0.0, height * 0.12), top + Vector2(0.0, height * 0.2),
-		Color(0.85, 0.66, 0.32, alpha), 4.0)
+	draw_arc(
+		top + Vector2(0.0, height * 0.05),
+		height * 0.07,
+		0.0,
+		PI,
+		20,
+		Color(0.85, 0.66, 0.32, alpha),
+		4.0
+	)
+	draw_line(
+		top + Vector2(0.0, height * 0.12),
+		top + Vector2(0.0, height * 0.2),
+		Color(0.85, 0.66, 0.32, alpha),
+		4.0
+	)
 
 
 func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
@@ -308,8 +365,12 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	for side in [-1.0, 1.0]:
 		var stride: float = sin(state.walk_phase + (PI if side < 0.0 else 0.0)) * state.walk_amount
 		var lift: float = maxf(stride, 0.0) * height * 0.035
-		var knee := Vector2(hip.x + side * knee_out + stride * height * 0.045, ground.y - height * 0.22 - lift * 0.5)
-		var foot := Vector2(ground.x + side * half_w * 0.95 + stride * height * 0.065, ground.y - lift)
+		var knee := Vector2(
+			hip.x + side * knee_out + stride * height * 0.045, ground.y - height * 0.22 - lift * 0.5
+		)
+		var foot := Vector2(
+			ground.x + side * half_w * 0.95 + stride * height * 0.065, ground.y - lift
+		)
 		if _has_body_skin():
 			var leg: String = "left" if side < 0.0 else "right"
 			_draw_skin_segment(leg + "_thigh", hip, knee, flip_width, alpha)
@@ -321,12 +382,15 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 			draw_circle(knee, height * 0.021, joint)
 
 	# 躯干
-	var torso := PackedVector2Array([
-		Vector2(hip.x - half_w * 0.82, hip.y),
-		Vector2(shoulder.x - half_w, shoulder.y),
-		Vector2(shoulder.x + half_w, shoulder.y),
-		Vector2(hip.x + half_w * 0.82, hip.y),
-	])
+	_draw_skin_accessories(ground, height, alpha)
+	var torso := PackedVector2Array(
+		[
+			Vector2(hip.x - half_w * 0.82, hip.y),
+			Vector2(shoulder.x - half_w, shoulder.y),
+			Vector2(shoulder.x + half_w, shoulder.y),
+			Vector2(hip.x + half_w * 0.82, hip.y),
+		]
+	)
 	if _has_body_skin():
 		_draw_skin_segment("torso", shoulder, hip, flip_width, alpha)
 	else:
@@ -334,10 +398,24 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		draw_polyline(torso + PackedVector2Array([torso[0]]), rim, 2.0)
 
 	# 双臂：肩 → 肘 → 腕。手角 0 = 自然垂下，+π/2 = 水平前伸，+π = 举过头顶
-	_left_wrist = _draw_arm(Vector2(shoulder.x - shoulder_half_w, shoulder.y),
-		state.hand_angle.x, false, height, body, joint, flip_width)
-	_right_wrist = _draw_arm(Vector2(shoulder.x + shoulder_half_w, shoulder.y),
-		state.hand_angle.y, true, height, body, joint, flip_width)
+	_left_wrist = _draw_arm(
+		Vector2(shoulder.x - shoulder_half_w, shoulder.y),
+		state.hand_angle.x,
+		false,
+		height,
+		body,
+		joint,
+		flip_width
+	)
+	_right_wrist = _draw_arm(
+		Vector2(shoulder.x + shoulder_half_w, shoulder.y),
+		state.hand_angle.y,
+		true,
+		height,
+		body,
+		joint,
+		flip_width
+	)
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
 	var head_center := Vector2(shoulder.x, shoulder.y - height * HEAD_CENTRE_RATIO)
@@ -351,8 +429,15 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 ## 一条手臂。手角以「自然垂下」为 0，向抬手方向为正；屏幕角口径见 `arm_direction()`。
 ## 几何全部走 `arm_elbow()` / `arm_wrist()`，与 `hand_screen_position()` 共用一条链——
 ## 手画在哪，问道具落点时就会得到同一个点。
-func _draw_arm(shoulder: Vector2, angle: float, right_side: bool,
-		height: float, body: Color, joint: Color, flip_width: float) -> Vector2:
+func _draw_arm(
+	shoulder: Vector2,
+	angle: float,
+	right_side: bool,
+	height: float,
+	body: Color,
+	joint: Color,
+	flip_width: float
+) -> Vector2:
 	var elbow: Vector2 = arm_elbow(shoulder, angle, right_side, height)
 	var wrist: Vector2 = arm_wrist(shoulder, angle, right_side, height)
 	# 翻面压扁时手臂同步变细，避免整台只剩两根粗线还挂在外面
@@ -362,8 +447,15 @@ func _draw_arm(shoulder: Vector2, angle: float, right_side: bool,
 		_draw_skin_segment(side + "_upper_arm", shoulder, elbow, thickness, body.a)
 		_draw_skin_segment(side + "_forearm", elbow, wrist, thickness, body.a)
 		_draw_skin_joint(elbow, height * 0.020 * thickness, body.a)
-		_draw_skin_hand(side + "_hand", wrist, arm_direction(angle, right_side),
-			height, thickness, right_side, body.a)
+		_draw_skin_hand(
+			side + "_hand",
+			wrist,
+			arm_direction(angle, right_side),
+			height,
+			thickness,
+			right_side,
+			body.a
+		)
 		return _skin_canvas_transform * wrist
 	draw_line(shoulder, elbow, body, height * 0.042 * thickness)
 	draw_line(elbow, wrist, body, height * 0.038 * thickness)
@@ -378,18 +470,18 @@ var _right_wrist: Vector2 = Vector2.ZERO
 
 
 ## 头：正面画五官、反面只留一道背缝，两者在灰度下也能区分。
-func _draw_head(centre: Vector2, radius: float, showing_front: bool,
-		body: Color, rim: Color, alpha: float) -> void:
-	var skin_id: int = puppet_state.head_id
-	if _skins.has(str(skin_id)):
+func _draw_head(
+	centre: Vector2, radius: float, showing_front: bool, body: Color, rim: Color, alpha: float
+) -> void:
+	var skin_id: int = skin_override if skin_override >= 0 else puppet_state.head_id
+	if _skins.has(str(skin_id)) and (skin_override >= 0 or skin_id < SKIN_TEXTURES.size()):
 		var skin: Dictionary = _skins[str(skin_id)]
 		var size: float = radius * float(skin["head_size_per_radius"])
 		var facing: float = 1.0 if showing_front else -1.0
 		if _has_body_skin():
-			facing = float(_skins[str(puppet_state.puppet_id)]["reference_facing"])
+			facing = float(_skins[str(_body_skin_id())]["reference_facing"])
 		var mirror: float = facing / float(skin["reference_facing"])
-		_draw_skin_tile(skin_id, "head", centre, 0.0,
-			Vector2(size * mirror, size), alpha)
+		_draw_skin_tile(skin_id, "head", centre, 0.0, Vector2(size * mirror, size), alpha)
 		return
 	draw_circle(centre, radius, body)
 	draw_arc(centre, radius, 0.0, TAU, 32, rim, 2.0)
@@ -409,25 +501,38 @@ func _draw_head(centre: Vector2, radius: float, showing_front: bool,
 			draw_circle(centre + Vector2(-radius * 0.85, -radius * 0.85), radius * 0.34, accent)
 			draw_circle(centre + Vector2(radius * 0.85, -radius * 0.85), radius * 0.34, accent)
 		_:
-			draw_rect(Rect2(centre.x - radius * 1.15, centre.y - radius * 1.15,
-				radius * 2.30, radius * 0.46), accent)
+			draw_rect(
+				Rect2(
+					centre.x - radius * 1.15, centre.y - radius * 1.15, radius * 2.30, radius * 0.46
+				),
+				accent
+			)
 
 	if showing_front:
 		# 正面：两只眼 + 鼻尖楔形
-		draw_circle(centre + Vector2(-radius * 0.34, -radius * 0.14), radius * 0.13,
-			Color(0.10, 0.07, 0.05, alpha))
-		draw_circle(centre + Vector2(radius * 0.30, -radius * 0.14), radius * 0.13,
-			Color(0.10, 0.07, 0.05, alpha))
-		var nose := PackedVector2Array([
-			centre + Vector2(radius * 0.82, -radius * 0.10),
-			centre + Vector2(radius * 1.42, radius * 0.40),
-			centre + Vector2(radius * 0.82, radius * 0.46),
-		])
+		draw_circle(
+			centre + Vector2(-radius * 0.34, -radius * 0.14),
+			radius * 0.13,
+			Color(0.10, 0.07, 0.05, alpha)
+		)
+		draw_circle(
+			centre + Vector2(radius * 0.30, -radius * 0.14),
+			radius * 0.13,
+			Color(0.10, 0.07, 0.05, alpha)
+		)
+		var nose := PackedVector2Array(
+			[
+				centre + Vector2(radius * 0.82, -radius * 0.10),
+				centre + Vector2(radius * 1.42, radius * 0.40),
+				centre + Vector2(radius * 0.82, radius * 0.46),
+			]
+		)
 		draw_colored_polygon(nose, body)
 	else:
 		# 反面：一道竖背缝 + 缝上的小签钉
-		draw_line(centre + Vector2(0.0, -radius * 0.72),
-			centre + Vector2(0.0, radius * 0.96), rim, 2.0)
+		draw_line(
+			centre + Vector2(0.0, -radius * 0.72), centre + Vector2(0.0, radius * 0.96), rim, 2.0
+		)
 		draw_circle(centre + Vector2(0.0, -radius * 0.72), radius * 0.16, rim)
 
 
@@ -438,11 +543,15 @@ func _read_skins() -> Dictionary:
 		push_error("影人美术清单无效：%s" % SKIN_MANIFEST_PATH)
 		return {}
 	var skins: Dictionary = {}
-	for character: String in ["baisuzhen", "xuxian", "xiaoqing"]:
+	for character: String in ["baisuzhen", "xuxian", "xiaoqing", "fahai"]:
 		var skin: Dictionary = parsed.get("characters", {}).get(character, {}).duplicate()
 		var parts: Dictionary = skin.get("parts", {})
-		var id: int = int(skin.get("puppet_id", -1))
-		if id < 0 or id >= SKIN_TEXTURES.size() or float(skin.get("head_size_per_radius", 0.0)) <= 0.0:
+		var id: int = int(skin.get("skin_id", skin.get("puppet_id", -1)))
+		if (
+			id < 0
+			or (id >= SKIN_TEXTURES.size() and not EXTRA_SKIN_TEXTURES.has(id))
+			or float(skin.get("head_size_per_radius", 0.0)) <= 0.0
+		):
 			push_error("影人美术定义无效：%s (%s)" % [character, SKIN_MANIFEST_PATH])
 			continue
 		var valid: bool = true
@@ -450,12 +559,26 @@ func _read_skins() -> Dictionary:
 		if not is_finite(shoulder_width) or shoulder_width <= 0.0 or shoulder_width > 0.25:
 			push_error("影人肩间距无效：%s (%s)" % [character, SKIN_MANIFEST_PATH])
 			valid = false
-		for part_name: String in ["head", "torso", "left_upper_arm", "left_forearm", "left_hand",
-				"right_upper_arm", "right_forearm", "right_hand", "left_thigh", "left_calf",
-				"right_thigh", "right_calf"]:
+		for part_name: String in [
+			"head",
+			"torso",
+			"left_upper_arm",
+			"left_forearm",
+			"left_hand",
+			"right_upper_arm",
+			"right_forearm",
+			"right_hand",
+			"left_thigh",
+			"left_calf",
+			"right_thigh",
+			"right_calf"
+		]:
 			var part: Dictionary = parts.get(part_name, {})
-			if part.get("rect", []).size() != 4 or part.get("pivot", []).size() != 2 \
-					or float(part.get("axis_pixels", 0.0)) <= 0.0:
+			if (
+				part.get("rect", []).size() != 4
+				or part.get("pivot", []).size() != 2
+				or float(part.get("axis_pixels", 0.0)) <= 0.0
+			):
 				push_error("影人分件无效：%s/%s" % [character, part_name])
 				valid = false
 			var width_scale: float = float(part.get("width_scale", 1.0))
@@ -463,56 +586,116 @@ func _read_skins() -> Dictionary:
 				push_error("影人分件宽度无效：%s/%s" % [character, part_name])
 				valid = false
 		if valid:
-			skin["joint_color"] = Color(skin.get("joint_hex", parsed["named_samples"]["gold_joint"]["hex"]))
+			skin["joint_color"] = Color(
+				skin.get("joint_hex", parsed["named_samples"]["gold_joint"]["hex"])
+			)
 			skin["ink_color"] = Color(skin.get("ink_hex", parsed["named_samples"]["ink"]["hex"]))
 			skins[str(id)] = skin
 	return skins
 
 
 func _has_body_skin() -> bool:
-	return _skins.has(str(puppet_state.puppet_id))
+	return _skins.has(str(_body_skin_id()))
 
 
-func _draw_skin_tile(skin_id: int, part_name: String, at: Vector2,
-		rotation_rad: float, size: Vector2, alpha: float) -> void:
+func _body_skin_id() -> int:
+	return skin_override if skin_override >= 0 else puppet_state.puppet_id
+
+
+## 饰带随躯干，锡杖随右腕；同一个翻面矩阵用于实体、投影和附件。
+func _draw_skin_accessories(ground: Vector2, height: float, alpha: float) -> void:
+	if not _has_body_skin():
+		return
+	var id: int = _body_skin_id()
+	var skin: Dictionary = _skins[str(id)]
+	var shoulder := ground + Vector2(0.0, -height * SHOULDER_RATIO + walk_body_offset(height))
+	if skin["parts"].has("ribbons"):
+		var ribbon_size: float = height * float(skin["ribbons_size_ratio"])
+		_draw_skin_tile(
+			id,
+			"ribbons",
+			shoulder + Vector2(-height * 0.04, -height * 0.10),
+			0.0,
+			Vector2.ONE * ribbon_size,
+			alpha
+		)
+	if skin["parts"].has("staff"):
+		var wrist: Vector2 = arm_wrist(
+			shoulder + Vector2(shoulder_half_width_px(height, 1.0), 0),
+			puppet_state.hand_angle.y,
+			true,
+			height
+		)
+		var staff_size: float = height * float(skin["staff_size_ratio"])
+		_draw_skin_tile(id, "staff", wrist, 0.0, Vector2.ONE * staff_size, alpha)
+
+
+func _draw_skin_tile(
+	skin_id: int, part_name: String, at: Vector2, rotation_rad: float, size: Vector2, alpha: float
+) -> void:
 	var part: Dictionary = _skins[str(skin_id)]["parts"][part_name]
 	var rect: Array = part["rect"]
 	var pivot: Array = part["pivot"]
 	var source := Rect2(float(rect[0]), float(rect[1]), float(rect[2]), float(rect[3]))
 	var offset := Vector2(float(pivot[0]) / source.size.x, float(pivot[1]) / source.size.y)
-	var tile_transform := Transform2D(rotation_rad,
-		Vector2(size.x / source.size.x, size.y / source.size.y), 0.0, at)
+	var tile_transform := Transform2D(
+		rotation_rad, Vector2(size.x / source.size.x, size.y / source.size.y), 0.0, at
+	)
 	draw_set_transform_matrix(_skin_canvas_transform * tile_transform)
-	draw_texture_rect_region(SKIN_TEXTURES[skin_id],
-		Rect2(-offset * source.size, source.size), source, Color(1.0, 1.0, 1.0, alpha))
+	draw_texture_rect_region(
+		SKIN_TEXTURES[skin_id] if skin_id < SKIN_TEXTURES.size() else EXTRA_SKIN_TEXTURES[skin_id],
+		Rect2(-offset * source.size, source.size),
+		source,
+		Color(1.0, 1.0, 1.0, alpha)
+	)
 	draw_set_transform(Vector2.ZERO)
 
 
-func _draw_skin_segment(part_name: String, start: Vector2, end: Vector2,
-		width_ratio: float, alpha: float) -> void:
-	var skin_id: int = puppet_state.puppet_id
+func _draw_skin_segment(
+	part_name: String, start: Vector2, end: Vector2, width_ratio: float, alpha: float
+) -> void:
+	var skin_id: int = _body_skin_id()
 	var skin: Dictionary = _skins[str(skin_id)]
 	var part: Dictionary = skin["parts"][part_name]
 	var length: float = start.distance_to(end)
 	var tile_length: float = length * 512.0 / float(part["axis_pixels"])
-	_draw_skin_tile(skin_id, part_name, start, (end - start).angle() - PI * 0.5,
-		Vector2(tile_length * width_ratio * float(part.get("width_scale", 1.0)), tile_length), alpha)
+	_draw_skin_tile(
+		skin_id,
+		part_name,
+		start,
+		(end - start).angle() - PI * 0.5,
+		Vector2(tile_length * width_ratio * float(part.get("width_scale", 1.0)), tile_length),
+		alpha
+	)
 
 
-func _draw_skin_hand(part_name: String, wrist: Vector2, direction: Vector2,
-		height: float, thickness: float, right_side: bool, alpha: float) -> void:
-	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+func _draw_skin_hand(
+	part_name: String,
+	wrist: Vector2,
+	direction: Vector2,
+	height: float,
+	thickness: float,
+	right_side: bool,
+	alpha: float
+) -> void:
+	var skin: Dictionary = _skins[str(_body_skin_id())]
 	var size: float = height * float(skin["hand_size_ratio"])
 	var mirror: float = 1.0 if right_side else -1.0
 	var side: String = "right" if right_side else "left"
 	if _held_prop_hand == side and skin["parts"].has(part_name + "_grip"):
 		part_name += "_grip"
-	_draw_skin_tile(puppet_state.puppet_id, part_name, wrist, direction.angle() - PI * 0.5,
-		Vector2(size * mirror * thickness, size), alpha)
+	_draw_skin_tile(
+		_body_skin_id(),
+		part_name,
+		wrist,
+		direction.angle() - PI * 0.5,
+		Vector2(size * mirror * thickness, size),
+		alpha
+	)
 
 
 func _draw_skin_joint(at: Vector2, radius: float, alpha: float) -> void:
-	var skin: Dictionary = _skins[str(puppet_state.puppet_id)]
+	var skin: Dictionary = _skins[str(_body_skin_id())]
 	var ink: Color = skin["ink_color"]
 	var gold: Color = skin["joint_color"]
 	ink.a = alpha
@@ -557,9 +740,25 @@ func _draw_chest_tag() -> void:
 	if render_mode == RenderMode.ENTITY:
 		# 融入签手操作的细刻线；保留原命中范围与落点。
 		for i in range(8):
-			draw_arc(centre, PuppetControllerScript.CHEST_TAG_RADIUS_PX, TAU * i / 8.0, TAU * i / 8.0 + 0.16, 6, Color(0.73, 0.51, 0.24, 0.36), 1.4, true)
+			draw_arc(
+				centre,
+				PuppetControllerScript.CHEST_TAG_RADIUS_PX,
+				TAU * i / 8.0,
+				TAU * i / 8.0 + 0.16,
+				6,
+				Color(0.73, 0.51, 0.24, 0.36),
+				1.4,
+				true
+			)
 		draw_circle(centre, 4.0, Color(0.83, 0.68, 0.42, 0.8))
 		return
-	draw_arc(centre, PuppetControllerScript.CHEST_TAG_RADIUS_PX, 0.0, TAU, 40,
-		Color(0.95, 0.55, 0.20, 0.75), 3.0)
+	draw_arc(
+		centre,
+		PuppetControllerScript.CHEST_TAG_RADIUS_PX,
+		0.0,
+		TAU,
+		40,
+		Color(0.95, 0.55, 0.20, 0.75),
+		3.0
+	)
 	draw_circle(centre, 7.0, Color(0.99, 0.80, 0.42, 0.95))

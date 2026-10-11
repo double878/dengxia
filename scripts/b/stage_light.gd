@@ -2,6 +2,7 @@ extends RefCounted
 class_name StageLight
 ## 只读状态与显式双时钟；暂停可重现，补救时自然火光仍继续。
 
+
 static func unit(value: float) -> float:
 	return clampf(value, 0.0, 1.0) if is_finite(value) else 0.0
 
@@ -10,8 +11,9 @@ static func sample(lamp: LampState, real_ms: int, song_ms: int, bpm: float = 96.
 	var oil: float = unit(lamp.oil) if lamp != null else 1.0
 	var feedback: float = unit(lamp.flame_feedback) if lamp != null else 0.5
 	var time: float = maxf(float(real_ms), 0.0) * 0.001
-	var wave: float = (sin(time * 3.7 + 0.8) * 0.52 + sin(time * 8.3 + 2.1) * 0.30
-		+ sin(time * 17.1 + 0.4) * 0.18)
+	var wave: float = (
+		sin(time * 3.7 + 0.8) * 0.52 + sin(time * 8.3 + 2.1) * 0.30 + sin(time * 17.1 + 0.4) * 0.18
+	)
 	var beat_phase: float = fposmod(float(song_ms) * 0.001 * maxf(bpm, 1.0) / 60.0, 1.0)
 	var pulse: float = exp(-beat_phase * 16.0)
 	var shake: float = lerpf(4.8, 0.7, feedback)

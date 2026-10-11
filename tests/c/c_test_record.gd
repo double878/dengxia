@@ -31,8 +31,13 @@ func _mk_snap(time_ms: int) -> Variant:
 	return CSnapshotScript.new(time_ms)
 
 
-func _mk_event(time_ms: int, kind: StringName, object_id: Variant = 0,
-		cue_id: String = "", payload: Dictionary = {}) -> Variant:
+func _mk_event(
+	time_ms: int,
+	kind: StringName,
+	object_id: Variant = 0,
+	cue_id: String = "",
+	payload: Dictionary = {}
+) -> Variant:
 	return CTimedEventScript.new(time_ms, kind, object_id, cue_id, payload)
 
 

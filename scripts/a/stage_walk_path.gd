@@ -3,10 +3,19 @@ extends RefCounted
 ## 布景的锚点与比例直接读取 CSceneryDef，避免画面和脚点各用一套定位。
 
 const SceneryDef := preload("res://scripts/c/c_scenery_def.gd")
-const DECK := [Vector2(0, 636.85714), Vector2(100, 592), Vector2(300, 509),
-	Vector2(500, 370), Vector2(700, 218), Vector2(921, 160),
-	Vector2(1140, 218), Vector2(1340, 370), Vector2(1540, 509),
-	Vector2(1740, 592), Vector2(1842, 636.85714)]
+const DECK := [
+	Vector2(0, 636.85714),
+	Vector2(100, 592),
+	Vector2(300, 509),
+	Vector2(500, 370),
+	Vector2(700, 218),
+	Vector2(921, 160),
+	Vector2(1140, 218),
+	Vector2(1340, 370),
+	Vector2(1540, 509),
+	Vector2(1740, 592),
+	Vector2(1842, 636.85714)
+]
 var _origin: Vector2
 var _scale: float
 
@@ -15,7 +24,10 @@ func _init() -> void:
 	for item: Dictionary in SceneryDef.make_level1().items:
 		if str(item.kind) == SceneryDef.KIND_ARCH_BRIDGE:
 			_scale = float(item.get("texture_scale_px", SceneryDef.TEXTURE_SCALE_PX))
-			_origin = Vector2(float(item.anchor_x) * 1920, float(item.anchor_y) * 1080) - item.texture_foot_px * _scale
+			_origin = (
+				Vector2(float(item.anchor_x) * 1920, float(item.anchor_y) * 1080)
+				- item.texture_foot_px * _scale
+			)
 			return
 	push_error("第一幕桥面路径找不到 arch_bridge 布景")
 

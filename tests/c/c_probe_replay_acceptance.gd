@@ -25,9 +25,18 @@ func _initialize() -> void:
 	var performer: Variant = CMockPerformerScript.new()
 	var record: Variant = performer.build(VERIFY_STAGE_ID, true)
 
-	print("模拟演出：第 %d 关 / %dms / 快照 %d 帧 / 事件 %d 条 / 幕 %d 段"
-		% [int(record.stage_id), int(record.duration_ms),
-			record.snapshots.size(), record.events.size(), record.acts.size()])
+	print(
+		(
+			"模拟演出：第 %d 关 / %dms / 快照 %d 帧 / 事件 %d 条 / 幕 %d 段"
+			% [
+				int(record.stage_id),
+				int(record.duration_ms),
+				record.snapshots.size(),
+				record.events.size(),
+				record.acts.size()
+			]
+		)
+	)
 	print("验收要素：" + ", ".join(CMockPerformerScript.covered_features()))
 	print("")
 

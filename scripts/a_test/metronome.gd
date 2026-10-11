@@ -91,8 +91,10 @@ func get_mix_rate() -> float:
 ## 旧教学关的幕前回放复用同一合成器，只读记录的冻结/暂停状态。
 func apply_replay_state(frozen: bool, paused: bool) -> void:
 	clock.set_song_frozen(frozen)
-	if paused: clock.pause()
-	else: clock.resume()
+	if paused:
+		clock.pause()
+	else:
+		clock.resume()
 	if _player != null:
 		_player.stream_paused = paused or frozen
 	if _slow_player != null:
@@ -201,8 +203,11 @@ func sample_at(song_s: float) -> float:
 	var beat_index: int = int(floor(song_s / beat_s))
 	var phase: float = fposmod(song_s, beat_s)
 	var note: float = NOTES[posmod(beat_index, NOTES.size())]
-	var melody: float = 0.20 * (0.35 + 0.65 * exp(-phase * 3.0)) * (
-		sin(TAU * note * song_s) + 0.22 * sin(TAU * note * 2.0 * song_s))
+	var melody: float = (
+		0.20
+		* (0.35 + 0.65 * exp(-phase * 3.0))
+		* (sin(TAU * note * song_s) + 0.22 * sin(TAU * note * 2.0 * song_s))
+	)
 	var drone: float = 0.05 * sin(TAU * 110.0 * song_s)
 	var drum: float = 0.50 * exp(-phase * 20.0) * sin(TAU * (95.0 - 30.0 * phase) * phase)
 	var accent: float = 0.0

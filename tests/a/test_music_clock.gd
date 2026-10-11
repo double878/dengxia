@@ -12,7 +12,7 @@ const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
 const FrameClockScript := preload("res://scripts/a_test/frame_clock.gd")
 
 const BPM: float = 96.0
-const BEAT_MS: float = 625.0          ## 60000 / 96
+const BEAT_MS: float = 625.0  ## 60000 / 96
 const STEP_MS: int = 10
 const FRAME: float = 0.01
 
@@ -37,8 +37,7 @@ func run_all() -> Dictionary:
 	_test_09_controller_uses_music_clock(t)
 	_test_10_no_track_falls_back(t)
 	_test_11_audio_stall_watchdog_threshold(t)
-	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
-		"failures": t.failures}
+	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}
 
 
 func _test_01_free_run_monotonic(t: ATestBase) -> void:
@@ -91,7 +90,7 @@ func _test_03_resume_no_jump(t: ATestBase) -> void:
 		clock.update(FRAME)
 	var frozen: int = clock.get_song_time_ms()
 	clock.pause()
-	for _i in 300:                     # 模拟「暂停了很久」
+	for _i in 300:  # 模拟「暂停了很久」
 		clock.update(FRAME)
 	t.check_eq(clock.get_song_time_ms(), frozen, "恢复前应仍是冻结值")
 	clock.resume()
@@ -112,10 +111,9 @@ func _test_03_resume_no_jump(t: ATestBase) -> void:
 func _test_04_beat_index_and_accent(t: ATestBase) -> void:
 	t.begin("04 拍序号与跨拍报告")
 	var clock: MusicClock = _new_clock()
-	t.check_approx(clock.beat_duration_s(), BEAT_MS / 1000.0, 1e-9,
-		"BPM 96 的单拍时长应为 0.625 s")
+	t.check_approx(clock.beat_duration_s(), BEAT_MS / 1000.0, 1e-9, "BPM 96 的单拍时长应为 0.625 s")
 	var crossings: Array[int] = []
-	for i in 400:                      # 4 秒 = 6.4 拍，应跨过第 0 拍到第 6 拍
+	for i in 400:  # 4 秒 = 6.4 拍，应跨过第 0 拍到第 6 拍
 		if clock.update(FRAME):
 			crossings.append(clock.get_beat_index())
 	t.check_eq(crossings.size(), 7, "4 秒内应报告 7 次跨拍（拍 0-6），实际 %s" % str(crossings))
@@ -125,8 +123,9 @@ func _test_04_beat_index_and_accent(t: ATestBase) -> void:
 			in_order = false
 	t.check(in_order, "跨拍序号应连续递增：%s" % str(crossings))
 	t.check_eq(clock.get_beat_index(), 6, "4 秒时处于第 6 拍")
-	t.check_approx(float(clock.time_to_next_beat_ms()), BEAT_MS * 7.0 - 4000.0, 1.0,
-		"距下一拍应约 375 ms")
+	t.check_approx(
+		float(clock.time_to_next_beat_ms()), BEAT_MS * 7.0 - 4000.0, 1.0, "距下一拍应约 375 ms"
+	)
 	t.finish("跨拍每拍只报一次且序号连续，距离下一拍可用")
 
 
@@ -147,8 +146,13 @@ func _test_05_beat_time_inverse(t: ATestBase) -> void:
 		if absf(float(beat_ms) - float(i) * BEAT_MS) > tolerance:
 			all_ok = false
 			details.append("beat %d 时间 %.1f 应约 %.1f" % [i, float(beat_ms), float(i) * BEAT_MS])
-	t.check(all_ok, "每个 beat_time_ms(i) 都应满足 get_beat_index() == i：%s"
-		% ("一致" if all_ok else ", ".join(details)))
+	t.check(
+		all_ok,
+		(
+			"每个 beat_time_ms(i) 都应满足 get_beat_index() == i：%s"
+			% ("一致" if all_ok else ", ".join(details))
+		)
+	)
 	t.finish("拍时间与拍序号互为逆运算（1 ms 取整容差）")
 
 
@@ -179,7 +183,7 @@ func _test_07_stage_def_level1(t: ATestBase) -> void:
 func _test_08_validate_catches_errors(t: ATestBase) -> void:
 	t.begin("08 关卡数据校验能报出具体问题")
 	var def: StageDef = StageDefScript.make_level1()
-	def.duration_ms = 40000        # 段落只覆盖到 35000，应报未覆盖
+	def.duration_ms = 40000  # 段落只覆盖到 35000，应报未覆盖
 	var problems: Array[String] = def.validate()
 	var mentioned: bool = false
 	for p in problems:
@@ -200,8 +204,9 @@ func _test_08_validate_catches_errors(t: ATestBase) -> void:
 	t.check(dup_found, "应报出 cue_id 重复：%s" % str(dup_problems))
 
 	var out_of_range: StageDef = StageDefScript.make_level1()
-	out_of_range.cues = [CueScript.make("cue_late", 40000, CueScript.ACTION_STAND_UP, 0,
-		{}, 250, "stand_up")]
+	out_of_range.cues = [
+		CueScript.make("cue_late", 40000, CueScript.ACTION_STAND_UP, 0, {}, 250, "stand_up")
+	]
 	var range_found: bool = false
 	for p in out_of_range.validate():
 		if p.find("不在关卡时长内") >= 0:
@@ -219,14 +224,19 @@ func _test_09_controller_uses_music_clock(t: ATestBase) -> void:
 	controller.clock = clock
 	controller.setup(3)
 	var state: PuppetState = controller.get_controlled()
-	var tag := Vector2(state.stage_pos.x * PuppetControllerScript.STAGE_PIXEL_SIZE.x,
-		state.stage_pos.y * PuppetControllerScript.STAGE_PIXEL_SIZE.y
-		- PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5)
+	var tag := Vector2(
+		state.stage_pos.x * PuppetControllerScript.STAGE_PIXEL_SIZE.x,
+		(
+			state.stage_pos.y * PuppetControllerScript.STAGE_PIXEL_SIZE.y
+			- PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5
+		)
+	)
 	t.check(controller.begin_drag(0, tag), "胸签命中应成立")
 	var events: Array[Dictionary] = controller.take_events()
 	t.check(events.size() > 0, "应产生事件")
-	t.check_eq(int(events[0]["time_ms"]), clock.get_song_time_ms(),
-		"事件 time_ms 应等于 MusicClock 的同一读数")
+	t.check_eq(
+		int(events[0]["time_ms"]), clock.get_song_time_ms(), "事件 time_ms 应等于 MusicClock 的同一读数"
+	)
 	t.finish("PuppetController 直接读 MusicClock，时间戳一致")
 
 

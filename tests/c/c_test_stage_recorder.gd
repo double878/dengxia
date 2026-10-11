@@ -22,13 +22,16 @@ class FakeClock:
 	var update_count: int = 0
 	## 测试专用：置 true 后 update() 不再推进时间，用于构造时钟倒退。
 	var freeze: bool = false
+
 	func get_song_time_ms() -> int:
 		return now_ms
+
 	func update(delta: float) -> void:
 		update_count += 1
 		if freeze:
 			return
 		advance(float(delta) * 1000.0)
+
 	func advance(ms: float) -> void:
 		if not paused:
 			now_ms += int(ms)
@@ -38,15 +41,21 @@ class FakePuppet:
 	var _id: int = 0
 	## 每次 tick 变化的字段名，让状态可被跳变检测捕获。
 	var stance: float = 0.0
+
 	func _init(id: int) -> void:
 		_id = id
+
 	func to_dict() -> Dictionary:
 		return {
 			"puppet_id": _id,
 			"stage_pos": {"x": 0.5, "y": 0.0},
-			"stance": stance, "facing": 0.0, "turn_progress": 0.0,
+			"stance": stance,
+			"facing": 0.0,
+			"turn_progress": 0.0,
 			"hand_angle": {"left": 0.0, "right": 0.0},
-			"head_id": -1, "hook_slot": -1, "is_controlled": false,
+			"head_id": -1,
+			"hook_slot": -1,
+			"is_controlled": false,
 		}
 
 
@@ -55,15 +64,19 @@ class FakeLamp:
 	var exposure: float = 0.5
 	var oil: float = 1.0
 	var flame_feedback: float = 0.5
+
 	func to_dict() -> Dictionary:
 		return {
-			"distance": distance, "exposure": exposure,
-			"oil": oil, "flame_feedback": flame_feedback,
+			"distance": distance,
+			"exposure": exposure,
+			"oil": oil,
+			"flame_feedback": flame_feedback,
 		}
 
 
 class FakePuppetController:
 	var puppets: Array = []
+
 	func _init() -> void:
 		for i in 3:
 			puppets.append(FakePuppet.new(i))
@@ -71,6 +84,7 @@ class FakePuppetController:
 
 class FakeLampController:
 	var lamp: Variant = null
+
 	func _init() -> void:
 		lamp = FakeLamp.new()
 
@@ -98,7 +112,7 @@ class FakeRuntime:
 	func is_over() -> bool:
 		return over
 
-	func tick(delta: float) -> void:
+	func tick(_delta: float) -> void:
 		tick_count += 1
 		# 时钟由 clock.update() 推进（接线层负责调用），tick 只管状态与事件——
 		# 分工照抄真实 A 端：MusicClock.update 推进时间，runtime.tick 消费时间。
@@ -110,11 +124,18 @@ class FakeRuntime:
 			p.stance = float(_t) * 0.001
 		lamp_controller.lamp.oil = maxf(0.0, 1.0 - float(_t) * 0.0005)
 		if auto_event:
-			events.append({
-				"time_ms": clock.now_ms, "kind": "lamp_oil_changed",
-				"object_id": "lamp_main", "cue_id": "",
-				"payload": {"oil": lamp_controller.lamp.oil},
-			})
+			(
+				events
+				. append(
+					{
+						"time_ms": clock.now_ms,
+						"kind": "lamp_oil_changed",
+						"object_id": "lamp_main",
+						"cue_id": "",
+						"payload": {"oil": lamp_controller.lamp.oil},
+					}
+				)
+			)
 
 	func take_events() -> Array:
 		var out: Array = events.duplicate(true)

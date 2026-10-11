@@ -1,0 +1,9 @@
+line_length: 100
+use_spaces: null
+safety_checks: true
+excluded_directories:
+  - .git
+  - .godot
+  - .venv
+  - .firecrawl
+  - builds

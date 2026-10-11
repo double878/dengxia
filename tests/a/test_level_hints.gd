@@ -33,14 +33,12 @@ func run_all() -> Dictionary:
 	_test_09_remedy_slow_factor(t)
 	_test_10_stage_arg_parsing(t)
 	_test_11_levels_run_end_to_end(t)
-	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
-		"failures": t.failures}
+	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}
 
 
 ## 造一关最小数据，用于把某一条新动作单独隔离出来判定。
 ## 关键动作的落点、范围全部由调用方给出，避免被真实关卡的其它落点干扰。
-func _custom_stage(cues: Array, duration_ms: int = 20000,
-		initial: Dictionary = {}) -> StageDef:
+func _custom_stage(cues: Array, duration_ms: int = 20000, initial: Dictionary = {}) -> StageDef:
 	var def: StageDef = StageDefScript.new()
 	def.id = 1
 	def.duration_ms = duration_ms
@@ -51,8 +49,12 @@ func _custom_stage(cues: Array, duration_ms: int = 20000,
 			cue["segment"] = "试"
 	def.cues = cues
 	var opening: Dictionary = {
-		"controlled": 0, "on_stage": [0, 1, 2], "hung": {1: 0},
-		"distance": 0.5, "exposure": 0.2, "oil": 1.0,
+		"controlled": 0,
+		"on_stage": [0, 1, 2],
+		"hung": {1: 0},
+		"distance": 0.5,
+		"exposure": 0.2,
+		"oil": 1.0,
 	}
 	opening.merge(initial, true)
 	def.initial = opening
@@ -87,20 +89,27 @@ func _test_01_four_levels_data(t: ATestBase) -> void:
 			continue
 		var want: Dictionary = expected[stage_id]
 		t.check_eq(def.id, stage_id, "第 %d 关编号正确" % stage_id)
-		t.check_eq(def.duration_ms, int(want["duration"]),
-			"第 %d 关时长应为 %d ms（PRD 第 6 节）" % [stage_id, int(want["duration"])])
+		t.check_eq(
+			def.duration_ms,
+			int(want["duration"]),
+			"第 %d 关时长应为 %d ms（PRD 第 6 节）" % [stage_id, int(want["duration"])]
+		)
 		t.check_eq(def.total_beats(), int(want["beats"]), "第 %d 关拍数" % stage_id)
 		t.check_eq(def.cues.size(), int(want["cues"]), "第 %d 关关键动作条数" % stage_id)
 		t.check(def.is_tutorial(), "第 %d 关属教学关（前四关）" % stage_id)
-		t.check(not def.act.is_empty() and not def.summary.is_empty(),
-			"第 %d 关应有折名与戏单简介（PRD 第 3、5.1 节）" % stage_id)
+		t.check(
+			not def.act.is_empty() and not def.summary.is_empty(),
+			"第 %d 关应有折名与戏单简介（PRD 第 3、5.1 节）" % stage_id
+		)
 		var problems: Array[String] = def.validate()
 		t.check_eq(problems.size(), 0, "第 %d 关数据应通过校验：%s" % [stage_id, str(problems)])
 		total_duration += def.duration_ms
 
 	# PRD A02：五关歌曲时间合计不超过 300 秒。第 5 关 110 秒，前四关之和须留出余量。
-	t.check(total_duration + 110000 <= 300000,
-		"前四关歌曲时间合计 %d ms，加第 5 关 110 秒后应不超过 300 秒" % total_duration)
+	t.check(
+		total_duration + 110000 <= 300000,
+		"前四关歌曲时间合计 %d ms，加第 5 关 110 秒后应不超过 300 秒" % total_duration
+	)
 
 	# 每关要教的动作必须真的出现在该关的 cue 表里（PRD 第 6 节的最低可验收动作）
 	var l2: StageDef = StageDefScript.make_stage(2)
@@ -143,18 +152,19 @@ func _test_02_stage_lookup(t: ATestBase) -> void:
 ## —— 3. 挂起与取回 ——
 func _test_03_hook_and_take_back_judged(t: ATestBase) -> void:
 	t.begin("03 挂起/取回在判定窗内命中，窗外记为错拍但动作照常发生")
-	var def: StageDef = _custom_stage([
-		CueScript.make("hook_cue", 5000, CueScript.ACTION_HOOK, -1, {}, 250, "hook"),
-		CueScript.make("back_cue", 12000, CueScript.ACTION_TAKE_BACK, -1, {}, 250, "take_back"),
-	], 20000)
+	var def: StageDef = _custom_stage(
+		[
+			CueScript.make("hook_cue", 5000, CueScript.ACTION_HOOK, -1, {}, 250, "hook"),
+			CueScript.make("back_cue", 12000, CueScript.ACTION_TAKE_BACK, -1, {}, 250, "take_back"),
+		],
+		20000
+	)
 	var bench := BenchScript.new(def)
 	# 先挂起一次（窗外）：动作照常发生（cue_fire 本来就照发），但记为未命中
 	bench.advance_to(2000)
 	t.check(bench.hook_current(), "开局应留有空挂钩，挂起成功")
-	t.check(_has(bench.director_log, "cue_fire", "hook_cue"),
-		"窗外挂起仍应发出 cue_fire（物理动作确实发生了）")
-	t.check(not _has(bench.director_log, "cue_hit", "hook_cue"),
-		"窗外挂起不得判成命中")
+	t.check(_has(bench.director_log, "cue_fire", "hook_cue"), "窗外挂起仍应发出 cue_fire（物理动作确实发生了）")
+	t.check(not _has(bench.director_log, "cue_hit", "hook_cue"), "窗外挂起不得判成命中")
 	t.check(_has(bench.director_log, "cue_miss", "hook_cue"), "窗外挂起记未命中")
 	t.check(bench.controller.get_controlled() == null, "挂起后无人受控")
 
@@ -162,36 +172,51 @@ func _test_03_hook_and_take_back_judged(t: ATestBase) -> void:
 	bench.advance_to(11900)
 	t.check(bench.take_back(1), "应能取回开局挂在钩上的影人")
 	var back: Dictionary = _outcome(bench, "back_cue")
-	t.check_eq(bool(back.get("hit", false)), true,
-		"窗内取回应命中（offset=%d ms）" % int(back.get("offset_ms", -99999)))
+	t.check_eq(
+		bool(back.get("hit", false)),
+		true,
+		"窗内取回应命中（offset=%d ms）" % int(back.get("offset_ms", -99999))
+	)
 	t.check(bench.controller.get_controlled() != null, "取回后有影人受控")
 
 	# 另一个方向：窗内挂起也应命中
-	var def2: StageDef = _custom_stage([
-		CueScript.make("hook_cue", 6000, CueScript.ACTION_HOOK, -1, {}, 250, "hook"),
-	], 20000)
+	var def2: StageDef = _custom_stage(
+		[
+			CueScript.make("hook_cue", 6000, CueScript.ACTION_HOOK, -1, {}, 250, "hook"),
+		],
+		20000
+	)
 	var bench2 := BenchScript.new(def2)
 	bench2.advance_to(5900)
 	t.check(bench2.hook_current(), "窗内挂起应成功")
 	var hook: Dictionary = _outcome(bench2, "hook_cue")
-	t.check_eq(bool(hook.get("hit", false)), true,
-		"窗内挂起应命中（offset=%d ms）" % int(hook.get("offset_ms", -99999)))
+	t.check_eq(
+		bool(hook.get("hit", false)),
+		true,
+		"窗内挂起应命中（offset=%d ms）" % int(hook.get("offset_ms", -99999))
+	)
 	t.finish("挂起与取回都参与鼓点判定，窗内命中、窗外记错拍")
 
 
 ## —— 4. 换头 ——
 func _test_04_head_swap_judged(t: ATestBase) -> void:
 	t.begin("04 换头在判定窗内命中，且六个头仍各出现恰好一次")
-	var def: StageDef = _custom_stage([
-		CueScript.make("head_cue", 5000, CueScript.ACTION_HEAD_SWAP, -1, {}, 250, "head_swap"),
-	], 20000)
+	var def: StageDef = _custom_stage(
+		[
+			CueScript.make("head_cue", 5000, CueScript.ACTION_HEAD_SWAP, -1, {}, 250, "head_swap"),
+		],
+		20000
+	)
 	var bench := BenchScript.new(def)
 	var before: int = bench.controller.get_controlled().head_id
 	bench.advance_to(4900)
 	t.check(bench.swap_head(1), "与头架第 2 个位置换头应成功")
 	var outcome: Dictionary = _outcome(bench, "head_cue")
-	t.check_eq(bool(outcome.get("hit", false)), true,
-		"窗内换头应命中（offset=%d ms）" % int(outcome.get("offset_ms", -99999)))
+	t.check_eq(
+		bool(outcome.get("hit", false)),
+		true,
+		"窗内换头应命中（offset=%d ms）" % int(outcome.get("offset_ms", -99999))
+	)
 	t.check(bench.controller.get_controlled().head_id != before, "换头后受控影人的头确实变了")
 	var heads: Array = []
 	for state in bench.controller.puppets:
@@ -206,10 +231,21 @@ func _test_04_head_swap_judged(t: ATestBase) -> void:
 ## —— 5. 灯位推拉 ——
 func _test_05_lamp_distance_judged(t: ATestBase) -> void:
 	t.begin("05 灯位推拉到目标区间时命中（滚轮推拉灯）")
-	var def: StageDef = _custom_stage([
-		CueScript.make("lamp_cue", 5000, CueScript.ACTION_LAMP_DISTANCE, -1,
-			{"key": "distance", "min": 0.70, "max": 1.0}, 250, "lamp_near"),
-	], 20000, {"distance": 0.50})
+	var def: StageDef = _custom_stage(
+		[
+			CueScript.make(
+				"lamp_cue",
+				5000,
+				CueScript.ACTION_LAMP_DISTANCE,
+				-1,
+				{"key": "distance", "min": 0.70, "max": 1.0},
+				250,
+				"lamp_near"
+			),
+		],
+		20000,
+		{"distance": 0.50}
+	)
 	var bench := BenchScript.new(def)
 	bench.advance_to(4700)
 	bench.lamp_input({"distance_increase": true})
@@ -220,9 +256,14 @@ func _test_05_lamp_distance_judged(t: ATestBase) -> void:
 	bench.lamp_input({})
 	var outcome: Dictionary = _outcome(bench, "lamp_cue")
 	t.check(not outcome.is_empty(), "推拉灯到位后应产生判定结果")
-	t.check_eq(bool(outcome.get("hit", false)), true,
-		"窗内把灯推到目标区间应命中（offset=%d ms，distance=%.3f）"
-			% [int(outcome.get("offset_ms", -99999)), bench.lamp_controller.lamp.distance])
+	t.check_eq(
+		bool(outcome.get("hit", false)),
+		true,
+		(
+			"窗内把灯推到目标区间应命中（offset=%d ms，distance=%.3f）"
+			% [int(outcome.get("offset_ms", -99999)), bench.lamp_controller.lamp.distance]
+		)
+	)
 	t.check(bench.lamp_controller.lamp.distance >= 0.70, "判定时灯距确实在目标区间内")
 	t.finish("灯位落点读 LampState.distance，推到位即命中")
 
@@ -230,8 +271,15 @@ func _test_05_lamp_distance_judged(t: ATestBase) -> void:
 ## —— 6. 灯位落点的「装填点」——
 func _test_06_lamp_not_armed_before_hint(t: ATestBase) -> void:
 	t.begin("06 灯位落点在线索时间之前不参与判定，之后须重新推到位才算")
-	var cue: Dictionary = CueScript.make("lamp_cue", 12500, CueScript.ACTION_LAMP_DISTANCE, -1,
-		{"key": "distance", "min": 0.70, "max": 1.0}, 250, "lamp_near")
+	var cue: Dictionary = CueScript.make(
+		"lamp_cue",
+		12500,
+		CueScript.ACTION_LAMP_DISTANCE,
+		-1,
+		{"key": "distance", "min": 0.70, "max": 1.0},
+		250,
+		"lamp_near"
+	)
 	var def: StageDef = _custom_stage([cue], 20000, {"distance": 0.50})
 	var hint_ms: int = CueScript.hint_time_ms(cue)
 	var bench := BenchScript.new(def)
@@ -245,8 +293,10 @@ func _test_06_lamp_not_armed_before_hint(t: ATestBase) -> void:
 		guard += 1
 	bench.lamp_input({})
 	bench.advance_to(hint_ms)
-	t.check(not _has(bench.director_log, "cue_fire", "lamp_cue"),
-		"线索时间之前推到位不得触发该落点（否则开局值恰好落在目标区间就会被算成一次动作）")
+	t.check(
+		not _has(bench.director_log, "cue_fire", "lamp_cue"),
+		"线索时间之前推到位不得触发该落点（否则开局值恰好落在目标区间就会被算成一次动作）"
+	)
 	t.check(bench.lamp_controller.lamp.distance >= 0.95, "此时灯确实已经在目标区间内")
 
 	# 装填之后必须先离开目标区间、再进入，才算「把灯推到位」
@@ -256,8 +306,7 @@ func _test_06_lamp_not_armed_before_hint(t: ATestBase) -> void:
 		bench.advance(1)
 		guard += 1
 	bench.lamp_input({})
-	t.check(not bench.director.performance.has_outcome("lamp_cue"),
-		"装填后离开目标区间不产生判定")
+	t.check(not bench.director.performance.has_outcome("lamp_cue"), "装填后离开目标区间不产生判定")
 
 	bench.advance_to(12250)
 	t.check(bench.lamp_controller.lamp.distance <= 0.70, "此刻灯在目标区间之外")
@@ -268,18 +317,32 @@ func _test_06_lamp_not_armed_before_hint(t: ATestBase) -> void:
 		guard += 1
 	bench.lamp_input({})
 	var outcome: Dictionary = _outcome(bench, "lamp_cue")
-	t.check_eq(bool(outcome.get("hit", false)), true,
-		"重新推入目标区间应命中（offset=%d ms）" % int(outcome.get("offset_ms", -99999)))
+	t.check_eq(
+		bool(outcome.get("hit", false)),
+		true,
+		"重新推入目标区间应命中（offset=%d ms）" % int(outcome.get("offset_ms", -99999))
+	)
 	t.finish("灯位落点只在线索时间之后判上升沿，避免开演瞬间被误判")
 
 
 ## —— 7. 倾灯显露 ——
 func _test_07_lamp_exposure_judged(t: ATestBase) -> void:
 	t.begin("07 倾灯把显露推到目标区间时命中")
-	var def: StageDef = _custom_stage([
-		CueScript.make("expo_cue", 6000, CueScript.ACTION_LAMP_EXPOSURE, -1,
-			{"key": "exposure", "min": 0.45, "max": 0.60}, 250, "exposure_up"),
-	], 20000, {"exposure": 0.20})
+	var def: StageDef = _custom_stage(
+		[
+			CueScript.make(
+				"expo_cue",
+				6000,
+				CueScript.ACTION_LAMP_EXPOSURE,
+				-1,
+				{"key": "exposure", "min": 0.45, "max": 0.60},
+				250,
+				"exposure_up"
+			),
+		],
+		20000,
+		{"exposure": 0.20}
+	)
 	var bench := BenchScript.new(def)
 	bench.advance_to(5500)
 	bench.lamp_input({"exposure_increase": true})
@@ -289,14 +352,35 @@ func _test_07_lamp_exposure_judged(t: ATestBase) -> void:
 		steps_used += 1
 	bench.lamp_input({})
 	var outcome: Dictionary = _outcome(bench, "expo_cue")
-	t.check_eq(bool(outcome.get("hit", false)), true,
-		"窗内推高显露应命中（offset=%d ms，exposure=%.3f）"
-			% [int(outcome.get("offset_ms", -99999)), bench.lamp_controller.lamp.exposure])
+	t.check_eq(
+		bool(outcome.get("hit", false)),
+		true,
+		(
+			"窗内推高显露应命中（offset=%d ms，exposure=%.3f）"
+			% [int(outcome.get("offset_ms", -99999)), bench.lamp_controller.lamp.exposure]
+		)
+	)
 	# 镜头拉到目标之外不应命中
-	var bench2 := BenchScript.new(_custom_stage([
-		CueScript.make("expo_cue", 6000, CueScript.ACTION_LAMP_EXPOSURE, -1,
-			{"key": "exposure", "min": 0.95, "max": 1.0}, 250, "exposure_up"),
-	], 20000, {"exposure": 0.20}))
+	var bench2 := (
+		BenchScript
+		. new(
+			_custom_stage(
+				[
+					CueScript.make(
+						"expo_cue",
+						6000,
+						CueScript.ACTION_LAMP_EXPOSURE,
+						-1,
+						{"key": "exposure", "min": 0.95, "max": 1.0},
+						250,
+						"exposure_up"
+					),
+				],
+				20000,
+				{"exposure": 0.20}
+			)
+		)
+	)
 	bench2.advance_to(5500)
 	bench2.lamp_input({"exposure_increase": true})
 	steps_used = 0
@@ -304,34 +388,55 @@ func _test_07_lamp_exposure_judged(t: ATestBase) -> void:
 		bench2.advance(1)
 		steps_used += 1
 	bench2.lamp_input({})
-	t.check_eq(bool(_outcome(bench2, "expo_cue").get("hit", false)), false,
-		"只推到中段（未达目标区间）应记为未命中，动作照常发生")
+	t.check_eq(
+		bool(_outcome(bench2, "expo_cue").get("hit", false)), false, "只推到中段（未达目标区间）应记为未命中，动作照常发生"
+	)
 	t.finish("倾灯按目标区间判定，未达区间记错拍")
 
 
 ## —— 8. 两类提示手互斥 ——
 func _test_08_hint_hand_is_mutually_exclusive(t: ATestBase) -> void:
 	t.begin("08 两类提示手互斥：补救手优先，补救冻结期间不出教学手")
-	var NONE: int = SceneScript.HAND_NONE
-	var TEACH: int = SceneScript.HAND_TEACHING
-	var REMEDY: int = SceneScript.HAND_REMEDY
+	var hand_none: int = SceneScript.HAND_NONE
+	var hand_teaching: int = SceneScript.HAND_TEACHING
+	var hand_remedy: int = SceneScript.HAND_REMEDY
 
-	t.check_eq(SceneScript.hint_hand_choice(false, false, true, false, "", "c1"), TEACH,
-		"教学关、正常演出、有已告知未判定的落点 → 教学手")
-	t.check_eq(SceneScript.hint_hand_choice(false, false, true, true, "", "c1"), NONE,
-		"补救冻结 + 无补救示范 → 不画教学手（落点不会到来，预告只会误导）")
-	t.check_eq(SceneScript.hint_hand_choice(false, false, true, true, "c9", "c1"), REMEDY,
-		"补救冻结 + 有补救示范 → 补救手（且教学手被压制）")
-	t.check_eq(SceneScript.hint_hand_choice(false, false, true, false, "c9", "c1"), REMEDY,
-		"同一 cue 上补救手优先于教学手")
-	t.check_eq(SceneScript.hint_hand_choice(false, false, false, false, "", "c1"), NONE,
-		"非教学关（第 5 关）没有常驻教学手")
-	t.check_eq(SceneScript.hint_hand_choice(false, false, true, false, "", ""), NONE,
-		"没有已告知的落点时两只手都不出")
-	t.check_eq(SceneScript.hint_hand_choice(true, false, true, false, "", "c1"), NONE,
-		"菜单暂停时不出手")
-	t.check_eq(SceneScript.hint_hand_choice(false, true, true, false, "c9", "c1"), NONE,
-		"演出结束后不出手")
+	t.check_eq(
+		SceneScript.hint_hand_choice(false, false, true, false, "", "c1"),
+		hand_teaching,
+		"教学关、正常演出、有已告知未判定的落点 → 教学手"
+	)
+	t.check_eq(
+		SceneScript.hint_hand_choice(false, false, true, true, "", "c1"),
+		hand_none,
+		"补救冻结 + 无补救示范 → 不画教学手（落点不会到来，预告只会误导）"
+	)
+	t.check_eq(
+		SceneScript.hint_hand_choice(false, false, true, true, "c9", "c1"),
+		hand_remedy,
+		"补救冻结 + 有补救示范 → 补救手（且教学手被压制）"
+	)
+	t.check_eq(
+		SceneScript.hint_hand_choice(false, false, true, false, "c9", "c1"),
+		hand_remedy,
+		"同一 cue 上补救手优先于教学手"
+	)
+	t.check_eq(
+		SceneScript.hint_hand_choice(false, false, false, false, "", "c1"),
+		hand_none,
+		"非教学关（第 5 关）没有常驻教学手"
+	)
+	t.check_eq(
+		SceneScript.hint_hand_choice(false, false, true, false, "", ""),
+		hand_none,
+		"没有已告知的落点时两只手都不出"
+	)
+	t.check_eq(
+		SceneScript.hint_hand_choice(true, false, true, false, "", "c1"), hand_none, "菜单暂停时不出手"
+	)
+	t.check_eq(
+		SceneScript.hint_hand_choice(false, true, true, false, "c9", "c1"), hand_none, "演出结束后不出手"
+	)
 
 	# 穷举全部组合：结果只可能是三种取值之一，不可能「两只手同时为真」。
 	var seen: Dictionary = {}
@@ -341,11 +446,10 @@ func _test_08_hint_hand_is_mutually_exclusive(t: ATestBase) -> void:
 				for frozen in [false, true]:
 					for demo in ["", "c9"]:
 						for active in ["", "c1"]:
-							seen[SceneScript.hint_hand_choice(paused, over, tutorial,
-								frozen, demo, active)] = true
+							seen[SceneScript.hint_hand_choice(paused, over, tutorial, frozen, demo, active)] = true
 	var allowed: bool = true
 	for key in seen.keys():
-		if key != NONE and key != TEACH and key != REMEDY:
+		if key != hand_none and key != hand_teaching and key != hand_remedy:
 			allowed = false
 	t.check(allowed, "选择结果只可能是「无 / 教学 / 补救」三者之一")
 	t.check_eq(seen.size(), 3, "三种取值都应被穷举覆盖到（实际 %s）" % str(seen.keys()))
@@ -355,16 +459,14 @@ func _test_08_hint_hand_is_mutually_exclusive(t: ATestBase) -> void:
 ## —— 9. 补救慢放倍率 ——
 func _test_09_remedy_slow_factor(t: ATestBase) -> void:
 	t.begin("09 补救慢放为 0.5 倍速（PRD 2026-10-04 修订）")
-	t.check_approx(MetronomeScript.REMEDY_SLOW_FACTOR, 0.5, 1e-9,
-		"补救慢放倍率应为 0.5")
+	t.check_approx(MetronomeScript.REMEDY_SLOW_FACTOR, 0.5, 1e-9, "补救慢放倍率应为 0.5")
 	var music: Metronome = MetronomeScript.new()
 	# 慢放内容的时间只按 0.5 前进，并在一小段（4 拍）里循环。
 	var loop_s: float = (60.0 / StageDefScript.LEVEL1_BPM) * 4.0
 	var expected: float = music.call("sample_at", fposmod(2.0 * 0.5, loop_s))
 	var actual: float = music.call("sample_at_slow", 2.0)
 	t.check_approx(actual, expected, 1e-9, "sample_at_slow 应按 0.5 倍速取样")
-	t.check(absf(MetronomeScript.REMEDY_SLOW_FACTOR - 0.1) > 1e-6,
-		"不应再是 0.1 倍速")
+	t.check(absf(MetronomeScript.REMEDY_SLOW_FACTOR - 0.1) > 1e-6, "不应再是 0.1 倍速")
 	t.finish("补救音乐按 0.5 倍速播放")
 
 
@@ -372,8 +474,10 @@ func _test_09_remedy_slow_factor(t: ATestBase) -> void:
 func _test_10_stage_arg_parsing(t: ATestBase) -> void:
 	t.begin("10 开发用切关参数解析：缺省回第 1 关，非法值不静默变成别的关")
 	var stage_id: int = SceneScript.requested_stage_id()
-	t.check(stage_id >= 1 and stage_id <= StageDefScript.LAST_TUTORIAL_LEVEL,
-		"解析结果应落在 1–4，实际 %d" % stage_id)
+	t.check(
+		stage_id >= 1 and stage_id <= StageDefScript.LAST_TUTORIAL_LEVEL,
+		"解析结果应落在 1–4，实际 %d" % stage_id
+	)
 	var args: PackedStringArray = OS.get_cmdline_args()
 	args.append_array(OS.get_cmdline_user_args())
 	var has_arg: bool = false
@@ -396,18 +500,21 @@ func _test_11_levels_run_end_to_end(t: ATestBase) -> void:
 		var bench := BenchScript.new(def)
 		var steps: int = bench.run_to_end(30000)
 		t.check(bench.director.is_over(), "第 %d 关应能跑到结束" % stage_id)
-		t.check_eq(bench.clock.get_song_time_ms(), def.duration_ms,
-			"第 %d 关歌曲时间应恰好走满 %d ms" % [stage_id, def.duration_ms])
-		t.check(bench.clock.get_real_time_ms() > def.duration_ms,
-			"第 %d 关因补救冻结，真实耗时应长于歌曲时长" % stage_id)
+		t.check_eq(
+			bench.clock.get_song_time_ms(),
+			def.duration_ms,
+			"第 %d 关歌曲时间应恰好走满 %d ms" % [stage_id, def.duration_ms]
+		)
+		t.check(
+			bench.clock.get_real_time_ms() > def.duration_ms, "第 %d 关因补救冻结，真实耗时应长于歌曲时长" % stage_id
+		)
 		t.check(steps < 30000, "第 %d 关应在步数上限内结束（实际 %d 步）" % [stage_id, steps])
 		var missing: Array[String] = []
 		for cue in def.cues:
 			var cue_id: String = str(cue["cue_id"])
 			if not bench.director.performance.has_outcome(cue_id):
 				missing.append(cue_id)
-		t.check_eq(missing.size(), 0, "第 %d 关每条落点都应有判定结果：%s"
-			% [stage_id, str(missing)])
+		t.check_eq(missing.size(), 0, "第 %d 关每条落点都应有判定结果：%s" % [stage_id, str(missing)])
 		bench.director.force_end()
 		bench.director_log.append_array(bench.director.take_events())
 	t.finish("第 2–4 关空场端到端可跑通，时间轴与记录完整")

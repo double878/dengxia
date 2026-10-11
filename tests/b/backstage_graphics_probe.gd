@@ -118,7 +118,16 @@ func _run() -> void:
 	var sum: float = 0.0
 	for value: float in intervals:
 		sum += value
-	var metrics := {"resolution": str(paused.get_size()), "frames": 240, "mean_ms": sum / 240.0, "p95_ms": intervals[228], "max_ms": intervals.back(), "checks": checks, "failures": failures, "gpu": RenderingServer.get_video_adapter_name()}
+	var metrics := {
+		"resolution": str(paused.get_size()),
+		"frames": 240,
+		"mean_ms": sum / 240.0,
+		"p95_ms": intervals[228],
+		"max_ms": intervals.back(),
+		"checks": checks,
+		"failures": failures,
+		"gpu": RenderingServer.get_video_adapter_name()
+	}
 	var file := FileAccess.open(output_dir + "/backstage-metrics.json", FileAccess.WRITE)
 	_check(file != null, "后台性能证据可写入")
 	metrics["checks"] = checks

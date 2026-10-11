@@ -43,7 +43,7 @@ const UMBRELLA_ID: int = 0
 const UMBRELLA_NAME: String = "umbrella_main"
 
 ## 角色分工（PuppetState.puppet_id）。与 StageDef.make_level1 的 initial 一致。
-const XUXIAN_ID: int = 1     ## 许仙：固定站位、右手举伞
+const XUXIAN_ID: int = 1  ## 许仙：固定站位、右手举伞
 const BAISUZHEN_ID: int = 0  ## 白素贞：玩家控制
 const XUXIAN_HAND: String = "right"
 const BAISUZHEN_HAND: String = "left"
@@ -160,8 +160,11 @@ func setup(p_stage_def: StageDef, p_puppets: Array) -> bool:
 
 ## 本关是否启用借伞还伞流程（只有第一关）。
 func is_enabled() -> bool:
-	return stage_id == StageDef.LEVEL1_ID and _puppet(BAISUZHEN_ID) != null \
+	return (
+		stage_id == StageDef.LEVEL1_ID
+		and _puppet(BAISUZHEN_ID) != null
 		and _puppet(XUXIAN_ID) != null
+	)
 
 
 ## 每帧一次。必须在 PuppetController.tick() 之后、StageDirector.update() 之前调用：
@@ -224,8 +227,9 @@ static func join_window_x(xuxian_x: float) -> Vector2:
 ## 比例不影响结论）；它不等于画面上的实际像素位置——那张图由显示端按手腕画
 ## （A→B 交接文档 6.2 节）。
 static func hand_height(hand_angle: float, stance: float) -> float:
-	var angle: float = clampf(hand_angle,
-		PuppetStateScript.HAND_ANGLE_MIN, PuppetStateScript.HAND_ANGLE_MAX)
+	var angle: float = clampf(
+		hand_angle, PuppetStateScript.HAND_ANGLE_MIN, PuppetStateScript.HAND_ANGLE_MAX
+	)
 	var drop: float = ARM_LENGTH * cos(angle)
 	return HAND_ANCHOR_Y - drop - STANCE_DROP * clampf(stance, 0.0, 1.0)
 
@@ -254,14 +258,20 @@ func holder_hand_position() -> Vector2:
 ## 与 `_holder_id` / `_borrow_x` 是同一个值，另开这两个入口是因为显示端读的是
 ## 「伞现在归谁、当初在哪儿接的」这两件事，直接读字段会让「谁该改它」变得模糊。
 
+
 func holder_id_of() -> int:
 	return _holder_id
 
 
 func recorded_view() -> Dictionary:
-	return {"holder_id": _holder_id, "holder_hand": _holder_hand,
-		"handing_off": handing_off, "from_id": _handoff_from_id,
-		"from_hand": _handoff_from_hand, "progress": _handoff_progress}
+	return {
+		"holder_id": _holder_id,
+		"holder_hand": _holder_hand,
+		"handing_off": handing_off,
+		"from_id": _handoff_from_id,
+		"from_hand": _handoff_from_hand,
+		"progress": _handoff_progress
+	}
 
 
 ## 只供回放表现端使用；不调用 update，不触发新交接或评分。
@@ -343,8 +353,9 @@ func _try_take(song_time_ms: int) -> void:
 	_holder_id = BAISUZHEN_ID
 	_holder_hand = BAISUZHEN_HAND
 	_reached_turn_point = false
-	_begin_handoff(position, hand_position(BAISUZHEN_ID, BAISUZHEN_HAND),
-		previous_id, previous_hand)
+	_begin_handoff(
+		position, hand_position(BAISUZHEN_ID, BAISUZHEN_HAND), previous_id, previous_hand
+	)
 	if not _take_reported:
 		_emit(song_time_ms, KIND_TAKE, BAISUZHEN_ID, _baisuzhen_x())
 		_take_reported = true
@@ -387,8 +398,7 @@ func _try_return(song_time_ms: int) -> void:
 	_holder_id = XUXIAN_ID
 	_holder_hand = XUXIAN_HAND
 	_reached_turn_point = false
-	_begin_handoff(position, hand_position(XUXIAN_ID, XUXIAN_HAND),
-		previous_id, previous_hand)
+	_begin_handoff(position, hand_position(XUXIAN_ID, XUXIAN_HAND), previous_id, previous_hand)
 	_must_leave_zone = true
 	if not _return_reported:
 		_emit(song_time_ms, KIND_RETURN, XUXIAN_ID, x)
@@ -429,8 +439,12 @@ func alignment() -> Dictionary:
 	var xuxian: PuppetState = _puppet(XUXIAN_ID)
 	var dy: float = 0.0
 	if baisuzhen != null and xuxian != null:
-		dy = absf(hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
-			- hand_height(xuxian.hand_angle.y, xuxian.stance))
+		dy = absf(
+			(
+				hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
+				- hand_height(xuxian.hand_angle.y, xuxian.stance)
+			)
+		)
 	return {
 		"dx": absf(_puppet_x(BAISUZHEN_ID) - _puppet_x(XUXIAN_ID)),
 		"dy": dy,
@@ -461,8 +475,7 @@ func _follow_hand() -> void:
 ## `previous_id` / `previous_hand` 是伞**原来**在哪只手上——显示端靠它把手腕上的伞
 ## 从那只手送到新的那只手（A 不给绝对坐标，见 A→B 交接文档 6.2 节）。
 ## 两只手本来就重合时不做过渡，`handing_off` 保持 false，显示端按新持伞人直接落位。
-func _begin_handoff(start: Vector2, live: Vector2, previous_id: int,
-		previous_hand: String) -> void:
+func _begin_handoff(start: Vector2, live: Vector2, previous_id: int, previous_hand: String) -> void:
 	_handoff_from_id = previous_id
 	_handoff_from_hand = previous_hand
 	if start.distance_to(live) < 0.0005:
@@ -478,8 +491,9 @@ func _begin_handoff(start: Vector2, live: Vector2, previous_id: int,
 func _advance_handoff(delta_s: float) -> void:
 	if not handing_off:
 		return
-	_handoff_progress = minf(_handoff_progress
-		+ maxf(delta_s, 0.0) / maxf(HANDOFF_DURATION_S, 0.001), 1.0)
+	_handoff_progress = minf(
+		_handoff_progress + maxf(delta_s, 0.0) / maxf(HANDOFF_DURATION_S, 0.001), 1.0
+	)
 	if _handoff_progress >= 1.0:
 		handing_off = false
 
@@ -502,13 +516,18 @@ func _emit(song_time_ms: int, kind: String, object_id: int, metric: float) -> vo
 		"borrow_x": _borrow_x,
 		"metric": metric,
 	}
-	_events.append({
-		"time_ms": song_time_ms,
-		"kind": kind,
-		"object_id": object_id,
-		"cue_id": "",
-		"payload": payload,
-	})
+	(
+		_events
+		. append(
+			{
+				"time_ms": song_time_ms,
+				"kind": kind,
+				"object_id": object_id,
+				"cue_id": "",
+				"payload": payload,
+			}
+		)
+	)
 
 
 ## 接伞与还伞的判定读数都用白素贞的接地点 x——

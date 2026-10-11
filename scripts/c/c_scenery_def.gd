@@ -45,8 +45,8 @@ const ANCHOR_Y: float = 0.5
 ##   - ⚠️ 放宽的只是「布景自身能不能移动」；影人接地点仍是 0.5，**没有被改动**。
 ##     布景若离开 0.5 就与影人的脚不在同一条线上——这是使用者的选择，不再报错。
 const Y_TOLERANCE: float = 0.5
-const Y_MIN: float = ANCHOR_Y - Y_TOLERANCE   ## 0.0（放宽后覆盖整个舞台高度）
-const Y_MAX: float = ANCHOR_Y + Y_TOLERANCE   ## 1.0
+const Y_MIN: float = ANCHOR_Y - Y_TOLERANCE  ## 0.0（放宽后覆盖整个舞台高度）
+const Y_MAX: float = ANCHOR_Y + Y_TOLERANCE  ## 1.0
 
 ## —— 第一关「入手 · 游湖借伞」布景参数（用户 2026-10-08 起逐条定案）——
 ## **只有两样东西**（2026-10-09 第二次构图定案后）：
@@ -69,7 +69,7 @@ const Y_MAX: float = ANCHOR_Y + Y_TOLERANCE   ## 1.0
 ##   若强行取 8/9（scale 0.2831）树顶会到 y=50，超出幕布顶 42px 被裁（用户明令禁止）。
 ##   故取「底对齐 + 顶留白 1/9」的解：scale 0.225063 → 树高 416px（幕布 70.7%）、
 ##   顶留白 65.3px＝幕布高 1/9.00。
-const LEVEL1_WILLOW_X: float = 0.116112   ## 柳树树干（树贴图左缘 x=96＝幕布左 66 + 内边距 30px）
+const LEVEL1_WILLOW_X: float = 0.116112  ## 柳树树干（树贴图左缘 x=96＝幕布左 66 + 内边距 30px）
 ## 柳树贴图像素比例（逐资产静态常量，非运行时形变能力）。
 ## 柳素材 1436×1846 与桥素材像素密度不同，全局 TEXTURE_SCALE_PX 不够用。
 ## **0.225063（2026-10-09 第三次构图，由 0.21 上调）**：
@@ -86,7 +86,7 @@ const LEVEL1_WILLOW_SCALE: float = 0.225063
 ## 要两者相等 → anchor_y = (572.8 − 0.225063)/1080 = **0.530162**。
 ## 注：0.530162 与 0.530389（上一版 scale 0.21 的解）差 0.000227——因为 scale 变了，
 ## foot 到贴图底边的 1px 素材差也随之变化。**改 scale 必须重算本常量**，否则底线会漂。
-const LEVEL1_WILLOW_BASE_Y: float = 0.530162   ## = 桥贴图底缘 572.8px（与桥同线）
+const LEVEL1_WILLOW_BASE_Y: float = 0.530162  ## = 桥贴图底缘 572.8px（与桥同线）
 ## 拱桥锚点 = 桥基中心 x（**完整拱**：woop 原素材本就是全拱，两端桥台 + 拱顶齐全）。
 ## 演变记录（用户 2026-10-08 起的定位决定，2026-10-09 定稿为完整拱）：
 ##   - 最初手绘草图：桥头起点 0.72；
@@ -107,11 +107,11 @@ const LEVEL1_BRIDGE_CENTER_X: float = 0.73
 ## 因此 0.53 不再是边界值，仍可继续微调。
 ## 但注意 0.53 已经**离开影人接地线 0.5**：树根/桥脚比影人的脚低 0.03×1080 ≈ 32px。
 ## 这是用户看过截图后的选择；若哪天想回到严格贴合，把它改回 ANCHOR_Y 即可。
-const LEVEL1_GROUND_Y: float = ANCHOR_Y + 0.03   ## = 0.53
+const LEVEL1_GROUND_Y: float = ANCHOR_Y + 0.03  ## = 0.53
 
 ## —— 元素种类 ——
 ## 显示端按 `kind` 选画法。新增种类时两边都要改（数据 + 画面），故集中在这里。
-const KIND_WILLOW: String = "willow"      ## 柳树：树干 + 向左上展开的树冠
+const KIND_WILLOW: String = "willow"  ## 柳树：树干 + 向左上展开的树冠
 const KIND_ARCH_BRIDGE: String = "arch_bridge"  ## 拱桥：半拱 + 水平延伸出画
 
 ## —— 位移字段名（**唯一**合法的位置相关字段）——
@@ -171,23 +171,23 @@ const SCENERY_TEX_WILLOW_BRANCH: String = "res://assets/scenery/level2/willow_br
 ## foot 取**底边左点**（建筑贴图的锚点惯例与树相反，建筑靠左对齐更可控）。
 ## 左缘 x=109px（贴幕布左边距），底 y=661px（贴地）。
 const LEVEL2_GATE_SCALE: float = 0.348174
-const LEVEL2_GATE_X: float = 0.056700# 左缘 109px 归一化
-const LEVEL2_GATE_BASE_Y: float = 0.612037   ## 底座 y=661px（贴地，与菊石同一地平线）
+const LEVEL2_GATE_X: float = 0.056700  # 左缘 109px 归一化
+const LEVEL2_GATE_BASE_Y: float = 0.612037  ## 底座 y=661px（贴地，与菊石同一地平线）
 
 ## 菊花：`plant-ornamental-005`（墨绿），素材 **1020×1807**（竖式，含底座山石）。
 ## 原高 368 → 缩到 0.36 = 132 → **×1.25 = 165px**。scale = 165/1807 = **0.091312**；
 ## foot 取**底边中心**（花盆正中，竖式花木与树同惯例）。
 const LEVEL2_CHRYS_SCALE: float = 0.091312
 ## 菊石仍在门楼左侧露出（几何上限见下），但缩小后露出比例更明显。
-const LEVEL2_CHRYS_X: float = 0.061755        ## 左缘 72px（幕布左+6），露出 37px
-const LEVEL2_CHRYS_BASE_Y: float = 0.612037   ## 底座 y=661px（**与门楼同一地平线**）
+const LEVEL2_CHRYS_X: float = 0.061755  ## 左缘 72px（幕布左+6），露出 37px
+const LEVEL2_CHRYS_BASE_Y: float = 0.612037  ## 底座 y=661px（**与门楼同一地平线**）
 
 ## 花篮（🔴 **已撤下**）：同日在门楼右侧试摆一版（放大 1.2 倍、间隙 15px），
 ## 用户当日定案移除。素材与常量保留在仓库里不删（删了要重新找美术），
 ## 要复用时把 `make_level2` 注释里的那段加回 `items` 即可。
 const LEVEL2_BASKET_SCALE: float = 0.115250
-const LEVEL2_BASKET_X: float = 0.445754# 底边中心 → 左缘 775、右缘 937
-const LEVEL2_BASKET_BASE_Y: float = 0.612037 ## 底 y=661px（贴地，与另三件同一线）
+const LEVEL2_BASKET_X: float = 0.445754  # 底边中心 → 左缘 775、右缘 937
+const LEVEL2_BASKET_BASE_Y: float = 0.612037  ## 底 y=661px（贴地，与另三件同一线）
 
 ## 柳树（第二关为**整株立树**，非第一关那种小垂枝）：`plant-ornamental-013`（粉绿），
 ## 素材 **1377×1866**。
@@ -198,8 +198,8 @@ const LEVEL2_BASKET_BASE_Y: float = 0.612037 ## 底 y=661px（贴地，与另三
 ## ⚠️ `anchor_x` 是**锚点（贴图底边中心）**的归一化，**不是左缘**——第一版误按左缘填，
 ## 实测右缘只到 1689（差 135px），测试当场抓住。现按
 ## 「右缘 1824 = 幕布右 1854 − 内边距 30」反推。
-const LEVEL2_TREE_SCALE: float = 0.245177   ## 458/1866
-const LEVEL2_TREE_X: float = 0.862017        ## 底边中心 → 左缘 1486、右缘 1824
+const LEVEL2_TREE_SCALE: float = 0.245177  ## 458/1866
+const LEVEL2_TREE_X: float = 0.862017  ## 底边中心 → 左缘 1486、右缘 1824
 const LEVEL2_TREE_BASE_Y: float = 0.612037  ## 底 y=661px（贴地）
 
 ## 贴图统一像素比例：素材 1 像素 = 画布多少像素。
@@ -211,8 +211,8 @@ const TEXTURE_SCALE_PX: float = 0.42
 ## —— 形状走向（决定贴图是否翻转，**不是**可自由变换）——
 ## 「景物只能左右平移」是硬约束；`polygon` 只是声明这条布景的走向语义，
 ## 且白名单只允许这两个值（断言会拦），保证素材不会被上下翻转/斜切。
-const POLY_ARCH_SPAN: String = "arch_span"    ## 完整拱跨（桥下可过，青白二人可站在拱前后）
-const POLY_ARCH_SIDE: String = "arch_side"    ## 半拱侧入（只露桥头 + 小半截桥身，延伸出画）
+const POLY_ARCH_SPAN: String = "arch_span"  ## 完整拱跨（桥下可过，青白二人可站在拱前后）
+const POLY_ARCH_SIDE: String = "arch_side"  ## 半拱侧入（只露桥头 + 小半截桥身，延伸出画）
 
 var stage_id: int = 1
 ## 布景元素列表。每条：
@@ -254,10 +254,11 @@ static func make_level1() -> CSceneryDef:
 			"texture_foot_px": Vector2(564.0, 1845.0),
 			# 逐资产缩放常量（见 LEVEL1_WILLOW_SCALE 注）；桥仍走全局 TEXTURE_SCALE_PX。
 			"texture_scale_px": LEVEL1_WILLOW_SCALE,
-			"params": {
-				# 树干高 / 树冠横向展开半径 / 树冠纵向半径，单位都是「画布高度比例」。
-				# 树冠向左上展开：`crown_bias_x` 为负表示树冠中心在树干左侧。
-				# 用户 2026-10-08：「树的长度要更高 0.05」→ trunk_height 0.20 → 0.25。
+			"params":
+			# 树干高 / 树冠横向展开半径 / 树冠纵向半径，单位都是「画布高度比例」。
+			# 树冠向左上展开：`crown_bias_x` 为负表示树冠中心在树干左侧。
+			# 用户 2026-10-08：「树的长度要更高 0.05」→ trunk_height 0.20 → 0.25。
+			{
 				# 树冠跟着上移（其位置由 trunk_height 推出），因此整棵树变高、树冠顶更高。
 				"trunk_height": 0.25,
 				"crown_radius_x": 0.075,
@@ -290,8 +291,9 @@ static func make_level1() -> CSceneryDef:
 			# 用户曾观感以为只渲染了半边，实为桥整体偏右、左侧 66~1015（占幕布 53%）全空，
 			# 并非裁剪 bug；桥的横向定位本轮未动。
 			"texture_foot_px": Vector2(921.0, 714.0),
-			"params": {
-				# 程序化占位画法用的形状参数（无贴图时生效；有贴图时被贴图取代）。
+			"params":
+			# 程序化占位画法用的形状参数（无贴图时生效；有贴图时被贴图取代）。
+			{
 				# 保留它们是为了 headless 批跑与断言不依赖贴图资源、且贴图缺失时画面不空。
 				"arch_end_x": 1.0,
 				# 桥面（拱顶）比接地线高多少。用户 2026-10-08 第三次定案：0.10 → 0.13。
@@ -332,7 +334,7 @@ static func make_level2() -> CSceneryDef:
 	def.items = [
 		{
 			"id": "gate",
-			"kind": KIND_ARCH_BRIDGE,   # 复用建筑类回退画法；贴图存在时不会走到
+			"kind": KIND_ARCH_BRIDGE,  # 复用建筑类回退画法；贴图存在时不会走到
 			"anchor_x": LEVEL2_GATE_X,
 			"anchor_y": LEVEL2_GATE_BASE_Y,
 			"pan_x": 0.0,
@@ -345,7 +347,7 @@ static func make_level2() -> CSceneryDef:
 		},
 		{
 			"id": "chrysanthemum",
-			"kind": KIND_WILLOW,        # 同上：有贴图不走回退
+			"kind": KIND_WILLOW,  # 同上：有贴图不走回退
 			"anchor_x": LEVEL2_CHRYS_X,
 			"anchor_y": LEVEL2_CHRYS_BASE_Y,
 			"pan_x": 0.0,
@@ -353,8 +355,13 @@ static func make_level2() -> CSceneryDef:
 			# 锚点 = 贴图底边中心（花盆正中）。素材 1020×1807。
 			"texture_foot_px": Vector2(510.0, 1807.0),
 			"texture_scale_px": LEVEL2_CHRYS_SCALE,
-			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
-				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+			"params":
+			{
+				"trunk_height": 0.25,
+				"crown_radius_x": 0.075,
+				"crown_radius_y": 0.055,
+				"crown_bias_x": 0.0
+			},
 		},
 		# 🔴 花篮（flower_basket）已于 2026-11 用户定案**移除**：加入当天即撤下，
 		# 「门的两侧对称摆两盆花」读起来太满，且与菊花的陪衬角色重复。
@@ -379,8 +386,13 @@ static func make_level2() -> CSceneryDef:
 			# 锚点 = 贴图**底边中心**（树干接地点）。素材 1377×1866。
 			"texture_foot_px": Vector2(688.0, 1866.0),
 			"texture_scale_px": LEVEL2_TREE_SCALE,
-			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
-				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+			"params":
+			{
+				"trunk_height": 0.25,
+				"crown_radius_x": 0.075,
+				"crown_radius_y": 0.055,
+				"crown_bias_x": 0.0
+			},
 		},
 	]
 	return def

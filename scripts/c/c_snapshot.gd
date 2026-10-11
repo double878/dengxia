@@ -88,12 +88,18 @@ static func default_lamp_dict() -> Dictionary:
 ## p_puppet_views 必须是长度 3 的数组，每项是 A 端 PuppetState.to_dict() 的返回值。
 ## 字段名以 A 端实际实现为准，不做任何改名或单位换算——转换是 A 的职责。
 ## 缺失或类型不符时 push_error 并保留缺省值，不静默写入错误数据。
-static func from_views(p_time_ms: int, p_puppet_views: Array, p_lamp_view: Dictionary = {}, p_performance: Dictionary = {}) -> Variant:
+static func from_views(
+	p_time_ms: int,
+	p_puppet_views: Array,
+	p_lamp_view: Dictionary = {},
+	p_performance: Dictionary = {}
+) -> Variant:
 	var snap := CSnapshotScript.new(p_time_ms)
 	snap.performance = p_performance.duplicate(true)
 	if p_puppet_views.size() != PUPPET_COUNT:
-		push_error("CSnapshot: puppets 长度应为 %d，实际 %d，缺失位置用缺省值"
-			% [PUPPET_COUNT, p_puppet_views.size()])
+		push_error(
+			"CSnapshot: puppets 长度应为 %d，实际 %d，缺失位置用缺省值" % [PUPPET_COUNT, p_puppet_views.size()]
+		)
 	for i in mini(PUPPET_COUNT, p_puppet_views.size()):
 		snap.puppets[i] = _sanitize_puppet_view(p_puppet_views[i], i)
 	if not p_lamp_view.is_empty():

@@ -58,8 +58,7 @@ func run_all() -> Dictionary:
 	_test_32_backwards_time_rebases_oil_consumption(t)
 	_test_33_malformed_feedback_is_ignored(t)
 	_test_34_lamp_input_mapping_uses_prd_controls(t)
-	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
-		"failures": t.failures}
+	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}
 
 
 func _test_01_initial_state_in_range(t: ATestBase) -> void:
@@ -232,7 +231,7 @@ func _test_14_same_song_time_no_double_charge(t: ATestBase) -> void:
 func _test_15_oil_never_below_zero(t: ATestBase) -> void:
 	t.begin("15 oil 不会低于 0.0")
 	var b: LampTestBench = _bench()
-	b.hold_input(200000)                      # 远超任何一关时长
+	b.hold_input(200000)  # 远超任何一关时长
 	t.check_eq(b.state().oil, 0.0, "灯油耗尽后应恰好停在 0.0")
 	t.check(b.state().oil >= 0.0, "oil 不得为负")
 	t.finish("灯油耗尽后保持 0.0，不会变负")
@@ -244,7 +243,7 @@ func _test_16_backwards_time_no_refill(t: ATestBase) -> void:
 	b.hold_input(5000)
 	var oil: float = b.state().oil
 	t.check(oil < 1.0, "推进 5 秒后 oil 应已下降")
-	b.set_song_ms(1000)                       # 时间倒退
+	b.set_song_ms(1000)  # 时间倒退
 	b.repeat_update_at_same_time(5)
 	t.check_eq(b.state().oil, oil, "时间倒退后 oil 不得回升")
 	t.check(b.state().oil <= oil, "oil 永不超过倒退前的读数")
@@ -284,8 +283,15 @@ func _test_19_pause_freezes_feedback(t: ATestBase) -> void:
 	b.hold_input(1000)
 	b.pause()
 	var feedback: float = b.state().flame_feedback
-	var events: Array = [{"kind": "cue_hit", "cue_id": "l1_c1_stand", "time_ms": 1000,
-		"object_id": 0, "payload": {"kind": "cue_hit"}}]
+	var events: Array = [
+		{
+			"kind": "cue_hit",
+			"cue_id": "l1_c1_stand",
+			"time_ms": 1000,
+			"object_id": 0,
+			"payload": {"kind": "cue_hit"}
+		}
+	]
 	b.feed_performance(events)
 	t.check_eq(b.state().flame_feedback, feedback, "暂停期间火焰反馈不得变化")
 	t.finish("暂停冻结火焰反馈")
@@ -298,16 +304,16 @@ func _test_20_resume_continues_no_jump(t: ATestBase) -> void:
 	b.pause()
 	var song_paused: int = b.clock.get_song_time_ms()
 	var oil_paused: float = b.state().oil
-	b.pause()                                 # 重复暂停应无副作用
+	b.pause()  # 重复暂停应无副作用
 	b.resume()
 	t.check_eq(b.clock.get_song_time_ms(), song_paused, "恢复瞬间不得跳变")
 	t.check_eq(b.state().oil, oil_paused, "恢复瞬间 oil 不得跳变")
 	# 恢复后按正常速率继续消耗
 	b.hold_input(1000)
 	var expected: float = LampControllerScript.clamp_unit(
-		oil_paused - LampControllerScript.OIL_CONSUME_PER_S * 1.0)
-	t.check_approx(b.state().oil, expected, 0.01,
-		"恢复 1 秒后 oil 应恰好按消耗速率下降")
+		oil_paused - LampControllerScript.OIL_CONSUME_PER_S * 1.0
+	)
+	t.check_approx(b.state().oil, expected, 0.01, "恢复 1 秒后 oil 应恰好按消耗速率下降")
 	t.finish("恢复后沿同一时间轴继续，不跳变、不补扣暂停时长")
 
 
@@ -315,15 +321,33 @@ func _test_21_hit_raises_feedback(t: ATestBase) -> void:
 	t.begin("21 命中事件能驱动 flame_feedback 在合法范围内变化")
 	var b: LampTestBench = _bench()
 	var before: float = b.state().flame_feedback
-	b.feed_performance([{"kind": "cue_hit", "cue_id": "l1_c1_stand", "time_ms": 2500,
-		"object_id": 0, "payload": {"kind": "cue_hit"}}])
+	b.feed_performance(
+		[
+			{
+				"kind": "cue_hit",
+				"cue_id": "l1_c1_stand",
+				"time_ms": 2500,
+				"object_id": 0,
+				"payload": {"kind": "cue_hit"}
+			}
+		]
+	)
 	var after: float = b.state().flame_feedback
 	t.check(after > before, "命中应提高火焰反馈（%.4f → %.4f）" % [before, after])
 	t.check(after <= 1.0, "提高后不得超过上界")
 	# 连续多次命中也不能越界
 	for i in 20:
-		b.feed_performance([{"kind": "cue_hit", "cue_id": "cue_%d" % i, "time_ms": 2500 + i,
-			"object_id": 0, "payload": {"kind": "cue_hit"}}])
+		b.feed_performance(
+			[
+				{
+					"kind": "cue_hit",
+					"cue_id": "cue_%d" % i,
+					"time_ms": 2500 + i,
+					"object_id": 0,
+					"payload": {"kind": "cue_hit"}
+				}
+			]
+		)
 	t.check_in_range(b.state().flame_feedback, 0.0, 1.0, "多次命中后仍应在 [0,1]")
 	t.finish("命中事件提高火焰反馈且不越界")
 
@@ -332,18 +356,45 @@ func _test_22_miss_lowers_feedback(t: ATestBase) -> void:
 	t.begin("22 错拍或漏做事件能驱动 flame_feedback 在合法范围内变化")
 	var b: LampTestBench = _bench()
 	var before: float = b.state().flame_feedback
-	b.feed_performance([{"kind": "cue_miss", "cue_id": "l1_c1_stand", "time_ms": 2500,
-		"object_id": 0, "payload": {"kind": "cue_miss", "reason": "out_of_window"}}])
+	b.feed_performance(
+		[
+			{
+				"kind": "cue_miss",
+				"cue_id": "l1_c1_stand",
+				"time_ms": 2500,
+				"object_id": 0,
+				"payload": {"kind": "cue_miss", "reason": "out_of_window"}
+			}
+		]
+	)
 	var after: float = b.state().flame_feedback
 	t.check(after < before, "错拍应降低火焰反馈（%.4f → %.4f）" % [before, after])
 	t.check(after >= 0.0, "降低后不得低于下界")
 	for i in 30:
-		b.feed_performance([{"kind": "cue_miss", "cue_id": "miss_%d" % i, "time_ms": 2500 + i,
-			"object_id": 0, "payload": {"kind": "cue_miss"}}])
+		b.feed_performance(
+			[
+				{
+					"kind": "cue_miss",
+					"cue_id": "miss_%d" % i,
+					"time_ms": 2500 + i,
+					"object_id": 0,
+					"payload": {"kind": "cue_miss"}
+				}
+			]
+		)
 	t.check_in_range(b.state().flame_feedback, 0.0, 1.0, "多次错拍后仍应在 [0,1]")
 	# 补救相关事件同样合法
-	b.feed_performance([{"kind": "remedy_success", "cue_id": "l1_c1_stand", "time_ms": 3000,
-		"object_id": 0, "payload": {"kind": "remedy_success"}}])
+	b.feed_performance(
+		[
+			{
+				"kind": "remedy_success",
+				"cue_id": "l1_c1_stand",
+				"time_ms": 3000,
+				"object_id": 0,
+				"payload": {"kind": "remedy_success"}
+			}
+		]
+	)
 	t.check_in_range(b.state().flame_feedback, 0.0, 1.0, "补救成功后仍应在 [0,1]")
 	t.finish("错拍/漏做降低火焰反馈且不越界")
 
@@ -351,16 +402,24 @@ func _test_22_miss_lowers_feedback(t: ATestBase) -> void:
 func _test_23_duplicate_event_no_double_stack(t: ATestBase) -> void:
 	t.begin("23 同一 performance 事件重复输入不会重复叠加")
 	var b: LampTestBench = _bench()
-	var event: Dictionary = {"kind": "cue_hit", "cue_id": "l1_c1_stand", "time_ms": 2500,
-		"object_id": 0, "payload": {"kind": "cue_hit"}}
+	var event: Dictionary = {
+		"kind": "cue_hit",
+		"cue_id": "l1_c1_stand",
+		"time_ms": 2500,
+		"object_id": 0,
+		"payload": {"kind": "cue_hit"}
+	}
 	b.feed_performance([event])
 	var once: float = b.state().flame_feedback
 	# 同一个事件重复喂 10 次，效果应与只喂一次完全相同
 	for _i in 10:
 		b.feed_performance([event])
-	t.check_approx(b.state().flame_feedback, once, 0.000001,
-		"同一事件重复输入不得重复叠加（一次 %.4f，重复后 %.4f）"
-			% [once, b.state().flame_feedback])
+	t.check_approx(
+		b.state().flame_feedback,
+		once,
+		0.000001,
+		"同一事件重复输入不得重复叠加（一次 %.4f，重复后 %.4f）" % [once, b.state().flame_feedback]
+	)
 	t.finish("同一事件幂等，不重复叠加反馈")
 
 
@@ -374,10 +433,12 @@ func _test_24_state_changes_before_event(t: ATestBase) -> void:
 	var last: Dictionary = events[events.size() - 1]
 	var payload: Dictionary = last["payload"]
 	# 事件载荷必须等于「取走事件时」的状态读数，即状态先变、事件后到
-	t.check_approx(float(payload["distance"]), b.state().distance, 0.000001,
-		"事件载荷的 distance 应等于同一帧读到的状态值")
-	t.check_approx(float(payload["exposure"]), b.state().exposure, 0.000001,
-		"事件载荷的 exposure 应等于同一帧读到的状态值")
+	t.check_approx(
+		float(payload["distance"]), b.state().distance, 0.000001, "事件载荷的 distance 应等于同一帧读到的状态值"
+	)
+	t.check_approx(
+		float(payload["exposure"]), b.state().exposure, 0.000001, "事件载荷的 exposure 应等于同一帧读到的状态值"
+	)
 	t.finish("先改状态再发事件，二者同帧一致")
 
 
@@ -398,8 +459,12 @@ func _test_25_event_contract_fields(t: ATestBase) -> void:
 	t.check_eq(e["object_id"], LampControllerScript.LAMP_OBJECT_ID, "object_id 应为油灯标识")
 	t.check_eq(e["cue_id"], "", "灯的自主事件 cue_id 为空串")
 	# 四种事件都在，且都满足同一字段契约
-	for kind in [LampControllerScript.KIND_STATE_CHANGED, LampControllerScript.KIND_INPUT_CHANGED,
-			LampControllerScript.KIND_OIL_CHANGED, LampControllerScript.KIND_FEEDBACK_CHANGED]:
+	for kind in [
+		LampControllerScript.KIND_STATE_CHANGED,
+		LampControllerScript.KIND_INPUT_CHANGED,
+		LampControllerScript.KIND_OIL_CHANGED,
+		LampControllerScript.KIND_FEEDBACK_CHANGED
+	]:
 		for candidate in b.events_of(kind):
 			for field in ["time_ms", "kind", "object_id", "cue_id", "payload"]:
 				if not candidate.has(field):
@@ -428,8 +493,7 @@ func _test_26_payload_has_current_values(t: ATestBase) -> void:
 	b.hold_input(1000)
 	var oil_events: Array = b.events_of(LampControllerScript.KIND_OIL_CHANGED)
 	t.check(oil_events.size() > 0, "灯油下降应发出 lamp_oil_changed")
-	t.check(float(oil_events[oil_events.size() - 1]["payload"]["oil"]) < 1.0,
-		"灯油事件载荷应带下降后的 oil")
+	t.check(float(oil_events[oil_events.size() - 1]["payload"]["oil"]) < 1.0, "灯油事件载荷应带下降后的 oil")
 	t.finish("payload 带变化后字段与 changed_fields")
 
 
@@ -441,10 +505,10 @@ func _test_27_malformed_events_no_crash(t: ATestBase) -> void:
 	var oil: float = before.oil
 	var feedback: float = before.flame_feedback
 	var malformed: Array = [
-		{},                                        # 空字典
-		{"kind": "cue_hit"},                       # 缺 payload 与 cue_id
-		{"kind": "cue_hit", "payload": {}},         # payload 为空
-		{"kind": "", "cue_id": "", "payload": {}},   # kind 为空串
+		{},  # 空字典
+		{"kind": "cue_hit"},  # 缺 payload 与 cue_id
+		{"kind": "cue_hit", "payload": {}},  # payload 为空
+		{"kind": "", "cue_id": "", "payload": {}},  # kind 为空串
 		{"kind": "cue_hit", "payload": "not a dict"},  # 非法 payload 类型
 	]
 	for case in malformed:
@@ -460,8 +524,9 @@ func _test_27_malformed_events_no_crash(t: ATestBase) -> void:
 	t.check_eq(b.state().oil, oil, "畸形事件不得改动 oil")
 	t.check_eq(b.state().distance, distance, "畸形事件不得改动 distance")
 	# 非法字段类型：把布尔当数字用也不能崩
-	b.feed_performance([{"kind": "cue_hit", "cue_id": true, "time_ms": "x",
-		"payload": {"kind": "cue_hit"}}])
+	b.feed_performance(
+		[{"kind": "cue_hit", "cue_id": true, "time_ms": "x", "payload": {"kind": "cue_hit"}}]
+	)
 	t.check_in_range(b.state().flame_feedback, 0.0, 1.0, "非法字段类型后反馈仍合法")
 	t.finish("畸形输入全部安全失败，状态保持合法且不被篡改")
 
@@ -517,8 +582,11 @@ func _test_30_receiver_parses_event(t: ATestBase) -> void:
 	var ok: bool = false
 	for parsed in received:
 		if str(parsed.get("kind", "")) == LampControllerScript.KIND_STATE_CHANGED:
-			t.check_eq(str(parsed["object_id"]), LampControllerScript.LAMP_OBJECT_ID,
-				"接收端读到的 object_id 应是油灯标识")
+			t.check_eq(
+				str(parsed["object_id"]),
+				LampControllerScript.LAMP_OBJECT_ID,
+				"接收端读到的 object_id 应是油灯标识"
+			)
 			t.check(parsed["payload"].has("distance"), "接收端应能读到 distance")
 			t.check(parsed["payload"].has("oil"), "接收端应能读到 oil")
 			t.check(parsed["time_ms"] >= 0, "接收端应能读到 time_ms")
@@ -531,15 +599,31 @@ func _test_31_fire_does_not_raise_feedback_on_miss(t: ATestBase) -> void:
 	t.begin("31 cue_fire 与错拍结果同时到达时反馈应下降")
 	var b: LampTestBench = _bench()
 	var before: float = b.state().flame_feedback
-	b.feed_performance([
-		{"kind": "cue_fire", "cue_id": "l1_c1_stand", "time_ms": 2500,
-			"object_id": 0, "payload": {"kind": "cue_fire"}},
-		{"kind": "cue_miss", "cue_id": "l1_c1_stand", "time_ms": 2500,
-			"object_id": 0, "payload": {"kind": "cue_miss"}},
-	])
-	t.check(b.state().flame_feedback < before,
-		"错拍动作虽然发生，但最终反馈应低于 %.4f（实际 %.4f）" %
-			[before, b.state().flame_feedback])
+	(
+		b
+		. feed_performance(
+			[
+				{
+					"kind": "cue_fire",
+					"cue_id": "l1_c1_stand",
+					"time_ms": 2500,
+					"object_id": 0,
+					"payload": {"kind": "cue_fire"}
+				},
+				{
+					"kind": "cue_miss",
+					"cue_id": "l1_c1_stand",
+					"time_ms": 2500,
+					"object_id": 0,
+					"payload": {"kind": "cue_miss"}
+				},
+			]
+		)
+	)
+	t.check(
+		b.state().flame_feedback < before,
+		"错拍动作虽然发生，但最终反馈应低于 %.4f（实际 %.4f）" % [before, b.state().flame_feedback]
+	)
 	t.finish("cue_fire 不再被当作命中反馈")
 
 
@@ -553,10 +637,14 @@ func _test_32_backwards_time_rebases_oil_consumption(t: ATestBase) -> void:
 	b.set_song_ms(2000)
 	b.tick()
 	var expected: float = LampControllerScript.clamp_unit(
-		before_rewind - LampControllerScript.OIL_CONSUME_PER_S)
-	t.check_approx(b.state().oil, expected, 0.000001,
-		"倒退后从新基准前进 1 秒应扣油（期望 %.6f，实际 %.6f）" %
-			[expected, b.state().oil])
+		before_rewind - LampControllerScript.OIL_CONSUME_PER_S
+	)
+	t.check_approx(
+		b.state().oil,
+		expected,
+		0.000001,
+		"倒退后从新基准前进 1 秒应扣油（期望 %.6f，实际 %.6f）" % [expected, b.state().oil]
+	)
 	t.finish("倒退只丢弃倒退区间，后续歌曲时间仍正常消耗")
 
 
@@ -564,14 +652,22 @@ func _test_33_malformed_feedback_is_ignored(t: ATestBase) -> void:
 	t.begin("33 缺字段或非法字段的反馈事件不应改变状态")
 	var b: LampTestBench = _bench()
 	var before: float = b.state().flame_feedback
-	b.feed_performance([
-		{"kind": "cue_hit"},
-		{"kind": "cue_hit", "cue_id": "x", "payload": {}},
-		{"kind": "cue_hit", "cue_id": true, "time_ms": "bad",
-			"payload": {"kind": "cue_hit"}},
-	])
-	t.check_eq(b.state().flame_feedback, before,
-		"畸形 cue_hit 不应伪造命中反馈")
+	(
+		b
+		. feed_performance(
+			[
+				{"kind": "cue_hit"},
+				{"kind": "cue_hit", "cue_id": "x", "payload": {}},
+				{
+					"kind": "cue_hit",
+					"cue_id": true,
+					"time_ms": "bad",
+					"payload": {"kind": "cue_hit"}
+				},
+			]
+		)
+	)
+	t.check_eq(b.state().flame_feedback, before, "畸形 cue_hit 不应伪造命中反馈")
 	t.finish("畸形反馈事件被安全忽略")
 
 
@@ -588,10 +684,8 @@ func _test_34_lamp_input_mapping_uses_prd_controls(t: ATestBase) -> void:
 	t.check(b.lamp.get_input_map()[KEY_DIST_UP], "滚轮上事件应转成灯距增加输入")
 	b.tick()
 	t.check(b.state().distance > 0.5, "滚轮上事件应实际推进 distance")
-	t.check_eq(LampInputReaderScript.KEY_EXPOSURE_DECREASE, KEY_Q,
-		"Q 应降低显露度")
-	t.check_eq(LampInputReaderScript.KEY_EXPOSURE_INCREASE, KEY_E,
-		"E 应增加显露度")
+	t.check_eq(LampInputReaderScript.KEY_EXPOSURE_DECREASE, KEY_Q, "Q 应降低显露度")
+	t.check_eq(LampInputReaderScript.KEY_EXPOSURE_INCREASE, KEY_E, "E 应增加显露度")
 	var description: String = LampInputReaderScript.describe_keys()
 	t.check(description.contains("滚轮"), "键位说明应显示滚轮灯距控制")
 	t.check(description.contains("Q/E"), "键位说明应显示 Q/E 显露度控制")

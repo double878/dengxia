@@ -9,15 +9,15 @@ class_name CueHint
 ## Cue 与 CueHint 互相引用会在类解析阶段形成循环，导致构造期解析失败。
 
 ## 线索种类。前四关可用图标逐步教学，具体呈现由 B 决定。
-const KIND_STANCE: String = "stance"        ## 站起 / 蹲下
-const KIND_HAND: String = "hand"            ## 抬手 / 落手
-const KIND_MOVE: String = "move"            ## 横向移动 / 转身
-const KIND_REACH: String = "reach"          ## 移动到目标位置
-const KIND_HOOK: String = "hook"            ## 挂起 / 取回影人（第 2 关）
-const KIND_HEAD: String = "head"            ## 与备用头架换头（第 4 关）
-const KIND_LAMP_DISTANCE: String = "lamp_distance"   ## 推拉灯位使影子缩放（第 3 关）
-const KIND_LAMP_EXPOSURE: String = "lamp_exposure"   ## 倾灯改变影子显露（第 4 关）
-const KIND_UMBRELLA: String = "umbrella"             ## 借伞 / 还伞（第 1 关）
+const KIND_STANCE: String = "stance"  ## 站起 / 蹲下
+const KIND_HAND: String = "hand"  ## 抬手 / 落手
+const KIND_MOVE: String = "move"  ## 横向移动 / 转身
+const KIND_REACH: String = "reach"  ## 移动到目标位置
+const KIND_HOOK: String = "hook"  ## 挂起 / 取回影人（第 2 关）
+const KIND_HEAD: String = "head"  ## 与备用头架换头（第 4 关）
+const KIND_LAMP_DISTANCE: String = "lamp_distance"  ## 推拉灯位使影子缩放（第 3 关）
+const KIND_LAMP_EXPOSURE: String = "lamp_exposure"  ## 倾灯改变影子显露（第 4 关）
+const KIND_UMBRELLA: String = "umbrella"  ## 借伞 / 还伞（第 1 关）
 
 ## 与 Cue.ACTION_* 一一对应的动作名，保持字符串一致即可，不建立类依赖。
 const ACTION_STAND_UP: String = "stand_up"

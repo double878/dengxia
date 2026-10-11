@@ -18,15 +18,15 @@ const PerformanceSystemScript := preload("res://scripts/a/performance_system.gd"
 const RemedySystemScript := preload("res://scripts/a/remedy_system.gd")
 const UmbrellaControllerScript := preload("res://scripts/a/umbrella_controller.gd")
 
-const END_REASON_DURATION: String = "duration_reached"   ## 正常到时结束
-const END_REASON_FORCED: String = "forced"               ## 外部要求立即结束（如跳过）
+const END_REASON_DURATION: String = "duration_reached"  ## 正常到时结束
+const END_REASON_FORCED: String = "forced"  ## 外部要求立即结束（如跳过）
 ## 补救冻结的起止事件。回放必须靠它还原「这一段真实时间不计入歌曲时间」，
 ## 否则 1:1 回放会比重看演出的实际耗时要短（TECH_DESIGN.md 第 4 节）。
 const KIND_FREEZE_BEGIN: String = "remedy_freeze_begin"
 const KIND_FREEZE_END: String = "remedy_freeze_end"
 
 var stage_def: StageDef = null
-var clock: Object = null                ## 鸭子类型：get_song_time_ms() -> int
+var clock: Object = null  ## 鸭子类型：get_song_time_ms() -> int
 var performance: PerformanceSystem = null
 var remedy: RemedySystem = null
 ## 第一关「借伞还伞」状态机。**其它关卡为 null**（流程表只定义第一关）：
@@ -41,14 +41,15 @@ var end_reason: String = ""
 
 var _events: Array[Dictionary] = []
 var _end_ms: int = -1
-var _remedy_frozen: bool = false         ## 当前是否因补救窗口而冻结歌曲时间轴
-var _frozen_since_real_ms: int = -1      ## 本次冻结开始时的真实时间
+var _remedy_frozen: bool = false  ## 当前是否因补救窗口而冻结歌曲时间轴
+var _frozen_since_real_ms: int = -1  ## 本次冻结开始时的真实时间
 
 
 ## 建立第一关的演出：判定系统与补救系统共用同一个时钟与同一批 Cue。
 ## p_lamp 是灯位/倾灯类 Cue 的读数来源；第 1、2 关没有这类落点，允许传 null。
-func setup(p_stage_def: StageDef, p_clock: Object, p_puppets: Array,
-		p_lamp: LampState = null) -> void:
+func setup(
+	p_stage_def: StageDef, p_clock: Object, p_puppets: Array, p_lamp: LampState = null
+) -> void:
 	stage_def = p_stage_def
 	clock = p_clock
 	performance = PerformanceSystemScript.new()
@@ -72,13 +73,18 @@ func start() -> void:
 	if started:
 		return
 	started = true
-	_events.append({
-		"time_ms": song_time_ms(),
-		"kind": "stage_start",
-		"object_id": 0,
-		"cue_id": "",
-		"payload": {"kind": "stage_start", "duration_ms": duration_ms()},
-	})
+	(
+		_events
+		. append(
+			{
+				"time_ms": song_time_ms(),
+				"kind": "stage_start",
+				"object_id": 0,
+				"cue_id": "",
+				"payload": {"kind": "stage_start", "duration_ms": duration_ms()},
+			}
+		)
+	)
 
 
 ## 每帧一次。必须在 PuppetController.tick() 之后调用。
@@ -184,20 +190,29 @@ func _sync_remedy_freeze(song_ms: int, real_ms: int) -> void:
 	_remedy_frozen = want
 	if want:
 		_frozen_since_real_ms = real_ms
-		_emit_event(song_ms, KIND_FREEZE_BEGIN, {
-			"reason": "remedy",
-			"open_windows": remedy.open_count(),
-			"real_time_ms": real_ms,
-		})
+		_emit_event(
+			song_ms,
+			KIND_FREEZE_BEGIN,
+			{
+				"reason": "remedy",
+				"open_windows": remedy.open_count(),
+				"real_time_ms": real_ms,
+			}
+		)
 		return
-	var frozen_ms: int = maxi(real_ms - _frozen_since_real_ms, 0) \
-		if _frozen_since_real_ms >= 0 else 0
+	var frozen_ms: int = (
+		maxi(real_ms - _frozen_since_real_ms, 0) if _frozen_since_real_ms >= 0 else 0
+	)
 	_frozen_since_real_ms = -1
-	_emit_event(song_ms, KIND_FREEZE_END, {
-		"reason": "remedy",
-		"frozen_ms": frozen_ms,
-		"real_time_ms": real_ms,
-	})
+	_emit_event(
+		song_ms,
+		KIND_FREEZE_END,
+		{
+			"reason": "remedy",
+			"frozen_ms": frozen_ms,
+			"real_time_ms": real_ms,
+		}
+	)
 
 
 func _finish(reason: String, now_ms: int) -> void:
@@ -212,21 +227,30 @@ func _finish(reason: String, now_ms: int) -> void:
 	var still_open: int = remedy.open_count()
 	if still_open > 0:
 		push_error("关卡结束时仍有 %d 个补救窗口未关闭" % still_open)
-	_emit_event(now_ms, "stage_end", {
-		"reason": reason,
-		"song_time_ms": now_ms,
-		"remedy_open_count": open_before,
-		"duration_ms": duration_ms(),
-	})
+	_emit_event(
+		now_ms,
+		"stage_end",
+		{
+			"reason": reason,
+			"song_time_ms": now_ms,
+			"remedy_open_count": open_before,
+			"duration_ms": duration_ms(),
+		}
+	)
 
 
 func _emit_event(time_ms: int, kind: String, payload_extra: Dictionary) -> void:
 	var payload := {"kind": kind}
 	payload.merge(payload_extra, true)
-	_events.append({
-		"time_ms": time_ms,
-		"kind": kind,
-		"object_id": 0,
-		"cue_id": "",
-		"payload": payload,
-	})
+	(
+		_events
+		. append(
+			{
+				"time_ms": time_ms,
+				"kind": kind,
+				"object_id": 0,
+				"cue_id": "",
+				"payload": payload,
+			}
+		)
+	)

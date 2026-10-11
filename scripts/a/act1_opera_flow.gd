@@ -16,8 +16,17 @@ var _events: Array[Dictionary] = []
 
 func setup(value: Dictionary, p_clock: MusicClock, p_umbrella: UmbrellaController) -> bool:
 	var previous := -1
-	for key in ["opening_end_ms", "arrival_ms", "singing_start_ms", "singing_end_ms",
-			"take_ms", "return_gate_ms", "return_start_ms", "closing_ms", "duration_ms"]:
+	for key in [
+		"opening_end_ms",
+		"arrival_ms",
+		"singing_start_ms",
+		"singing_end_ms",
+		"take_ms",
+		"return_gate_ms",
+		"return_start_ms",
+		"closing_ms",
+		"duration_ms"
+	]:
 		var point := int(value.get(key, -1))
 		if point <= previous:
 			push_error("第一幕音频时间表非法：%s=%d" % [key, point])
@@ -118,14 +127,22 @@ func _begin_wait(value: String) -> void:
 	_deadline_ms = clock.get_real_time_ms() + WAIT_LIMIT_MS
 	_set_phase(value, "condition_pending")
 	clock.set_song_frozen(true)
-	_emit("opera_wait_begin", {"phase_id": value, "deadline_real_ms": _deadline_ms,
-		"asset_id": "wait_loop"})
+	_emit(
+		"opera_wait_begin",
+		{"phase_id": value, "deadline_real_ms": _deadline_ms, "asset_id": "wait_loop"}
+	)
 
 
 func _end_wait(reason: String, next: String) -> void:
 	if is_waiting():
-		_emit("opera_wait_end", {"phase_id": phase, "reason": reason,
-			"wait_ms": WAIT_LIMIT_MS - maxi(_deadline_ms - clock.get_real_time_ms(), 0)})
+		_emit(
+			"opera_wait_end",
+			{
+				"phase_id": phase,
+				"reason": reason,
+				"wait_ms": WAIT_LIMIT_MS - maxi(_deadline_ms - clock.get_real_time_ms(), 0)
+			}
+		)
 	_deadline_ms = -1
 	_set_phase(next, reason)
 	clock.set_song_frozen(false)
@@ -137,8 +154,16 @@ func _timeout() -> void:
 	umbrella.take_allowed = false
 	umbrella.return_allowed = false
 	clock.advance_to_ms(int(config.closing_ms))
-	_emit("opera_score_skipped", {"from_ms": from, "to_ms": int(config.closing_ms),
-		"reason": "timeout", "phase_id": "closing", "asset_id": "main"})
+	_emit(
+		"opera_score_skipped",
+		{
+			"from_ms": from,
+			"to_ms": int(config.closing_ms),
+			"reason": "timeout",
+			"phase_id": "closing",
+			"asset_id": "main"
+		}
+	)
 
 
 func _set_phase(value: String, reason: String) -> void:
@@ -149,7 +174,20 @@ func _set_phase(value: String, reason: String) -> void:
 
 
 func _emit(kind: String, data: Dictionary) -> void:
-	data.merge({"real_time_ms": clock.get_real_time_ms(), "audio_version": config.audio_version,
-		"stage_id": 1}, true)
-	_events.append({"time_ms": clock.get_song_time_ms(), "kind": kind,
-		"object_id": "performance_audio", "cue_id": "", "payload": data})
+	data.merge(
+		{
+			"real_time_ms": clock.get_real_time_ms(),
+			"audio_version": config.audio_version,
+			"stage_id": 1
+		},
+		true
+	)
+	_events.append(
+		{
+			"time_ms": clock.get_song_time_ms(),
+			"kind": kind,
+			"object_id": "performance_audio",
+			"cue_id": "",
+			"payload": data
+		}
+	)

@@ -86,9 +86,11 @@ func _ready() -> void:
 	_puppet.puppet_state = puppet_state
 	_puppet.stage_origin = STAGE_ORIGIN
 	_puppet.stage_size = STAGE_SIZE
-	_hud_hint.text = "拖动胸签 = 横向移动 / 纵向站蹲 / 沿移动方向翻面    " \
-		+ "A=抬左手 D=抬右手 Shift+A=落左手 Shift+D=落右手 W=双手抬 S=双手落    " \
+	_hud_hint.text = (
+		"拖动胸签 = 横向移动 / 纵向站蹲 / 沿移动方向翻面    "
+		+ "A=抬左手 D=抬右手 Shift+A=落左手 Shift+D=落右手 W=双手抬 S=双手落    "
 		+ "空格=挂起/取回影人（PRD 第 4.1 节）    ESC=暂停/继续"
+	)
 
 	if OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG):
 		_run_probe_and_quit()
@@ -213,35 +215,81 @@ func _refresh_hud() -> void:
 
 	var lines: Array[String] = []
 	lines.append("[b]A 操控 + 音乐时钟测试 · 占位影人（不依赖 B 的美术）[/b]")
-	lines.append("暂停状态：%s    步进数：%d    FPS：%d" % [
-		"[color=#ff8]已暂停[/color]" if _paused else "运行中",
-		_harness.get_step_count(), Engine.get_frames_per_second()])
+	lines.append(
+		(
+			"暂停状态：%s    步进数：%d    FPS：%d"
+			% [
+				"[color=#ff8]已暂停[/color]" if _paused else "运行中",
+				_harness.get_step_count(),
+				Engine.get_frames_per_second()
+			]
+		)
+	)
 	lines.append("")
 	lines.append("puppet_id：%d    受控：%s" % [state.puppet_id, state.is_controlled])
 	lines.append("stage_pos：x=%.4f  y=%.4f   （0-1，接地点）" % [state.stage_pos.x, state.stage_pos.y])
 	lines.append("stance：%.4f   %s" % [state.stance, _bar(state.stance)])
-	lines.append("facing：%+.0f（+1 正面 / -1 反面）   翻面进度 turn_progress：%.4f"
-		% [state.facing, state.turn_progress])
-	lines.append("hand_angle：左手 %+.4f  右手 %+.4f  （弧度，0 = 垂下 / %.4f = 举过头顶）"
-		% [state.hand_angle.x, state.hand_angle.y, PuppetState.HAND_ANGLE_MAX])
+	lines.append(
+		(
+			"facing：%+.0f（+1 正面 / -1 反面）   翻面进度 turn_progress：%.4f"
+			% [state.facing, state.turn_progress]
+		)
+	)
+	lines.append(
+		(
+			"hand_angle：左手 %+.4f  右手 %+.4f  （弧度，0 = 垂下 / %.4f = 举过头顶）"
+			% [state.hand_angle.x, state.hand_angle.y, PuppetState.HAND_ANGLE_MAX]
+		)
+	)
 	lines.append("head_id：%d    hook_slot：%d" % [state.head_id, state.hook_slot])
 	lines.append("拖动中：%s" % _harness.input_reader.is_drag_active())
 	lines.append("")
-	lines.append("输入快照：A=%s Shift+A=%s D=%s Shift+D=%s W=%s S=%s" % [
-		input_map["left_raise"], input_map["left_lower"],
-		input_map["right_raise"], input_map["right_lower"],
-		input_map["both_raise"], input_map["both_lower"]])
+	lines.append(
+		(
+			"输入快照：A=%s Shift+A=%s D=%s Shift+D=%s W=%s S=%s"
+			% [
+				input_map["left_raise"],
+				input_map["left_lower"],
+				input_map["right_raise"],
+				input_map["right_lower"],
+				input_map["both_raise"],
+				input_map["both_lower"]
+			]
+		)
+	)
 	lines.append("")
 	lines.append("边界自检（应恒为 通过）：")
-	lines.append("  stage_pos ∈ [0,1]        %s" % _ok(_in_unit(state.stage_pos.x) and _in_unit(state.stage_pos.y)))
+	lines.append(
+		(
+			"  stage_pos ∈ [0,1]        %s"
+			% _ok(_in_unit(state.stage_pos.x) and _in_unit(state.stage_pos.y))
+		)
+	)
 	lines.append("  stance ∈ [0,1]           %s" % _ok(state.stance >= 0.0 and state.stance <= 1.0))
 	lines.append("  facing 恰为 ±1（正/反两面）%s" % _ok(absf(state.facing) == 1.0))
-	lines.append("  turn_progress ∈ [0,1]    %s" % _ok(state.turn_progress >= 0.0 and state.turn_progress <= 1.0))
-	lines.append("  hand_angle ∈ [%.4f, %.4f] %s" % [PuppetState.HAND_ANGLE_MIN, PuppetState.HAND_ANGLE_MAX,
-		_ok(state.hand_angle.x >= PuppetState.HAND_ANGLE_MIN - 1e-6
-			and state.hand_angle.x <= PuppetState.HAND_ANGLE_MAX + 1e-6
-			and state.hand_angle.y >= PuppetState.HAND_ANGLE_MIN - 1e-6
-			and state.hand_angle.y <= PuppetState.HAND_ANGLE_MAX + 1e-6)])
+	lines.append(
+		(
+			"  turn_progress ∈ [0,1]    %s"
+			% _ok(state.turn_progress >= 0.0 and state.turn_progress <= 1.0)
+		)
+	)
+	lines.append(
+		(
+			"  hand_angle ∈ [%.4f, %.4f] %s"
+			% [
+				PuppetState.HAND_ANGLE_MIN,
+				PuppetState.HAND_ANGLE_MAX,
+				_ok(
+					(
+						state.hand_angle.x >= PuppetState.HAND_ANGLE_MIN - 1e-6
+						and state.hand_angle.x <= PuppetState.HAND_ANGLE_MAX + 1e-6
+						and state.hand_angle.y >= PuppetState.HAND_ANGLE_MIN - 1e-6
+						and state.hand_angle.y <= PuppetState.HAND_ANGLE_MAX + 1e-6
+					)
+				)
+			]
+		)
+	)
 	_state_label.text = "\n".join(lines)
 	_refresh_clock_panel()
 	_refresh_cue_panel()
@@ -339,15 +387,33 @@ func _refresh_clock_panel() -> void:
 	lines.append("")
 	lines.append("拍序号 beat_index：%d    距下一拍：%d ms" % [beat, _clock.time_to_next_beat_ms()])
 	lines.append("单拍时长：%.2f ms    BPM：%.1f" % [_stage_def.beat_duration_ms(), _stage_def.bpm])
-	lines.append("跨拍次数：%d    最近跨拍：%s" % [_crossing_count,
-		"尚未跨拍" if _last_crossing_ms < 0 else "%d ms" % _last_crossing_ms])
+	lines.append(
+		(
+			"跨拍次数：%d    最近跨拍：%s"
+			% [_crossing_count, "尚未跨拍" if _last_crossing_ms < 0 else "%d ms" % _last_crossing_ms]
+		)
+	)
 	lines.append("")
-	lines.append("时钟来源：%s" % ("[color=#6f6]音频播放位置[/color]" if driven
-		else "[color=#f96]自由计时（未取得音频位置）[/color]"))
+	lines.append(
+		(
+			"时钟来源：%s"
+			% ("[color=#6f6]音频播放位置[/color]" if driven else "[color=#f96]自由计时（未取得音频位置）[/color]")
+		)
+	)
 	lines.append("输出延迟 output_latency：%.1f ms" % (_clock.get_output_latency_s() * 1000.0))
-	lines.append("临时节拍音：%s%s" % [
-		"[color=#6f6]播放中[/color]" if _metronome.is_active() else "[color=#f66]本机不可用[/color]",
-		"" if _metronome_enabled else "（已用 M 关闭）"])
+	lines.append(
+		(
+			"临时节拍音：%s%s"
+			% [
+				(
+					"[color=#6f6]播放中[/color]"
+					if _metronome.is_active()
+					else "[color=#f66]本机不可用[/color]"
+				),
+				"" if _metronome_enabled else "（已用 M 关闭）"
+			]
+		)
+	)
 	lines.append("采样率：%.0f Hz" % _metronome.get_mix_rate())
 	lines.append("")
 	lines.append("说明：B 的正式锣鼓主音轨尚未交付，")
@@ -367,10 +433,16 @@ func _format_event(event: Dictionary) -> String:
 		if k == "kind":
 			continue
 		extra.append("%s=%s" % [k, payload[k]])
-	return "t=%-6d %-14s obj=%d cue=%s  %s" % [
-		event["time_ms"], event["kind"], event["object_id"],
-		"\"%s\"" % event["cue_id"] if event["cue_id"] != "" else "\"\"",
-		", ".join(extra)]
+	return (
+		"t=%-6d %-14s obj=%d cue=%s  %s"
+		% [
+			event["time_ms"],
+			event["kind"],
+			event["object_id"],
+			'"%s"' % event["cue_id"] if event["cue_id"] != "" else '""',
+			", ".join(extra)
+		]
+	)
 
 
 func _bar(value: float) -> String:

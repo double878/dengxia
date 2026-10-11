@@ -138,8 +138,12 @@ func _test_06_fast_turn(t: Variant) -> void:
 	t.check(float(right.puppets[0].facing) > 0.0, "前半段面向右（%.1f）" % float(right.puppets[0].facing))
 	t.check(float(left.puppets[0].facing) < 0.0, "后半段面向左（%.1f）" % float(left.puppets[0].facing))
 	# turn_progress 必须等于 abs(facing)，B 侧靠它判转身完成度
-	t.check_approx(float(right.puppets[0].turn_progress), absf(float(right.puppets[0].facing)),
-		1e-6, "turn_progress 与 |facing| 一致")
+	t.check_approx(
+		float(right.puppets[0].turn_progress),
+		absf(float(right.puppets[0].facing)),
+		1e-6,
+		"turn_progress 与 |facing| 一致"
+	)
 	t.finish("转身成立")
 
 
@@ -177,8 +181,10 @@ func _test_09_lamp_distance_direction(t: Variant) -> void:
 	var record: Variant = CMockPerformerScript.new().build()
 	var before: Variant = _snap_at(record, 5300)
 	var during: Variant = _snap_at(record, 6000)
-	t.check(float(during.lamp.distance) < float(before.lamp.distance),
-		"推拉段 distance 变小（%.4f < %.4f）" % [float(during.lamp.distance), float(before.lamp.distance)])
+	t.check(
+		float(during.lamp.distance) < float(before.lamp.distance),
+		"推拉段 distance 变小（%.4f < %.4f）" % [float(during.lamp.distance), float(before.lamp.distance)]
+	)
 	# 灯位事件必须带 String 命名空间的 object_id
 	var lamp_events: Array = _events_of_kind(record, "lamp_input_changed")
 	t.check_eq(lamp_events.size(), 2, "两条灯位事件")
@@ -219,8 +225,9 @@ func _test_11_wrong_beat_has_cue_fire(t: Variant) -> void:
 			wrong_only.append(e)
 	t.check_eq(wrong_only.size(), 2, "其中 2 条是错拍")
 	for e in wrong_only:
-		t.check(_has_event_at(record, "cue_fire", str(e.cue_id)),
-			"错拍 %s 有配对的 cue_fire" % str(e.cue_id))
+		t.check(
+			_has_event_at(record, "cue_fire", str(e.cue_id)), "错拍 %s 有配对的 cue_fire" % str(e.cue_id)
+		)
 	t.finish("忠实性成立")
 
 
@@ -232,8 +239,10 @@ func _test_12_missed_has_reason(t: Variant) -> void:
 		if str(e.kind) == "cue_miss" and str(e.payload.get("reason", "")) == "missed_outright":
 			found = true
 			# 完全没做 → 本就不该有 cue_fire
-			t.check(not _has_event_at(record, "cue_fire", str(e.cue_id)),
-				"漏做 %s 没有 cue_fire（正确）" % str(e.cue_id))
+			t.check(
+				not _has_event_at(record, "cue_fire", str(e.cue_id)),
+				"漏做 %s 没有 cue_fire（正确）" % str(e.cue_id)
+			)
 			t.check(e.payload.has("offset_ms"), "payload 带 offset_ms")
 	t.check(found, "存在 missed_outright 事件")
 	t.finish("漏做成立")

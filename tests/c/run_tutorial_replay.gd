@@ -30,7 +30,8 @@ func _run() -> void:
 	controller.swap_head(0)
 	harness.advance_steps(1)
 	for _i in range(10000):
-		if harness.runtime.is_over(): break
+		if harness.runtime.is_over():
+			break
 		harness.advance_steps(1)
 	level._process(0)
 	var record: CPerformanceRecord = harness.capture.record
@@ -42,7 +43,9 @@ func _run() -> void:
 		quit(1)
 		return
 	for kind: String in ["puppet_hook", "puppet_take_back", "head_swap"]:
-		check(record.events.any(func(e: Variant) -> bool: return str(e.kind) == kind), "未录制 " + kind)
+		check(
+			record.events.any(func(e: Variant) -> bool: return str(e.kind) == kind), "未录制 " + kind
+		)
 	game._choose_replay(true)
 	var replay: Node = game._replay
 	replay.set_process(false)
