@@ -91,3 +91,29 @@ A 套件的非法输入用例会故意输出 ERROR。完整第一关无头启动
 按用户要求，许仙与法海的站立身高参数从 300 调为 200，缩小约三分之一；两者实体与幕布投影共用 `FIGURE_HEIGHT`，实际冠帽轮廓高度接近门楼的房门上沿。脚点沿用 661 px 地面，锡杖和竹签连接跟随现有视图缩放。
 
 本次只调整显示尺寸并记录交付。脚本解析、gdformat、gdlint 通过；`tests/c/run_act2_opening.gd` 在 Windows 窗口中 117 项通过，已检查 `act2-scenery-onstage.png`。导入、60 帧无头启动、Windows Release 导出均退出 0，默认第一关启动仍有原有 ObjectDB/resource 退出提示；未重跑其他完整套件、未新增尺寸常量的镜像测试。命令沿用上方包装器，日志为 `act2-scale-parse` / `act2-scale-graphics` / `act2-scale-import` / `act2-scale-startup` / `act2-scale-export`。
+
+## 2026-10-11 树后与门内手动出场
+
+用户确认 1B / 2A / 3A / 4B / 5A：首次按 1 时法海在树右后方、按 2 时许仙在门洞内，各先露出部分身体；空格接手后手动分别向左／向右拖出。保留 200 身高、原地面、操作手和原输入。树的逐行外轮廓与右门框提供固定舞台遮罩，实体和投影同步隐藏被遮挡部分；幕布外竹签继续可见。实体及当前灯距投影走出入口后永久解除该人的遮罩。部分出场或完全出场后退场再上场均恢复原处和姿势，重复数字键不重置；遮挡区不响应影人的胸签抓取和右键退场。
+
+新增 `scripts/act2/act2_entrance.gd`、共享 shader include 和 `tests/c/run_act2_entrances.gd`，显示端只增加默认关闭的可选遮罩。未修改布景原图、场景或工程配置。PRD、技术设计、第二关定案及 README 已同步；本轮直接实现并自查，未使用子智能体或独立代理审查。
+
+回归先在旧实现复现 6 项入口／遮挡失败；遮挡区输入检查又复现左右键误命中，修复后结果如下：
+
+| 实际命令（`tools/run_godot.ps1 -GodotArgs`） | 结果 |
+| --- | --- |
+| `--headless --path . --check-only --script <五个变动脚本>` | 全部退出 0 |
+| `gdformat --check` / `gdlint` 五个变动脚本 | 全部通过 |
+| `--headless --path . --script res://tests/c/run_act2_entrances.gd` | 30 项，0 失败 |
+| `--path . --script res://tests/c/run_act2_entrances.gd` | Windows OpenGL，43 项，0 失败 |
+| `--path . --script res://tests/c/run_act2_opening.gd` | Windows OpenGL，117 项，0 失败 |
+| `--headless --path . --script res://tests/b/run_stage_visuals.gd` | 379 项，0 失败 |
+| `--path . --script res://tests/b/run_stage_walk.gd` | Windows OpenGL，24 项，0 失败 |
+| `--headless --path . --import` | 退出 0 |
+| `--headless --path . --quit-after 60` | 退出 0，原有 ObjectDB/resource 退出提示仍在 |
+| `--headless --path . --export-release "Windows Desktop" builds/dengxia.exe` | 退出 0 |
+| `--path builds --main-pack dengxia.pck res://scenes/act2/opening.tscn --quit-after 60` | Windows 图形启动退出 0 |
+
+使用同一 `D:\Godot\4.7.2\godot.exe`，精确版本 `4.7.2.stable.official.ed1daf0bf`，同版本导出模板存在。窗口测试经真实 viewport 输入管线执行，比较遮挡、无遮挡和缺席三种画面的像素：法海初始可见面积约为无遮挡的 36%，许仙约为 17%，投影亦为部分可见；已检查实际截图。未执行人工完整试玩或重跑 A/C 其他完整套件，未验证尚未接入的第二关整关录放。
+
+日志在忽略的 `builds/stage-realism/logs/entrance-*`；截图在 `builds/act2-opening/entrance-fahai-start.png`、`entrance-xuxian-start.png`、`entrance-fahai-out.png`、`entrance-xuxian-partial.png` 和 `entrance-both-out.png`。导出产物为 `builds/dengxia.exe` 与同目录 `dengxia.pck`；正式回归测试及引擎生成的 UID 保留，无临时入口需要清理。

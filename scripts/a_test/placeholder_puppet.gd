@@ -41,6 +41,8 @@ enum RenderMode { LEGACY, ENTITY, PROJECTION }
 @export var render_mode: RenderMode = RenderMode.LEGACY
 var _view_material: ShaderMaterial = null
 var _last_draw_state: Array = []
+## 仅第二关首次出场遮挡使用；空值不影响其余场景或第一关回放。
+var entrance_mask: Texture2D = null
 
 var puppet_state: PuppetState = null
 var lamp_state: LampState = null
@@ -140,6 +142,8 @@ func _update_view_material() -> void:
 		_view_material = ShaderMaterial.new()
 		_view_material.shader = shader
 	material = _view_material
+	_view_material.set_shader_parameter("entrance_active", entrance_mask != null)
+	_view_material.set_shader_parameter("entrance_mask", entrance_mask)
 	if render_mode == RenderMode.ENTITY:
 		_view_material.set_shader_parameter(
 			"environment",

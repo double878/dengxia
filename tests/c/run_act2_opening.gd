@@ -153,7 +153,7 @@ func test_controls(opening: Node) -> void:
 	controller.tick(1.0 / 60.0)
 	check(controller.get_puppet(1).stage_pos == xu_position, "旧拖动泄漏到许仙")
 	check(
-		controller.get_puppet(1).turn_progress == 1.0 and controller.get_puppet(1).facing == -1.0,
+		controller.get_puppet(1).turn_progress == 1.0 and controller.get_puppet(1).facing == 1.0,
 		"法海的翻面目标泄漏到许仙"
 	)
 	press(Vector2(960, 856))
@@ -216,11 +216,11 @@ func test_hand_drag(opening: Node) -> void:
 		press(at)
 		check(controller.is_dragging(), "操作手/手边竹签没有抓住胸签")
 		var motion := InputEventMouseMotion.new()
-		motion.position = at + Vector2(80, 0)
-		motion.relative = Vector2(80, 0)
+		motion.position = at + Vector2(-200, 0)
+		motion.relative = Vector2(-200, 0)
 		root.push_input(motion, true)
 		controller.tick(1.0 / 60.0)
-		check(state.stage_pos.x > before.x, "从操作手拖动没有移动当前影人")
+		check(state.stage_pos.x < before.x, "从操作手拖动没有移动当前影人")
 		check(
 			state.hand_angle == pose and controller.get_puppet(1).stage_pos == other,
 			"拖动改变了姿势或未接手影人"

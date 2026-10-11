@@ -5,6 +5,7 @@ const PuppetView := preload("res://scripts/a_test/placeholder_puppet.gd")
 const PuppetInput := preload("res://scripts/a_test/input_reader.gd")
 const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
 const OperatorHand := preload("res://scripts/b/operator_hand.gd")
+const Entrance := preload("res://scripts/act2/act2_entrance.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HAND_ANCHOR := Vector2(960, 856)
 const HAND_AREA := Rect2(768, 712, 384, 256)
@@ -29,6 +30,8 @@ var _pause_button: Button
 var _cast_labels: Array[Label] = []
 var _paused: bool = false
 var _accumulator: float = 0.0
+var _entrance := Entrance.new()
+var _entrance_complete: Array[bool] = [false, false]
 
 
 func _ready() -> void:
@@ -38,11 +41,12 @@ func _ready() -> void:
 	controller.clock = clock
 	controller.setup(2)
 	controller.controlled_id = -1
+	_entrance.setup(CLOTH)
 	for id in range(2):
 		var state: PuppetState = controller.get_puppet(id)
 		state.is_controlled = false
-		state.stage_pos = Vector2(0.35 if id == 0 else 0.66, CSceneryDef.LEVEL2_GATE_BASE_Y)
-		state.facing = 1.0 if id == 0 else -1.0
+		state.stage_pos = _entrance.positions[id]
+		state.facing = -1.0 if id == 0 else 1.0
 		state.hand_angle = Vector2(0.1, PI * 0.5) if id == 0 else Vector2.ZERO
 	lamp_controller.clock = clock
 	lamp_controller.setup()
@@ -131,6 +135,11 @@ func _input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if controller.controlled_id < 0:
 				return
+			if (
+				not _entrance_complete[controller.controlled_id]
+				and _entrance.blocks_point(controller.controlled_id, event.position)
+			):
+				return
 			var translated := event.duplicate() as InputEventMouseButton
 			translated.position = _grab_position(event.position)
 			puppet_event = translated
@@ -192,6 +201,8 @@ func _puppet_at(at: Vector2) -> int:
 		bounds = bounds.expand(view.hand_screen_position("left"))
 		bounds = bounds.expand(view.hand_screen_position("right"))
 		if bounds.grow(14).has_point(at):
+			if not _entrance_complete[id] and _entrance.blocks_point(id, at):
+				continue
 			return id
 	return -1
 
@@ -218,6 +229,7 @@ func _refresh_views() -> void:
 	_surface.update_light(
 		lamp_controller.lamp, clock.get_real_time_ms(), clock.get_song_time_ms(), clock.bpm
 	)
+	_sync_entrances()
 	_lamp.lamp = lamp_controller.lamp
 	_lamp.set_visual_time(clock.get_real_time_ms(), clock.get_song_time_ms(), clock.bpm)
 	_status.text = "第二关 · 端阳惊变    第一幕 · 法海劝酒"
@@ -231,12 +243,35 @@ func _refresh_views() -> void:
 		_hint.text = (
 			"正在接手：%s    空格换人 · 左键拖胸签或手边竹签 · A/D 抬手 · 右键点影人下场" % CAST[controller.controlled_id]
 		)
+		if not _entrance_complete[controller.controlled_id]:
+			_hint.text = (
+				"正在接手：%s · 左键拖手边竹签%s · 空格换人 · 右键退场"
+				% [
+					CAST[controller.controlled_id],
+					"向左走出树后" if controller.controlled_id == 0 else "向右走出门洞"
+				]
+			)
 	for id in range(_cast_labels.size()):
 		_cast_labels[id].text = (
 			"%d    %s\n%s" % [id + 1, CAST[id], "已上场" if on_stage.has(id) else "待上场"]
 		)
 	queue_redraw()
 	_foreground.queue_redraw()
+
+
+func _sync_entrances() -> void:
+	for id in range(_views.size()):
+		var entity: PlaceholderPuppet = _views[id]
+		var projection: PlaceholderPuppet = _surface.projection_views[id]
+		if (
+			on_stage.has(id)
+			and not _entrance_complete[id]
+			and _entrance.has_cleared(id, entity, projection)
+		):
+			_entrance_complete[id] = true
+		var mask: Texture2D = null if _entrance_complete[id] else _entrance.masks[id]
+		entity.entrance_mask = mask
+		projection.entrance_mask = mask
 
 
 func _build_hud() -> void:

@@ -64,6 +64,7 @@ py -3.13 -m venv .venv
 | `tests/b/run_act1_game_audio.gd` | 正式第一幕音源、等待与暂停 |
 | `tests/b/run_stage_walk.gd` | 桥面、距离驱动步态与正式入口 |
 | `tests/c/run_act2_opening.gd` | 三条第一关收场路径、点击切关、法海外观绑定、第二关开场键鼠与暂停 |
+| `tests/c/run_act2_entrances.gd` | 树后／门内首次手动出场、实体与投影遮挡、恢复进度、遮挡区命中与 Windows 像素验收 |
 | `tests/c/run_game_replay.gd` | 实际记录与选择/重看/跳过/再演 |
 | `tests/c/run_game_replay_success.gd` | 完整接还伞与回放 |
 | `tests/c/run_tutorial_replay.gd`（追加 `-- stage=2`） | 旧教学关挂起、取回、换头与节拍回放 |
@@ -81,6 +82,8 @@ py -3.13 -m venv .venv
 ```
 
 按 `1` 法海上场、`2` 许仙上场，空格循环接手；左键拖胸签或手边竹签，`A/D` 抬手，`Shift+A/D` 落手，`W/S` 双手抬落，右键点影人下场，滚轮与 `Q/E` 调灯，`ESC` 暂停。当前开场没有对白、递酒、变蛇、惊倒、整关计分与第二关录放，不会按旧教学时长自动结束。
+
+首次上场时，法海在树右后方露出一点，许仙在门洞内露出一点；空格接手后，从手边抓签，分别向左／向右拖出，出场过程受布景遮挡。完全走出后在布景前自由表演；右键退场后再上场恢复原位置、姿势和出场进度。点遮挡区域不会误抓取或退场，手边竹签始终可拖动。
 
 `tools/build_fahai_assets.py` 用 Pillow 和 NumPy 重建 atlas；原图保留在 `assets/puppets/source/`，该目录由 `.gdignore` 排除导入和导出。透明整身预览在 `docs/art/fahai-cutout.png`。不需要图像生成 API，也不增加游戏运行依赖。
 
