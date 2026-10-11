@@ -18,6 +18,7 @@ var sample_wall: int = 0
 var frame_times: Array[float] = []
 var last_opera_phase: String = ""
 var observed_gongs: int = 0
+var handoff_x: float = 0.0
 
 
 func _initialize() -> void:
@@ -36,6 +37,9 @@ func _run() -> void:
 	game = load("res://scenes/game_flow.tscn").instantiate()
 	root.add_child(game)
 	harness = game._level._harness
+	var xuxian: PuppetState = harness.runtime.puppet_controller.get_puppet(UmbrellaController.XUXIAN_ID)
+	var join: Vector2 = UmbrellaController.join_window_x(xuxian.stage_pos.x)
+	handoff_x = (join.x + join.y) * 0.5
 	game._level.set_process(false)
 	if not graphics:
 		harness.opera_audio.stop()
@@ -112,7 +116,7 @@ func _automate(delta: float) -> void:
 	var goal: float = bai.stage_pos.x
 	if opera.phase == "wait_arrival":
 		if arrival_wait_start < 0: arrival_wait_start = real
-		if real - arrival_wait_start > 800: goal = 0.236
+		if real - arrival_wait_start > 800: goal = handoff_x
 	elif opera.phase == "wait_take":
 		if take_wait_start < 0: take_wait_start = real
 		_key(KEY_A, real - take_wait_start > 700)
@@ -124,7 +128,7 @@ func _automate(delta: float) -> void:
 		elif opera.phase == "wait_return":
 			if return_wait_start < 0: return_wait_start = real
 			if real - return_wait_start > 700:
-				goal = 0.236
+				goal = handoff_x
 				_key(KEY_S, true)
 	elif opera.returned:
 		_key(KEY_S, true)
