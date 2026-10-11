@@ -398,17 +398,19 @@ func _level2_geometry(t: RefCounted) -> void:
 	# ⑧ 花篮（2026-10-11 加入）：与门楼左侧的菊花**左右对称**，且在门楼右侧、贴地同线。
 	t.check_approx(basket_rect.end.y, 661.0, 3.0,
 		"花篮底缘 y=661px（四件同地平线，贴地）")
-	#与菊花同高 → 视觉上是一对
-	t.check(absf(basket_rect.size.y - chrs_rect.size.y) <= 3.0,
-		"花篮高 %.0f 与菊花高 %.0f 同高（对称的一对）" % [
+	# 花篮 2026-10-11 放大 1.2 倍（165→198），略高于菊花读作「主花篮 + 陪衬菊石」，
+	# 但仍须与菊花同一量级（不超过 1.5 倍），否则左右对称读不出来。
+	t.check(basket_rect.size.y > chrs_rect.size.y
+		and basket_rect.size.y <= chrs_rect.size.y * 1.5,
+		"花篮高 %.0f 略大于菊花 %.0f（主次分明，≤1.5 倍）" % [
 			basket_rect.size.y, chrs_rect.size.y])
 	# 在门楼右侧且完整可见（不被门楼遮住）
 	t.check(basket_rect.position.x >= gate_rect.end.x,
 		"花篮左缘 %.0f ≥ 门楼右缘 %.0f（在门楼右侧）" % [
 			basket_rect.position.x, gate_rect.end.x])
 	var gap_b: float = basket_rect.position.x - gate_rect.end.x
-	t.check(gap_b >= 20.0 and gap_b <= 80.0,
-		"花篮与门楼间隙 %.0f px（20~80，对称于菊花的 37px 露出量）" % gap_b)
+	t.check(gap_b >= 8.0 and gap_b <= 30.0,
+		"花篮紧贴门楼右柱，间隙 %.0f px（8~30，用户「放在门的旁边」）" % gap_b)
 	# 不与树挤在一起
 	t.check(tree_rect.position.x - basket_rect.end.x >= 100.0,
 		"花篮右缘 %.0f 与树左缘 %.0f 留 %.0f px（不挤在一起）" % [
