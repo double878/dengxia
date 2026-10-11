@@ -30,6 +30,7 @@ func run_all() -> Dictionary:
 	_texture_contract(t)
 	_view_scripts_load(t)
 	_empty_stage_fallback(t)
+	_level2_geometry(t)
 	_geometry_on_canvas(t)
 	_constants_consistency(t)
 
@@ -289,10 +290,93 @@ func _geometry_on_canvas(t: RefCounted) -> void:
 ## 未知关卡返回空布景，而不是静默顶替成第一关的
 func _empty_stage_fallback(t: RefCounted) -> void:
 	t.begin("未知关卡返回空布景")
-	var empty: CSceneryDef = DefScript.make_stage(2)
-	t.check(empty.items.is_empty(), "第 2 关布景为空（未实现就是未实现，不拿第一关顶替）")
-	t.check_eq(empty.stage_id, 2, "空布景仍携带 stage_id 供显示端报错用")
+	# 第 3 关仍未实现（不是拿已有关卡顶替）
+	var empty: CSceneryDef = DefScript.make_stage(3)
+	t.check(empty.items.is_empty(), "第 3 关布景为空（未实现就是未实现，不拿第一关顶替）")
+	t.check_eq(empty.stage_id, 3, "空布景仍携带 stage_id 供显示端报错用")
 	t.check(DefScript.make_stage(1).items.size() > 0, "第 1 关布景非空")
+	# 第 2 关自 2026-10-11 起有自己的布景（门楼 + 菊石 + 垂柳枝）
+	t.check_eq(DefScript.make_stage(2).items.size(), 3,
+		"第 2 关有自己的布景（3 件：门楼 / 菊花石 / 垂柳枝）")
+
+
+## 第二关布景的几何契约（2026-10-11 用户定案）。
+## 三件布景的位置来自用户参考图目测，全部钉成断言防漂移。
+func _level2_geometry(t: RefCounted) -> void:
+	t.begin("第二关布景几何（门楼 / 菊石 / 垂柳）")
+	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
+	var def: CSceneryDef = DefScript.make_stage(2)
+	t.check_eq(def.stage_id, 2, "第 2 关 stage_id = 2")
+	t.check_eq(def.items.size(), 3, "共 3 件布景")
+
+	# 逐件量出贴图绘制矩形（公式与 CSceneryView._draw_texture_item 一致）
+	for item in def.items:
+		var img := Image.load_from_file(
+			ProjectSettings.globalize_path(str(item.get("texture", ""))))
+		if img == null:
+			t.check(false, "%s 贴图可读（第二关几何断言前置）" % item.get("id", "?"))
+			continue
+		var scale: float = DefScript.TEXTURE_SCALE_PX
+		if item.has("texture_scale_px"):
+			scale = float(item["texture_scale_px"])
+		var foot: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
+		var target := Vector2(float(item.get("anchor_x", 0.0)) * 1920.0,
+			float(item.get("anchor_y", 0.0)) * 1080.0)
+		var r := Rect2(target - foot * scale,
+			Vector2(float(img.get_width()), float(img.get_height())) * scale)
+		# ① 三件都必须完整落在幕布里
+		t.check(r.position.x >= cloth.position.x - 0.5
+			and r.end.x <= cloth.end.x + 0.5
+			and r.position.y >= cloth.position.y - 0.5
+			and r.end.y <= cloth.end.y + 0.5,
+			"%s 完整入幕布（x %.0f~%.0f  y %.0f~%.0f）" % [
+				item.get("id", "?"), r.position.x, r.end.x, r.position.y, r.end.y])
+		# ② 只允许水平平移（第二关同样受这条约束）
+		t.check(item.has("pan_x"), "%s 有 pan_x 字段（水平平移口）" % item.get("id", "?"))
+	#③ 门楼与菊石「贴地」：底缘应贴近幕布底缘（参考图里它们站在地上）
+	var gate_rect: Rect2 = Rect2()
+	var chrs_rect: Rect2 = Rect2()
+	var branch_rect: Rect2 = Rect2()
+	for item in def.items:
+		var img2 := Image.load_from_file(
+			ProjectSettings.globalize_path(str(item.get("texture", ""))))
+		if img2 == null:
+			continue
+		var sc: float = float(item.get("texture_scale_px", DefScript.TEXTURE_SCALE_PX))
+		var ft: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
+		var tg := Vector2(float(item.get("anchor_x", 0.0)) * 1920.0,
+			float(item.get("anchor_y", 0.0)) * 1080.0)
+		var rr := Rect2(tg - ft * sc,
+			Vector2(float(img2.get_width()), float(img2.get_height())) * sc)
+		match str(item.get("id", "")):
+			"gate": gate_rect = rr
+			"chrysanthemum": chrs_rect = rr
+			"willow_branch": branch_rect = rr
+	t.check_approx(gate_rect.end.y, 661.0, 3.0,
+		"门楼底缘 y=661px（贴地，参考图里门楼站在地上）")
+	# 菊石与门楼**同一地平线**（用户 2026-10-11 定案；第一版 635 与门楼 661差 26px，已修）
+	t.check_approx(chrs_rect.end.y, 661.0, 3.0,
+		"菊石底缘 y=661px（与门楼同地平线）")
+	# ④ 垂柳枝是**悬垂件**：底缘明显高于门楼（不接地）
+	t.check(branch_rect.end.y < gate_rect.end.y - 100.0,
+		"垂柳枝悬垂不接地（底缘 %.0f，比门楼底 %.0f 高 %.0f px）" % [
+			branch_rect.end.y, gate_rect.end.y, gate_rect.end.y - branch_rect.end.y])
+	# ⑤ 菊石从门楼左侧露出（几何上无法完整放到门楼左侧：门楼左缘 109 − 幕布左 66 = 35px
+	#    < 菊花最小宽约 46px），故按参考图取「被门楼遮住大部、左侧露出约 37px」
+	t.check(chrs_rect.position.x < gate_rect.position.x,
+		"菊石左缘 %.0f < 门楼左缘 %.0f（菊石在门楼左侧露出）" % [
+			chrs_rect.position.x, gate_rect.position.x])
+	var exposed: float = gate_rect.position.x - chrs_rect.position.x
+	t.check(exposed >= 20.0 and exposed <= 60.0,
+		"菊石在门楼左侧露出 %.0f px（要求 20~60，能辨认又不喧宾夺主）" % exposed)
+	#⑥ 垂柳在门楼右侧
+	t.check(branch_rect.position.x > gate_rect.end.x,
+		"垂柳左缘 %.0f >门楼右缘 %.0f（柳在门右侧）" % [
+			branch_rect.position.x, gate_rect.end.x])
+	# ⑦ 画面右半留给影人：布景整体不得越到 0.60 以右
+	t.check(gate_rect.end.x < 1920.0 * 0.60,
+		"门楼右缘 %.0f < 0.60幕宽（%.0f），右侧留给影人" % [
+			gate_rect.end.x, 1920.0 * 0.60])
 
 
 ## 常量与数据同源：改常量忘改数据（或反过来）必须被测试抓住

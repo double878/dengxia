@@ -146,6 +146,47 @@ const SCENERY_TEX_BRIDGE: String = "res://assets/scenery/level1/arch_bridge.png"
 ## （皮影皮革质感：褐干 + 皮影绿树冠 + 青蓝分层 + 奶白雕边高光）。
 const SCENERY_TEX_WILLOW: String = "res://assets/scenery/level1/willow.png"
 
+## ══════════ 第二关「游园惊梦」布景贴图（用户 2026-10-11 提供三份woop） ══════════
+## 参考构图：用户手绘/AI 参考图——门楼居**左半幅**（带屋檐、门扇、花窗），
+## 菊石盆景在**最左**，柳枝从门右上垂下；三具影人在画面右侧。
+## 三份素材都是 woop@2、**单件整图**（joints=0，无需拆件），已从 webp 转 PNG
+## （Compatibility 渲染器上 webp 会画白块——与第一关同一条教训）。
+const SCENERY_TEX_GATE: String = "res://assets/scenery/level2/gate.png"
+const SCENERY_TEX_CHRYS: String = "res://assets/scenery/level2/chrysanthemum.png"
+const SCENERY_TEX_WILLOW_BRANCH: String = "res://assets/scenery/level2/willow_branch.png"
+
+## —— 第二关三件布景的定位常量（全部由「参考图目测 → 幕布归一化」推出）——
+##
+## 门楼：`architecture-008`，素材 **1870×1314**（横式建筑，宽高比 1.423）。
+## 参考图里屋顶顶贴幕布上缘、底座贴地，故**高度先定**（549px），宽度由比例推出（782px）。
+## scale = 549/1314 = **0.417954**；foot 取**底边左点**（建筑贴图的锚点惯例与树相反，
+## 建筑靠左对齐更可控）。实测位置：左缘 x=109px、顶 y=111px、底 y=661px。
+const LEVEL2_GATE_SCALE: float = 0.417954
+const LEVEL2_GATE_X: float = 0.056700# 左缘 109px 归一化
+const LEVEL2_GATE_BASE_Y: float = 0.612037   ## 底座 y=661px（贴地，与桥同地平线）
+
+## 菊花：`plant-ornamental-005`（墨绿），素材 **1020×1807**（竖式，含底座山石）。
+## 参考图里在最左侧、底座贴地。高368px→ scale = 368/1807 = **0.203376**；
+## foot 取**底边中心**（花盆正中，竖式花木与树同惯例）。
+const LEVEL2_CHRYS_SCALE: float = 0.203376
+## ⚠️ 菊花**不能完整放在门楼左侧**（用户 2026-10-11 选择「移到门楼左侧」，但实测几何不允许）：
+## 门楼左缘 x=109、幕布左缘 x=66，中间仅 **35px** 空隙；而菊花最小宽约 46px（高 82）
+## ——**装不下**。门楼再左移也不行（左移到 66 则空隙为 0，更窄）。
+## 故按参考图的真实构图执行：**菊草从门楼左侧墙后伸出、被门楼遮住大部**，
+## 只在门楼左缘外露出 37px（可辨认是菊草）。这与参考图里菊草被墙遮住的效果一致。
+const LEVEL2_CHRYS_X: float = 0.091522         ## 左缘 72px（幕布左+6），露出 37px
+const LEVEL2_CHRYS_BASE_Y: float = 0.612037   ## 底座 y=661px（**与门楼同一地平线**）
+
+## 柳枝：`plant-ornamental-013`（粉绿），素材 **1377×1866**。
+## 参考图里是门右上垂下的柳枝（不是第一关那种整树），体量较小：高 294px。
+## 左缘 921px = 门楼右缘(891) + 30px 间隙——**必须在门楼右侧之外**，
+## 否则柳枝会与门楼叠在一起（第一版试算放在 806px，测试当场抓住，已修）。
+const LEVEL2_BRANCH_SCALE: float = 0.157557   ## 294/1866
+const LEVEL2_BRANCH_X: float = 0.536145# 左缘 921px
+## 悬垂件的顶须留内边距：顶 y=112（幕布上缘 92 + 20）、底 y=407，比门楼底(661) 高 254px。
+## 第一版把base_y 取 0.3375 → 顶落到 y=70，**越出幕布上缘 22px**，测试当场抓住，已修。
+const LEVEL2_BRANCH_BASE_Y: float = 0.376852  ## 悬挂下端 y=407px（不接地，悬垂）
+
 ## 贴图统一像素比例：素材 1 像素 = 画布多少像素。
 ## 0.42 → 完整拱素材 1842 宽 = 774 画布像素（幕布宽 1788 的 43%），
 ## 桥基中心锚在 x = 0.73 时桥跨约 1016~1787px，整体完整落在幕布内。
@@ -255,6 +296,63 @@ static func make_stage(stage_id: int) -> CSceneryDef:
 	match stage_id:
 		1:
 			return make_level1()
+		2:
+			return make_level2()
 	var empty := CSceneryDef.new()
 	empty.stage_id = stage_id
 	return empty
+
+
+## 第二关「游园惊梦」布景（用户 2026-10-11 定案）：门楼 + 菊花石 + 垂柳枝。
+## 构图来自用户参考图：门楼占**左半幅**，菊石在最左，垂柳从门右上垂下；
+## 画面右侧留给三具影人（人物站位归 A 侧，本文件一概不动）。
+##
+## ⚠️ 与第一关的两点差异（决定了本关的锚点取向）：
+##   ① **不与桥同地平线**——第一关有桥，桥脚定义了 0.53 这条线；第二关没有桥，
+##      门楼/菊石改为**贴幕布底缘**（base_y ≈ 0.59~0.61），避免出现「悬空的建筑」。
+##   ② **柳枝是悬垂件**，底端不接地，故它的 base_y 明显高于另两件（0.3375）。
+static func make_level2() -> CSceneryDef:
+	var def := CSceneryDef.new()
+	def.stage_id = 2
+	def.items = [
+		{
+			"id": "gate",
+			"kind": KIND_ARCH_BRIDGE,   # 复用建筑类回退画法；贴图存在时不会走到
+			"anchor_x": LEVEL2_GATE_X,
+			"anchor_y": LEVEL2_GATE_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_GATE,
+			# 锚点 = 贴图**底边左点**（建筑惯例；树/花木用底边中心）。
+			# 素材 1870×1314，foot 与 anchor 对齐 → 整门楼左缘即anchor_x。
+			"texture_foot_px": Vector2(0.0, 1314.0),
+			"texture_scale_px": LEVEL2_GATE_SCALE,
+			"params": {"deck_rise": 0.10, "deck_thickness": 0.048, "arch_end_x": 0.45},
+		},
+		{
+			"id": "chrysanthemum",
+			"kind": KIND_WILLOW,        # 同上：有贴图不走回退
+			"anchor_x": LEVEL2_CHRYS_X,
+			"anchor_y": LEVEL2_CHRYS_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_CHRYS,
+			# 锚点 = 贴图底边中心（花盆正中）。素材 1020×1807。
+			"texture_foot_px": Vector2(510.0, 1807.0),
+			"texture_scale_px": LEVEL2_CHRYS_SCALE,
+			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
+				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+		},
+		{
+			"id": "willow_branch",
+			"kind": KIND_WILLOW,
+			"anchor_x": LEVEL2_BRANCH_X,
+			"anchor_y": LEVEL2_BRANCH_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_WILLOW_BRANCH,
+			# 锚点 = 贴图**底边中心**（垂柳枝的悬挂点）。素材 1377×1866。
+			"texture_foot_px": Vector2(688.0, 1866.0),
+			"texture_scale_px": LEVEL2_BRANCH_SCALE,
+			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
+				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+		},
+	]
+	return def
