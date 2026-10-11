@@ -4,6 +4,8 @@
 >
 > 本次仅接入 `scenes/act2/opening.tscn`：复用 `PuppetController`、`MusicClock`、`LampController`、`InputReader`、`StageBackdrop` 和 `StageSurface`，不实例化旧教学关。开场没有正式音源，唯一时钟冻结歌曲时间、保留真实时间用于火光；不启动整关判定或录放，也不按旧 45 秒自动收场。后续剧情接入正式编排与 `CLiveCapture` 后才验收完整第二关录放。
 >
+> 2026-10-11 布景接入：第二关第一幕复用 `CStageBinding(stage_id=2, enable_rain=false)`，加载队友 PR #9 的门楼、菊石与柳树，保持原构图和幕布裁剪；布景位于幕布之上、实体影人之下。人物脚点取 `CSceneryDef.LEVEL2_GATE_BASE_Y`（约 y=661 px），不沿用第一关桥面或雨幕。两关共用 `OperatorHand` 绘制操作手，第二关空格接手后允许左键拖胸签或手边竹签。
+>
 > 法海使用 atlas 皮肤编号 3，运行影人仍是 0 号；`PlaceholderPuppet.skin_override` 只控制显示，不改 `PuppetState` 身份或第一关的头架归属。实体和投影均设置同一覆盖与身高；锡杖绑定右腕，饰带绑定躯干，共用翻面和灯距变换。参考 JPEG、手工轮廓及生成脚本保留；alpha 为白底估算，背面仅镜像，不宣称测得透射率或独立背面。
 >
 > 第一关收场页消费鼠标左/中/右键按下事件，排除滚轮和释放，延后一帧切换且禁止重复加载。装饰 Control 忽略鼠标，首次观看选择仍由按钮处理；离开时释放 `CResultFlow` 及旧记录、停止旧回放，再进入第二关。新接手接口清空旧拖动和翻面瞬态，防止动作串到另一影人。

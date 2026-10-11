@@ -63,3 +63,25 @@ A 套件的非法输入用例会故意输出 ERROR。完整第一关无头启动
 定向测试先在旧实现复现 5 项手边拖动失败；修复后无头回归 70 项、Windows OpenGL 窗口回归 77 项通过，覆盖未接手不拖动、手掌/短签落点、移动后重抓、换人后的拖动对象、松开结束及手掌像素可见性。第一关 `tests/b/run_stage_walk.gd` 图形回归 24 项通过，已检查两关截图；未执行人工试玩或重跑其他完整套件。四个改动脚本解析、格式与 lint 通过；导入、60 帧启动、Windows Release 导出和 PCK 第二关启动均退出 0。默认第一关启动仍有前述 ObjectDB/resource 基线退出提示。
 
 本次命令沿用上方包装器：开场回归使用 `hand-headless-final` / `hand-graphics-final` 日志名，第一关图形回归使用 `hand-level1-graphics`；门禁使用 `hand-import` / `hand-startup` / `hand-export` / `hand-packed-opening`。日志保存在 `builds/stage-realism/logs/hand-*`，新增截图为 `builds/act2-opening/operator-hand-idle.png` 与 `operator-hand-dragged.png`。自查确认只涉及操作手绘制、输入映射和相应回归；没有调用子智能体。
+
+## 2026-10-11 队友布景接入与主干合并
+
+队友 [PR #9](https://github.com/double878/dengxia/pull/9) 已合入 `main@955d72a`，交付的是门楼、菊石与柳树布景资源及数据。先将最新主干合入 `feat-act2`，自动合并无冲突；再在正式第二关开场挂载 `CStageBinding(stage_id=2, enable_rain=false)`，人物脚点取第二关门楼基线（约 661 px）。布景构图、贴图与裁剪沿用队友实现，三份新增 C 脚本统一格式；第一关衔接、操作手和空格接手保持可用。完整第二关剧情的交付边界沿用上文。
+
+新增回归先在未接入版本复现三条收场路径均缺少布景绑定，接入后的验证如下：
+
+| 检查 | 本轮实际结果 |
+| --- | --- |
+| 五个变动脚本解析 | 全部退出 0 |
+| gdformat / gdlint scripts tests | 106 文件格式通过，lint 无问题 |
+| 第二关切关与操演，无头 / Windows 窗口 | 109 / 117 项通过；检查三件实际贴图、幕布裁剪、层级、地面与键鼠 |
+| 布景数据套件 | 116 项通过 |
+| A 行为套件 | 1284 + 22 项通过，0 失败 |
+| B 视觉套件 | 379 项通过 |
+| C 录放套件 | 459 项通过，0 失败 |
+| 正式第一关回放 / 成功演出回放 | 37 / 12 项通过 |
+| 第一关 Windows 画面与步态 | 24 项通过 |
+| 导入、60 帧启动、Windows Release 导出 | 全部退出 0 |
+| 导出 PCK 中第二关开场启动 | 退出 0 |
+
+命令仍为上方 `tools/run_godot.ps1` 包装器，测试入口见表中套件；本轮日志前缀为 `scenery-integration-*`。实际窗口截图见 `builds/act2-opening/act2-scenery-onstage.png` 与 `operator-hand-idle.png`。已检查窗口画面；键鼠通过 viewport 输入管线自动验证，未执行人工完整试玩。非法输入测试按预期输出 ERROR；默认第一关启动与 A 套件仍有已知 ObjectDB/resource 退出提示。未调用子智能体，已直接审查集成差异、双方布景数据与状态边界。

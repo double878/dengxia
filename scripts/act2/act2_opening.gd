@@ -39,7 +39,7 @@ func _ready() -> void:
 	for id in range(2):
 		var state: PuppetState = controller.get_puppet(id)
 		state.is_controlled = false
-		state.stage_pos = Vector2(0.35 if id == 0 else 0.66, 0.53)
+		state.stage_pos = Vector2(0.35 if id == 0 else 0.66, CSceneryDef.LEVEL2_GATE_BASE_Y)
 		state.facing = 1.0 if id == 0 else -1.0
 		state.hand_angle = Vector2(0.1, PI * 0.5) if id == 0 else Vector2.ZERO
 	lamp_controller.clock = clock
@@ -56,6 +56,11 @@ func _ready() -> void:
 	_surface.projection_views[0].skin_override = 3
 	for projection: PlaceholderPuppet in _surface.projection_views:
 		projection.figure_height = 300.0
+	var binding := CStageBinding.new()
+	binding.name = "CStageBinding"
+	binding.stage_id = 2
+	binding.enable_rain = false
+	add_child(binding)
 	for id in range(2):
 		var view: PlaceholderPuppet = PuppetView.new()
 		view.name = "Fahai" if id == 0 else "Xuxian"

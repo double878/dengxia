@@ -77,10 +77,44 @@ func test_transition(route: String) -> void:
 	else:
 		check(opening.get("on_stage").is_empty(), "切关点击穿透使影人提前上场")
 		check(game.get_child_count() == 1, "重复点击加载了多个场景")
+		test_scenery(opening)
 		if route == "decline":
 			await test_controls(opening)
 	game.queue_free()
 	await process_frame
+
+
+func test_scenery(opening: Node) -> void:
+	var binding := opening.get_node_or_null("CStageBinding") as CStageBinding
+	check(binding != null, "正式第二关缺少队友布景绑定")
+	if binding == null:
+		return
+	check(binding.stage_id == 2, "第二关错误加载第一关布景")
+	check(not binding.enable_rain and binding.get("_rain") == null, "第二关沿用了游湖雨幕")
+	var scenery := binding.get("_scenery") as CSceneryView
+	check(scenery != null, "布景绑定存在但未生成布景")
+	if scenery == null:
+		return
+	var data := scenery.get("_def") as CSceneryDef
+	var ids: Array[String] = []
+	for item: Dictionary in data.items:
+		ids.append(str(item.get("id", "")))
+		var texture := scenery._get_texture(str(item.get("texture", ""))) as Texture2D
+		check(texture != null and texture.get_width() > 0, "布景贴图没有实际加载：" + ids.back())
+	ids.sort()
+	check(ids == ["chrysanthemum", "gate", "willow_branch"], "正式第二关不是门楼/菊石/柳树构图")
+	check(scenery.clip_rect == Rect2(66, 92, 1788, 588), "布景没有裁入幕布")
+	check(
+		(
+			scenery.z_index > opening.get("_surface").z_index
+			and scenery.z_index < opening.get("_views")[0].z_index
+		),
+		"布景遮住影人或被幕布遮住"
+	)
+	var controller: PuppetController = opening.get("controller")
+	for state: PuppetState in controller.puppets:
+		check(absf(state.stage_pos.y * 1080 - 661) < 1, "人物脚点未对齐第二关地面")
+	check(controller.walk_path == null, "第二关仍沿第一关桥面行走")
 
 
 func test_controls(opening: Node) -> void:
@@ -103,6 +137,7 @@ func test_controls(opening: Node) -> void:
 	check(view.get("skin_override") == 3, "法海没有独立身体")
 	check(opening.get("_surface").projection_views[0].get("skin_override") == 3, "投影没用法海")
 	check(not opening.get("_surface").front_view, "开场误显示幕前")
+	await capture("act2-scenery-onstage")
 	fahai.hand_angle = Vector2(0.4, 1.2)
 	var pose: Vector2 = fahai.hand_angle
 	await test_hand_drag(opening)

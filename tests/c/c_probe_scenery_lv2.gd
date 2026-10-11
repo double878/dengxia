@@ -43,26 +43,38 @@ func _build() -> void:
 	root.add_child(scenery)
 
 
-class BoardLayer extends Node2D:
+class BoardLayer:
+	extends Node2D
+
 	func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, CANVAS_SIZE), Color("#3a2a18"))
 		draw_rect(CLOTH, Color("#a3977c"))
 		# 刻度参考（0.1 间隔）
 		for i in range(1, 10):
 			var x: float = float(i) / 10.0 * CANVAS_SIZE.x
-			draw_line(Vector2(x, CLOTH.position.y), Vector2(x, CLOTH.end.y),
-				Color(1, 1, 1, 0.06), 1.0)
-			draw_string(ThemeDB.fallback_font, Vector2(x + 4, CLOTH.position.y + 20),
-				"%.1f" % (float(i) / 10.0), HORIZONTAL_ALIGNMENT_LEFT, -1, 16,
-				Color(1, 1, 1, 0.4))
+			draw_line(
+				Vector2(x, CLOTH.position.y), Vector2(x, CLOTH.end.y), Color(1, 1, 1, 0.06), 1.0
+			)
+			draw_string(
+				ThemeDB.fallback_font,
+				Vector2(x + 4, CLOTH.position.y + 20),
+				"%.1f" % (float(i) / 10.0),
+				HORIZONTAL_ALIGNMENT_LEFT,
+				-1,
+				16,
+				Color(1, 1, 1, 0.4)
+			)
 
 
-class Figure extends Node2D:
+class Figure:
+	extends Node2D
 	var x_pos: float = 0.0
+
 	func _draw() -> void:
 		var y: float = 0.62 * CANVAS_SIZE.y
-		draw_rect(Rect2(Vector2(x_pos - 30.0, y - 130.0), Vector2(60.0, 130.0)),
-			Color(1, 1, 1, 0.18))
+		draw_rect(
+			Rect2(Vector2(x_pos - 30.0, y - 130.0), Vector2(60.0, 130.0)), Color(1, 1, 1, 0.18)
+		)
 
 
 func _on_frame() -> void:
@@ -83,12 +95,16 @@ func _save_and_quit() -> void:
 			continue
 		var sc: float = float(it.get("texture_scale_px", DefScript.TEXTURE_SCALE_PX))
 		var ft: Vector2 = it.get("texture_foot_px", Vector2.ZERO)
-		var tg := Vector2(float(it.get("anchor_x", 0.0)) * 1920.0,
-			float(it.get("anchor_y", 0.0)) * 1080.0)
-		var r := Rect2(tg - ft * sc,
-			Vector2(float(img.get_width()), float(img.get_height())) * sc)
-		print("   %-14s x %.0f~%.0f  y %.0f~%.0f  (scale %.4f)" % [
-			str(it.get("id", "?")), r.position.x, r.end.x, r.position.y, r.end.y, sc])
+		var tg := Vector2(
+			float(it.get("anchor_x", 0.0)) * 1920.0, float(it.get("anchor_y", 0.0)) * 1080.0
+		)
+		var r := Rect2(tg - ft * sc, Vector2(float(img.get_width()), float(img.get_height())) * sc)
+		print(
+			(
+				"   %-14s x %.0f~%.0f  y %.0f~%.0f  (scale %.4f)"
+				% [str(it.get("id", "?")), r.position.x, r.end.x, r.position.y, r.end.y, sc]
+			)
+		)
 
 	var img2: Image = get_root().get_texture().get_image()
 	if img2 == null:
