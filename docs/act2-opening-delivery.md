@@ -85,3 +85,43 @@ A 套件的非法输入用例会故意输出 ERROR。完整第一关无头启动
 | 导出 PCK 中第二关开场启动 | 退出 0 |
 
 命令仍为上方 `tools/run_godot.ps1` 包装器，测试入口见表中套件；本轮日志前缀为 `scenery-integration-*`。实际窗口截图见 `builds/act2-opening/act2-scenery-onstage.png` 与 `operator-hand-idle.png`。已检查窗口画面；键鼠通过 viewport 输入管线自动验证，未执行人工完整试玩。非法输入测试按预期输出 ERROR；默认第一关启动与 A 套件仍有已知 ObjectDB/resource 退出提示。未调用子智能体，已直接审查集成差异、双方布景数据与状态边界。
+
+## 2026-10-11 人物缩小至房门高度
+
+按用户要求，许仙与法海的站立身高参数从 300 调为 200，缩小约三分之一；两者实体与幕布投影共用 `FIGURE_HEIGHT`，实际冠帽轮廓高度接近门楼的房门上沿。脚点沿用 661 px 地面，锡杖和竹签连接跟随现有视图缩放。
+
+本次只调整显示尺寸并记录交付。脚本解析、gdformat、gdlint 通过；`tests/c/run_act2_opening.gd` 在 Windows 窗口中 117 项通过，已检查 `act2-scenery-onstage.png`。导入、60 帧无头启动、Windows Release 导出均退出 0，默认第一关启动仍有原有 ObjectDB/resource 退出提示；未重跑其他完整套件、未新增尺寸常量的镜像测试。命令沿用上方包装器，日志为 `act2-scale-parse` / `act2-scale-graphics` / `act2-scale-import` / `act2-scale-startup` / `act2-scale-export`。
+
+## 2026-10-11 树后与门内手动出场
+
+用户确认 1B / 2A / 3A / 4B / 5A：首次按 1 时法海在树右后方、按 2 时许仙在门洞内，各先露出部分身体；空格接手后手动分别向左／向右拖出。保留 200 身高、原地面、操作手和原输入。树的逐行外轮廓与右门框提供固定舞台遮罩，实体和投影同步隐藏被遮挡部分；幕布外竹签继续可见。实体及当前灯距投影走出入口后永久解除该人的遮罩。部分出场或完全出场后退场再上场均恢复原处和姿势，重复数字键不重置；遮挡区不响应影人的胸签抓取和右键退场。
+
+新增 `scripts/act2/act2_entrance.gd`、共享 shader include 和 `tests/c/run_act2_entrances.gd`，显示端只增加默认关闭的可选遮罩。未修改布景原图、场景或工程配置。PRD、技术设计、第二关定案及 README 已同步；本轮直接实现并自查，未使用子智能体或独立代理审查。
+
+回归先在旧实现复现 6 项入口／遮挡失败；遮挡区输入检查又复现左右键误命中，修复后结果如下：
+
+| 实际命令（`tools/run_godot.ps1 -GodotArgs`） | 结果 |
+| --- | --- |
+| `--headless --path . --check-only --script <五个变动脚本>` | 全部退出 0 |
+| `gdformat --check` / `gdlint` 五个变动脚本 | 全部通过 |
+| `--headless --path . --script res://tests/c/run_act2_entrances.gd` | 30 项，0 失败 |
+| `--path . --script res://tests/c/run_act2_entrances.gd` | Windows OpenGL，43 项，0 失败 |
+| `--path . --script res://tests/c/run_act2_opening.gd` | Windows OpenGL，117 项，0 失败 |
+| `--headless --path . --script res://tests/b/run_stage_visuals.gd` | 379 项，0 失败 |
+| `--path . --script res://tests/b/run_stage_walk.gd` | Windows OpenGL，24 项，0 失败 |
+| `--headless --path . --import` | 退出 0 |
+| `--headless --path . --quit-after 60` | 退出 0，原有 ObjectDB/resource 退出提示仍在 |
+| `--headless --path . --export-release "Windows Desktop" builds/dengxia.exe` | 退出 0 |
+| `--path builds --main-pack dengxia.pck res://scenes/act2/opening.tscn --quit-after 60` | Windows 图形启动退出 0 |
+
+使用同一 `D:\Godot\4.7.2\godot.exe`，精确版本 `4.7.2.stable.official.ed1daf0bf`，同版本导出模板存在。窗口测试经真实 viewport 输入管线执行，比较遮挡、无遮挡和缺席三种画面的像素：法海初始可见面积约为无遮挡的 36%，许仙约为 17%，投影亦为部分可见；已检查实际截图。未执行人工完整试玩或重跑 A/C 其他完整套件，未验证尚未接入的第二关整关录放。
+
+日志在忽略的 `builds/stage-realism/logs/entrance-*`；截图在 `builds/act2-opening/entrance-fahai-start.png`、`entrance-xuxian-start.png`、`entrance-fahai-out.png`、`entrance-xuxian-partial.png` 和 `entrance-both-out.png`。导出产物为 `builds/dengxia.exe` 与同目录 `dengxia.pck`；正式回归测试及引擎生成的 UID 保留，无临时入口需要清理。
+
+## 2026-10-11 许仙改为门洞中央直接上场
+
+用户要求许仙直接在门的中间出场，覆盖上一版许仙从右门框逐渐露出的定案。现在按 2 时，许仙实体和投影在门洞中央（约 x=434.4 px）完整显示；仍需空格接手，退场再上场恢复原处。删除许仙专用门洞遮罩和右侧出场判据；法海沿用树后首次遮挡与手动走出。同步 PRD、技术设计、README 和第二关定案，原计划注明后续调整。
+
+更新既有出场回归后，旧实现先复现 6 项位置／完整显露／胸签抓取失败；修正后 Windows OpenGL 出场测试 40 项、两关衔接与操演 117 项全部通过。实体和投影的许仙初始可见像素与无遮挡画面完全一致，已检查 `builds/act2-opening/entrance-xuxian-start.png`，人物落在门洞中间。三个变动脚本解析、gdformat 和 gdlint 通过；资源导入、60 帧无头启动和 Windows Release 导出均退出 0，本次启动日志没有退出资源提示。不表示此前间歇出现的第一关退出资源提示已被修复。
+
+实际命令继续使用 `tools/run_godot.ps1`：`--headless --path . --check-only --script <三个变动脚本>`、`--path . --script res://tests/c/run_act2_entrances.gd`、`--path . --script res://tests/c/run_act2_opening.gd`、`--headless --path . --import`、`--headless --path . --quit-after 60`、`--headless --path . --export-release "Windows Desktop" builds/dengxia.exe`。本轮日志前缀 `door-center-*`，版本仍为 `4.7.2.stable.official.ed1daf0bf`。未重跑其他完整套件或人工完整试玩；没有新建临时测试入口，沿用现有分支和 PR #12。
