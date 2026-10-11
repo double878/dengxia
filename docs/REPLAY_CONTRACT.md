@@ -1,5 +1,7 @@
 # 录放契约（REPLAY_CONTRACT）
 
+> 2026-10-11 正式入口补充（以下优先于后文历史原型口径）：`Level1Harness.start_recording()` 在应用开场站位之后写入 t=0 帧；固定步末 `CLiveCapture.capture()` 读取状态和宿主统一事件，不调用 Runtime.tick、不自行取 Runtime 事件。正式记录的 time_ms 使用唯一 MusicClock 的真实演出时间，payload 保留 song_time_ms、real_time_ms、sequence；duration_ms 为实际终点，包括全部等待和补救，菜单暂停除外。CSnapshot.performance 保存 song_ms、on_stage、umbrella（归属、交接起点及进度）、audio（各轨播放位置/暂停、等待增益）。PuppetState 增加 walk_phase/walk_amount，回放保留步态。新增合法类别为 puppet_hook、puppet_take_back、head_swap、opera_wait_begin/end、opera_take_close、opera_score_skipped、opera_phase_changed、dialogue_line_changed；音频事件的 object_id 为 performance_audio。CResultFlow.offer_replay 只进入 choice，choose_replay 才播放或进入 result；显式 begin_replay 保留为旧测试/探针兼容 API。GameFlow 使用选择 API，不自动回放。后文 CRecorder/CStageRecorder 的固定歌曲长度及歌曲时间口径只适用于旧原型，不用于正式游戏。
+
 > 本文件是 C 侧录放行为的**唯一契约**，由 C 负责维护。
 > 生成：2026-10-04 · 基准分支 `feat-replay-from-a`（从 `origin/feat-level1-controls` @ `e791acd` 切出）
 

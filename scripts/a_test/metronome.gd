@@ -88,6 +88,18 @@ func get_mix_rate() -> float:
 	return _mix_rate
 
 
+## 旧教学关的幕前回放复用同一合成器，只读记录的冻结/暂停状态。
+func apply_replay_state(frozen: bool, paused: bool) -> void:
+	clock.set_song_frozen(frozen)
+	if paused: clock.pause()
+	else: clock.resume()
+	if _player != null:
+		_player.stream_paused = paused or frozen
+	if _slow_player != null:
+		_slow_player.stream_paused = paused or not frozen
+	update()
+
+
 ## 时钟重新开始（重播 / 回到 0）时对齐拍游标。
 func reset() -> void:
 	_sample_cursor = 0

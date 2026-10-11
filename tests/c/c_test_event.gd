@@ -14,6 +14,7 @@ func run_all() -> Dictionary:
 	var t: Variant = preload("res://tests/c/c_test_base.gd").new()
 	_test_01_known_kinds_count(t)
 	_test_01b_new_kinds_present(t)
+	_test_formal_audio_and_prop_kinds(t)
 	_test_02_all_lamp_kinds_present(t)
 	_test_03_puppet_event_int_object_id(t)
 	_test_04_lamp_event_string_object_id(t)
@@ -36,7 +37,7 @@ func _mk(time_ms: int, kind: StringName, object_id: Variant = 0,
 
 
 func _test_01_known_kinds_count(t: Variant) -> void:
-	t.begin("KNOWN_KINDS：A 端共 25 个事件 kind")
+	t.begin("KNOWN_KINDS：正式宿主共 34 个事件 kind")
 	# 权威口径（实测自 A 端代码，非推算）：
 	#   puppet_controller 5：drag_begin/drag_end/pose_stance/facing_turn/hand_motion
 	#   performance_system 4：cue_hint/cue_fire/cue_hit/cue_miss
@@ -51,8 +52,23 @@ func _test_01_known_kinds_count(t: Variant) -> void:
 	# umbrella_take/return 被 append_event 静默拒写（白名单外）。这两组的归属有据：
 	# stage_director.gd:13 写明冻结区间「供 B 提示、C 记录回放节奏」，
 	# umbrella_controller.gd:38-39 定义借伞/还伞且 A-to-B 交接文档 §5 已列。
-	t.check_eq(CTimedEventScript.KNOWN_KINDS.size(), 25, "kind 全集应为 25 个")
+	# 正式宿主另有 3 个道具/头架类别、5 个剧情类别和 1 个对白类别。
+	t.check_eq(CTimedEventScript.KNOWN_KINDS.size(), 34, "kind 全集应为 34 个")
 	t.finish("kind 数量对齐 A 端")
+
+
+func _test_formal_audio_and_prop_kinds(t: Variant) -> void:
+	t.begin("正式音频和道具事件可录制，音频对象仍受类型约束")
+	for kind: StringName in [&"puppet_hook", &"puppet_take_back", &"head_swap"]:
+		t.check(_mk(100, kind, 0).validate().is_empty(), "%s 可录制" % kind)
+	for kind: StringName in [&"opera_wait_begin", &"opera_wait_end", &"opera_take_close",
+			&"opera_score_skipped", &"opera_phase_changed", &"dialogue_line_changed"]:
+		t.check(_mk(100, kind, "performance_audio").validate().is_empty(), "%s 可录制" % kind)
+	t.check(not _mk(100, &"head_swap", "performance_audio").validate().is_empty(), "不能将头架事件伪装成音频对象")
+	t.check(_mk(100, &"cue_miss", -1).validate().is_empty(), "无人受控时仍保留动作未完成事件")
+	t.check(_mk(100, &"remedy_open", -1).validate().is_empty(), "无人受控时仍保留补救事件")
+	t.check(not _mk(100, &"head_swap", -1).validate().is_empty(), "具体影人的操作不允许无对象")
+	t.finish("正式事件白名单及命名空间完整")
 
 
 func _test_01b_new_kinds_present(t: Variant) -> void:

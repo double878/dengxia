@@ -45,7 +45,7 @@ func _play_to_end(flow: Variant) -> void:
 
 func run_all() -> Dictionary:
 	var t: Variant = preload("res://tests/c/c_test_base.gd").new()
-	_test_01_auto_replay_after_show(t)
+	_test_01_explicit_replay_request(t)
 	_test_02_null_record_rejected(t)
 	_test_03_pause_resume_delegated(t)
 	_test_04_skip_to_result(t)
@@ -63,15 +63,15 @@ func run_all() -> Dictionary:
 	return t.report()
 
 
-func _test_01_auto_replay_after_show(t: Variant) -> void:
-	t.begin("演出结束自动进幕前回放")
+func _test_01_explicit_replay_request(t: Variant) -> void:
+	t.begin("显式请求开始幕前回放的兼容入口")
 	var flow: Variant = _flow()
 	var ok: bool = flow.begin_replay(_record_without_applause(), 1)
 	t.check(ok, "进入回放")
 	t.check_eq(flow.get_flow_state(), &"replaying", "状态为 replaying")
 	t.check(flow.is_replaying(), "is_replaying 为真")
 	t.check_eq(flow.get_replay_duration_ms(), 8000, "1:1 用本关实际时长 8000ms")
-	t.finish("自动切换成立")
+	t.finish("显式播放请求成立；正式入口的选择流程另由 run_game_replay 验证")
 
 
 func _test_02_null_record_rejected(t: Variant) -> void:

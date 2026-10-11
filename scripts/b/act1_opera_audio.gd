@@ -14,6 +14,9 @@ var _slow: AudioStreamPlayer
 var _line: Dictionary = {}
 var _events: Array[Dictionary] = []
 var _wait_gain: float = 0.0
+var _replay_paused: bool = false
+var _last_gong_seq: int = -1
+var replay_gong_count: int = 0
 
 
 static func read_config() -> Dictionary:
@@ -88,6 +91,60 @@ func setup(value: Dictionary, p_clock: MusicClock, p_flow: Act1OperaFlow) -> boo
 
 func get_player() -> AudioStreamPlayer:
 	return _main
+
+
+func recorded_view() -> Dictionary:
+	return {"main": _player_view(_main), "wait": _player_view(_wait),
+		"slow": _player_view(_slow), "wait_gain": _wait_gain}
+
+
+func _player_view(player: AudioStreamPlayer) -> Dictionary:
+	return {"playing": player.playing, "paused": player.stream_paused,
+		"position_ms": player.get_playback_position() * 1000.0}
+
+
+func setup_replay(value: Dictionary) -> bool:
+	return setup(value, null, null)
+
+
+## 幕前只消费音频快照和已记录的收锣事件，不运行剧情、不推进 MusicClock。
+func apply_replay(view: Dictionary, events: Array, paused: bool) -> void:
+	_replay_paused = paused
+	for pair: Array in [["main", _main], ["wait", _wait], ["slow", _slow]]:
+		_sync_recorded_player(pair[1], view.get(pair[0], {}), paused)
+	_wait.volume_db = linear_to_db(maxf(float(view.get("wait_gain", 0)), 0.001))
+	_gong.stream_paused = paused
+	for event: Variant in events:
+		if str(event.kind) == "opera_take_close" and int(event.seq) > _last_gong_seq:
+			_last_gong_seq = int(event.seq)
+			replay_gong_count += 1
+			_gong.play()
+			_gong.stream_paused = paused
+
+
+func _sync_recorded_player(player: AudioStreamPlayer, view: Dictionary, paused: bool) -> void:
+	if not bool(view.get("playing", false)):
+		player.stop()
+	else:
+		var position_s: float = maxf(float(view.get("position_ms", 0)) / 1000.0, 0.0)
+		if not player.playing:
+			player.play(position_s)
+		elif absf(player.get_playback_position() - position_s) > 0.15:
+			player.seek(position_s)
+	player.stream_paused = paused or bool(view.get("paused", false))
+
+
+func set_replay_paused(value: bool) -> void:
+	_replay_paused = value
+	if value:
+		for player: AudioStreamPlayer in [_main, _wait, _gong, _slow]:
+			player.stream_paused = true
+	else:
+		_gong.stream_paused = false
+
+
+func is_replay_paused() -> bool:
+	return _replay_paused
 
 
 func update(events: Array = [], delta: float = 1.0 / 60.0) -> void:

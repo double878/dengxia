@@ -92,7 +92,7 @@ func _process(_delta: float) -> void:
 		puppet_state.facing, puppet_state.turn_progress, puppet_state.hand_angle,
 		puppet_state.head_id, puppet_state.hook_slot, puppet_state.is_controlled,
 		puppet_state.puppet_id, stage_origin, stage_size, figure_height, hand_anchor,
-		show_chest_tag, _held_prop_hand]
+		show_chest_tag, _held_prop_hand, puppet_state.walk_phase, puppet_state.walk_amount]
 	if render_mode != RenderMode.ENTITY and lamp_state != null:
 		draw_state.append(lamp_state.distance)
 	if render_mode == RenderMode.LEGACY and lamp_state != null:
@@ -203,7 +203,7 @@ func hand_screen_position(hand: String) -> Vector2:
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
 	var right_side: bool = hand != "left"
 	var shoulder := Vector2(ground.x + (half_w if right_side else -half_w),
-		ground.y - height * SHOULDER_RATIO)
+		ground.y - height * SHOULDER_RATIO + walk_body_offset(height))
 	var angle: float = puppet_state.hand_angle.y if right_side else puppet_state.hand_angle.x
 	return _skin_figure_transform(ground) * arm_wrist(shoulder, angle, right_side, height)
 
@@ -233,8 +233,12 @@ func head_top_screen_position() -> Vector2:
 	var height: float = figure_px_height()
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
 	var centre := Vector2(ground.x,
-		ground.y - height * (SHOULDER_RATIO + HEAD_CENTRE_RATIO))
+		ground.y - height * (SHOULDER_RATIO + HEAD_CENTRE_RATIO) + walk_body_offset(height))
 	return Vector2(centre.x, centre.y - head_radius_px(height))
+
+
+func walk_body_offset(height: float) -> float:
+	return -absf(sin(puppet_state.walk_phase)) * height * 0.008 * puppet_state.walk_amount
 
 
 func _draw() -> void:
@@ -293,16 +297,19 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	var rim := Color(RIM.r, RIM.g, RIM.b, alpha * 0.75)
 	var joint := Color(JOINT.r, JOINT.g, JOINT.b, alpha)
 
-	var hip := Vector2(ground.x, ground.y - height * HIP_RATIO)
-	var shoulder := Vector2(ground.x, ground.y - height * SHOULDER_RATIO)
+	var bob: float = walk_body_offset(height)
+	var hip := Vector2(ground.x, ground.y - height * HIP_RATIO + bob)
+	var shoulder := Vector2(ground.x, ground.y - height * SHOULDER_RATIO + bob)
 	var half_w: float = half_width_px(height, flip_width)
 	var shoulder_half_w: float = shoulder_half_width_px(height, flip_width)
 
 	# 腿：髋 → 膝 → 脚。蹲下时膝盖外张、重心下沉（stance 越大越蹲）
 	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0)) * flip_width
 	for side in [-1.0, 1.0]:
-		var knee := Vector2(hip.x + side * knee_out, ground.y - height * 0.22)
-		var foot := Vector2(ground.x + side * half_w * 0.95, ground.y)
+		var stride: float = sin(state.walk_phase + (PI if side < 0.0 else 0.0)) * state.walk_amount
+		var lift: float = maxf(stride, 0.0) * height * 0.035
+		var knee := Vector2(hip.x + side * knee_out + stride * height * 0.045, ground.y - height * 0.22 - lift * 0.5)
+		var foot := Vector2(ground.x + side * half_w * 0.95 + stride * height * 0.065, ground.y - lift)
 		if _has_body_skin():
 			var leg: String = "left" if side < 0.0 else "right"
 			_draw_skin_segment(leg + "_thigh", hip, knee, flip_width, alpha)

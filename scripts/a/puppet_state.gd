@@ -25,6 +25,8 @@ var hand_angle: Vector2 = Vector2.ZERO      ## x = 左手，y = 右手（弧度�
 var head_id: int = HEAD_ID_NONE
 var hook_slot: int = HOOK_SLOT_NONE
 var is_controlled: bool = false
+var walk_phase: float = 0.0                 ## 距离驱动的连续迈步相位（弧度）
+var walk_amount: float = 0.0                ## 0 收脚站定，1 小步走；回放原样读取
 
 ## 连续量范围。PuppetController 与 clamp_continuous() 共用同一组上下限。
 const STAGE_POS_MIN: float = 0.0
@@ -56,6 +58,7 @@ func clamp_continuous() -> void:
 	stance = clampf(stance, STANCE_MIN, STANCE_MAX)
 	facing = FACING_FRONT if facing >= 0.0 else FACING_BACK
 	turn_progress = clampf(turn_progress, TURN_PROGRESS_MIN, TURN_PROGRESS_MAX)
+	walk_amount = clampf(walk_amount, 0.0, 1.0)
 	hand_angle.x = clampf(hand_angle.x, HAND_ANGLE_MIN, HAND_ANGLE_MAX)
 	hand_angle.y = clampf(hand_angle.y, HAND_ANGLE_MIN, HAND_ANGLE_MAX)
 
@@ -85,4 +88,6 @@ func to_dict() -> Dictionary:
 		"head_id": head_id,
 		"hook_slot": hook_slot,
 		"is_controlled": is_controlled,
+		"walk_phase": walk_phase,
+		"walk_amount": walk_amount,
 	}

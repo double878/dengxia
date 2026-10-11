@@ -258,6 +258,22 @@ func holder_id_of() -> int:
 	return _holder_id
 
 
+func recorded_view() -> Dictionary:
+	return {"holder_id": _holder_id, "holder_hand": _holder_hand,
+		"handing_off": handing_off, "from_id": _handoff_from_id,
+		"from_hand": _handoff_from_hand, "progress": _handoff_progress}
+
+
+## 只供回放表现端使用；不调用 update，不触发新交接或评分。
+func apply_recorded_view(view: Dictionary) -> void:
+	_holder_id = int(view.get("holder_id", -1))
+	_holder_hand = str(view.get("holder_hand", "right"))
+	handing_off = bool(view.get("handing_off", false))
+	_handoff_from_id = int(view.get("from_id", -1))
+	_handoff_from_hand = str(view.get("from_hand", ""))
+	_handoff_progress = clampf(float(view.get("progress", 1.0)), 0.0, 1.0)
+
+
 func holder_hand_of() -> String:
 	return _holder_hand
 

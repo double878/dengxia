@@ -260,6 +260,7 @@ func sample(p_now_ms: int) -> Dictionary:
 		"progress": 0.0 if duration <= 0 else clampf(float(t) / float(duration), 0.0, 1.0),
 		"puppets": blended["puppets"],
 		"lamp": blended["lamp"],
+		"performance": blended.get("performance", {}),
 		"events": _pending_events.duplicate(true),
 		"state": _state,
 		"is_finished": _reached_end,
@@ -285,22 +286,23 @@ func _blend_at(now_ms: int) -> Dictionary:
 		#
 		# 「首帧内容」就是t<17ms 时的正确答案：那段时间确实只有首帧那一份数据。
 		var first: Variant = _record.snapshots[0]
-		return {"puppets": _copy_puppets(first), "lamp": first.lamp.duplicate(true)}
+		return {"puppets": _copy_puppets(first), "lamp": first.lamp.duplicate(true), "performance": first.performance.duplicate(true)}
 
 	var a: Variant = _record.snapshots[idx]
 	# 已经越过最后一帧：直接用最后一帧，不外推。
 	if idx >= _record.snapshots.size() - 1:
-		return {"puppets": _copy_puppets(a), "lamp": a.lamp.duplicate(true)}
+		return {"puppets": _copy_puppets(a), "lamp": a.lamp.duplicate(true), "performance": a.performance.duplicate(true)}
 
 	var b: Variant = _record.snapshots[idx + 1]
 	var span: int = int(b.time_ms) - int(a.time_ms)
 	if span <= 0:
 		# 同一时刻不该有两帧（记录侧已去重）。出现时用 a，宁可停顿也不外推。
-		return {"puppets": _copy_puppets(a), "lamp": a.lamp.duplicate(true)}
+		return {"puppets": _copy_puppets(a), "lamp": a.lamp.duplicate(true), "performance": a.performance.duplicate(true)}
 	var ratio: float = clampf(float(now_ms - int(a.time_ms)) / float(span), 0.0, 1.0)
 	return {
 		"puppets": _lerp_puppets(a, b, ratio),
 		"lamp": _lerp_lamp(a.lamp, b.lamp, ratio),
+		"performance": _lerp_performance(a.performance, b.performance, ratio, span),
 	}
 
 
@@ -324,9 +326,11 @@ func _lerp_puppets(a: Variant, b: Variant, ratio: float) -> Array:
 				"y": _lerp_float(pos_a.get("y", 0.0), pos_b.get("y", 0.0), ratio),
 			},
 			"stance": _lerp_float(pa.get("stance", 0.0), pb.get("stance", 0.0), ratio),
-			"facing": _lerp_float(pa.get("facing", 0.0), pb.get("facing", 0.0), ratio),
+			"facing": float(pb.get("facing", 1.0)) if ratio >= 1.0 else float(pa.get("facing", 1.0)),
 			"turn_progress": _lerp_float(
 				pa.get("turn_progress", 0.0), pb.get("turn_progress", 0.0), ratio),
+			"walk_phase": _lerp_float(pa.get("walk_phase", 0.0), pb.get("walk_phase", 0.0), ratio),
+			"walk_amount": _lerp_float(pa.get("walk_amount", 0.0), pb.get("walk_amount", 0.0), ratio),
 			"hand_angle": {
 				"left": _lerp_float(hand_a.get("left", 0.0), hand_b.get("left", 0.0), ratio),
 				"right": _lerp_float(hand_a.get("right", 0.0), hand_b.get("right", 0.0), ratio),
@@ -334,12 +338,37 @@ func _lerp_puppets(a: Variant, b: Variant, ratio: float) -> Array:
 			# 离散量跟随「时间已过 b 的落点」翻转，等价于在 b.time_ms 那一刻跳变。
 			"head_id": int(pb.get("head_id", -1)) if ratio >= 1.0 else int(pa.get("head_id", -1)),
 			"hook_slot": int(pb.get("hook_slot", -1)) if ratio >= 1.0 else int(pa.get("hook_slot", -1)),
-			"is_controlled": bool(pa.get("is_controlled", false)),
+			"is_controlled": bool(pb.get("is_controlled", false)) if ratio >= 1.0 else bool(pa.get("is_controlled", false)),
 		})
 	return out
 
 
-## 灯态插值。四字段全是连续量，全部插值。
+## 歌曲/音源位置连续插值，跳段和归属按记录落点离散切换。
+func _lerp_performance(a: Dictionary, b: Dictionary, ratio: float, span: int) -> Dictionary:
+	if ratio >= 1.0:
+		return b.duplicate(true)
+	var out: Dictionary = a.duplicate(true)
+	# 前向跳段只在记录落点发生，不能把被跳过的对白插值播出来。
+	var song_delta: int = int(b.get("song_ms", 0)) - int(a.get("song_ms", 0))
+	if song_delta >= 0 and song_delta <= span * 2 + 100:
+		out["song_ms"] = int(round(lerpf(float(a.get("song_ms", 0)), float(b.get("song_ms", 0)), ratio)))
+	var ua: Dictionary = a.get("umbrella", {})
+	var ub: Dictionary = b.get("umbrella", {})
+	if not ua.is_empty() and ua.get("holder_id") == ub.get("holder_id"):
+		out.umbrella.progress = lerpf(float(ua.get("progress", 1)), float(ub.get("progress", 1)), ratio)
+	var aa: Dictionary = a.get("audio", {})
+	var ab: Dictionary = b.get("audio", {})
+	for key: String in ["main", "wait", "slow"]:
+		if aa.has(key) and ab.has(key):
+			var delta_ms: float = float(ab[key].position_ms) - float(aa[key].position_ms)
+			if delta_ms >= 0 and delta_ms <= span * 2 + 100:
+				out.audio[key].position_ms = lerpf(float(aa[key].position_ms), float(ab[key].position_ms), ratio)
+	if aa.has("wait_gain") and ab.has("wait_gain"):
+		out.audio.wait_gain = lerpf(float(aa.wait_gain), float(ab.wait_gain), ratio)
+	return out
+
+
+## 灯态四字段均为连续量。
 func _lerp_lamp(a: Dictionary, b: Dictionary, ratio: float) -> Dictionary:
 	var out: Dictionary = CSnapshotScript.default_lamp_dict()
 	for key in out.keys():
