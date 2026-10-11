@@ -70,6 +70,14 @@ var _stance_moving: bool = false
 var _stance_last_emitted: float = 0.0
 var _flip_target: float = 0.0            ## 当前这次翻面的目标面；0.0 表示还没翻过面
 var _hand_dir: Vector2i = Vector2i.ZERO
+var walk_path: RefCounted = null
+
+
+func set_walk_path(path: RefCounted) -> void:
+	walk_path = path
+	if path != null:
+		for state: PuppetState in puppets:
+			state.stage_pos.y = path.height_at(state.stage_pos.x)
 
 
 func _init() -> void:
@@ -82,6 +90,7 @@ func setup(puppet_count: int = 3) -> void:
 		push_error("PuppetController.setup 收到非法 puppet_count：%d" % puppet_count)
 		puppet_count = 1
 	puppets.clear()
+	walk_path = null
 	_events.clear()
 	_drag_active = false
 	_drag_puppet_id = -1
@@ -204,6 +213,8 @@ func head_on_rack(slot: int) -> int:
 ## 顺序固定：应用拖动 → 应用双手 → 应用翻面 → clamp → 事件早已在各自步骤内入队。
 ## 保证同一帧内状态先变、事件后到。
 func tick(delta: float) -> void:
+	for state: PuppetState in puppets:
+		state.walk_amount = 0.0
 	var controlled: PuppetState = get_controlled()
 	if controlled == null:
 		return
@@ -249,6 +260,7 @@ func end_drag() -> void:
 	if target != null:
 		_apply_drag(target)
 		_settle_stance(target)
+		target.walk_amount = 0.0
 	_drag_active = false
 	_drag_puppet_id = -1
 	_drag_accum_px = Vector2.ZERO
@@ -294,9 +306,16 @@ func _apply_drag(controlled: PuppetState) -> void:
 	var dpx: Vector2 = _drag_accum_px
 	_drag_accum_px = Vector2.ZERO
 
+	var before_x: float = controlled.stage_pos.x
 	controlled.stage_pos.x = clampf(
 		controlled.stage_pos.x + dpx.x / STAGE_PIXEL_SIZE.x,
 		PuppetStateScript.STAGE_POS_MIN, PuppetStateScript.STAGE_POS_MAX)
+	var moved_px: float = absf(controlled.stage_pos.x - before_x) * STAGE_PIXEL_SIZE.x
+	if moved_px > 0.01:
+		controlled.walk_phase += moved_px * TAU / 96.0
+		controlled.walk_amount = 1.0
+	if walk_path != null:
+		controlled.stage_pos.y = walk_path.height_at(controlled.stage_pos.x)
 
 	var before_stance: float = controlled.stance
 	controlled.stance = clampf(

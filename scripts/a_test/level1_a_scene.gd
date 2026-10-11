@@ -29,6 +29,8 @@ const PuppetViewScript := preload("res://scripts/a_test/placeholder_puppet.gd")
 const SurfaceScript := preload("res://scripts/b/stage_surface.gd")
 const BackdropScript := preload("res://scripts/b/stage_backdrop.gd")
 const UmbrellaVisualScript := preload("res://scripts/b/umbrella_visual.gd")
+const StageBindingScript := preload("res://scripts/c/c_stage_binding.gd")
+const WalkPathScript := preload("res://scripts/a/stage_walk_path.gd")
 
 const CANVAS_SIZE := Vector2(1920.0, 1080.0)
 
@@ -142,6 +144,10 @@ func _ready() -> void:
 	_stage_surface.z_index = -1
 	add_child(_stage_surface)
 	_stage_surface.configure(CLOTH)
+	var binding := StageBindingScript.new()
+	binding.name = "CStageBinding"
+	binding.stage_id = _stage_def.id
+	add_child(binding)
 	_entity_umbrella = UmbrellaVisualScript.new()
 	_entity_umbrella.views = _puppet_views
 	_entity_umbrella.z_index = 18
@@ -220,6 +226,8 @@ func _configure_initial_stage() -> void:
 	controller.get_puppet(controlled).is_controlled = true
 	var on_stage: Array = _stage_def.initial.get("on_stage", [0, 1, 2])
 	_on_stage = on_stage if not on_stage.is_empty() else [0, 1, 2]
+	if _stage_def.id == 1:
+		controller.set_walk_path(WalkPathScript.new())
 
 
 func _process(delta: float) -> void:
