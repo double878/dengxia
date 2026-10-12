@@ -443,20 +443,20 @@ func _level2_two_acts_separate(t: RefCounted) -> void:
 		if ids1.has(id2):
 			overlap.append(id2)
 	t.check(overlap.is_empty(), "两幕布景 id 不重叠（实际重叠 %s）" % [str(overlap)])
-	# 第一幕三件与第二幕九件都要在（数量漂移立刻可见）
+	# 第一幕三件与第二幕十三件都要在（数量漂移立刻可见）
 	t.check_eq(act1.items.size(), 3, "第一幕仍是 3 件（门楼 / 菊石 / 树）")
-	t.check_eq(act2.items.size(), 9, "第二幕 9 件（柱×2 / 花盆 / 桌 / 凳×2 / 壶 / 杯×2）")
+	t.check_eq(act2.items.size(), 13, "第二幕 13 件（柱×2 / 梁×4 / 花盆 / 桌 / 凳×2 / 壶 / 杯×2）")
 
 
-## 第二关**第二幕**「室内厅堂」布景的几何契约（用户 2026-10-12 定稿 v8）。
-## 与前两关不同，本幕**四种锚点高度并存**，故逐件按各自的口径断言：
-##   贴地件 653.4 / 桌上件 595.6 / 立柱 680（贴幕布下沿）。
+## 第二关**第二幕**「室内厅堂」布景的几何契约（用户 2026-10-12 定稿，本轮第三版）。
+## 与前两关不同，本幕**五种锚点高度并存**，故逐件按各自的口径断言：
+##   贴地件 653.4 / 桌上件 394.7（= 桌面最高水平面）/ 立柱 680（贴幕布下沿）/ 横梁 228.4（悬挂）。
 func _level2_act2_geometry(t: RefCounted) -> void:
-	t.begin("第二关第二幕厅堂几何（柱 / 花盆 / 桌 / 凳 / 酒具）")
+	t.begin("第二关第二幕厅堂几何（柱 / 梁 / 花盆 / 桌 / 凳 / 酒具）")
 	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
 	var def: CSceneryDef = DefScript.make_stage(DefScript.LEVEL2_ACT2_STAGE_ID)
 	t.check_eq(def.stage_id, 22, "第二幕 stage_id = 22")
-	t.check_eq(def.items.size(), 9, "共 9 件（v8 起删掉整套横梁）")
+	t.check_eq(def.items.size(), 13, "共 13 件（柱×2 + 梁×4 + 花盆 + 桌 + 凳×2 + 酒壶 + 酒杯×2）")
 
 	var rects: Dictionary = {}
 	for item in def.items:
@@ -543,13 +543,29 @@ func _level2_act2_geometry(t: RefCounted) -> void:
 	t.check(pot.end.x < table.position.x, "花盆右缘 %.1f < 桌左缘 %.1f（不碰桌）" % [pot.end.x, table.position.x])
 	t.check(pot.end.y > table.end.y - table.size.y, "花盆高 %.0f 高于桌（%.0f）——用户定案「花盆比桌子高一点」" % [pot.size.y, table.size.y])
 
-	# ⑨ 酒具三件取**桌面高度** 595.6（不是地平线），且横向都落在桌面内
-	t.check_approx(wine_pot.end.y, 595.6, 1.5, "酒壶锚点 y=%.1f（桌面高，用户定案「上移 0.1」）" % wine_pot.end.y)
-	t.check_approx(cup_g.end.y, 595.6, 1.5, "绿釉杯锚点 y=%.1f" % cup_g.end.y)
-	t.check_approx(cup_r.end.y, 595.6, 1.5, "朱红杯锚点 y=%.1f" % cup_r.end.y)
+	# ⑨ 酒具三件的**底边 = 桌面最高水平面**（用户 2026-10-12 第二轮明确要求）。
+	#    桌贴图裁到内容框后第 0 行就是桌面最高点，故「桌面最高水平面」= 桌绘制矩形的顶边。
+	#    🔴 上一版锚在 595.6（比桌面最高面低 200.9px），酒具画到了桌布下摆与桌腿上——
+	#    这条断言就是为了让那种错法再也回不来。
+	var table_top: float = table.position.y
+	t.check_approx(
+		table_top,
+		DefScript.LEVEL2_ACT2_TABLE_TOP_Y * 1080.0,
+		0.5,
+		"桌面最高水平面 y=%.1f = LEVEL2_ACT2_TABLE_TOP_Y×1080（常量与桌几何同源）" % table_top
+	)
 	for pair in [["酒壶", wine_pot], ["绿釉杯", cup_g], ["朱红杯", cup_r]]:
 		var label: String = str(pair[0])
 		var rect: Rect2 = pair[1]
+		t.check_approx(
+			rect.end.y,
+			table_top,
+			0.5,
+			(
+				"%s 的最低水平面 y=%.1f 对齐桌面最高水平面 y=%.1f"
+				% [label, rect.end.y, table_top]
+			)
+		)
 		t.check(
 			rect.position.x >= table.position.x - 0.5 and rect.end.x <= table.end.x + 0.5,
 			"%s 横向落在桌面内（%.1f~%.1f ⊂ %.1f~%.1f）" % [label, rect.position.x, rect.end.x, table.position.x, table.end.x]
@@ -558,13 +574,70 @@ func _level2_act2_geometry(t: RefCounted) -> void:
 	t.check(wine_pot.end.x <= cup_g.position.x + 0.5, "酒壶在绿釉杯左侧（壶右缘 %.1f ≤ 杯左缘 %.1f）" % [wine_pot.end.x, cup_g.position.x])
 	t.check(cup_g.end.x <= cup_r.position.x + 0.5, "绿釉杯在朱红杯左侧（%.1f ≤ %.1f）" % [cup_g.end.x, cup_r.position.x])
 
-	# ⑩ 反向断言：**横梁整套已删**（用户 2026-10-12 手绘批注「删除」）。
-	#    留反向断言是防止有人照旧图把它加回来——v8 之后立柱上面不再有梁。
-	var beams: Array[String] = []
+	# ⑩ 立柱改用**剪掉内侧**的贴图（用户 2026-10-12 第二轮：「把立柱靠内侧的那一边部分剪掉」）。
+	#    贴图契约：604×1893（原 984×1893，内侧雀替臂整条剪掉）。
+	for pair in [
+		["左", DefScript.SCENERY_TEX_COLUMN_CUT], ["右", DefScript.SCENERY_TEX_COLUMN_MIRROR_CUT]
+	]:
+		var cimg := Image.load_from_file(ProjectSettings.globalize_path(str(pair[1])))
+		t.check(cimg != null, "%s柱贴图可读：%s" % [str(pair[0]), str(pair[1])])
+		if cimg != null:
+			t.check_eq(cimg.get_width(), 604, "%s柱贴图宽 604（剪掉内侧臂后的宽度）" % str(pair[0]))
+			t.check_eq(cimg.get_height(), 1893, "%s柱贴图高 1893（与素材同高）" % str(pair[0]))
+	t.check_eq(
+		str(_find(def, "column_left").get("texture", "")),
+		DefScript.SCENERY_TEX_COLUMN_CUT,
+		"左柱引用 SCENERY_TEX_COLUMN_CUT（不是未剪的 column.png）"
+	)
+	t.check_eq(
+		str(_find(def, "column_right").get("texture", "")),
+		DefScript.SCENERY_TEX_COLUMN_MIRROR_CUT,
+		"右柱引用 SCENERY_TEX_COLUMN_MIRROR_CUT（镜像 + 剪内侧）"
+	)
+
+	# ⑪ 横梁四根**在位**且**正好铺满柱间净宽**（用户 2026-10-12 第二轮：「四个横梁保留」）。
+	#    上一版误把参考图上「剪柱内侧」的批注读成「删横梁」，整套删掉了 9 件版；
+	#    这里钉住「四根 / 等宽 / 首尾相接 / 两端正好接柱内侧缘」，以后改柱宽忘改梁宽立刻报错。
+	var beam_ids: Array[String] = []
 	for item in def.items:
 		if str(item.get("id", "")).begins_with("beam"):
-			beams.append(str(item.get("id", "")))
-	t.check(beams.is_empty(), "横梁已整套删除（实际仍有 %s）" % [str(beams)])
+			beam_ids.append(str(item.get("id", "")))
+	t.check_eq(beam_ids.size(), 4, "横梁四根在位（实际 %s）" % [str(beam_ids)])
+	if beam_ids.size() == 4:
+		var beam_rects: Array[Rect2] = []
+		for bid in ["beam_0", "beam_1", "beam_2", "beam_3"]:
+			beam_rects.append(rects.get(bid, Rect2()))
+		for i in range(1, 4):
+			t.check_approx(
+				beam_rects[i].size.x,
+				beam_rects[0].size.x,
+				0.5,
+				"beam_%d 与 beam_0 等宽（%.1f / %.1f）" % [i, beam_rects[i].size.x, beam_rects[0].size.x]
+			)
+		for i in range(3):
+			t.check_approx(
+				beam_rects[i].end.x,
+				beam_rects[i + 1].position.x,
+				0.5,
+				"beam_%d 右缘 %.1f 与 beam_%d 左缘 %.1f 相接（四根连成一条楣子）"
+				% [i, beam_rects[i].end.x, i + 1, beam_rects[i + 1].position.x]
+			)
+		t.check_approx(
+			beam_rects[0].position.x,
+			col_l.end.x,
+			0.5,
+			"横梁左端 %.1f 接左柱内侧缘 %.1f（柱剪内侧后梁正好铺满柱间净宽）" % [beam_rects[0].position.x, col_l.end.x]
+		)
+		t.check_approx(
+			beam_rects[3].end.x,
+			col_r.position.x,
+			0.5,
+			"横梁右端 %.1f 接右柱内侧缘 %.1f" % [beam_rects[3].end.x, col_r.position.x]
+		)
+		for i in 4:
+			t.check_approx(
+				beam_rects[i].end.y, 228.4, 1.0, "beam_%d 梁底 y=%.1f（悬挂件，与 v7 同）" % [i, beam_rects[i].end.y]
+			)
 
 
 ## 第三关《盗仙草》布景几何：**一座山，顶天立地、紧靠最右侧**（用户 2026-10-12 定案）。

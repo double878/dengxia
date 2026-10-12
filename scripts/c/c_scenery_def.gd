@@ -168,11 +168,26 @@ const SCENERY_TEX_WILLOW_BRANCH: String = "res://assets/scenery/level2/willow_br
 ## ⚠️ 与第一幕（门楼版）**各自独立、互不覆盖**：第一幕 = `make_level2()`（编号 2），
 ## 本幕 = `make_level2_act2()`（编号 **22**）。两幕共用「第二关」这个剧情段，
 ## 但布景数据是两套——合并时不得把任一方塞进对方的函数里。
-const SCENERY_TEX_COLUMN: String = "res://assets/scenery/level2b/column.png"  # 984×1893
+const SCENERY_TEX_COLUMN: String = "res://assets/scenery/level2b/column.png"  # 984×1893（原始素材，现不引用）
 ## 右柱用**水平翻转**版（用户 2026-10-12 手绘批注「这个需要镜像」）。
 ## Godot 4 的 `draw_texture_rect` 无 flip_h 参数，故离线镜像成独立 PNG，
 ## 不走运行时翻转，避开 compat 渲染器的坑。
 const SCENERY_TEX_COLUMN_MIRROR: String = "res://assets/scenery/level2b/column_mirror.png"
+##
+## 🔴 2026-10-12（第二轮定案）：**立柱内侧剪掉，四个横梁保留**。
+## 立柱素材自带一条**横贯两侧的雀替臂**（左侧伸到贴图 x=0、右侧伸到 x≈982），
+## 「顶天立地」后这条内侧臂正压在横梁端头的位置上（上一版因此整条删了横梁，
+## 是把「要剪的」认成了横梁——用户本轮澄清：**梁保留，剪的是柱内侧**）。
+## 实测柱身 x 277~604，故把 x≥604 的部分（内侧雀替臂 + 柱础内侧一小段）整条剪掉，
+## 保留：柱身 + 深褐**梁头**（贴图 x 334~590，完整保住）+ 外侧雀替臂。
+## 剪后 604×1893，**离线切图**再入库——`draw_texture_rect_region` 在 compat 渲染器上
+## 画白块（2026-10-08 已验），运行时裁不可用，与 column_mirror 同一条教训。
+const SCENERY_TEX_COLUMN_CUT: String = "res://assets/scenery/level2b/column_cut.png"  # 604×1893
+const SCENERY_TEX_COLUMN_MIRROR_CUT: String = (
+	"res://assets/scenery/level2b/column_mirror_cut.png"
+)  # 604×1893 = 上者的水平镜像
+## 横梁（**保留**四根）：1762×369，四根等分铺满柱间净宽（见 LEVEL2_BEAM_* 常量）。
+const SCENERY_TEX_BEAM: String = "res://assets/scenery/level2b/beam.png"
 const SCENERY_TEX_FLOWERPOT: String = "res://assets/scenery/level2b/flowerpot.png"  # 1109×1848
 const SCENERY_TEX_TABLE: String = "res://assets/scenery/level2b/table.png"  # 1895×1937
 const SCENERY_TEX_STOOL: String = "res://assets/scenery/level2b/stool.png"  # 1401×1281
@@ -239,30 +254,57 @@ const LEVEL2_TREE_BASE_Y: float = 0.612037  ## 底 y=661px（贴地）
 ## `make_level2()` / `make_level2_act2()` 两个函数、两个编号的原因。
 const LEVEL2_ACT2_STAGE_ID: int = 22
 ##
-## 四种锚点高度**并存**（这是本幕与前两关最大的不同，`anchor_y` 是绝对归一化坐标）：
-##   贴地件（花盆 / 桌 / 两凳）**653.4** / 桌上件（酒壶 / 酒杯）**595.6**
-##   / **立柱单独贴幕布下边缘 680**（顶天立地，高 566.4）。
-## 参考图上从左到右的布局（v8 实测）：
-##   左柱 66~360 │ 花盆 390~593 │ 左凳 634~774 │ 圆桌 834~1087（居中 960）
-##   │ 右凳 1147~1287 │ 右柱 1560~1854（镜像贴图）
+## 五种锚点高度**并存**（这是本幕与前两关最大的不同，`anchor_y` 是绝对归一化坐标）：
+##   贴地件（花盆 / 桌 / 两凳）**653.4** / 桌上件（酒壶 / 酒杯）**394.7**（= 桌面最高水平面）
+##   / **立柱单独贴幕布下边缘 680**（顶天立地，高 566.4）/ 悬挂件（四根横梁，**梁底 228.4**）。
+## 参考图上从左到右的布局（v8 实测，本轮柱内侧已剪）：
+##   左柱 66~246.7 │ 花盆 390~593 │ 左凳 634~774 │ 圆桌 834~1087（居中 960）
+##   │ 右凳 1147~1287 │ 右柱 1673.3~1854（镜像贴图）；四根横梁 246.7~1673.3 铺满柱间。
 const LEVEL2_ACT2_GROUND_Y: float = 0.605  ## 地平线 y=653.4px
-## 🔴 用户 2026-10-12 定案：桌面高度**上移 0.1**（487.6 → **595.6px**）。
-## 这会让酒具偏离贴图上的桌面（浮在视觉桌面下方）——是按用户要求做的视觉调整，
-## 不是几何错误，别再"顺手修回去"。
-const LEVEL2_ACT2_TABLE_TOP_Y: float = 0.551457  ## 酒具锚点 y=595.6px
-## 立柱：**顶天立地**（顶离幕布上缘 21.6px、**底贴幕布下沿 680**），高 566.4、宽 294.4。
+## 立柱：**顶天立地**（顶离幕布上缘 21.6px、**底贴幕布下沿 680**），高 566.4。
 ## ⚠️ 立柱是**唯一不跟随地平线**的贴地件——它的底对齐幕布下边缘（680），
 ## 而其余贴地件走 653.4。两者差 26.6px 是用户确认过的取舍。
 const LEVEL2_ACT2_COLUMN_BASE_Y: float = 0.629630  ## 柱底 y=680px（幕布下沿）
-const LEVEL2_ACT2_COLUMN_SCALE: float = 0.299208  ## 高 566.4px（984×1893）
+## 剪掉内侧后的柱贴图宽（原 984；内侧 x≥604 的雀替臂整条剪掉，见 SCENERY_TEX_COLUMN_CUT）
+const LEVEL2_ACT2_COLUMN_TEX_W: float = 604.0
+const LEVEL2_ACT2_COLUMN_SCALE: float = 0.299208  ## 高 566.4px（604×1893 剪后素材）
 ## 两柱**以幕布中心为轴对称**：左柱中心 + 右柱中心 = 2 × 幕布中心（断言按此写，
 ## 改幕布尺寸时自动成立，而不是各写死一个数）。
-const LEVEL2_ACT2_COLUMN_LEFT_X: float = 0.111042  ## 左柱 66~360
-const LEVEL2_ACT2_COLUMN_RIGHT_X: float = 0.888958  ## 右柱 1560~1854
+## ⚠️ `anchor_x` 是**贴图底边中心**（= 绘制矩形中心），不是边缘：
+##   左柱矩形 66~246.7，中心 66 + 302×0.299208 = 156.36 → 0.081438；
+##   右柱矩形 1673.3~1854，中心 1854 − 302×0.299208 = 1763.64 → 0.918563。
+const LEVEL2_ACT2_COLUMN_LEFT_X: float = 0.081438  ## 左柱跨 66~246.7
+const LEVEL2_ACT2_COLUMN_RIGHT_X: float = 0.918563  ## 右柱跨 1673.3~1854
+##
+## —— 横梁四根（用户 2026-10-12 第二轮定案：「**四个横梁保留**」）——
+## 柱内侧剪掉后柱间净宽由 1199 变为 1426.6（1673.28 − 246.72），四根梁按 v7 立下的
+## **同一公式**重新等分：单宽 1426.6/4 = 356.6px → scale = 356.6/1762 = **0.202406**。
+## 即「梁随柱宽自适应」——宽度变了，**梁底高度 228.4 不动**（与 v7 同）。
+const LEVEL2_BEAM_Y: float = 0.211481  ## 梁底 y=228.4px（悬挂件，不接地平线）
+const LEVEL2_BEAM_SCALE: float = 0.202406  ## 单梁宽 356.6px、高 74.7px（1762×369）
+const LEVEL2_BEAM_0_X: float = 0.221375  ## 跨 246.7~603.4
+const LEVEL2_BEAM_1_X: float = 0.407125  ## 跨 603.4~960.0
+const LEVEL2_BEAM_2_X: float = 0.592875  ## 跨 960.0~1316.6
+const LEVEL2_BEAM_3_X: float = 0.778625  ## 跨 1316.6~1673.3
 ##
 ## 圆桌居中 = 幕布中心，同时是两凳的**对称轴**。
 const LEVEL2_ACT2_TABLE_SCALE: float = 0.13354  ## 高 258.7px（1895×1937）
 const LEVEL2_ACT2_TABLE_X: float = 0.5  ## 桌面中心 = 幕布中心 960px
+## —— 桌面**最高水平面**：桌上酒具的底边一律对齐到这里（用户 2026-10-12 第二轮定案）——
+## 桌贴图裁到内容包围盒后，**第 0 行就是桌面最高点**（桌面椭圆远边），
+## 它在画布上的位置由桌子自身几何推出：
+##   桌底 653.4（地平线） − 1937×0.13354 = **394.7px**
+## 🔴 上一版把酒具锚在 595.6，比桌面最高面低 **200.9px**——酒具被画到了桌布下摆和桌腿上。
+## 写成**表达式**而不是字面量：桌子挪位 / 改比例时酒具自动跟随，不会两处漂移。
+const LEVEL2_ACT2_TABLE_TEX_H: float = 1937.0  ## 桌贴图高（1895×1937）
+const LEVEL2_ACT2_TABLE_TOP_ROW_PX: float = 0.0  ## 贴图内「桌面最高行」的行号
+const LEVEL2_ACT2_TABLE_TOP_Y: float = (
+	(
+		LEVEL2_ACT2_GROUND_Y * 1080.0
+		- (LEVEL2_ACT2_TABLE_TEX_H - LEVEL2_ACT2_TABLE_TOP_ROW_PX) * LEVEL2_ACT2_TABLE_SCALE
+	)
+	/ 1080.0
+)  ## = 0.365494 → 394.7px（断言会与桌面绘制矩形顶部比对）
 const LEVEL2_ACT2_STOOL_SCALE: float = 0.099922  ## 高 128px（1401×1281）
 const LEVEL2_ACT2_STOOL_LEFT_X: float = 0.366391  ## 左凳跨 633~773
 const LEVEL2_ACT2_STOOL_RIGHT_X: float = 0.633609  ## 右凳跨 1147~1287
@@ -503,16 +545,21 @@ static func make_level2() -> CSceneryDef:
 ## 因此各占一个编号：第一幕 2、第二幕 22。切幕时由 A 侧换编号，
 ## 本文件只保证「取 22 拿到厅堂、取 2 拿到门楼」。
 ##
-## **v8 的两处变化（依据用户 2026-10-12 手绘图批注「按这个标准来」）**：
-##   ① **横梁整套删除**：手绘图顶部红线批注「删除」，圈住整套楣头/挂落结构。
-##      v3~v7 的四根横梁（beam_0..3）连同 `LEVEL2_BEAM_*` 常量一并移除；
-##      `assets/scenery/level2b/beam.png` 资产保留在磁盘、不再被引用。
-##      立柱仍是「顶天立地」——只是上面不再有梁。
-##   ② **右柱镜像**：手绘图右下批注「这个需要镜像」。右柱改用水平翻转贴图
-##      `column_mirror.png`，与左柱花纹方向对称。
+## **本轮（2026-10-12 第二轮）的三处变化**：
+##   ① **横梁四根恢复**（用户：「四个横梁保留」）。上一版把参考图顶部红线批注「删除」
+##      读成了「删横梁」，实际那道红圈的圆心落在**左柱朝内一侧的雀替臂**上——要剪的是柱，
+##      不是梁。本轮把 beam_0..3 按「梁宽随柱间净宽自适应」的公式重新铺满柱间。
+##   ② **立柱内侧剪掉**（用户：「把立柱靠内侧的那一边部分剪掉」）。柱身实测 x 277~604，
+##      剪掉 x≥604 的内侧臂，改用 `column_cut.png` / `column_mirror_cut.png`（各 604×1893）。
+##      两柱仍关于幕布中心对称，柱间净宽 1199 → 1426.6。
+##   ③ **酒具底边对齐桌面最高水平面**（用户明确要求）。酒具锚点由 595.6 改为 394.7
+##      （= 桌绘制矩形顶部，由 `LEVEL2_ACT2_TABLE_TOP_Y` 表达式推出）。见该常量注。
 ##
-## v7 及以前的结构（仅供追溯，勿再当现状）：立柱×2 / 横梁×4 / 花盆 / 圆桌 /
-## 凳×2 / 酒壶 / 酒杯×2 共 13 件；**v8 起共 9 件**（去横梁，余者不动）。
+## **v8（保留项）**：右柱镜像——手绘图右下批注「这个需要镜像」，右柱用水平翻转贴图，
+## 与左柱花纹方向对称（本轮改用 `column_mirror_cut.png`，镜像 + 剪内侧都做在离线贴图上）。
+##
+## 结构沿革（仅供追溯，勿再当现状）：v3~v7 = 柱×2 / 梁×4 / 花盆 / 桌 / 凳×2 / 壶 / 杯×2 共 13 件；
+## v8（上一版）= 误删横梁 → **9 件**；**本轮回到 13 件**（梁找回 + 柱剪内侧 + 酒具上桌）。
 ##
 ## ⚠️ 两种 `kind` 只作「有贴图时不走回退画法」的占位（与第一幕同法）：
 ##   建筑/家具类（柱、桌、凳）用 `KIND_ARCH_BRIDGE`，花木/器物类（花盆、酒具）用
@@ -522,15 +569,17 @@ static func make_level2_act2() -> CSceneryDef:
 	def.stage_id = LEVEL2_ACT2_STAGE_ID
 	def.items = [
 		# —— 立柱成对：紧贴左右幕布，「顶天立地」（底贴幕布下沿，不随地平线）——
+		# 🔴 2026-10-12 第二轮：用**剪掉内侧**的贴图（column_cut / column_mirror_cut），
+		#    柱身内侧的雀替臂整条去掉，让横梁端头干净地接到柱身上。
 		{
 			"id": "column_left",
 			"kind": KIND_ARCH_BRIDGE,
 			"anchor_x": LEVEL2_ACT2_COLUMN_LEFT_X,
 			"anchor_y": LEVEL2_ACT2_COLUMN_BASE_Y,
 			"pan_x": 0.0,
-			"texture": SCENERY_TEX_COLUMN,
-			# 锚点 = 贴图底边中心。素材 984×1893。
-			"texture_foot_px": Vector2(492.0, 1893.0),
+			"texture": SCENERY_TEX_COLUMN_CUT,
+			# 锚点 = 贴图底边中心。剪后 604×1893。
+			"texture_foot_px": Vector2(302.0, 1893.0),
 			"texture_scale_px": LEVEL2_ACT2_COLUMN_SCALE,
 			"params": {},
 		},
@@ -540,13 +589,59 @@ static func make_level2_act2() -> CSceneryDef:
 			"anchor_x": LEVEL2_ACT2_COLUMN_RIGHT_X,
 			"anchor_y": LEVEL2_ACT2_COLUMN_BASE_Y,
 			"pan_x": 0.0,
-			# v8：右柱用**水平翻转贴图**（用户手绘批注「这个需要镜像」）。
+			# 右柱用**水平翻转贴图**（用户手绘批注「这个需要镜像」）。
 			# Godot 4 的 draw_texture_rect 无 flip_h 参数，故离线镜像成独立 PNG，
 			# 不走运行时翻转，避开 compat 渲染器的坑。镜像只翻内容、不改几何，
 			# 故左右两柱同宽同高（断言会比这一条）。
-			"texture": SCENERY_TEX_COLUMN_MIRROR,
-			"texture_foot_px": Vector2(492.0, 1893.0),
+			"texture": SCENERY_TEX_COLUMN_MIRROR_CUT,
+			"texture_foot_px": Vector2(302.0, 1893.0),
 			"texture_scale_px": LEVEL2_ACT2_COLUMN_SCALE,
+			"params": {},
+		},
+		# —— 横梁四根：等分铺满柱间净宽，**梁宽随柱宽自适应**（用户定案「四个横梁保留」）——
+		{
+			"id": "beam_0",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_BEAM_0_X,
+			"anchor_y": LEVEL2_BEAM_Y,  # 悬挂：底边挂在柱间上部，不是地平线
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BEAM,
+			# 锚点 = 底边中心。素材 1762×369。
+			"texture_foot_px": Vector2(881.0, 369.0),
+			"texture_scale_px": LEVEL2_BEAM_SCALE,
+			"params": {},
+		},
+		{
+			"id": "beam_1",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_BEAM_1_X,
+			"anchor_y": LEVEL2_BEAM_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BEAM,
+			"texture_foot_px": Vector2(881.0, 369.0),
+			"texture_scale_px": LEVEL2_BEAM_SCALE,
+			"params": {},
+		},
+		{
+			"id": "beam_2",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_BEAM_2_X,
+			"anchor_y": LEVEL2_BEAM_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BEAM,
+			"texture_foot_px": Vector2(881.0, 369.0),
+			"texture_scale_px": LEVEL2_BEAM_SCALE,
+			"params": {},
+		},
+		{
+			"id": "beam_3",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_BEAM_3_X,
+			"anchor_y": LEVEL2_BEAM_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BEAM,
+			"texture_foot_px": Vector2(881.0, 369.0),
+			"texture_scale_px": LEVEL2_BEAM_SCALE,
 			"params": {},
 		},
 		# —— 花盆：落地，夹在左柱与圆桌之间 ——
@@ -601,7 +696,8 @@ static func make_level2_act2() -> CSceneryDef:
 			"texture_scale_px": LEVEL2_ACT2_STOOL_SCALE,
 			"params": {},
 		},
-		# —— 桌上三件：anchor_y 取**桌面高度**（595.6），不是地平线 ——
+		# —— 桌上三件：anchor_y = **桌面最高水平面**（394.7，见 LEVEL2_ACT2_TABLE_TOP_Y），
+		#    不是地平线；三件的「底边」都落在同一条水平线上（用户明确要求）——
 		{
 			"id": "wine_pot",
 			"kind": KIND_WILLOW,
