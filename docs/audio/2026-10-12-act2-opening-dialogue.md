@@ -2,6 +2,39 @@
 
 用户确认六句台词、正常对白与收尾约 30 秒、操作等待另计。最新调度为法海独自走出柳树 → 树旁说首句 → 许仙出门迎接后回话 → 继续交锋 → 许仙真实上前应允 → 自动暗场。
 
+## 用户参考声音修订（当前 v2）
+
+用户反馈许仙与第一关的听感不一致、音量过小，并提供 `20261012-1158-29.8799540.mp4` 作为法海声音参考。旧版许仙三句为 −23.14、−24.45、−22.78 LUFS，法海为约 −15.5 至 −15.9 LUFS；旧制作只对不同角色统一乘 0.8，未匹配角色间响度。
+
+当前版本 `act2-opening-dialogue-v2-user-reference` 的许仙身份参考改为第一关已接入的 `return-02/06/08.wav`，韵律参考为第一关 `return-02.wav`，直接对齐实际对白。法海视频音轨经已有 MelBandRoformer 分离，选取 0–7.7 秒仅法海说话的窗口作为身份参考，排除小沙弥答话；自然说话韵律取 F5 自带男声原句“对，这就是我，万人敬仰的太乙真人。”。不使用背景伴奏，不变调、不变速、不加混响。
+
+制作仍为 F5 32 步 / CFG 2.0，Seed-VC 25 步 / CFG 0.7，长度 1.0、关闭 F0 与半音偏移；既有 20 个模型与配置文件 SHA-256 核验通过。法海长句原始 FLOAT 峰值为 1.143，旧脚本错误地在浮点中间阶段套用交付幅度限制；现保留有限值 FLOAT 原样，响度匹配后再检查 PCM16 无削波，不以硬裁峰处理原始音源。
+
+自动转写在许仙末句“这……”处出现多余音节歧义，且原始 F5 声与转换声均存在。仅做一次内容修订：合成文本改为“这，我便劝她一杯。若是无事，还请大师莫再疑她。”，缩短犹豫停顿，台词字词和字幕保留。其余五句成品 SHA-256 与首次 v2 候选逐一一致。修订前样本、请求、结果与脚本版本均保留，未做种子扫描。
+
+六句离线两遍匹配至 −18 LUFS，实际为 −18.05 至 −17.99 LUFS，最大真峰值 −2.21 dBTP；许仙提升约 4.8–6.5 dB。七条交付 WAV 严格解码、哈希、实际帧数、48 kHz 双声道 PCM16、无满幅样本检查通过。主轨中的对白与各句成品逐样本一致，保护静音检查通过；当前主轨 1,476,711 帧，30.7648125 秒，清单取 30,765 ms。迎接 / 应允冻结点为 5,334 / 22,454 ms，暗场起点为 28,765 ms。
+
+制作目录 `builds/act2-voice-revision/` 包含输入指纹、用户视频哈希、分离、人声参考、原始 F5 声、转换声、响度检查及末句修订历史。对比文件 `xuxian-reference-and-new.wav` / `fahai-reference-and-new.wav` 均先播放参考、静音 650 ms、再播放新版首句；预览参考音量仅在本地对比文件中匹配，第一关正式音源未修改。
+
+自动音色诊断表明法海三句对参考的 CAMPPlus 余弦相似度从约 0.14–0.22 提升至 0.61–0.68；该指标仅作诊断。转写仍有“贫僧/平生”“大师/老师”等歧义，不能据此宣称字词、自然度或角色音色已通过人耳验收。当前六句尚未获用户逐句听验；后面的初版记录属于历史 v1，不代表当前音源参数。
+
+本轮只更新七条 WAV、清单和相关文档，未修改游戏脚本。安装当前音源后，使用固定 `D:\Godot\4.7.2\godot.exe` 完成以下验证；日志前缀为 `builds/stage-realism/logs/act2-voice-*`。
+
+| 实际命令或入口 | 结果 |
+| --- | --- |
+| `tools/run_godot.ps1 -LogName act2-voice-import --headless --path . --import` | 退出 0，七条 WAV 重新导入 |
+| `tools/run_godot.ps1 -LogName act2-voice-dialogue --headless --path . --script res://tests/c/run_act2_dialogue.gd` | 36 项、0 失败 |
+| `tools/run_godot.ps1 -LogName act2-voice-opening --headless --path . --script res://tests/c/run_act2_opening.gd` | 133 项、0 失败 |
+| `builds/act2-voice-revision/windows_verify.py`，调用临时 GUI 入口及外部 55 秒保护 | Windows/OpenGL/WASAPI 实演 24 项、0 失败，退出 0，无超时，图形 stderr 为空 |
+| `tools/run_godot.ps1 -LogName act2-voice-startup --headless --path . --quit-after 60` | 退出 0 |
+| `tools/run_godot.ps1 -LogName act2-voice-export --headless --path . --export-release "Windows Desktop" builds/dengxia.exe` | 退出 0 |
+| 从 `builds/` 运行 `dengxia.exe --headless --quit-after 60` | 退出 0 |
+| 从 `builds/` 运行 `D:\Godot\4.7.2\godot.exe --headless --main-pack dengxia.pck res://scenes/act2/opening.tscn --quit-after 60` | 退出 0，打包资源可加载当前对白清单及音轨 |
+
+图形实演用真实输入完成跳关、法海上场和短距离拖签、首句后许仙出门迎接、应允上前、菜单暂停续播及暗场清场；首句结束前许仙上场被阻止。同步 WASAPI 回录长 33.387 秒，PCM16 峰值 29,574，无回调错误；只证明实际输出非静音，不替代音色或自然度试听。临时 GUI 入口及 UID 已删除。整套 A（1,284 + 22）、B（379）、C（459）回归在本轮替换音源前通过；替换后以以上相关回归与图形实演验证，不重复运行整套。
+
+开场回归、60 帧无头启动和打包启动仍出现既有的 2 个 ObjectDB / 1 个音源资源退出释放提示，退出码均为 0；资源导入、导出、对白回归及最终图形日志无该错误。本轮没有声称用户已听验六句音色或自然度。
+
 ## 台词与来源
 
 | 角色 | 台词 |

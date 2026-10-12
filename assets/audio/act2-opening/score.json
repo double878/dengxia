@@ -1,12 +1,12 @@
 {
-  "audio_version": "act2-opening-dialogue-v1",
+  "audio_version": "act2-opening-dialogue-v2-user-reference",
   "stage_id": 2,
   "scene_id": "fahai_advice",
   "main_path": "res://assets/audio/act2-opening/main.wav",
-  "duration_ms": 30916,
+  "duration_ms": 30765,
   "greeting_gate_ms": 5334,
   "agreement_gate_ms": 22454,
-  "dark_start_ms": 28916,
+  "dark_start_ms": 28765,
   "lines": [
     {
       "line_id": "act2_opening_fahai_01",
@@ -63,9 +63,11 @@
       "role_id": "xuxian",
       "text": "这……我便劝她一杯。若是无事，还请大师莫再疑她。",
       "seed": 2026101205,
+      "generation_text": "这，我便劝她一杯。若是无事，还请大师莫再疑她。",
+      "generation_note": "Same words, use short comma pause instead of ellipsis; one bounded content revision",
       "role_name": "许仙",
       "start_ms": 22954,
-      "end_ms": 28666,
+      "end_ms": 28515,
       "delivery": "speech"
     }
   ],
@@ -73,98 +75,120 @@
     {
       "asset_id": "act2_opening_fahai_01",
       "path": "res://assets/audio/act2-opening/act2_opening_fahai_01.wav",
-      "sha256": "7104f4b1dc1d9a032898fb22924c0c77a12430b35f90ef50e883898dfc4c474e",
+      "sha256": "4fe384fe81c4f3cd927491a8630e452974207287204e9123f9b9f297aefcf9cb",
       "frames": 226256,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16",
-      "peak": 0.8150612115859985
+      "peak": 0.547210693359375
     },
     {
       "asset_id": "act2_opening_xuxian_01",
       "path": "res://assets/audio/act2-opening/act2_opening_xuxian_01.wav",
-      "sha256": "beabe599d57225ae850afac11f9167ae78f02fc41335b6a4c66bc005fea8f740",
+      "sha256": "b1fed1a2c3bffde9c188c33ebb377775ac0bf521644410775ac908edfaa74d05",
       "frames": 162726,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16",
-      "peak": 0.2548556327819824
+      "peak": 0.771820068359375
     },
     {
       "asset_id": "act2_opening_fahai_02",
       "path": "res://assets/audio/act2-opening/act2_opening_fahai_02.wav",
-      "sha256": "43d4ecad652cdf4050244961eda58c67e326fef83f9c46afd45acb0d7d70cbea",
+      "sha256": "b93a6124000010be9a58439d0234d5d523490315157c3e8258297db0d7dd5ecb",
       "frames": 173872,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16",
-      "peak": 0.735583484172821
+      "peak": 0.521942138671875
     },
     {
       "asset_id": "act2_opening_xuxian_02",
       "path": "res://assets/audio/act2-opening/act2_opening_xuxian_02.wav",
-      "sha256": "75ed17890391d41745ee10fee4588c7cb312f21351668b7a7550e8c3974a2e0e",
+      "sha256": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
       "frames": 139320,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16",
-      "peak": 0.2487419694662094
+      "peak": 0.623504638671875
     },
     {
       "asset_id": "act2_opening_fahai_03",
       "path": "res://assets/audio/act2-opening/act2_opening_fahai_03.wav",
-      "sha256": "fe396ef2a716427c056d225b2fd36eacd9b2b7579050e318b86fbd7599b88f91",
+      "sha256": "26702e2ac03a586353216ba434d7b02aaa14b3c355b2b19af41f7defd7c8dde1",
       "frames": 278640,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16",
-      "peak": 0.811468243598938
+      "peak": 0.705078125
     },
     {
       "asset_id": "act2_opening_xuxian_03",
       "path": "res://assets/audio/act2-opening/act2_opening_xuxian_03.wav",
-      "sha256": "597824f43f4ba99dd91c2373aacd218bd75df92d16c62f8e683624d6e27ce02f",
-      "frames": 274182,
+      "sha256": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
+      "frames": 266937,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16",
-      "peak": 0.4098339080810547
+      "peak": 0.600311279296875
     },
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-opening/main.wav",
-      "sha256": "5eb7f9d9480d81d17ed9d1030f2f61abcee7b2568c33f86b5434719e78c1c51f",
-      "frames": 1483956,
+      "sha256": "b366645ebabbc390b0d8cb60a55dd1cc7aa2b6c6a7fe222ac790757d2f53020c",
+      "frames": 1476711,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16",
-      "peak": 0.8150612115859985
+      "peak": 0.771820068359375
     }
   ],
-  "source_request_sha256": "34b3e16c5756d027bdd9a52d7bb9ca9c40cfc293d260f327cf712995c06127c8",
-  "production_script_sha256": "8fb0fe4c81fc16967d6db286ab5f0bf7ae315f52d8150f2a101941f1b4d78132",
+  "source_request_sha256": "c8be03b451bebb30be0edc20fb659181ffaed84014a5726b836e4f46e0532b94",
+  "production_script_sha256": "e361e3a8230e67773eea8c0dfc0e29f006f72ca3f89ffa0959dfe43db4d18004",
   "identity_references": {
     "fahai": {
-      "path": "D:\\Cursor_program\\灯下\\builds\\act2-dialogue\\fahai-reference.wav",
-      "sha256": "96724a113240d1f82c6ded1334122f0176b96c9226ccd3c919e625bcfd2a3ede",
-      "source": "F5-TTS 1.1.22 bundled basic_ref_zh.wav; male reference; new role identity not yet user-listening-approved"
+      "path": "D:\\Cursor_program\\灯下\\builds\\act2-voice-revision\\fahai-identity.wav",
+      "sha256": "dacb30bb9d4f008fba622811751a9536553ee123686d46a2c9127cac61999a2d",
+      "source": "user supplied shadow-puppet Fahai clip, separated vocals, first speaker only",
+      "source_video_sha256": "26f880680bad349b9bf18b7e068f67e1671d8ea2e58758d39b2c60043b25d01e",
+      "source_window_seconds": [
+        0.0,
+        7.7
+      ],
+      "listening_scope": "User selected reference timbre; generated lines not yet approved"
     },
     "xuxian": {
-      "path": "D:\\Cursor_program\\灯下\\builds\\act1-jingju-xuxian-pilot\\xuxian-answer-continuous-vocals-01.wav",
-      "sha256": "9da04aff1dc51e688edf6360e92b12fed27fa04f4207b5ba93622d3b925d36f6",
-      "source": "accepted act1 Xuxian singing identity"
+      "path": "D:\\Cursor_program\\灯下\\builds\\act2-voice-revision\\xuxian-act1-speech-identity.wav",
+      "sha256": "09383362614e342f69058e304fd40dad52d0f45a4839b57014bdfa55bc12e7a4",
+      "source": "Actual shipped act1 Xuxian speech, not singing",
+      "source_assets": [
+        {
+          "path": "res://assets/audio/act1-natural/return-02.wav",
+          "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a"
+        },
+        {
+          "path": "res://assets/audio/act1-natural/return-06.wav",
+          "sha256": "37ae12ab01c5cc1fe46e1d50ae9cd70aa8c05b4385f2c07ead564407bd1cc978"
+        },
+        {
+          "path": "res://assets/audio/act1-natural/return-08.wav",
+          "sha256": "e5e9263e5b97b3a71551f4dc64adc85e9509d3b4a3b4713f5f62f127271dd17a"
+        }
+      ]
     }
   },
   "prosody_references": {
     "fahai": {
-      "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\baisheying-baisuzhen-selected-vocals.wav",
-      "sha256": "faadb2cdeda77ba1e66e8add08bee24125d18dcc53d22cf65fa72fb86711c3da",
-      "text": "人世间竟有如此美丽的湖山。"
+      "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\deps\\f5_tts\\infer\\examples\\basic\\basic_ref_zh.wav",
+      "sha256": "96724a113240d1f82c6ded1334122f0176b96c9226ccd3c919e625bcfd2a3ede",
+      "text": "对，这就是我，万人敬仰的太乙真人。",
+      "source": "F5 bundled natural male speech; exact text from author speech_edit.py"
     },
     "xuxian": {
-      "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\baisheying-baisuzhen-selected-vocals.wav",
-      "sha256": "faadb2cdeda77ba1e66e8add08bee24125d18dcc53d22cf65fa72fb86711c3da",
-      "text": "人世间竟有如此美丽的湖山。"
+      "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\return-02.wav",
+      "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+      "text": "些小之事，何劳娘子专程回来。",
+      "source": "Actual shipped act1 Xuxian speech for speaking pitch and prosody"
     }
   },
   "parameters": {
@@ -176,7 +200,8 @@
     "f0_condition": false,
     "auto_f0_adjust": false,
     "semi_tone_shift": 0,
-    "delivery_gain": 0.8
+    "delivery_lufs": -18,
+    "true_peak_ceiling_db": -1.5
   },
   "model_inputs": [
     {
@@ -361,9 +386,8 @@
     }
   ],
   "production_script_versions": {
-    "tts_and_first_vc": "624a956221fd25c1aabad2508ab5e71536f227d1bde3d17b0eb0f96d6baf8cd6",
-    "vc_after_path_fix": "69fdb1a393672e28b1a005112418b85481770fa5b48f8e8078f5fc3b026fc182",
-    "vc_final": "8fb0fe4c81fc16967d6db286ab5f0bf7ae315f52d8150f2a101941f1b4d78132"
+    "generation": "e361e3a8230e67773eea8c0dfc0e29f006f72ca3f89ffa0959dfe43db4d18004",
+    "assembly": "4a5a36af0eabf575f99a7621c5423bfd114b3deb79d3864d4fd6f2909a105701"
   },
   "sources": [
     "https://scripts.xikao.com/play/06000050",
@@ -371,5 +395,175 @@
     "https://artsandculture.google.com/story/CgVhg_73SS0vJA?hl=zh-CN"
   ],
   "text_origin": "Original project adaptation approved by user; not verbatim TV dialogue",
-  "human_listening_verified": false
+  "human_listening_verified": false,
+  "loudness_verification": [
+    {
+      "line_id": "act2_opening_fahai_01",
+      "before": {
+        "input_i": "-16.63",
+        "input_tp": "-3.80",
+        "input_lra": "2.00",
+        "input_thresh": "-26.92",
+        "output_i": "-16.69",
+        "output_tp": "-3.55",
+        "output_lra": "1.70",
+        "output_thresh": "-27.08",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.31"
+      },
+      "after": {
+        "input_i": "-18.05",
+        "input_tp": "-5.17",
+        "input_lra": "2.00",
+        "input_thresh": "-28.28",
+        "output_i": "-16.69",
+        "output_tp": "-3.55",
+        "output_lra": "1.70",
+        "output_thresh": "-27.08",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.31"
+      },
+      "processing": "two-pass EBU R128 loudness match, -18 LUFS, -1.5 dBTP, no pitch/time/reverb/trim"
+    },
+    {
+      "line_id": "act2_opening_xuxian_01",
+      "before": {
+        "input_i": "-20.43",
+        "input_tp": "-4.64",
+        "input_lra": "1.60",
+        "input_thresh": "-30.98",
+        "output_i": "-16.55",
+        "output_tp": "-1.50",
+        "output_lra": "0.00",
+        "output_thresh": "-27.36",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.45"
+      },
+      "after": {
+        "input_i": "-18.01",
+        "input_tp": "-2.21",
+        "input_lra": "1.60",
+        "input_thresh": "-28.56",
+        "output_i": "-16.55",
+        "output_tp": "-1.50",
+        "output_lra": "0.00",
+        "output_thresh": "-27.36",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.45"
+      },
+      "processing": "two-pass EBU R128 loudness match, -18 LUFS, -1.5 dBTP, no pitch/time/reverb/trim"
+    },
+    {
+      "line_id": "act2_opening_fahai_02",
+      "before": {
+        "input_i": "-16.72",
+        "input_tp": "-4.34",
+        "input_lra": "1.00",
+        "input_thresh": "-26.72",
+        "output_i": "-18.02",
+        "output_tp": "-6.03",
+        "output_lra": "0.00",
+        "output_thresh": "-28.02",
+        "normalization_type": "dynamic",
+        "target_offset": "0.02"
+      },
+      "after": {
+        "input_i": "-18.00",
+        "input_tp": "-5.62",
+        "input_lra": "1.00",
+        "input_thresh": "-28.00",
+        "output_i": "-18.02",
+        "output_tp": "-6.03",
+        "output_lra": "0.00",
+        "output_thresh": "-28.02",
+        "normalization_type": "dynamic",
+        "target_offset": "0.02"
+      },
+      "processing": "two-pass EBU R128 loudness match, -18 LUFS, -1.5 dBTP, no pitch/time/reverb/trim"
+    },
+    {
+      "line_id": "act2_opening_xuxian_02",
+      "before": {
+        "input_i": "-21.01",
+        "input_tp": "-7.11",
+        "input_lra": "0.00",
+        "input_thresh": "-31.79",
+        "output_i": "-17.99",
+        "output_tp": "-4.10",
+        "output_lra": "0.00",
+        "output_thresh": "-28.77",
+        "normalization_type": "linear",
+        "target_offset": "-0.01"
+      },
+      "after": {
+        "input_i": "-17.99",
+        "input_tp": "-4.10",
+        "input_lra": "0.00",
+        "input_thresh": "-28.77",
+        "output_i": "-18.00",
+        "output_tp": "-4.11",
+        "output_lra": "0.00",
+        "output_thresh": "-28.78",
+        "normalization_type": "linear",
+        "target_offset": "-0.00"
+      },
+      "processing": "two-pass EBU R128 loudness match, -18 LUFS, -1.5 dBTP, no pitch/time/reverb/trim"
+    },
+    {
+      "line_id": "act2_opening_fahai_03",
+      "before": {
+        "input_i": "-17.83",
+        "input_tp": "-2.85",
+        "input_lra": "2.60",
+        "input_thresh": "-27.94",
+        "output_i": "-18.71",
+        "output_tp": "-4.04",
+        "output_lra": "0.60",
+        "output_thresh": "-28.79",
+        "normalization_type": "dynamic",
+        "target_offset": "0.71"
+      },
+      "after": {
+        "input_i": "-18.01",
+        "input_tp": "-3.02",
+        "input_lra": "2.70",
+        "input_thresh": "-28.11",
+        "output_i": "-18.71",
+        "output_tp": "-4.04",
+        "output_lra": "0.60",
+        "output_thresh": "-28.79",
+        "normalization_type": "dynamic",
+        "target_offset": "0.71"
+      },
+      "processing": "two-pass EBU R128 loudness match, -18 LUFS, -1.5 dBTP, no pitch/time/reverb/trim"
+    },
+    {
+      "line_id": "act2_opening_xuxian_03",
+      "before": {
+        "input_i": "-21.64",
+        "input_tp": "-8.07",
+        "input_lra": "0.70",
+        "input_thresh": "-31.81",
+        "output_i": "-17.28",
+        "output_tp": "-3.75",
+        "output_lra": "0.50",
+        "output_thresh": "-27.62",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.72"
+      },
+      "after": {
+        "input_i": "-17.99",
+        "input_tp": "-4.43",
+        "input_lra": "0.70",
+        "input_thresh": "-28.16",
+        "output_i": "-17.28",
+        "output_tp": "-3.75",
+        "output_lra": "0.50",
+        "output_thresh": "-27.62",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.72"
+      },
+      "processing": "two-pass EBU R128 loudness match, -18 LUFS, -1.5 dBTP, no pitch/time/reverb/trim"
+    }
+  ]
 }
