@@ -27,14 +27,18 @@ func run_all() -> Dictionary:
 	_level1_shape(t)
 	_ground_line_alignment(t)
 	_pan_only_constraint(t)
+	_pan_only_all_stages(t)
 	_texture_contract(t)
 	_view_scripts_load(t)
 	_empty_stage_fallback(t)
 	_level2_geometry(t)
+	_level2_two_acts_separate(t)
+	_level2_act2_geometry(t)
+	_level3_geometry(t)
 	_geometry_on_canvas(t)
 	_constants_consistency(t)
 
-	t.finish("布景数据契约（第一关 + 通用约束）")
+	t.finish("布景数据契约（三关 + 第二关两幕 + 通用约束）")
 	return {"passed": t.passed, "failed": t.failed, "exit_code": t.report()}
 
 
@@ -177,6 +181,47 @@ func _pan_only_constraint(t: RefCounted) -> void:
 		t.check_approx(
 			float(item.get("pan_x", -1.0)), 0.0, 1e-9, "%s 的 pan_x 初始为 0" % str(item.get("id", ""))
 		)
+
+
+## 「景物只能左右平移」是**全关卡**的硬约束，不是第一关专属。
+## `_pan_only_constraint` 只查第一关（历史原因），这里对**所有已实现关卡**再查一遍
+## 字段白名单——第二关两幕与第三关是后加的，最容易从后门塞进 y 位移 / 缩放 / 旋转。
+func _pan_only_all_stages(t: RefCounted) -> void:
+	t.begin("只能左右平移（全关卡）")
+	var allowed := {
+		"id": true,
+		"kind": true,
+		"texture": true,
+		"texture_foot_px": true,
+		"polygon": true,
+		"texture_scale_px": true
+	}
+	for key in DefScript.POSITION_KEYS:
+		allowed[key] = true
+	for sid in [1, 2, DefScript.LEVEL2_ACT2_STAGE_ID, 3]:
+		var def: CSceneryDef = DefScript.make_stage(sid)
+		for item in def.items:
+			var label := "%d/%s" % [sid, str(item.get("id", ""))]
+			for key in item.keys():
+				if str(key) == "params":
+					continue
+				t.check(allowed.has(str(key)), "%s 的字段 %s 在白名单内（禁止 y 位移/缩放/旋转）" % [label, str(key)])
+			var params: Dictionary = item.get("params", {})
+			for key in params.keys():
+				var k := str(key)
+				var banned := (
+					k.contains("scale")
+					or k.contains("rotate")
+					or k.contains("rotation")
+					or k.contains("pos_y")
+					or k.contains("y_offset")
+					or k == "y"
+				)
+				t.check(not banned, "%s.params.%s 不是位移/缩放/旋转字段" % [label, k])
+			t.check_approx(float(item.get("pan_x", -1.0)), 0.0, 1e-9, "%s 的 pan_x 初始为 0" % label)
+			var ay: float = float(item.get("anchor_y", -1.0))
+			t.check_finite(ay, "%s 的 anchor_y 是有限数" % label)
+			t.check_in_range(ay, DefScript.Y_MIN, DefScript.Y_MAX, "%s 的 anchor_y ∈ [%.2f, %.2f]" % [label, DefScript.Y_MIN, DefScript.Y_MAX])
 
 
 ## 贴图契约（用户 2026-10-08：woop 素材接入）——贴图存在、锚点合法、走向白名单
@@ -363,13 +408,211 @@ func _geometry_on_canvas(t: RefCounted) -> void:
 ## 未知关卡返回空布景，而不是静默顶替成第一关的
 func _empty_stage_fallback(t: RefCounted) -> void:
 	t.begin("未知关卡返回空布景")
-	# 第 3 关仍未实现（不是拿已有关卡顶替）
-	var empty: CSceneryDef = DefScript.make_stage(3)
-	t.check(empty.items.is_empty(), "第 3 关布景为空（未实现就是未实现，不拿第一关顶替）")
-	t.check_eq(empty.stage_id, 3, "空布景仍携带 stage_id 供显示端报错用")
+	# ⚠️ 第 3 关自 2026-10-12 起**已实现**（一座顶天立地的山），
+	#    故「未实现」哨兵改用**第 4 关**——「未实现就是未实现」这条口径不变，
+	#    只是换了尚未实现的那个编号（换编号而不是删断言，是为了留住这条守护）。
+	var empty: CSceneryDef = DefScript.make_stage(4)
+	t.check(empty.items.is_empty(), "第 4 关布景为空（未实现就是未实现，不拿别关顶替）")
+	t.check_eq(empty.stage_id, 4, "空布景仍携带 stage_id 供显示端报错用")
 	t.check(DefScript.make_stage(1).items.size() > 0, "第 1 关布景非空")
-	# 第 2 关自 2026-10-11 起有自己的布景（门楼 + 菊石 + 垂柳枝）
+	# 第 2 关自 2026-10-11 起有自己的布景（**第一幕**：门楼 + 菊石 + 垂柳树）
 	t.check_eq(DefScript.make_stage(2).items.size(), 3, "第 2 关有自己的布景（3 件：门楼 / 菊花石 / 树）")
+	# 第 3 关自 2026-10-12 起有自己的布景（一座山）
+	t.check_eq(DefScript.make_stage(3).items.size(), 1, "第 3 关有自己的布景（1 件：山）")
+
+
+## 第二关两幕**必须各占一个编号、互不覆盖**。
+## 这是本文件最重要的一条守护：两幕布景完全不同（门外 vs 厅堂），
+## 而第二幕一度被写进 `make_level2()` 里——那会**直接顶掉第一幕的门楼**，
+## 且 `act2_opening.gd` 还在用编号 2 取第一幕数据。此处把它钉成断言。
+func _level2_two_acts_separate(t: RefCounted) -> void:
+	t.begin("第二关两幕各占一个编号")
+	var act1: CSceneryDef = DefScript.make_stage(2)
+	var act2: CSceneryDef = DefScript.make_stage(DefScript.LEVEL2_ACT2_STAGE_ID)
+	t.check_eq(DefScript.LEVEL2_ACT2_STAGE_ID, 22, "第二幕编号常量 = 22（第一幕是 2，不得共用）")
+	t.check_eq(act1.stage_id, 2, "编号 2 = 第一幕（门楼）")
+	t.check_eq(act2.stage_id, 22, "编号 22 = 第二幕（厅堂）")
+	t.check(act1.items.size() > 0 and act2.items.size() > 0, "两幕都有布景（各非空）")
+	# 两幕的 id 集合必须**不相交**：出现交集就说明有人把一套写进了另一套
+	var ids1: Array[String] = []
+	for item in act1.items:
+		ids1.append(str(item.get("id", "")))
+	var overlap: Array[String] = []
+	for item in act2.items:
+		var id2 := str(item.get("id", ""))
+		if ids1.has(id2):
+			overlap.append(id2)
+	t.check(overlap.is_empty(), "两幕布景 id 不重叠（实际重叠 %s）" % [str(overlap)])
+	# 第一幕三件与第二幕九件都要在（数量漂移立刻可见）
+	t.check_eq(act1.items.size(), 3, "第一幕仍是 3 件（门楼 / 菊石 / 树）")
+	t.check_eq(act2.items.size(), 9, "第二幕 9 件（柱×2 / 花盆 / 桌 / 凳×2 / 壶 / 杯×2）")
+
+
+## 第二关**第二幕**「室内厅堂」布景的几何契约（用户 2026-10-12 定稿 v8）。
+## 与前两关不同，本幕**四种锚点高度并存**，故逐件按各自的口径断言：
+##   贴地件 653.4 / 桌上件 595.6 / 立柱 680（贴幕布下沿）。
+func _level2_act2_geometry(t: RefCounted) -> void:
+	t.begin("第二关第二幕厅堂几何（柱 / 花盆 / 桌 / 凳 / 酒具）")
+	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
+	var def: CSceneryDef = DefScript.make_stage(DefScript.LEVEL2_ACT2_STAGE_ID)
+	t.check_eq(def.stage_id, 22, "第二幕 stage_id = 22")
+	t.check_eq(def.items.size(), 9, "共 9 件（v8 起删掉整套横梁）")
+
+	var rects: Dictionary = {}
+	for item in def.items:
+		var img := Image.load_from_file(
+			ProjectSettings.globalize_path(str(item.get("texture", "")))
+		)
+		if img == null:
+			t.check(false, "%s 贴图可读（第二幕几何断言前置）" % item.get("id", "?"))
+			continue
+		var scale: float = float(item.get("texture_scale_px", DefScript.TEXTURE_SCALE_PX))
+		var foot: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
+		var target := Vector2(
+			float(item.get("anchor_x", 0.0)) * 1920.0, float(item.get("anchor_y", 0.0)) * 1080.0
+		)
+		var r := Rect2(
+			target - foot * scale, Vector2(float(img.get_width()), float(img.get_height())) * scale
+		)
+		rects[str(item.get("id", ""))] = r
+		# ① 每件都必须完整落在幕布里（越界会被渲染器裁掉 = 只剩半边）
+		t.check(
+			(
+				r.position.x >= cloth.position.x - 0.5
+				and r.end.x <= cloth.end.x + 0.5
+				and r.position.y >= cloth.position.y - 0.5
+				and r.end.y <= cloth.end.y + 0.5
+			),
+			(
+				"%s 完整入幕布（x %.0f~%.0f  y %.0f~%.0f）"
+				% [item.get("id", "?"), r.position.x, r.end.x, r.position.y, r.end.y]
+			)
+		)
+		# ② 只允许水平平移（第二幕同样受这条硬约束）
+		t.check(item.has("pan_x"), "%s 有 pan_x 字段（水平平移口）" % item.get("id", "?"))
+		t.check_approx(float(item.get("pan_x", -1.0)), 0.0, 1e-9, "%s 的 pan_x 初始为 0" % item.get("id", "?"))
+
+	var col_l: Rect2 = rects.get("column_left", Rect2())
+	var col_r: Rect2 = rects.get("column_right", Rect2())
+	var table: Rect2 = rects.get("table", Rect2())
+	var stool_l: Rect2 = rects.get("stool_left", Rect2())
+	var stool_r: Rect2 = rects.get("stool_right", Rect2())
+	var pot: Rect2 = rects.get("flowerpot", Rect2())
+	var wine_pot: Rect2 = rects.get("wine_pot", Rect2())
+	var cup_g: Rect2 = rects.get("wine_cup_green", Rect2())
+	var cup_r: Rect2 = rects.get("wine_cup_red", Rect2())
+
+	# ③ 两柱**以幕布中心为轴对称**——按「中心之和 = 2×幕布中心」写，
+	#    改幕布尺寸时自动成立，而不是各写死一个数。
+	var cloth_center: float = cloth.position.x + cloth.size.x * 0.5
+	t.check_approx(
+		col_l.get_center().x + col_r.get_center().x,
+		cloth_center * 2.0,
+		1.0,
+		"左右柱关于幕布中心对称（中心 %.1f + %.1f = %.1f，应为 %.1f）"
+		% [col_l.get_center().x, col_r.get_center().x, col_l.get_center().x + col_r.get_center().x, cloth_center * 2.0]
+	)
+	# ④ 右柱是**镜像贴图**：镜像只翻内容、不改几何 → 左右柱同宽同高
+	t.check_approx(col_l.size.x, col_r.size.x, 0.5, "左右柱同宽（%.1f / %.1f，镜像不改几何）" % [col_l.size.x, col_r.size.x])
+	t.check_approx(col_l.size.y, col_r.size.y, 0.5, "左右柱同高（%.1f / %.1f）" % [col_l.size.y, col_r.size.y])
+	# ⑤ 立柱「顶天立地」：**底贴幕布下沿 680**（唯一不随地平线的贴地件），高 = 幕布高 − 21.6
+	t.check_approx(col_l.end.y, cloth.end.y, 1.0, "左柱底缘 y=%.1f 贴幕布下沿 %.1f" % [col_l.end.y, cloth.end.y])
+	t.check_approx(col_r.end.y, cloth.end.y, 1.0, "右柱底缘 y=%.1f 贴幕布下沿 %.1f" % [col_r.end.y, cloth.end.y])
+	t.check_approx(col_l.size.y, 566.4, 1.0, "柱高 566.4px（占幕布高 %.1f%%）" % [100.0 * col_l.size.y / cloth.size.y])
+	t.check(col_l.position.y > cloth.position.y, "柱顶 y=%.1f 未越幕布上缘 %.1f" % [col_l.position.y, cloth.position.y])
+
+	# ⑥ 圆桌居中（同时是两凳的对称轴）
+	t.check_approx(table.get_center().x, cloth_center, 1.0, "圆桌中心 %.1f = 幕布中心 %.1f（居中）" % [table.get_center().x, cloth_center])
+	t.check_approx(table.end.y, 653.4, 1.5, "圆桌落地 y=%.1f（地平线 653.4）" % table.end.y)
+	# ⑦ 两凳关于圆桌对称
+	t.check_approx(
+		stool_l.get_center().x + stool_r.get_center().x,
+		table.get_center().x * 2.0,
+		1.0,
+		"两凳关于桌中心对称（%.1f + %.1f = %.1f）"
+		% [stool_l.get_center().x, stool_r.get_center().x, stool_l.get_center().x + stool_r.get_center().x]
+	)
+	t.check(stool_l.end.x < table.position.x, "左凳在桌左侧（凳右缘 %.1f < 桌左缘 %.1f）" % [stool_l.end.x, table.position.x])
+	t.check(stool_r.position.x > table.end.x, "右凳在桌右侧（凳左缘 %.1f > 桌右缘 %.1f）" % [stool_r.position.x, table.end.x])
+	t.check_approx(stool_l.end.y, 653.4, 1.5, "左凳落地 y=%.1f" % stool_l.end.y)
+	t.check_approx(stool_r.end.y, 653.4, 1.5, "右凳落地 y=%.1f" % stool_r.end.y)
+
+	# ⑧ 花盆**落地**、夹在左柱与圆桌之间（既压不到柱、也碰不到桌）
+	t.check_approx(pot.end.y, 653.4, 1.5, "花盆落地 y=%.1f（与非立柱贴地件同线）" % pot.end.y)
+	t.check(pot.position.x > col_l.end.x, "花盆左缘 %.1f > 左柱右缘 %.1f（不压柱）" % [pot.position.x, col_l.end.x])
+	t.check(pot.end.x < table.position.x, "花盆右缘 %.1f < 桌左缘 %.1f（不碰桌）" % [pot.end.x, table.position.x])
+	t.check(pot.end.y > table.end.y - table.size.y, "花盆高 %.0f 高于桌（%.0f）——用户定案「花盆比桌子高一点」" % [pot.size.y, table.size.y])
+
+	# ⑨ 酒具三件取**桌面高度** 595.6（不是地平线），且横向都落在桌面内
+	t.check_approx(wine_pot.end.y, 595.6, 1.5, "酒壶锚点 y=%.1f（桌面高，用户定案「上移 0.1」）" % wine_pot.end.y)
+	t.check_approx(cup_g.end.y, 595.6, 1.5, "绿釉杯锚点 y=%.1f" % cup_g.end.y)
+	t.check_approx(cup_r.end.y, 595.6, 1.5, "朱红杯锚点 y=%.1f" % cup_r.end.y)
+	for pair in [["酒壶", wine_pot], ["绿釉杯", cup_g], ["朱红杯", cup_r]]:
+		var label: String = str(pair[0])
+		var rect: Rect2 = pair[1]
+		t.check(
+			rect.position.x >= table.position.x - 0.5 and rect.end.x <= table.end.x + 0.5,
+			"%s 横向落在桌面内（%.1f~%.1f ⊂ %.1f~%.1f）" % [label, rect.position.x, rect.end.x, table.position.x, table.end.x]
+		)
+	# 壶在左、两杯在右（用户手绘图的排序）
+	t.check(wine_pot.end.x <= cup_g.position.x + 0.5, "酒壶在绿釉杯左侧（壶右缘 %.1f ≤ 杯左缘 %.1f）" % [wine_pot.end.x, cup_g.position.x])
+	t.check(cup_g.end.x <= cup_r.position.x + 0.5, "绿釉杯在朱红杯左侧（%.1f ≤ %.1f）" % [cup_g.end.x, cup_r.position.x])
+
+	# ⑩ 反向断言：**横梁整套已删**（用户 2026-10-12 手绘批注「删除」）。
+	#    留反向断言是防止有人照旧图把它加回来——v8 之后立柱上面不再有梁。
+	var beams: Array[String] = []
+	for item in def.items:
+		if str(item.get("id", "")).begins_with("beam"):
+			beams.append(str(item.get("id", "")))
+	t.check(beams.is_empty(), "横梁已整套删除（实际仍有 %s）" % [str(beams)])
+
+
+## 第三关《盗仙草》布景几何：**一座山，顶天立地、紧靠最右侧**（用户 2026-10-12 定案）。
+func _level3_geometry(t: RefCounted) -> void:
+	t.begin("第三关布景几何（一座山）")
+	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
+	var def: CSceneryDef = DefScript.make_stage(3)
+	t.check_eq(def.stage_id, 3, "第 3 关 stage_id = 3")
+	t.check_eq(def.items.size(), 1, "只有 1 件布景（贴图内已含云 / 松 / 峰顶殿宇，一件顶三件）")
+	var item: Dictionary = def.items[0]
+	t.check_eq(str(item.get("id", "")), "mountain", "元素 id = mountain")
+
+	var img := Image.load_from_file(
+		ProjectSettings.globalize_path(str(item.get("texture", "")))
+	)
+	t.check(img != null, "山贴图可读（不依赖导入缓存）")
+	if img == null:
+		return
+	t.check_eq(img.get_width(), 1494, "山贴图宽 1494")
+	t.check_eq(img.get_height(), 1754, "山贴图高 1754")
+	var scale: float = float(item.get("texture_scale_px", DefScript.TEXTURE_SCALE_PX))
+	var foot: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
+	var target := Vector2(
+		float(item.get("anchor_x", 0.0)) * 1920.0, float(item.get("anchor_y", 0.0)) * 1080.0
+	)
+	var r := Rect2(target - foot * scale, Vector2(float(img.get_width()), float(img.get_height())) * scale)
+
+	# ① 完整入幕布
+	t.check(
+		(
+			r.position.x >= cloth.position.x - 0.5
+			and r.end.x <= cloth.end.x + 0.5
+			and r.position.y >= cloth.position.y - 0.5
+			and r.end.y <= cloth.end.y + 0.5
+		),
+		"山完整入幕布（x %.0f~%.0f  y %.0f~%.0f）" % [r.position.x, r.end.x, r.position.y, r.end.y]
+	)
+	# ② 顶天立地：山高 = 幕布高，山顶贴幕布顶、山脚贴幕布底
+	t.check_approx(r.size.y, cloth.size.y, 1.0, "山高 %.1f = 幕布高 %.1f（顶天立地）" % [r.size.y, cloth.size.y])
+	t.check_approx(r.position.y, cloth.position.y, 1.0, "山顶 y=%.1f 贴幕布顶 %.1f" % [r.position.y, cloth.position.y])
+	t.check_approx(r.end.y, cloth.end.y, 1.0, "山脚 y=%.1f 贴幕布底 %.1f" % [r.end.y, cloth.end.y])
+	# ③ 紧靠最右侧（右缘内留 20px）
+	t.check_approx(cloth.end.x - r.end.x, 20.0, 2.0, "山右缘距幕布右 %.1f（内留 20px）" % (cloth.end.x - r.end.x))
+	# ④ 左侧大片留空给影人（用户定案：左侧约 72% 留空）
+	var free_ratio: float = (r.position.x - cloth.position.x) / cloth.size.x
+	t.check(free_ratio >= 0.65, "山左侧留空 %.0f%%（用户定案约 72%%，给影人活动区）" % (100.0 * free_ratio))
+	# ⑤ 只允许水平平移
+	t.check(item.has("pan_x"), "山有 pan_x 字段（水平平移口）")
 
 
 ## 第二关布景的几何契约（2026-10-11 用户定案）。

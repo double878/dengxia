@@ -1,13 +1,34 @@
 extends SceneTree
-## 第二关布景验证探针（零 .tscn，只读运行）。
-## 与c_probe_scenery 同构：只建幕布 + 布景 + 三个影人占位，不加雨幕/不建 B 侧，
-## 目的是看清门楼 / 菊石 / 垂柳三件的位置与比例。
+## 布景验证探针（零 .tscn，只读运行）—— **任意关卡通吃**。
+## 与 c_probe_scenery 同构：只建幕布 + 布景 + 三个影人占位，不加雨幕/不建 B 侧，
+## 目的是看清该关各件布景的位置与比例。
+##
+## 用法：
+##   第二关第一幕（缺省）：godot --path . --script res://tests/c/c_probe_scenery_lv2.gd
+##   第二关第二幕（厅堂）：godot --path . --script res://tests/c/c_probe_scenery_lv2.gd -- --stage=22
+##   第三关（山）：        godot --path . --script res://tests/c/c_probe_scenery_lv2.gd -- --stage=3
+##
+## 🔴 原来关卡号与输出目录都写死为 2，第二关之后就没法用了；
+## 现在关卡号从命令行读，输出按关卡分文件（`stage22_*.png`）。
+## ⚠️ **不可加 --headless**：要真渲染纹理才能截图。
+## ⚠️ 图中 x=0.55 / 0.70 / 0.85 处三个苍白矩形是**本探针自带的影人占位**
+##    （`Figure`，白 18%），不是布景缺陷——别把它当成没加载贴图的 bug 去查。
 const DefScript := preload("res://scripts/c/c_scenery_def.gd")
 const ViewScript := preload("res://scripts/c/c_scenery_view.gd")
 
 const CANVAS_SIZE := Vector2(1920.0, 1080.0)
 const CLOTH := Rect2(66.0, 92.0, 1788.0, 588.0)
-const OUT := "user://shots_lv2"
+const OUT := "user://shots_scenery"
+
+## 当前关卡号（由 `_stage_id()` 在启动时写入，输出文件名要用）。
+var _sid: int = 2
+
+## 从命令行读关卡号：`-- --stage=N`，缺省 2。
+static func _stage_id() -> int:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--stage="):
+			return int(a.substr(8))
+	return 2
 
 var _frames: int = 0
 
@@ -19,13 +40,13 @@ func _initialize() -> void:
 
 func _build() -> void:
 	var root := Node2D.new()
-	root.name = "Lv2Probe"
+	root.name = "SceneryProbe"
 	get_root().add_child(root)
 
 	var board := BoardLayer.new()
 	root.add_child(board)
 
-	# 三个影人占位（模拟第二关会有的人物在右侧；人物站位归 A 侧，这里只做视觉参照）
+	# 三个影人占位（模拟影人活动区；人物站位归 A 侧，这里只做视觉参照）
 	var xs: Array = [0.55, 0.70, 0.85]
 	for i in 3:
 		var fig := Figure.new()
@@ -33,13 +54,13 @@ func _build() -> void:
 		fig.z_index = 20
 		root.add_child(fig)
 
-	# ★ 被测对象：第二关布景
+	# ★ 被测对象：该关布景
 	var scenery := ViewScript.new()
 	scenery.stage_origin = Vector2.ZERO
 	scenery.stage_size = CANVAS_SIZE
 	scenery.clip_rect = CLOTH
 	scenery.z_index = 0
-	scenery.setup(DefScript.make_stage(2))
+	scenery.setup(DefScript.make_stage(_stage_id()))
 	root.add_child(scenery)
 
 
@@ -86,8 +107,9 @@ func _on_frame() -> void:
 
 func _save_and_quit() -> void:
 	# 打印几何（与几何探针同口径，便于核对）
-	var def: CSceneryDef = DefScript.make_stage(2)
-	print("[lv2] 关卡 %d 布景 %d 件" % [def.stage_id, def.items.size()])
+	_sid = _stage_id()
+	var def: CSceneryDef = DefScript.make_stage(_sid)
+	print("[scenery] 关卡 %d 布景 %d 件" % [def.stage_id, def.items.size()])
 	for it in def.items:
 		var tex_path := str(it.get("texture", ""))
 		var img := Image.load_from_file(ProjectSettings.globalize_path(tex_path))
@@ -101,7 +123,7 @@ func _save_and_quit() -> void:
 		var r := Rect2(tg - ft * sc, Vector2(float(img.get_width()), float(img.get_height())) * sc)
 		print(
 			(
-				"   %-14s x %.0f~%.0f  y %.0f~%.0f  (scale %.4f)"
+				"   %-18s x %.0f~%.0f  y %.0f~%.0f  (scale %.4f)"
 				% [str(it.get("id", "?")), r.position.x, r.end.x, r.position.y, r.end.y, sc]
 			)
 		)
@@ -112,7 +134,7 @@ func _save_and_quit() -> void:
 		quit(1)
 		return
 	DirAccess.make_dir_recursive_absolute(OUT)
-	var p := OUT + "/lv2_%d.png" % int(Time.get_unix_time_from_system())
+	var p := OUT + "/stage%d_%d.png" % [_sid, int(Time.get_unix_time_from_system())]
 	if img2.save_png(p) == OK:
 		print("[shot] ", ProjectSettings.globalize_path(p))
 	else:
