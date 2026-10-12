@@ -11,10 +11,15 @@ var player: AudioStreamPlayer
 var clock: MusicClock
 var controller: PuppetController
 var problem: String = ""
+var arrival_target_x: float = 0.0
+var greeting_target_x: float = 0.0
 var agreement_target_x: float = 0.0
+var _greeting_origin: float = 0.0
 var _agreement_origin: float = 0.0
 var _agreement_direction: float = 1.0
 var _missing_actor: bool = false
+var _fahai_present: bool = false
+var _xuxian_present: bool = false
 
 
 func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
@@ -63,6 +68,9 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 		previous = end
 	if gate < int(lines[4].end_ms) or gate + 200 > int(lines[5].start_ms):
 		return _fail("第二关第一幕等待点须在第五、六句之间的保护静音内")
+	var greeting_gate := int(config.get("greeting_gate_ms", -1))
+	if greeting_gate < int(lines[0].end_ms) or greeting_gate + 200 > int(lines[1].start_ms):
+		return _fail("第二关第一幕迎接等待点须在首句后的保护静音内")
 	var path := str(config.get("main_path", ""))
 	if not ResourceLoader.exists(path):
 		return _fail("缺少第二关第一幕主轨：" + path)
@@ -84,32 +92,40 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 	clock.set_player(player)
 	clock.start()
 	clock.set_song_frozen(true)
+	arrival_target_x = controller.get_puppet(0).stage_pos.x - 380.0 / 1920.0
+	_greeting_origin = controller.get_puppet(1).stage_pos.x
 	return true
 
 
 func update(on_stage: Array[int], entrance_clear: bool) -> void:
 	if phase in ["error", "finished"] or clock.is_paused():
 		return
-	_missing_actor = not on_stage.has(0) or not on_stage.has(1)
+	_fahai_present = on_stage.has(0)
+	_xuxian_present = on_stage.has(1)
+	_missing_actor = (
+		not _fahai_present or (phase not in ["wait_arrival", "first_line"] and not _xuxian_present)
+	)
 	if phase != "closing" and _missing_actor:
 		clock.set_song_frozen(true)
 		return
 	if phase == "wait_arrival":
 		var fahai := controller.get_puppet(0)
-		var xuxian := controller.get_puppet(1)
-		var gap := (fahai.stage_pos.x - xuxian.stage_pos.x) * 1920.0
-		if (
-			entrance_clear
-			and gap >= 220.0
-			and gap <= 380.0
-			and fahai.facing == -1.0
-			and xuxian.facing == 1.0
-			and absf(fahai.stage_pos.y - xuxian.stage_pos.y) * 1080.0 < 50.0
-		):
-			phase = "dialogue"
+		if entrance_clear and fahai.facing == -1.0:
+			phase = "first_line"
 			clock.set_song_frozen(false)
 		return
 	var now := clock.get_song_time_ms()
+	if phase == "first_line" and now >= int(config.greeting_gate_ms):
+		clock.set_song_frozen(true)
+		_update_greeting_target()
+		phase = "wait_greeting"
+		return
+	if phase == "wait_greeting":
+		_update_greeting_target()
+		if _has_greeted():
+			phase = "dialogue"
+			clock.set_song_frozen(false)
+		return
 	if phase == "dialogue" and now >= int(config.agreement_gate_ms):
 		clock.set_song_frozen(true)
 		_reset_agreement_step()
@@ -139,6 +155,28 @@ func update(on_stage: Array[int], entrance_clear: bool) -> void:
 		finished.emit()
 
 
+func _update_greeting_target() -> void:
+	var direction := signf(controller.get_puppet(0).stage_pos.x - _greeting_origin)
+	greeting_target_x = controller.get_puppet(0).stage_pos.x - direction * 300.0 / 1920.0
+
+
+func _has_greeted() -> bool:
+	var fahai := controller.get_puppet(0)
+	var xuxian := controller.get_puppet(1)
+	var toward := signf(fahai.stage_pos.x - xuxian.stage_pos.x)
+	var direction := signf(fahai.stage_pos.x - _greeting_origin)
+	var moved := (xuxian.stage_pos.x - _greeting_origin) * direction * 1920.0
+	var gap := absf(fahai.stage_pos.x - xuxian.stage_pos.x) * 1920.0
+	return (
+		moved >= AGREEMENT_STEP
+		and gap >= 220.0
+		and gap <= 380.0
+		and fahai.facing == -toward
+		and xuxian.facing == toward
+		and absf(fahai.stage_pos.y - xuxian.stage_pos.y) * 1080.0 < 50.0
+	)
+
+
 func _reset_agreement_step() -> void:
 	_agreement_origin = controller.get_puppet(1).stage_pos.x
 	_agreement_direction = signf(controller.get_puppet(0).stage_pos.x - _agreement_origin)
@@ -146,7 +184,10 @@ func _reset_agreement_step() -> void:
 
 
 func get_line() -> Dictionary:
-	if phase in ["wait_arrival", "wait_agreement", "error", "finished"] or _missing_actor:
+	if (
+		phase in ["wait_arrival", "wait_greeting", "wait_agreement", "error", "finished"]
+		or _missing_actor
+	):
 		return {}
 	var now := clock.get_song_time_ms()
 	for row: Dictionary in config.get("lines", []):
@@ -160,9 +201,23 @@ func get_hint() -> String:
 		"error":
 			return "对白音源加载失败，请查看运行日志"
 		"wait_arrival":
+			if not _fahai_present:
+				return "按 1 请法海上场 · 空格接手后向左走出柳树"
 			if controller.controlled_id == 0:
-				return "向左走出柳树，来到许仙右侧面对面"
-			return "空格接手法海 · 向左走出柳树，来到许仙右侧面对面"
+				return "向左走出柳树，在树旁开口"
+			return "空格接手法海 · 向左走出柳树，在树旁开口"
+		"first_line":
+			if not _fahai_present:
+				return "按 1 请法海重新上场，继续首句"
+			return "法海先开口 · 说完后再请许仙出门迎接"
+		"wait_greeting":
+			if not _fahai_present:
+				return "按 1 请法海重新上场，等许仙迎接"
+			if not _xuxian_present:
+				return "按 2 请许仙出门迎接 · 空格接手后朝法海走近"
+			if controller.controlled_id == 1:
+				return "从门洞朝法海走近，面对面迎接后回话"
+			return "空格接手许仙 · 从门洞朝法海走近，面对面迎接后回话"
 		"wait_agreement":
 			if _agreement_direction == 0.0:
 				return "两人站得太近 · 先将法海移到许仙旁侧，再让许仙上前一步"

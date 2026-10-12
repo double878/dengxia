@@ -123,6 +123,8 @@ func test_controls(opening: Node) -> void:
 	await capture("operator-hand-idle")
 	key(KEY_1)
 	key(KEY_1)
+	# 本测试独立验证双人操演；首句和迎接许可由 run_act2_dialogue 覆盖。
+	opening.dialogue.phase = "wait_greeting"
 	key(KEY_2)
 	key(KEY_3)
 	check(opening.get("on_stage") == [0, 1], "数字键上场/重复上场/空槽")

@@ -10,6 +10,8 @@ func _run() -> void:
 	var fahai: PuppetState = controller.get_puppet(0)
 	var xuxian: PuppetState = controller.get_puppet(1)
 	key(KEY_1)
+	# 独立验证入口几何；首句结束后的上场许可由对白回归覆盖。
+	opening.dialogue.phase = "wait_greeting"
 	key(KEY_2)
 	check(fahai.stage_pos.x * 1920 > 1655, "法海首次没有出现在树的右后方")
 	check(fahai.stage_pos.x * 1920 < 1824, "法海首次在幕布右缘之外")

@@ -175,6 +175,8 @@ func _grab_position(at: Vector2) -> Vector2:
 func _enter(id: int) -> void:
 	if dialogue.phase in ["closing", "finished", "error"]:
 		return
+	if id == 1 and dialogue.phase in ["wait_arrival", "first_line"]:
+		return
 	if on_stage.has(id):
 		return
 	on_stage.append(id)
@@ -251,7 +253,7 @@ func _refresh_views() -> void:
 	if _paused:
 		_hint.text = "演出已暂停 · 按 ESC 或点击继续"
 	elif on_stage.is_empty():
-		_hint.text = "按 1 请法海上场，按 2 请许仙上场"
+		_hint.text = "按 1 请法海上场 · 空格接手后向左走出柳树"
 	elif controller.controlled_id < 0:
 		_hint.text = "按空格接手在场影人"
 	else:
@@ -272,7 +274,10 @@ func _refresh_views() -> void:
 		_hint.text = dialogue.get_hint()
 		if controller.controlled_id >= 0 and not _hint.text.is_empty():
 			_hint.text = "正在接手：%s · %s" % [CAST[controller.controlled_id], _hint.text]
-		if not on_stage.has(0) or not on_stage.has(1):
+		if (
+			dialogue.phase not in ["wait_arrival", "first_line", "wait_greeting"]
+			and (not on_stage.has(0) or not on_stage.has(1))
+		):
 			_hint.text = "按 1 请法海上场，按 2 请许仙上场 · 重新上场保留原姿势"
 	var line: Dictionary = dialogue.get_line()
 	_subtitle.text = "" if line.is_empty() else "%s：%s" % [line.role_name, line.text]
@@ -351,14 +356,19 @@ func _draw_operator_hand() -> void:
 	OperatorHand.draw_on(
 		_foreground, HAND_ANCHOR, 0.65 + 0.35 * StageLight.unit(lamp_controller.lamp.oil)
 	)
-	if not _paused and on_stage.has(0) and on_stage.has(1):
+	if not _paused and on_stage.has(0):
 		var target_x := -1.0
+		var id := 0
 		if dialogue.phase == "wait_arrival":
-			target_x = controller.get_puppet(1).stage_pos.x * 1920.0 + 300.0
+			target_x = dialogue.arrival_target_x * 1920.0
+		elif dialogue.phase == "wait_greeting" and on_stage.has(1):
+			target_x = dialogue.greeting_target_x * 1920.0
+			id = 1
 		elif dialogue.phase == "wait_agreement":
 			target_x = dialogue.agreement_target_x * 1920.0
+			id = 1
 		if target_x >= CLOTH.position.x and target_x < CLOTH.end.x:
-			var y := controller.get_puppet(1).stage_pos.y * 1080.0 + 6.0
+			var y := controller.get_puppet(id).stage_pos.y * 1080.0 + 6.0
 			_foreground.draw_line(
 				Vector2(target_x - 34, y), Vector2(target_x + 34, y), Color("e7c590"), 3
 			)

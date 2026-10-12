@@ -4,6 +4,7 @@
   "scene_id": "fahai_advice",
   "main_path": "res://assets/audio/act2-opening/main.wav",
   "duration_ms": 30916,
+  "greeting_gate_ms": 5334,
   "agreement_gate_ms": 22454,
   "dark_start_ms": 28916,
   "lines": [

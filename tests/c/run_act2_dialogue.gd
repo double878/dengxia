@@ -31,9 +31,10 @@ func _run() -> void:
 	check(dialogue.phase == "wait_arrival" and clock.is_song_frozen(), "空台播放对白")
 	opening._enter(0)
 	opening._enter(1)
+	check(opening.on_stage == [0], "首句结束前许仙提前出门")
 	opening._process(0.1)
 	check(dialogue.phase == "wait_arrival", "法海藏在树后便开口")
-	controller.get_puppet(0).stage_pos.x = controller.get_puppet(1).stage_pos.x + 300.0 / 1920.0
+	controller.get_puppet(0).stage_pos.x -= 380.0 / 1920.0
 	controller.get_puppet(0).facing = 1.0
 	opening._refresh_views()
 	opening._process(0.02)
@@ -41,12 +42,55 @@ func _run() -> void:
 	controller.get_puppet(0).facing = -1.0
 	opening._refresh_views()
 	opening._process(0.1)
-	check(dialogue.phase == "dialogue" and not clock.is_song_frozen(), "真实就位没有开始对白")
+	check(dialogue.phase == "first_line" and not clock.is_song_frozen(), "法海走出树旁后没有独自说首句")
+	if dialogue.phase != "first_line":
+		opening.queue_free()
+		await process_frame
+		quit(1)
+		return
 	opening._toggle_pause()
 	var before: int = clock.get_real_time_ms()
 	opening._process(0.1)
 	check(clock.get_real_time_ms() == before and clock.is_paused(), "菜单暂停没有冻结双时钟")
 	opening._toggle_pause()
+	opening._exit(0)
+	opening._process(0.02)
+	check(clock.is_song_frozen(), "首句法海误退场没有冻结")
+	check(dialogue.get_hint().contains("法海重新上场"), "首句退场提示误要求许仙")
+	opening._enter(0)
+	opening._process(0.02)
+	check(dialogue.phase == "first_line" and not clock.is_song_frozen(), "法海回来后首句未原位续播")
+	clock.set_free_time_ms(int(dialogue.config.lines[0].end_ms) - 50)
+	opening._process(0.02)
+	check(dialogue.phase == "first_line", "法海首句尚未说完便等待迎接")
+	opening._enter(1)
+	check(opening.on_stage == [0], "说首句时允许许仙提前上场")
+	clock.set_free_time_ms(int(dialogue.config.lines[0].end_ms) + 120)
+	opening._process(0.02)
+	check(dialogue.phase == "wait_greeting" and clock.is_song_frozen(), "首句之后没有冻结并等待许仙迎接")
+	check(dialogue.get_line().is_empty(), "许仙未出门便播放回话字幕")
+	clock.update(20.0)
+	opening._process(0.02)
+	check(dialogue.phase == "wait_greeting", "迎接等待超时后自动回话")
+	opening._enter(1)
+	opening._process(0.02)
+	check(opening.on_stage == [0, 1] and dialogue.phase == "wait_greeting", "许仙只在门内上场便回话")
+	var fahai_position: Vector2 = controller.get_puppet(0).stage_pos
+	controller.get_puppet(1).stage_pos.x -= 80.0 / 1920.0
+	opening._process(0.02)
+	check(dialogue.phase == "wait_greeting", "许仙走反方向仍回话")
+	controller.get_puppet(1).stage_pos.x = fahai_position.x - 300.0 / 1920.0
+	controller.get_puppet(1).facing = -1.0
+	opening._process(0.02)
+	check(dialogue.phase == "wait_greeting", "迎接时背对法海仍回话")
+	controller.get_puppet(1).facing = 1.0
+	opening._exit(0)
+	opening._process(0.02)
+	check(dialogue.phase == "wait_greeting", "法海缺席仍完成迎接")
+	opening._enter(0)
+	opening._process(0.02)
+	check(dialogue.phase == "dialogue" and not clock.is_song_frozen(), "许仙迎接就位后没有回话")
+	check(controller.get_puppet(0).stage_pos == fahai_position, "迎接要求法海继续走到门前")
 	clock.set_free_time_ms(int(dialogue.config.agreement_gate_ms))
 	opening._process(0.02)
 	check(dialogue.phase == "wait_agreement" and clock.is_song_frozen(), "第五句后未等待实际应允")
@@ -98,6 +142,7 @@ func test_agreement_at_edge(scene: PackedScene) -> void:
 	clock.set_player(null)
 	clock.start()
 	opening._enter(0)
+	dialogue.phase = "wait_greeting"
 	opening._enter(1)
 	dialogue.phase = "dialogue"
 	var edge := PuppetState.STAGE_POS_MAX
