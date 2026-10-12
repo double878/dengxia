@@ -108,7 +108,7 @@ static func _guides(sid: int) -> Array:
 					"y": DefScript.LEVEL2_BEAM_TOP_Y * 1080.0,
 					"text":
 						(
-							"横梁最高水平线 y=%.1fpx（%.4f）← 用户第三轮定案；梁底 %.1fpx"
+							"横梁最高水平线 y=%.1fpx（%.4f）← 用户第四轮定案；梁底 %.1fpx"
 							% [
 								DefScript.LEVEL2_BEAM_TOP_Y * 1080.0,
 								DefScript.LEVEL2_BEAM_TOP_Y,
@@ -139,10 +139,18 @@ static func _guides(sid: int) -> Array:
 				},
 				{
 					"y": DefScript.LEVEL2_ACT2_GROUND_Y * 1080.0,
+					# 第四轮起花盆**不再走地平线**（另在 658.8px / 0.61，只差 5.4px）。
+					# 两条线只差 5.4px，各自再画一条线＋一行字会叠在一起看不清，
+					# 故这里并入同一行文字说明；花盆实际落点看 stdout 的矩形打印。
 					"text":
 						(
-							"地平线 y=%.1fpx（%.4f）← 花盆 / 桌 / 两凳落地线"
-							% [DefScript.LEVEL2_ACT2_GROUND_Y * 1080.0, DefScript.LEVEL2_ACT2_GROUND_Y]
+							"地平线 y=%.1fpx（%.4f）← 桌 / 两凳落线（花盆另在 %.1fpx / %.2f）"
+							% [
+								DefScript.LEVEL2_ACT2_GROUND_Y * 1080.0,
+								DefScript.LEVEL2_ACT2_GROUND_Y,
+								DefScript.LEVEL2_ACT2_FLOWERPOT_BASE_Y * 1080.0,
+								DefScript.LEVEL2_ACT2_FLOWERPOT_BASE_Y,
+							]
 						),
 					"color": Color(0.30, 1.0, 0.45, 0.92),
 				},
@@ -244,6 +252,7 @@ func _save_and_quit() -> void:
 	_sid = _stage_id()
 	var def: CSceneryDef = DefScript.make_stage(_sid)
 	print("[scenery] 关卡 %d 布景 %d 件" % [def.stage_id, def.items.size()])
+	var drawn: Dictionary = {}
 	for it in def.items:
 		var tex_path := str(it.get("texture", ""))
 		var img := Image.load_from_file(ProjectSettings.globalize_path(tex_path))
@@ -255,35 +264,67 @@ func _save_and_quit() -> void:
 			float(it.get("anchor_x", 0.0)) * 1920.0, float(it.get("anchor_y", 0.0)) * 1080.0
 		)
 		var r := Rect2(tg - ft * sc, Vector2(float(img.get_width()), float(img.get_height())) * sc)
+		drawn[str(it.get("id", "?"))] = r
 		print(
 			(
-				"   %-18s x %.0f~%.0f  y %.0f~%.0f  (scale %.4f)"
+				"   %-18s x %.1f~%.1f  y %.1f~%.1f  (scale %.5f)"
 				% [str(it.get("id", "?")), r.position.x, r.end.x, r.position.y, r.end.y, sc]
 			)
 		)
 	for g in _guides(_sid):
 		print("   [标线] y=%.1fpx  %s" % [float(g["y"]), str(g["text"])])
 
-	# 第二幕专查：用户第三轮定的三条线，逐条打印实际值（便于与图上的标线对照）
+	# 第二幕专查：用户逐轮定的落点，逐条打印**实际绘制值 vs 目标**（便于与图上的标线对照）
 	if _sid == 22:
 		var wine_line: float = DefScript.LEVEL2_ACT2_WINE_BASE_Y * 1080.0
 		var table_top: float = DefScript.LEVEL2_ACT2_TABLE_TOP_Y * 1080.0
 		print(
 			(
-				"[核对] 横梁 梁顶 y=%.1fpx / 梁底 y=%.1fpx（用户定案梁顶 0.15；梁底 = 梁顶 + 梁高 74.7）"
-				% [DefScript.LEVEL2_BEAM_TOP_Y * 1080.0, DefScript.LEVEL2_BEAM_Y * 1080.0]
+				"[核对] 横梁 梁顶 y=%.1fpx（用户第四轮定案 %.2f）/ 梁底 y=%.1fpx（= 梁顶 + 梁高 74.7）"
+				% [
+					DefScript.LEVEL2_BEAM_TOP_Y * 1080.0,
+					DefScript.LEVEL2_BEAM_TOP_Y,
+					DefScript.LEVEL2_BEAM_Y * 1080.0,
+				]
+			)
+		)
+		var sl: Rect2 = drawn.get("stool_left", Rect2())
+		var sr: Rect2 = drawn.get("stool_right", Rect2())
+		print(
+			(
+				(
+					"[核对] 两凳 凳心 x=%.1f / %.1f（用户第四轮定案 0.40→768.0 / 0.60→1152.0）；"
+					+ "对称和 %.1f = 2×幕布中心 1920.0"
+				)
+				% [sl.get_center().x, sr.get_center().x, sl.get_center().x + sr.get_center().x]
 			)
 		)
 		print(
 			(
-				"[核对] 花盆最左缘目标 x=%.1fpx（LEVEL2_ACT2_FLOWERPOT_LEFT_X=%.2f）——实际值见上方矩形"
+				(
+					"[核对]   凳矩形 %.1f~%.1f / %.1f~%.1f；与桌**包围盒**（833.5~1086.5）各相吻 4.5px，"
+					+ "但桌在该高度带的实际像素不重叠（判法见 c_test_scenery.gd ⑦b）"
+				)
+				% [sl.position.x, sl.end.x, sr.position.x, sr.end.x]
+			)
+		)
+		var fp: Rect2 = drawn.get("flowerpot", Rect2())
+		print(
+			(
+				(
+					"[核对] 花盆 最左缘 x=%.1f（用户第三轮定案 0.15→288.0）/ 最下水平线 y=%.1f"
+					+ "（用户第四轮定案 0.61→658.8，比地平线低 %.1f）/ 高 %.1fpx（ZOOM %.2f）"
+				)
 				% [
-					DefScript.LEVEL2_ACT2_FLOWERPOT_LEFT_X * 1920.0,
-					DefScript.LEVEL2_ACT2_FLOWERPOT_LEFT_X,
+					fp.position.x,
+					fp.end.y,
+					fp.end.y - DefScript.LEVEL2_ACT2_GROUND_Y * 1080.0,
+					fp.size.y,
+					DefScript.LEVEL2_ACT2_FLOWERPOT_ZOOM,
 				]
 			)
 		)
-		print("[核对] 酒具落线 y=%.1fpx（用户定案 0.4）；桌面最高面 y=%.1fpx" % [wine_line, table_top])
+		print("[核对] 酒具落线 y=%.1fpx（用户第三轮定案 0.4）；桌面最高面 y=%.1fpx" % [wine_line, table_top])
 		for it in def.items:
 			if str(it.get("id", "")).begins_with("wine"):
 				var bottom: float = float(it.get("anchor_y", 0.0)) * 1080.0

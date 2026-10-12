@@ -448,10 +448,10 @@ func _level2_two_acts_separate(t: RefCounted) -> void:
 	t.check_eq(act2.items.size(), 13, "第二幕 13 件（柱×2 / 梁×4 / 花盆 / 桌 / 凳×2 / 壶 / 杯×2）")
 
 
-## 第二关**第二幕**「室内厅堂」布景的几何契约（用户 2026-10-12 定稿，第三轮）。
-## 与前两关不同，本幕**五种锚点高度并存**，故逐件按各自的口径断言：
-##   贴地件 653.4 / 桌上酒具 **432（0.4）** / 立柱 680（贴幕布下沿）
-##   / 横梁 **梁顶 162（0.15）、梁底 236.7（= 梁顶 + 梁高）**。
+## 第二关**第二幕**「室内厅堂」布景的几何契约（用户 2026-10-12 定稿，第四轮）。
+## 与前两关不同，本幕**六种锚点高度并存**，故逐件按各自的口径断言：
+##   桌 / 两凳 653.4（地平线）/ 花盆 **658.8（0.61，比地平线更低）** / 桌上酒具 **432（0.4）**
+##   / 立柱 680（贴幕布下沿）/ 横梁 **梁顶 129.6（0.12）、梁底 204.3（= 梁顶 + 梁高）**。
 func _level2_act2_geometry(t: RefCounted) -> void:
 	t.begin("第二关第二幕厅堂几何（柱 / 梁 / 花盆 / 桌 / 凳 / 酒具）")
 	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
@@ -525,7 +525,21 @@ func _level2_act2_geometry(t: RefCounted) -> void:
 	# ⑥ 圆桌居中（同时是两凳的对称轴）
 	t.check_approx(table.get_center().x, cloth_center, 1.0, "圆桌中心 %.1f = 幕布中心 %.1f（居中）" % [table.get_center().x, cloth_center])
 	t.check_approx(table.end.y, 653.4, 1.5, "圆桌落地 y=%.1f（地平线 653.4）" % table.end.y)
-	# ⑦ 两凳关于圆桌对称
+	# ⑦ 两凳：**第四轮起各钉在用户给的 0.4 / 0.6 上**，且仍关于桌中心对称。
+	t.check_approx(
+		stool_l.get_center().x,
+		DefScript.LEVEL2_ACT2_STOOL_LEFT_X * 1920.0,
+		0.5,
+		"左凳心 x=%.1f = LEVEL2_ACT2_STOOL_LEFT_X×1920（%.2f，用户第四轮定案 0.4）"
+		% [stool_l.get_center().x, DefScript.LEVEL2_ACT2_STOOL_LEFT_X]
+	)
+	t.check_approx(
+		stool_r.get_center().x,
+		DefScript.LEVEL2_ACT2_STOOL_RIGHT_X * 1920.0,
+		0.5,
+		"右凳心 x=%.1f = LEVEL2_ACT2_STOOL_RIGHT_X×1920（%.2f，对称 0.6）"
+		% [stool_r.get_center().x, DefScript.LEVEL2_ACT2_STOOL_RIGHT_X]
+	)
 	t.check_approx(
 		stool_l.get_center().x + stool_r.get_center().x,
 		table.get_center().x * 2.0,
@@ -533,16 +547,91 @@ func _level2_act2_geometry(t: RefCounted) -> void:
 		"两凳关于桌中心对称（%.1f + %.1f = %.1f）"
 		% [stool_l.get_center().x, stool_r.get_center().x, stool_l.get_center().x + stool_r.get_center().x]
 	)
-	t.check(stool_l.end.x < table.position.x, "左凳在桌左侧（凳右缘 %.1f < 桌左缘 %.1f）" % [stool_l.end.x, table.position.x])
-	t.check(stool_r.position.x > table.end.x, "右凳在桌右侧（凳左缘 %.1f > 桌右缘 %.1f）" % [stool_r.position.x, table.end.x])
+	# ⑦b 凳**压不到桌**——但这条**不能用包围盒判**：
+	#     桌贴图 1895×1937 近似正方、四周是背景留白，**包围盒**宽 253px（833.5~1086.5）；
+	#     而凳顶（525.4px）以下的桌只剩中柱与腿基——实测该竖直带内桌宽只有 24~116px。
+	#     凳心挪到 0.4 / 0.6 后，凳矩形（698~838 / 1082~1222）与桌**包围盒**各相吻 4.5px，
+	#     用包围盒判会**误报**「凳压在桌上」（第三轮那两条 `stool.end.x < table.position.x`
+	#     就是这么写的，本轮凳一挪就假报）。
+	#     故改为：取桌**在凳所在竖直带内的实际不透明像素**横向跨度，再判两者不相交——
+	#     这才是画面上真会重叠的部分。
+	var t_img := Image.load_from_file(ProjectSettings.globalize_path(DefScript.SCENERY_TEX_TABLE))
+	t.check(t_img != null, "桌贴图可读（⑦b 判「凳不压桌」的前置）")
+	if t_img != null:
+		t_img.convert(Image.FORMAT_RGBA8)
+		var t_scale: float = DefScript.LEVEL2_ACT2_TABLE_SCALE
+		var t_anch: Vector2 = Vector2(
+			DefScript.LEVEL2_ACT2_TABLE_X * 1920.0, DefScript.LEVEL2_ACT2_TABLE_TOP_Y * 1080.0
+		)
+		var t_foot: Vector2 = _find(def, "table").get("texture_foot_px", Vector2.ZERO)
+		var band_y0: float = minf(stool_l.position.y, stool_r.position.y)
+		var band_y1: float = maxf(stool_l.end.y, stool_r.end.y)
+		var row_a: int = maxi(0, int((band_y0 - t_anch.y) / t_scale))
+		var row_b: int = mini(t_img.get_height() - 1, int((band_y1 - t_anch.y) / t_scale))
+		var span_l: float = INF
+		var span_r: float = -INF
+		for ry in range(row_a, row_b + 1, 6):
+			for rx in range(0, t_img.get_width(), 4):
+				if t_img.get_pixel(rx, ry).a > 0.15:
+					var cx: float = t_anch.x + (float(rx) - t_foot.x) * t_scale
+					span_l = minf(span_l, cx)
+					span_r = maxf(span_r, cx)
+		t.check(
+			span_r > span_l,
+			"桌在凳高度带（%.1f~%.1f）内有实像素（x %.1f~%.1f）" % [band_y0, band_y1, span_l, span_r]
+		)
+		t.check(
+			stool_l.end.x <= span_l + 0.5,
+			"左凳右缘 %.1f ≤ 桌在该带内的**实际**左缘 %.1f（不压桌；桌包围盒 %.1f 不算数）"
+			% [stool_l.end.x, span_l, table.position.x]
+		)
+		t.check(
+			stool_r.position.x >= span_r - 0.5,
+			"右凳左缘 %.1f ≥ 桌在该带内的**实际**右缘 %.1f（不压桌）" % [stool_r.position.x, span_r]
+		)
 	t.check_approx(stool_l.end.y, 653.4, 1.5, "左凳落地 y=%.1f" % stool_l.end.y)
 	t.check_approx(stool_r.end.y, 653.4, 1.5, "右凳落地 y=%.1f" % stool_r.end.y)
 
-	# ⑧ 花盆**落地**、夹在左柱与圆桌之间（既压不到柱、也碰不到桌）
-	t.check_approx(pot.end.y, 653.4, 1.5, "花盆落地 y=%.1f（与非立柱贴地件同线）" % pot.end.y)
+	# ⑧ 花盆：**最下水平线 0.61（658.8px，比地平线更低）+ 放大 5%**，最左缘仍 0.15（第四轮）。
+	t.check_approx(
+		pot.end.y,
+		DefScript.LEVEL2_ACT2_FLOWERPOT_BASE_Y * 1080.0,
+		0.5,
+		"花盆最下水平线 y=%.1f = LEVEL2_ACT2_FLOWERPOT_BASE_Y×1080（%.2f，用户第四轮定案）"
+		% [pot.end.y, DefScript.LEVEL2_ACT2_FLOWERPOT_BASE_Y]
+	)
+	#    🔴 反向断言：花盆从第四轮起**不再走地平线**（它是唯一「更靠前」的贴地件）——
+	#    防有人照旧口径把它改回 653.4。
+	t.check(
+		pot.end.y > DefScript.LEVEL2_ACT2_GROUND_Y * 1080.0 + 0.5,
+		(
+			"花盆落线 %.1f 在地平线 %.1f **之下**（第四轮起花盆不走地平线，别再改回）"
+			% [pot.end.y, DefScript.LEVEL2_ACT2_GROUND_Y * 1080.0]
+		)
+	)
+	t.check_approx(
+		pot.size.y,
+		1848.0 * DefScript.LEVEL2_ACT2_FLOWERPOT_SCALE,
+		0.5,
+		(
+			"花盆高 %.1f = 贴图高 × SCALE（= 基础比例 %.5f × ZOOM %.2f）"
+			% [
+				pot.size.y,
+				DefScript.LEVEL2_ACT2_FLOWERPOT_SCALE_BASE,
+				DefScript.LEVEL2_ACT2_FLOWERPOT_ZOOM
+			]
+		)
+	)
+	t.check_approx(
+		pot.size.y,
+		354.4,
+		1.0,
+		"花盆高 354.4px（原 337.5px，第四轮「稍微放大一点点」= ZOOM 1.05）"
+	)
 	#    🔴 用户 2026-10-12 第三轮：「花盆**最左侧**移动到 0.15」→ 288px。
 	#    「最左侧」= 贴图内容左缘 = 绘制矩形左缘（贴图已裁到内容框，内容自贴图 x=0 起）。
-	#    锚点写成了「左缘 + foot x × scale」的表达式，这条断言同时守住常量与几何。
+	#    锚点写成了「左缘 + foot x × scale」的表达式，这条断言同时守住常量与几何；
+	#    第四轮放大时**只向右长**、左缘仍钉在这里。
 	t.check_approx(
 		pot.position.x,
 		DefScript.LEVEL2_ACT2_FLOWERPOT_LEFT_X * 1920.0,
@@ -663,28 +752,40 @@ func _level2_act2_geometry(t: RefCounted) -> void:
 			0.5,
 			"横梁右端 %.1f 接右柱内侧缘 %.1f" % [beam_rects[3].end.x, col_r.position.x]
 		)
-		# 🔴 第三轮：改以**梁顶**定高（用户「横梁最高水平线 → 0.15」），梁底由梁高推出。
+		# 🔴 第三轮起以**梁顶**定高、梁底由梁高推出；第四轮把梁顶由 0.15 上抬到 **0.12**。
 		#    写成常量表达式 → 换贴图/改梁宽时底边自动跟随，这里同时守顶与底两端。
 		var beam_top: float = DefScript.LEVEL2_BEAM_TOP_Y * 1080.0
 		var beam_bottom: float = DefScript.LEVEL2_BEAM_Y * 1080.0
 		t.check_approx(
 			beam_top,
-			162.0,
+			129.6,
 			0.5,
-			"梁顶常量 = %.1fpx（LEVEL2_BEAM_TOP_Y = %.2f，用户定案 0.15）" % [beam_top, DefScript.LEVEL2_BEAM_TOP_Y]
+			"梁顶常量 = %.1fpx（LEVEL2_BEAM_TOP_Y = %.2f，用户第四轮定案 0.12）"
+			% [beam_top, DefScript.LEVEL2_BEAM_TOP_Y]
 		)
 		t.check_approx(
 			beam_bottom,
-			236.7,
+			204.3,
 			0.5,
 			"梁底常量 = 梁顶 + 梁高 = %.1fpx（梁高 = 369×0.202406 = 74.7px）" % beam_bottom
+		)
+		# 反向约束：梁既不能越出幕布上缘，也要**整段落在立柱的竖向范围之内**——
+		# 横向正好卡在两柱之间（两端接柱内侧缘，见上），纵向贴着柱身上部，
+		# 看着才像「梁架在柱头上」。
+		# ⚠️ 别写成「梁底要在柱顶之上」：y 越大越靠下，梁底 204.3 本就在柱顶 113.6 **之下**，
+		#    那正是要的效果（梁顶 129.6 距柱顶仅 16px，与参考图的挂落位置一致）。
+		t.check(beam_top >= cloth.position.y, "梁顶 %.1f 未越幕布上缘 %.1f" % [beam_top, cloth.position.y])
+		t.check(
+			beam_top > col_l.position.y and beam_bottom < col_l.end.y,
+			"横梁竖向 %.1f~%.1f 落在立柱竖向范围（柱顶 %.1f ~ 柱底 %.1f）之内"
+			% [beam_top, beam_bottom, col_l.position.y, col_l.end.y]
 		)
 		for i in 4:
 			t.check_approx(
 				beam_rects[i].position.y,
 				beam_top,
 				1.0,
-				"beam_%d 梁顶 y=%.1f（= 用户给的 0.15 那条线）" % [i, beam_rects[i].position.y]
+				"beam_%d 梁顶 y=%.1f（= 用户第四轮给的 0.12 那条线）" % [i, beam_rects[i].position.y]
 			)
 			t.check_approx(
 				beam_rects[i].end.y,
