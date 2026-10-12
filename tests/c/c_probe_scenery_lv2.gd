@@ -17,8 +17,9 @@ extends SceneTree
 ##
 ## 坐标参考（用户 2026-10-12 要求「标个横纵坐标参考」）：
 ##   默认叠一层坐标网格——0.05 细格 / 0.10 主刻度，四周标归一化坐标值；
-##   另按关卡画关键水平面标线（地平线、桌面最高水平面），并写出像素值，
-##   便于「酒具底边要对齐桌面最高水平面」这类关系直接在图上核对。
+##   另按关卡画关键水平面标线（横梁最高水平线 / 桌面最高水平面 / 酒具落线 / 地平线 /
+##   立柱底 = 幕布下沿），并写出像素值，便于「梁顶落在 0.15」「酒具底边落在 0.4」
+##   这类关系直接在图上核对。
 const DefScript := preload("res://scripts/c/c_scenery_def.gd")
 const ViewScript := preload("res://scripts/c/c_scenery_view.gd")
 
@@ -51,6 +52,16 @@ static func _grid_on() -> bool:
 	return true
 
 
+## 命令行开关 `-- --guides=0` 关掉关键水平面标线（缺省开）。
+## 标线文字会压在景物上，要出「干净图」做放大对照时把它关掉；
+## 关掉只影响落图，stdout 仍照常打印各标线的数值。
+static func _guides_on() -> bool:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--guides="):
+			return int(a.substr(9)) != 0
+	return true
+
+
 var _frames: int = 0
 
 
@@ -66,7 +77,7 @@ func _build() -> void:
 
 	var board := BoardLayer.new()
 	board.show_grid = _grid_on()
-	board.guides = _guides(_stage_id())
+	board.guides = _guides(_stage_id()) if _guides_on() else []
 	root.add_child(board)
 
 	# 三个影人占位（模拟影人活动区；人物站位归 A 侧，这里只做视觉参照）
@@ -94,11 +105,35 @@ static func _guides(sid: int) -> Array:
 		22:
 			return [
 				{
+					"y": DefScript.LEVEL2_BEAM_TOP_Y * 1080.0,
+					"text":
+						(
+							"横梁最高水平线 y=%.1fpx（%.4f）← 用户第三轮定案；梁底 %.1fpx"
+							% [
+								DefScript.LEVEL2_BEAM_TOP_Y * 1080.0,
+								DefScript.LEVEL2_BEAM_TOP_Y,
+								DefScript.LEVEL2_BEAM_Y * 1080.0,
+							]
+						),
+					"color": Color(1.0, 0.86, 0.25, 0.95),
+				},
+				{
 					"y": DefScript.LEVEL2_ACT2_TABLE_TOP_Y * 1080.0,
 					"text":
 						(
-							"桌面最高水平面 y=%.1fpx（%.4f）← 酒具底边一律对齐此线"
+							"桌面最高水平面 y=%.1fpx（%.4f）"
 							% [DefScript.LEVEL2_ACT2_TABLE_TOP_Y * 1080.0, DefScript.LEVEL2_ACT2_TABLE_TOP_Y]
+						),
+					"color": Color(0.75, 0.55, 0.95, 0.85),
+				},
+				{
+					"y": DefScript.LEVEL2_ACT2_WINE_BASE_Y * 1080.0,
+					# 与桌面最高面只差 37px，文字下挪一栏，免得两条标线的字叠在一起
+					"text_dy": 26.0,
+					"text":
+						(
+							"酒具最低水平面 y=%.1fpx（%.2f）← 壶 / 两杯底边一律对齐此线"
+							% [DefScript.LEVEL2_ACT2_WINE_BASE_Y * 1080.0, DefScript.LEVEL2_ACT2_WINE_BASE_Y]
 						),
 					"color": Color(1.0, 0.28, 0.86, 0.92),
 				},
@@ -153,8 +188,8 @@ class BoardLayer:
 			var gy: float = float(g["y"])
 			var col: Color = g["color"]
 			draw_line(Vector2(0.0, gy), Vector2(CANVAS_SIZE.x, gy), col, 2.0)
-			# 标线文字压在线上方，避免压住景物
-			_text(Vector2(72.0, gy - 8.0), str(g["text"]), col)
+			# 标线文字默认压在线上方；相邻标线太近时用 text_dy 下挪，免得两行字叠在一起
+			_text(Vector2(72.0, gy + float(g.get("text_dy", -8.0))), str(g["text"]), col)
 
 	## 0.05 细格 + 0.10 主刻度；四边标归一化坐标值（0.1~0.9）
 	func _draw_grid() -> void:
@@ -229,17 +264,33 @@ func _save_and_quit() -> void:
 	for g in _guides(_sid):
 		print("   [标线] y=%.1fpx  %s" % [float(g["y"]), str(g["text"])])
 
-	# 第二幕专查：酒具「最低水平面」与「桌面最高水平面」的差值（用户 2026-10-12 要求对齐 0）
+	# 第二幕专查：用户第三轮定的三条线，逐条打印实际值（便于与图上的标线对照）
 	if _sid == 22:
-		var plane: float = DefScript.LEVEL2_ACT2_TABLE_TOP_Y * 1080.0
-		print("[核对] 桌面最高水平面 y=%.1fpx" % plane)
+		var wine_line: float = DefScript.LEVEL2_ACT2_WINE_BASE_Y * 1080.0
+		var table_top: float = DefScript.LEVEL2_ACT2_TABLE_TOP_Y * 1080.0
+		print(
+			(
+				"[核对] 横梁 梁顶 y=%.1fpx / 梁底 y=%.1fpx（用户定案梁顶 0.15；梁底 = 梁顶 + 梁高 74.7）"
+				% [DefScript.LEVEL2_BEAM_TOP_Y * 1080.0, DefScript.LEVEL2_BEAM_Y * 1080.0]
+			)
+		)
+		print(
+			(
+				"[核对] 花盆最左缘目标 x=%.1fpx（LEVEL2_ACT2_FLOWERPOT_LEFT_X=%.2f）——实际值见上方矩形"
+				% [
+					DefScript.LEVEL2_ACT2_FLOWERPOT_LEFT_X * 1920.0,
+					DefScript.LEVEL2_ACT2_FLOWERPOT_LEFT_X,
+				]
+			)
+		)
+		print("[核对] 酒具落线 y=%.1fpx（用户定案 0.4）；桌面最高面 y=%.1fpx" % [wine_line, table_top])
 		for it in def.items:
 			if str(it.get("id", "")).begins_with("wine"):
 				var bottom: float = float(it.get("anchor_y", 0.0)) * 1080.0
 				print(
 					(
-						"        %-16s 最低水平面 y=%.1fpx  与桌面最高面差 %+.1fpx"
-						% [str(it.get("id", "?")), bottom, bottom - plane]
+						"        %-16s 最低水平面 y=%.1fpx  与落线差 %+.1fpx  比桌面最高面低 %.1fpx"
+						% [str(it.get("id", "?")), bottom, bottom - wine_line, bottom - table_top]
 					)
 				)
 

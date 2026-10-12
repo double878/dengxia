@@ -448,9 +448,10 @@ func _level2_two_acts_separate(t: RefCounted) -> void:
 	t.check_eq(act2.items.size(), 13, "第二幕 13 件（柱×2 / 梁×4 / 花盆 / 桌 / 凳×2 / 壶 / 杯×2）")
 
 
-## 第二关**第二幕**「室内厅堂」布景的几何契约（用户 2026-10-12 定稿，本轮第三版）。
+## 第二关**第二幕**「室内厅堂」布景的几何契约（用户 2026-10-12 定稿，第三轮）。
 ## 与前两关不同，本幕**五种锚点高度并存**，故逐件按各自的口径断言：
-##   贴地件 653.4 / 桌上件 394.7（= 桌面最高水平面）/ 立柱 680（贴幕布下沿）/ 横梁 228.4（悬挂）。
+##   贴地件 653.4 / 桌上酒具 **432（0.4）** / 立柱 680（贴幕布下沿）
+##   / 横梁 **梁顶 162（0.15）、梁底 236.7（= 梁顶 + 梁高）**。
 func _level2_act2_geometry(t: RefCounted) -> void:
 	t.begin("第二关第二幕厅堂几何（柱 / 梁 / 花盆 / 桌 / 凳 / 酒具）")
 	var cloth := Rect2(66.0, 92.0, 1788.0, 588.0)
@@ -539,40 +540,68 @@ func _level2_act2_geometry(t: RefCounted) -> void:
 
 	# ⑧ 花盆**落地**、夹在左柱与圆桌之间（既压不到柱、也碰不到桌）
 	t.check_approx(pot.end.y, 653.4, 1.5, "花盆落地 y=%.1f（与非立柱贴地件同线）" % pot.end.y)
+	#    🔴 用户 2026-10-12 第三轮：「花盆**最左侧**移动到 0.15」→ 288px。
+	#    「最左侧」= 贴图内容左缘 = 绘制矩形左缘（贴图已裁到内容框，内容自贴图 x=0 起）。
+	#    锚点写成了「左缘 + foot x × scale」的表达式，这条断言同时守住常量与几何。
+	t.check_approx(
+		pot.position.x,
+		DefScript.LEVEL2_ACT2_FLOWERPOT_LEFT_X * 1920.0,
+		0.5,
+		"花盆最左缘 x=%.1f = LEVEL2_ACT2_FLOWERPOT_LEFT_X×1920（%.2f）" % [pot.position.x, DefScript.LEVEL2_ACT2_FLOWERPOT_LEFT_X]
+	)
 	t.check(pot.position.x > col_l.end.x, "花盆左缘 %.1f > 左柱右缘 %.1f（不压柱）" % [pot.position.x, col_l.end.x])
 	t.check(pot.end.x < table.position.x, "花盆右缘 %.1f < 桌左缘 %.1f（不碰桌）" % [pot.end.x, table.position.x])
 	t.check(pot.end.y > table.end.y - table.size.y, "花盆高 %.0f 高于桌（%.0f）——用户定案「花盆比桌子高一点」" % [pot.size.y, table.size.y])
 
-	# ⑨ 酒具三件的**底边 = 桌面最高水平面**（用户 2026-10-12 第二轮明确要求）。
-	#    桌贴图裁到内容框后第 0 行就是桌面最高点，故「桌面最高水平面」= 桌绘制矩形的顶边。
-	#    🔴 上一版锚在 595.6（比桌面最高面低 200.9px），酒具画到了桌布下摆与桌腿上——
-	#    这条断言就是为了让那种错法再也回不来。
-	var table_top: float = table.position.y
+	# ⑨ 酒具三件的**最低水平面 = 0.4（432px）**（用户 2026-10-12 第三轮：「酒具对齐 0.4」）。
+	#    桌面可见面 = 后沿 394.7（= LEVEL2_ACT2_TABLE_TOP_Y）~ 前沿 ≈446.2（椭圆近边），
+	#    432 落在**中前部** → 「站在桌面上」；而上一版引用的 394.7 是后沿（悬在桌缘上）。
+	#    ⚠️ 底边（432）落在**桌子绘制矩形之内**，所以「图层在上」不是可选项（见 ⑨b）。
+	var wine_line: float = DefScript.LEVEL2_ACT2_WINE_BASE_Y * 1080.0
 	t.check_approx(
-		table_top,
-		DefScript.LEVEL2_ACT2_TABLE_TOP_Y * 1080.0,
+		wine_line,
+		432.0,
 		0.5,
-		"桌面最高水平面 y=%.1f = LEVEL2_ACT2_TABLE_TOP_Y×1080（常量与桌几何同源）" % table_top
+		"酒具落线 = %.1fpx（LEVEL2_ACT2_WINE_BASE_Y = %.2f）" % [wine_line, DefScript.LEVEL2_ACT2_WINE_BASE_Y]
 	)
 	for pair in [["酒壶", wine_pot], ["绿釉杯", cup_g], ["朱红杯", cup_r]]:
 		var label: String = str(pair[0])
 		var rect: Rect2 = pair[1]
 		t.check_approx(
 			rect.end.y,
-			table_top,
+			wine_line,
 			0.5,
 			(
-				"%s 的最低水平面 y=%.1f 对齐桌面最高水平面 y=%.1f"
-				% [label, rect.end.y, table_top]
+				"%s 的最低水平面 y=%.1f 对齐酒具落线 %.1f"
+				% [label, rect.end.y, wine_line]
 			)
 		)
 		t.check(
 			rect.position.x >= table.position.x - 0.5 and rect.end.x <= table.end.x + 0.5,
 			"%s 横向落在桌面内（%.1f~%.1f ⊂ %.1f~%.1f）" % [label, rect.position.x, rect.end.x, table.position.x, table.end.x]
 		)
+		t.check(
+			rect.end.y > table.position.y + 0.5,
+			"%s 底边 %.1f 低于桌面最高面 %.1f（落在桌面之内 → 必须压在桌子之上）" % [label, rect.end.y, table.position.y]
+		)
 	# 壶在左、两杯在右（用户手绘图的排序）
 	t.check(wine_pot.end.x <= cup_g.position.x + 0.5, "酒壶在绿釉杯左侧（壶右缘 %.1f ≤ 杯左缘 %.1f）" % [wine_pot.end.x, cup_g.position.x])
 	t.check(cup_g.end.x <= cup_r.position.x + 0.5, "绿釉杯在朱红杯左侧（%.1f ≤ %.1f）" % [cup_g.end.x, cup_r.position.x])
+
+	# ⑨b **图层在上**：绘制顺序 = `items` 数组顺序（`CSceneryView._draw_items` 逐件直绘，
+	#     没有逐件 z_index），后画者在上。酒具底边落在桌子矩形之内，若排在桌子之前就会被
+	#     桌面盖住——用户原话「且图层在上，不要被桌子遮住」。这条断言钉住顺序，防随手调序。
+	var draw_index: Dictionary = {}
+	for i in def.items.size():
+		draw_index[str(def.items[i].get("id", ""))] = i
+	for wid in ["wine_pot", "wine_cup_green", "wine_cup_red"]:
+		t.check(
+			int(draw_index.get("table", -1)) < int(draw_index.get(wid, -1)),
+			(
+				"%s 排在 table 之后（索引 %d > %d）→ 绘制时压在桌子之上，不被遮住"
+				% [wid, int(draw_index.get(wid, -1)), int(draw_index.get("table", -1))]
+			)
+		)
 
 	# ⑩ 立柱改用**剪掉内侧**的贴图（用户 2026-10-12 第二轮：「把立柱靠内侧的那一边部分剪掉」）。
 	#    贴图契约：604×1893（原 984×1893，内侧雀替臂整条剪掉）。
@@ -634,9 +663,34 @@ func _level2_act2_geometry(t: RefCounted) -> void:
 			0.5,
 			"横梁右端 %.1f 接右柱内侧缘 %.1f" % [beam_rects[3].end.x, col_r.position.x]
 		)
+		# 🔴 第三轮：改以**梁顶**定高（用户「横梁最高水平线 → 0.15」），梁底由梁高推出。
+		#    写成常量表达式 → 换贴图/改梁宽时底边自动跟随，这里同时守顶与底两端。
+		var beam_top: float = DefScript.LEVEL2_BEAM_TOP_Y * 1080.0
+		var beam_bottom: float = DefScript.LEVEL2_BEAM_Y * 1080.0
+		t.check_approx(
+			beam_top,
+			162.0,
+			0.5,
+			"梁顶常量 = %.1fpx（LEVEL2_BEAM_TOP_Y = %.2f，用户定案 0.15）" % [beam_top, DefScript.LEVEL2_BEAM_TOP_Y]
+		)
+		t.check_approx(
+			beam_bottom,
+			236.7,
+			0.5,
+			"梁底常量 = 梁顶 + 梁高 = %.1fpx（梁高 = 369×0.202406 = 74.7px）" % beam_bottom
+		)
 		for i in 4:
 			t.check_approx(
-				beam_rects[i].end.y, 228.4, 1.0, "beam_%d 梁底 y=%.1f（悬挂件，与 v7 同）" % [i, beam_rects[i].end.y]
+				beam_rects[i].position.y,
+				beam_top,
+				1.0,
+				"beam_%d 梁顶 y=%.1f（= 用户给的 0.15 那条线）" % [i, beam_rects[i].position.y]
+			)
+			t.check_approx(
+				beam_rects[i].end.y,
+				beam_bottom,
+				1.0,
+				"beam_%d 梁底 y=%.1f（= 梁顶 + 梁高）" % [i, beam_rects[i].end.y]
 			)
 
 
