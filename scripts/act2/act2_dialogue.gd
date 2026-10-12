@@ -4,7 +4,7 @@ extends Node
 signal finished
 
 const MANIFEST := "res://assets/audio/act2-opening/score.json"
-const AGREEMENT_STEP := 40.0
+const GREETING_STEP := 40.0
 var config: Dictionary = {}
 var phase: String = "wait_arrival"
 var player: AudioStreamPlayer
@@ -13,10 +13,7 @@ var controller: PuppetController
 var problem: String = ""
 var arrival_target_x: float = 0.0
 var greeting_target_x: float = 0.0
-var agreement_target_x: float = 0.0
 var _greeting_origin: float = 0.0
-var _agreement_origin: float = 0.0
-var _agreement_direction: float = 1.0
 var _missing_actor: bool = false
 var _fahai_present: bool = false
 var _xuxian_present: bool = false
@@ -35,11 +32,10 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 	config = value
 	if str(config.get("audio_version", "")).is_empty():
 		return _fail("第二关第一幕缺少音源版本")
-	var gate := int(config.get("agreement_gate_ms", -1))
 	var dark := int(config.get("dark_start_ms", -1))
 	var duration := int(config.get("duration_ms", -1))
-	if gate <= 0 or dark <= gate or duration <= dark:
-		return _fail("第二关第一幕应允与暗场时标非法")
+	if dark <= 0 or duration <= dark:
+		return _fail("第二关第一幕暗场时标非法")
 	var lines: Variant = config.get("lines")
 	if not (lines is Array) or lines.size() != 6:
 		return _fail("第二关第一幕须交付六句对白")
@@ -66,8 +62,9 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 			return _fail("第二关第一幕台词身份、时标或内容非法：" + id)
 		ids[id] = true
 		previous = end
-	if gate < int(lines[4].end_ms) or gate + 200 > int(lines[5].start_ms):
-		return _fail("第二关第一幕等待点须在第五、六句之间的保护静音内")
+	var silence := int(config.get("agreement_silence_ms", -1))
+	if silence <= 0 or absi(int(lines[5].start_ms) - int(lines[4].end_ms) - silence) > 1:
+		return _fail("第二关第一幕末句前的沉默须与音轨时标一致")
 	var greeting_gate := int(config.get("greeting_gate_ms", -1))
 	if greeting_gate < int(lines[0].end_ms) or greeting_gate + 200 > int(lines[1].start_ms):
 		return _fail("第二关第一幕迎接等待点须在首句后的保护静音内")
@@ -126,26 +123,12 @@ func update(on_stage: Array[int], entrance_clear: bool) -> void:
 			phase = "dialogue"
 			clock.set_song_frozen(false)
 		return
-	if phase == "dialogue" and now >= int(config.agreement_gate_ms):
-		clock.set_song_frozen(true)
-		_reset_agreement_step()
-		phase = "wait_agreement"
-		return
-	if phase == "wait_agreement":
-		var xuxian := controller.get_puppet(1)
-		var toward := signf(controller.get_puppet(0).stage_pos.x - xuxian.stage_pos.x)
-		# 自由走位可能重叠或换到另一侧；重新提示真实方向，不把挪动法海算作应允。
-		if toward != _agreement_direction:
-			_reset_agreement_step()
-			return
-		if toward == 0.0:
-			return
-		var moved := (xuxian.stage_pos.x - _agreement_origin) * _agreement_direction * 1920.0
-		if moved >= AGREEMENT_STEP and toward == xuxian.facing:
-			phase = "agreement"
-			clock.set_song_frozen(false)
-		return
 	clock.set_song_frozen(false)
+	# 沉默已编入主轨，只读歌曲时间；不再等待走位或另开计时器。
+	if phase == "dialogue" and now >= int(config.lines[4].end_ms):
+		phase = "thinking"
+	if phase == "thinking" and now >= int(config.lines[5].start_ms):
+		phase = "agreement"
 	if now >= int(config.dark_start_ms):
 		phase = "closing"
 	if now >= int(config.duration_ms):
@@ -168,7 +151,7 @@ func _has_greeted() -> bool:
 	var moved := (xuxian.stage_pos.x - _greeting_origin) * direction * 1920.0
 	var gap := absf(fahai.stage_pos.x - xuxian.stage_pos.x) * 1920.0
 	return (
-		moved >= AGREEMENT_STEP
+		moved >= GREETING_STEP
 		and gap >= 220.0
 		and gap <= 380.0
 		and fahai.facing == -toward
@@ -177,17 +160,8 @@ func _has_greeted() -> bool:
 	)
 
 
-func _reset_agreement_step() -> void:
-	_agreement_origin = controller.get_puppet(1).stage_pos.x
-	_agreement_direction = signf(controller.get_puppet(0).stage_pos.x - _agreement_origin)
-	agreement_target_x = _agreement_origin + _agreement_direction * AGREEMENT_STEP / 1920.0
-
-
 func get_line() -> Dictionary:
-	if (
-		phase in ["wait_arrival", "wait_greeting", "wait_agreement", "error", "finished"]
-		or _missing_actor
-	):
+	if phase in ["wait_arrival", "wait_greeting", "error", "finished"] or _missing_actor:
 		return {}
 	var now := clock.get_song_time_ms()
 	for row: Dictionary in config.get("lines", []):
@@ -218,12 +192,9 @@ func get_hint() -> String:
 			if controller.controlled_id == 1:
 				return "从门洞朝法海走近，面对面迎接后回话"
 			return "空格接手许仙 · 从门洞朝法海走近，面对面迎接后回话"
-		"wait_agreement":
-			if _agreement_direction == 0.0:
-				return "两人站得太近 · 先将法海移到许仙旁侧，再让许仙上前一步"
-			if controller.controlled_id == 1:
-				return "朝法海上前一步，表示应允"
-			return "空格接手许仙 · 朝法海上前一步，表示应允"
+		"thinking":
+			if not _missing_actor:
+				return "许仙沉默片刻"
 		"closing", "finished":
 			return ""
 	if _missing_actor:

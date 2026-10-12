@@ -364,9 +364,6 @@ func _draw_operator_hand() -> void:
 		elif dialogue.phase == "wait_greeting" and on_stage.has(1):
 			target_x = dialogue.greeting_target_x * 1920.0
 			id = 1
-		elif dialogue.phase == "wait_agreement":
-			target_x = dialogue.agreement_target_x * 1920.0
-			id = 1
 		if target_x >= CLOTH.position.x and target_x < CLOTH.end.x:
 			var y := controller.get_puppet(id).stage_pos.y * 1080.0 + 6.0
 			_foreground.draw_line(

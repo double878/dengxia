@@ -1,12 +1,38 @@
 # 第二关第一幕《法海劝酒》自然对白
 
-用户确认六句台词、正常对白与收尾约 30 秒、操作等待另计。最新调度为法海独自走出柳树 → 树旁说首句 → 许仙出门迎接后回话 → 继续交锋 → 许仙真实上前应允 → 自动暗场。
+用户确认六句台词、正常对白与收尾约 30 秒、操作等待另计。最新调度为法海独自走出柳树 → 树旁说首句 → 许仙出门迎接后回话 → 继续交锋 → 许仙原地沉默约 1.2 秒后自动回应 → 自动暗场。
 
-## 用户参考声音修订（当前 v2）
+## 末句自动回应（当前调度）
+
+用户取消末句前“上前一步”的操作，保留短暂沉默。沿用声音 v2 的六条对白 WAV，不再生成音源；仅将第五、六句之间的 29,760 帧静音增至 57,600 帧（48 kHz 下为 1.2 秒）。主轨中各句 PCM 逐样本保留，六条分句文件的 SHA-256 与上一轮相同。新增 580 ms 后，主轨为 1,504,551 帧、31.3448125 秒（清单 31,345 ms）；末句始末为 23,534 / 29,095 ms，暗场起点为 29,345 ms。迎接冻结点仍为 5,334 ms。
+
+`Act2Dialogue` 删除应允走位等待、目标与提示，第五句说完进入 `thinking`，歌曲时间经过主轨静音后自动播放许仙末句。沉默时不显示对白字幕；菜单暂停和演员误退场按既有唯一时钟规则冻结，恢复后继续剩余静音。幕次、迎接流程及演员姿态不变，无自动移动。清单版本为 `act2-opening-dialogue-v2-user-reference-silent-reply`，删除旧 `agreement_gate_ms`，记录 `agreement_silence_ms=1200` 与编排脚本指纹。
+
+修改后的对白回归先在旧实现上得到 40 项 / 14 个预期失败，覆盖仍需走位、缺少短暂沉默等差异；实施后 40 项全部通过。三个改动脚本逐文件 `--check-only` 解析通过，资源导入退出 0。编排脚本与原始主轨、清单备份、逐样本核验结果保存在 `builds/act2-silent-reply/`。
+
+实际运行命令如下，统一通过 `tools/run_godot.ps1` 调用 `D:\Godot\4.7.2\godot.exe`，日志前缀 `act2-silence-*`：
+
+| 命令或入口 | 结果 |
+| --- | --- |
+| `--headless --path . --check-only --script <act2_dialogue.gd / act2_opening.gd / run_act2_dialogue.gd>` | 三个改动脚本逐文件解析通过 |
+| `--headless --path . --script res://tests/c/run_act2_dialogue.gd` | 40 项、0 失败 |
+| `--headless --path . --script res://tests/c/run_act2_opening.gd` | 133 项、0 失败 |
+| `--headless --path . --script res://tests/c/run_act2_entrances.gd` | 28 项、0 失败 |
+| `--headless --path . --script res://tests/c/run_tests_c.gd` | 459 项、0 失败，故意无效输入的错误日志为预期 |
+| `--headless --path . --import` / `--headless --path . --quit-after 60` | 均退出 0 |
+| `--headless --path . --export-release "Windows Desktop" builds/dengxia.exe` | 退出 0 |
+| 从 `builds/` 运行 `dengxia.exe --headless --quit-after 60` | 退出 0 |
+| 从 `builds/` 运行 `godot.exe --headless --main-pack dengxia.pck res://scenes/act2/opening.tscn --quit-after 60` | 退出 0，确认新清单、静音编排与对白脚本可打包加载 |
+
+Windows/OpenGL/WASAPI 实际播放 21 项、0 失败；用视口键鼠输入完成法海上场、短距离移步及许仙迎接后，不再对许仙做任何移动输入。歌曲时间 22,350 ms 观察到沉默、23,534 ms 自动进入许仙末句，原位保持至暗场清场。沉默期间另暂停 0.7 秒，音轨和时钟均冻结，恢复后继续；图形 stderr 为空。外部 55 秒保护未超时，退出 0，同步回录 34.069 秒非静音输出且无 WASAPI 回调错误。报告与回录在 `builds/act2-silent-reply/`，临时图形入口与回录包装脚本已删除。
+
+60 帧无头启动和两个打包启动仍有此前记录的 ObjectDB/WAV 退出释放提示，退出码为 0；图形实演、对白、入口、开场、导入和导出日志无该错误。未重复执行未改动的第一关 A/B 测试，未运行 `gdformat` / `gdlint`；已完成逐文件解析和差异审查。六条分句音源逐字节沿用，听验范围沿用声音 v2 的记录。
+
+## 用户参考声音修订（声音 v2 的历史记录）
 
 用户反馈许仙与第一关的听感不一致、音量过小，并提供 `20261012-1158-29.8799540.mp4` 作为法海声音参考。旧版许仙三句为 −23.14、−24.45、−22.78 LUFS，法海为约 −15.5 至 −15.9 LUFS；旧制作只对不同角色统一乘 0.8，未匹配角色间响度。
 
-当前版本 `act2-opening-dialogue-v2-user-reference` 的许仙身份参考改为第一关已接入的 `return-02/06/08.wav`，韵律参考为第一关 `return-02.wav`，直接对齐实际对白。法海视频音轨经已有 MelBandRoformer 分离，选取 0–7.7 秒仅法海说话的窗口作为身份参考，排除小沙弥答话；自然说话韵律取 F5 自带男声原句“对，这就是我，万人敬仰的太乙真人。”。不使用背景伴奏，不变调、不变速、不加混响。
+声音修订版本 `act2-opening-dialogue-v2-user-reference` 的许仙身份参考改为第一关已接入的 `return-02/06/08.wav`，韵律参考为第一关 `return-02.wav`，直接对齐实际对白。法海视频音轨经已有 MelBandRoformer 分离，选取 0–7.7 秒仅法海说话的窗口作为身份参考，排除小沙弥答话；自然说话韵律取 F5 自带男声原句“对，这就是我，万人敬仰的太乙真人。”。不使用背景伴奏，不变调、不变速、不加混响。
 
 制作仍为 F5 32 步 / CFG 2.0，Seed-VC 25 步 / CFG 0.7，长度 1.0、关闭 F0 与半音偏移；既有 20 个模型与配置文件 SHA-256 核验通过。法海长句原始 FLOAT 峰值为 1.143，旧脚本错误地在浮点中间阶段套用交付幅度限制；现保留有限值 FLOAT 原样，响度匹配后再检查 PCM16 无削波，不以硬裁峰处理原始音源。
 

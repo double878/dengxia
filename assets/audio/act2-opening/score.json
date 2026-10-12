@@ -1,12 +1,11 @@
 {
-  "audio_version": "act2-opening-dialogue-v2-user-reference",
+  "audio_version": "act2-opening-dialogue-v2-user-reference-silent-reply",
   "stage_id": 2,
   "scene_id": "fahai_advice",
   "main_path": "res://assets/audio/act2-opening/main.wav",
-  "duration_ms": 30765,
+  "duration_ms": 31345,
   "greeting_gate_ms": 5334,
-  "agreement_gate_ms": 22454,
-  "dark_start_ms": 28765,
+  "dark_start_ms": 29345,
   "lines": [
     {
       "line_id": "act2_opening_fahai_01",
@@ -66,8 +65,8 @@
       "generation_text": "这，我便劝她一杯。若是无事，还请大师莫再疑她。",
       "generation_note": "Same words, use short comma pause instead of ellipsis; one bounded content revision",
       "role_name": "许仙",
-      "start_ms": 22954,
-      "end_ms": 28515,
+      "start_ms": 23534,
+      "end_ms": 29095,
       "delivery": "speech"
     }
   ],
@@ -135,8 +134,8 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-opening/main.wav",
-      "sha256": "b366645ebabbc390b0d8cb60a55dd1cc7aa2b6c6a7fe222ac790757d2f53020c",
-      "frames": 1476711,
+      "sha256": "79f4519ab609cb6f5713289230122f19269db3b4dd964d939b7f1e0b649e9cf7",
+      "frames": 1504551,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16",
@@ -387,7 +386,8 @@
   ],
   "production_script_versions": {
     "generation": "e361e3a8230e67773eea8c0dfc0e29f006f72ca3f89ffa0959dfe43db4d18004",
-    "assembly": "4a5a36af0eabf575f99a7621c5423bfd114b3deb79d3864d4fd6f2909a105701"
+    "assembly": "4a5a36af0eabf575f99a7621c5423bfd114b3deb79d3864d4fd6f2909a105701",
+    "silence_arrangement": "adf983eec0f367e5f20072815ca07774d4e51e1e6b7d2ab364ed8e5fcc458a8c"
   },
   "sources": [
     "https://scripts.xikao.com/play/06000050",
@@ -565,5 +565,13 @@
       },
       "processing": "two-pass EBU R128 loudness match, -18 LUFS, -1.5 dBTP, no pitch/time/reverb/trim"
     }
-  ]
+  ],
+  "agreement_silence_ms": 1200,
+  "arrangement_edit": {
+    "source_main_sha256": "b366645ebabbc390b0d8cb60a55dd1cc7aa2b6c6a7fe222ac790757d2f53020c",
+    "original_silence_frames": 29760,
+    "silence_frames": 57600,
+    "source_dialogue_pcm_preserved": true,
+    "requires_agreement_step": false
+  }
 }

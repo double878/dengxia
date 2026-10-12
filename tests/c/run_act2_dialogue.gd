@@ -91,24 +91,37 @@ func _run() -> void:
 	opening._process(0.02)
 	check(dialogue.phase == "dialogue" and not clock.is_song_frozen(), "许仙迎接就位后没有回话")
 	check(controller.get_puppet(0).stage_pos == fahai_position, "迎接要求法海继续走到门前")
-	clock.set_free_time_ms(int(dialogue.config.agreement_gate_ms))
+	var silence_start: int = int(dialogue.config.lines[4].end_ms)
+	var reply_start: int = int(dialogue.config.lines[5].start_ms)
+	check(
+		reply_start - silence_start >= 1000 and reply_start - silence_start <= 1500,
+		"末句前未留出短暂沉默"
+	)
+	clock.set_free_time_ms(silence_start + 120)
 	opening._process(0.02)
-	check(dialogue.phase == "wait_agreement" and clock.is_song_frozen(), "第五句后未等待实际应允")
+	check(dialogue.phase == "thinking" and not clock.is_song_frozen(), "沉默阶段仍要求许仙走位")
+	check(dialogue.get_line().is_empty(), "沉默时提前显示许仙回话")
+	check(not dialogue.get_hint().contains("上前一步"), "沉默时仍提示上前一步")
 	var origin: Vector2 = controller.get_puppet(1).stage_pos
-	clock.update(20.0)
+	opening._toggle_pause()
+	var silence_paused_ms: int = clock.get_song_time_ms()
+	opening._process(1.0)
+	check(clock.get_song_time_ms() == silence_paused_ms, "菜单暂停消耗了许仙沉默时间")
+	opening._toggle_pause()
+	clock.set_free_time_ms(reply_start - 80)
 	opening._process(0.02)
-	check(dialogue.phase == "wait_agreement", "等待超时跳过应允")
-	controller.get_puppet(1).stage_pos.x -= 60.0 / 1920.0
-	opening._process(0.02)
-	check(dialogue.phase == "wait_agreement", "朝反方向走被当成应允")
-	controller.get_puppet(1).stage_pos = origin + Vector2(48.0 / 1920.0, 0)
-	controller.get_puppet(1).facing = 1.0
+	check(dialogue.phase == "thinking" and dialogue.get_line().is_empty(), "沉默尚未结束便回话")
 	opening._exit(0)
 	opening._process(0.02)
-	check(dialogue.phase == "wait_agreement", "法海缺席仍播放应允")
+	check(clock.is_song_frozen(), "沉默时法海误退场没有冻结")
 	opening._enter(0)
 	opening._process(0.02)
-	check(dialogue.phase == "agreement" and not clock.is_song_frozen(), "许仙真实上前没有解锁末句")
+	check(not clock.is_song_frozen(), "沉默时法海回来后未续播")
+	clock.set_free_time_ms(reply_start)
+	opening._process(0.02)
+	check(dialogue.phase == "agreement" and not clock.is_song_frozen(), "许仙不走位无法自动回话")
+	check(controller.get_puppet(1).stage_pos == origin, "自动回话移动了许仙")
+	check(dialogue.get_line().get("role_id") == "xuxian", "沉默结束没有显示许仙回应")
 	opening._exit(1)
 	opening._process(0.02)
 	check(clock.is_song_frozen(), "误退场没有冻结对白")
@@ -127,12 +140,12 @@ func _run() -> void:
 	check(opening.on_stage.is_empty(), "暗场后仍接受第一幕上场输入")
 	opening.queue_free()
 	await process_frame
-	await test_agreement_at_edge(scene)
+	await test_reply_at_edge(scene)
 	print("ACT2_DIALOGUE checks=%d failures=%d" % [checks, failures])
 	quit(1 if failures else 0)
 
 
-func test_agreement_at_edge(scene: PackedScene) -> void:
+func test_reply_at_edge(scene: PackedScene) -> void:
 	var opening: Node = scene.instantiate()
 	root.add_child(opening)
 	opening.set_process(false)
@@ -148,18 +161,12 @@ func test_agreement_at_edge(scene: PackedScene) -> void:
 	var edge := PuppetState.STAGE_POS_MAX
 	opening.controller.get_puppet(0).stage_pos.x = edge
 	opening.controller.get_puppet(1).stage_pos.x = edge
-	clock.set_free_time_ms(int(dialogue.config.agreement_gate_ms))
+	clock.set_free_time_ms(int(dialogue.config.lines[4].end_ms) + 120)
 	opening._process(0.02)
+	check(dialogue.phase == "thinking" and not clock.is_song_frozen(), "舞台边缘沉默仍等待走位")
+	clock.set_free_time_ms(int(dialogue.config.lines[5].start_ms))
 	opening._process(0.02)
-	check(dialogue.phase == "wait_agreement", "重叠站位被当作应允")
-	check(dialogue.get_hint().contains("先将法海"), "重叠站位没有恢复提示")
-	opening.controller.get_puppet(0).stage_pos.x -= 150.0 / 1920.0
-	opening._process(0.02)
-	check(dialogue.phase == "wait_agreement", "只挪法海就播放应允")
-	check(dialogue.agreement_target_x < edge, "重排站位后目标仍超出舞台边界")
-	opening.controller.get_puppet(1).stage_pos.x -= 48.0 / 1920.0
-	opening.controller.get_puppet(1).facing = -1.0
-	opening._process(0.02)
-	check(dialogue.phase == "agreement", "边界重排后真实上前无法恢复")
+	check(dialogue.phase == "agreement", "边缘重叠站位阻止自动回话")
+	check(opening.controller.get_puppet(1).stage_pos.x == edge, "边缘自动回话移动了许仙")
 	opening.queue_free()
 	await process_frame
