@@ -3,6 +3,7 @@ extends SceneTree
 
 var checks: int = 0
 var failures: int = 0
+const GAME_SCENE := preload("res://scenes/game_flow.tscn")
 
 
 func _initialize() -> void:
@@ -19,14 +20,53 @@ func check(value: bool, label: String) -> void:
 func _run() -> void:
 	check(ResourceLoader.exists("res://scenes/act2/opening.tscn"), "缺少独立第二关开场")
 	check(PlaceholderPuppet.SKIN_TEXTURES.size() == 3, "法海污染了第一关头架映射")
+	await test_skip_act1(false)
+	await test_skip_act1(true)
 	for route: String in ["decline", "skip", "complete"]:
 		await test_transition(route)
 	print("ACT2_OPENING checks=%d failures=%d" % [checks, failures])
 	quit(1 if failures else 0)
 
 
+func test_skip_act1(paused: bool) -> void:
+	var game: Node = GAME_SCENE.instantiate()
+	root.add_child(game)
+	await process_frame
+	var old_level: Node = game.get("_level")
+	old_level.set_process(false)
+	var harness: Level1Harness = old_level.get("_harness")
+	if paused:
+		old_level._toggle_pause()
+	var button: Button = old_level.get_node_or_null("Hud/SkipAct1Button")
+	check(button != null, "第一关缺少一键跳过按钮")
+	if button == null:
+		game.queue_free()
+		await process_frame
+		return
+	check(button.is_visible_in_tree() and not button.disabled, "演出或暂停时跳过按钮不可用")
+	click(button.get_global_rect().get_center())
+	check(game.get("_advancing"), "实际按钮点击没有触发切关")
+	button.pressed.emit()
+	var record := CPerformanceRecord.new()
+	game._performance_finished(record, 1, "许仙借伞")
+	check(game.get("_flow") == null, "跳过同帧的完成信号仍触发回放选择")
+	await process_frame
+	await process_frame
+	check(game.get("_stage_id") == 2, "跳过第一关没有直接进入第二关")
+	check(not is_instance_valid(old_level), "跳过后第一关宿主没有释放")
+	check(harness.clock.player == null, "跳过后第一关音频仍绑定时钟")
+	check(game.get("_flow") == null and game.get("_page") == null, "跳过第一关仍显示回放或收场")
+	check(game.get_child_count() == 1, "重复跳过加载了多个第二关")
+	var opening: Node = game.get("_level")
+	check(opening.scene_file_path == "res://scenes/act2/opening.tscn", "跳过误入旧第二关教学场景")
+	check(opening.on_stage.is_empty() and opening.controller.controlled_id == -1, "跳过点击穿透到第二关操演")
+	check(opening.get_node_or_null("Hud/SkipAct1Button") == null, "跳过按钮残留第二关")
+	game.queue_free()
+	await process_frame
+
+
 func test_transition(route: String) -> void:
-	var game: Node = load("res://scenes/game_flow.tscn").instantiate()
+	var game: Node = GAME_SCENE.instantiate()
 	root.add_child(game)
 	var old_level: Node = game.get("_level")
 	old_level.set_process(false)
