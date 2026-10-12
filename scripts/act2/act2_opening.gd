@@ -1,11 +1,12 @@
 extends Node2D
-## 第二关劝酒场的开场操演。剧情、判定和整关录放由后续切片接入。
+## 第二关第一幕操演与动作许可对白；整关录放由后续切片接入。
 
 const PuppetView := preload("res://scripts/a_test/placeholder_puppet.gd")
 const PuppetInput := preload("res://scripts/a_test/input_reader.gd")
 const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
 const OperatorHand := preload("res://scripts/b/operator_hand.gd")
 const Entrance := preload("res://scripts/act2/act2_entrance.gd")
+const Dialogue := preload("res://scripts/act2/act2_dialogue.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HAND_ANCHOR := Vector2(960, 856)
 const HAND_AREA := Rect2(768, 712, 384, 256)
@@ -32,11 +33,15 @@ var _paused: bool = false
 var _accumulator: float = 0.0
 var _entrance := Entrance.new()
 var _entrance_complete: Array[bool] = [false, false]
+var dialogue := Dialogue.new()
+var _subtitle: Label
+var _dark: ColorRect
+var _transition_title: Label
 
 
 func _ready() -> void:
 	clock.start()
-	# 音源编排尚未接入，停在开场等待；真实时间仍供火光使用。
+	# 先准备唯一时钟；正式主轨绑定后停在就位等待，真实时间供火光使用。
 	clock.set_song_frozen(true)
 	controller.clock = clock
 	controller.setup(2)
@@ -85,6 +90,9 @@ func _ready() -> void:
 	_foreground.draw.connect(_draw_operator_hand)
 	add_child(_foreground)
 	_build_hud()
+	add_child(dialogue)
+	dialogue.finished.connect(_finish_first_scene)
+	dialogue.setup(clock, controller)
 	_refresh_views()
 
 
@@ -103,6 +111,8 @@ func _process(delta: float) -> void:
 		lamp_controller.update(FIXED_DELTA)
 		controller.take_events()
 		lamp_controller.take_events()
+		_sync_entrances()
+		dialogue.update(on_stage, _entrance_complete[0])
 	if steps == 8:
 		_accumulator = 0.0
 	_refresh_views()
@@ -113,6 +123,9 @@ func _input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			_toggle_pause()
 		elif not _paused:
+			if dialogue.phase in ["closing", "finished", "error"]:
+				get_viewport().set_input_as_handled()
+				return
 			match event.keycode:
 				KEY_1:
 					_enter(0)
@@ -122,7 +135,7 @@ func _input(event: InputEvent) -> void:
 					_take_next()
 		get_viewport().set_input_as_handled()
 		return
-	if _paused:
+	if _paused or dialogue.phase in ["closing", "finished", "error"]:
 		return
 	var puppet_event: InputEvent = event
 	if event is InputEventMouseButton and event.pressed:
@@ -160,6 +173,8 @@ func _grab_position(at: Vector2) -> Vector2:
 
 
 func _enter(id: int) -> void:
+	if dialogue.phase in ["closing", "finished", "error"]:
+		return
 	if on_stage.has(id):
 		return
 	on_stage.append(id)
@@ -253,6 +268,16 @@ func _refresh_views() -> void:
 		)
 	queue_redraw()
 	_foreground.queue_redraw()
+	if not _paused and not on_stage.is_empty():
+		_hint.text = dialogue.get_hint()
+		if controller.controlled_id >= 0 and not _hint.text.is_empty():
+			_hint.text = "正在接手：%s · %s" % [CAST[controller.controlled_id], _hint.text]
+		if not on_stage.has(0) or not on_stage.has(1):
+			_hint.text = "按 1 请法海上场，按 2 请许仙上场 · 重新上场保留原姿势"
+	var line: Dictionary = dialogue.get_line()
+	_subtitle.text = "" if line.is_empty() else "%s：%s" % [line.role_name, line.text]
+	_dark.color.a = dialogue.fade_amount()
+	_transition_title.visible = dialogue.phase == "finished"
 
 
 func _sync_entrances() -> void:
@@ -290,6 +315,20 @@ func _build_hud() -> void:
 	lamp_hint.text = "滚轮推拉灯 · Q/E 调整显露"
 	var hand_hint := _label(hud, Vector2(790, 925), Vector2(440, 46), 22)
 	hand_hint.text = "空格接手 · 一次操纵一人"
+	_subtitle = _label(hud, Vector2(130, 690), Vector2(1660, 65), 27)
+	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var transition := CanvasLayer.new()
+	transition.layer = 10
+	add_child(transition)
+	_dark = ColorRect.new()
+	_dark.size = Vector2(1920, 1080)
+	_dark.color = Color(0, 0, 0, 0)
+	_dark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	transition.add_child(_dark)
+	_transition_title = _label(transition, Vector2(460, 460), Vector2(1000, 160), 56)
+	_transition_title.text = "端阳"
+	_transition_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_transition_title.visible = false
 
 
 func _label(parent: Node, at: Vector2, size: Vector2, font_size: int) -> Label:
@@ -312,6 +351,20 @@ func _draw_operator_hand() -> void:
 	OperatorHand.draw_on(
 		_foreground, HAND_ANCHOR, 0.65 + 0.35 * StageLight.unit(lamp_controller.lamp.oil)
 	)
+	if not _paused and on_stage.has(0) and on_stage.has(1):
+		var target_x := -1.0
+		if dialogue.phase == "wait_arrival":
+			target_x = controller.get_puppet(1).stage_pos.x * 1920.0 + 300.0
+		elif dialogue.phase == "wait_agreement":
+			target_x = dialogue.agreement_target_x * 1920.0
+		if target_x >= CLOTH.position.x and target_x < CLOTH.end.x:
+			var y := controller.get_puppet(1).stage_pos.y * 1080.0 + 6.0
+			_foreground.draw_line(
+				Vector2(target_x - 34, y), Vector2(target_x + 34, y), Color("e7c590"), 3
+			)
+			_foreground.draw_line(
+				Vector2(target_x, y - 10), Vector2(target_x, y), Color("e7c590"), 3
+			)
 
 
 func _card_style(active: bool) -> StyleBoxFlat:
@@ -327,3 +380,13 @@ func _exit_tree() -> void:
 	_puppet_input.set_enabled(false)
 	_lamp_input.set_enabled(false)
 	clock.pause()
+	if is_instance_valid(dialogue.player):
+		dialogue.player.stop()
+
+
+func _finish_first_scene() -> void:
+	_release_control()
+	on_stage.clear()
+	_puppet_input.set_enabled(false)
+	_lamp_input.set_enabled(false)
+	_refresh_views()
