@@ -31,7 +31,15 @@
 
 图形探针调用正式宿主 `_input`，捕获实际操作后的状态，进入正式幕前表现端；截图在 `builds/upper-body/` 的 `pose.png`、`act1-pose-hint.png`、`act1-replay-pose.png`。已目视检查新姿态、提示、竖直持杖与朝上伞面。
 
-## 限制
+## 原工程接入
+
+已将功能差异接回 `D:\Cursor_program\灯下`，原分支 `feat-act2-hall-onstage@d483d18` 和厅堂文件保留；上半身提交仍独立位于功能分支。PRD/TECH_DESIGN 在保留厅堂补充的基础上追加新操作。
+
+组合工程再次执行资源导入、启动和 Windows 导出，三项均退出 0；上半身 100 条、Windows 图形 22 项、第二关入口 133 项和 `tests/c/run_act2_hall.gd` 厅堂衔接 38 项均通过。日志前缀为 `upper-integrated-`，可试玩包为原工程 `builds/dengxia.exe`。
+
+导出包在 Windows 图形环境运行 `builds/dengxia.exe --quit-after 60`，实际退出 0，stderr 为空。
+
+## 剩余限制
 
 Windows 自动输入与截图证明程序路径和画面，不能替代用户对手感与音频的试玩。第二关整关录放尚未接入，本功能只扩展共用姿态契约。
 
