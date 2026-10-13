@@ -6,6 +6,7 @@ class_name PuppetController
 ## 事件契约见 docs/superpowers/plans/2026-10-03-level1-a.md 第 1.3 节。
 
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
+const UpperPose := preload("res://scripts/a/upper_body_pose.gd")
 
 ## 虚拟舞台像素尺寸。固定为 1920x1080，不使用 viewport 尺寸，
 ## 这样窗口缩放不会改变操控手感。
@@ -71,6 +72,7 @@ var _stance_last_emitted: float = 0.0
 var _flip_target: float = 0.0  ## 当前这次翻面的目标面；0.0 表示还没翻过面
 var _hand_dir: Vector2i = Vector2i.ZERO
 var walk_path: RefCounted = null
+var upper_drag_hand: String = ""
 
 
 func set_walk_path(path: RefCounted) -> void:
@@ -274,6 +276,7 @@ func drag_to(mouse_pos: Vector2) -> void:
 
 
 func end_drag() -> void:
+	upper_drag_hand = ""
 	if not _drag_active:
 		return
 	var who: int = _drag_puppet_id
@@ -371,20 +374,82 @@ func _apply_hands(controlled: PuppetState, delta: float) -> void:
 		_input_map["both_raise"],
 		_input_map["both_lower"]
 	)
-	if left_dir != 0:
-		controlled.hand_angle.x += float(left_dir) * step
-	if right_dir != 0:
-		controlled.hand_angle.y += float(right_dir) * step
-	var ceiling: float = clampf(
-		hand_angle_max, PuppetStateScript.HAND_ANGLE_MIN, PuppetStateScript.HAND_ANGLE_MAX
-	)
-	controlled.hand_angle.x = clampf(
-		controlled.hand_angle.x, PuppetStateScript.HAND_ANGLE_MIN, ceiling
-	)
-	controlled.hand_angle.y = clampf(
-		controlled.hand_angle.y, PuppetStateScript.HAND_ANGLE_MIN, ceiling
-	)
+	if upper_drag_hand == "left":
+		left_dir = 0
+	if upper_drag_hand == "right":
+		right_dir = 0
+	_step_hand(controlled, false, left_dir, step)
+	_step_hand(controlled, true, right_dir, step)
 	_emit_hand_if_changed(controlled, left_dir, right_dir)
+
+
+func _step_hand(state: PuppetState, right: bool, dir: int, step: float) -> void:
+	if dir == 0:
+		return
+	var angle: float = state.hand_angle.y if right else state.hand_angle.x
+	var bend: float = state.elbow_angle.y if right else state.elbow_angle.x
+	var ceiling: float = clampf(hand_angle_max, -PI * 0.5, PI)
+	var angles := Vector2(angle, bend)
+	if bend < 0.00001:
+		# 自然直臂保留原快捷动作路径及打伞停靠位；目标仍可经拖手变成弯臂。
+		angles.x = clampf(angle + float(dir) * step, -PI * 0.5, ceiling)
+	else:
+		var target: Vector2 = UpperPose.arm_points(Vector2.ZERO, angle, bend, right, 1.0).wrist
+		target.y = clampf(target.y - float(dir) * step * 0.31, 0.31 * cos(ceiling), 0.31)
+		angles = UpperPose.solve_arm(target, right, 1.0)
+	if right:
+		state.hand_angle.y = angles.x
+		state.elbow_angle.y = angles.y
+	else:
+		state.hand_angle.x = angles.x
+		state.elbow_angle.x = angles.y
+
+
+func set_hand_target(hand: String, offset: Vector2, height: float) -> void:
+	var state: PuppetState = get_controlled()
+	if state == null or hand not in ["left", "right"]:
+		return
+	if not offset.is_finite() or not is_finite(height) or height <= 0:
+		push_error("影人 %d 手目标非法：%s / %s" % [state.puppet_id, offset, height])
+		return
+	var right: bool = hand == "right"
+	var angles: Vector2 = UpperPose.solve_arm(offset, right, height)
+	if right:
+		state.hand_angle.y = angles.x
+		state.elbow_angle.y = angles.y
+	else:
+		state.hand_angle.x = angles.x
+		state.elbow_angle.x = angles.y
+	_emit("upper_body_pose", state.puppet_id, {"part": hand})
+
+
+func set_upper_angle(part: String, angle: float) -> void:
+	var state: PuppetState = get_controlled()
+	if state == null:
+		return
+	if not is_finite(angle):
+		push_error("影人 %d 上身角度非法：%s / %s" % [state.puppet_id, part, angle])
+		return
+	if part == "head":
+		state.head_tilt = clampf(angle, -UpperPose.HEAD_LIMIT, UpperPose.HEAD_LIMIT)
+	elif part == "torso":
+		state.torso_lean = clampf(angle, 0.0, UpperPose.LEAN_MAX)
+	else:
+		return
+	_emit("upper_body_pose", state.puppet_id, {"part": part})
+
+
+func reset_upper_body() -> void:
+	end_drag()
+	var state: PuppetState = get_controlled()
+	if state == null:
+		return
+	state.hand_angle = Vector2.ZERO
+	state.elbow_angle = Vector2.ZERO
+	state.head_tilt = 0.0
+	state.torso_lean = 0.0
+	set_input_map({})
+	_emit("upper_body_reset", state.puppet_id, {})
 
 
 ## 翻面推进。影人只有正反两面（PuppetState.facing 为二值），因此这里不做连续旋转：

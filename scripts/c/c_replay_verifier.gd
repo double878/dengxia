@@ -40,10 +40,12 @@ const CONTINUOUS_EPSILON: float = 1.0e-6
 const DISCRETE_FIELDS: Array[String] = ["head_id", "hook_slot"]
 
 ## 影人的连续标量字段。
-const PUPPET_SCALAR_FIELDS: Array[String] = ["stance", "facing", "turn_progress"]
+const PUPPET_SCALAR_FIELDS: Array[String] = [
+	"stance", "facing", "turn_progress", "head_tilt", "torso_lean"
+]
 
 ## 影人的连续二维字段，内含 "x"/"y" 或 "left"/"right"。
-const PUPPET_VECTOR_FIELDS: Array[String] = ["stage_pos", "hand_angle"]
+const PUPPET_VECTOR_FIELDS: Array[String] = ["stage_pos", "hand_angle", "elbow_angle"]
 
 ## 灯态四字段，全为连续量。
 const LAMP_FIELDS: Array[String] = ["distance", "exposure", "oil", "flame_feedback"]

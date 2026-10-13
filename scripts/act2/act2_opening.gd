@@ -105,6 +105,7 @@ func _ready() -> void:
 	dialogue.finished.connect(_finish_first_scene)
 	dialogue.setup(clock, controller)
 	_refresh_views()
+	_puppet_input.set_views(_views)
 
 
 func _process(delta: float) -> void:
@@ -157,6 +158,9 @@ func _input(event: InputEvent) -> void:
 					_enter(1)
 				KEY_SPACE:
 					_take_next()
+				KEY_R:
+					_puppet_input.release_drag()
+					controller.reset_upper_body()
 		get_viewport().set_input_as_handled()
 		return
 	if _paused or dialogue.phase in ["closing", "finished", "error"]:
@@ -194,6 +198,11 @@ func _grab_position(at: Vector2) -> Vector2:
 		controlled.stage_pos * PuppetController.STAGE_PIXEL_SIZE
 		- Vector2(0, PuppetController.CHEST_TAG_RADIUS_PX * 0.5)
 	)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		_puppet_input.release_drag()
 
 
 func _enter(id: int) -> void:
@@ -344,6 +353,8 @@ func _build_hud() -> void:
 	lamp_hint.text = "滚轮推拉灯 · Q/E 调整显露"
 	var hand_hint := _label(hud, Vector2(790, 925), Vector2(440, 46), 22)
 	hand_hint.text = "空格接手 · 一次操纵一人"
+	var pose_hint := _label(hud, Vector2(790, 966), Vector2(1040, 35), 19)
+	pose_hint.text = "拖手签摆双臂 · 拖头调俯仰 · Alt 拖躯干前倾 · R 恢复上身"
 	_subtitle = _label(hud, Vector2(130, 690), Vector2(1660, 65), 27)
 	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var transition := CanvasLayer.new()

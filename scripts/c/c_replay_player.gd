@@ -38,6 +38,8 @@ var _state: StringName = STATE_IDLE
 var _event_cursor: int = 0
 ## 本次回放已派发的事件索引，供表现层逐条消费。
 var _pending_events: Array = []
+## R 是瞬时姿态恢复，在落点之前禁止朝恢复后的姿态预插值。
+var _pose_resets: Dictionary = {}
 ## 累计派发的事件数，诊断与验收用。
 var _dispatched_event_count: int = 0
 ## 暂停前的时刻，resume 时回到这里。
@@ -86,7 +88,7 @@ func get_clock_source() -> int:
 
 func _init(p_record: Variant = null) -> void:
 	if p_record != null:
-		load(p_record)
+		self.load(p_record)
 
 
 ## 装载一份记录并复位到 t=0。此时状态为 ready，尚未开始推进。
@@ -102,6 +104,12 @@ func load(p_record: Variant) -> bool:
 			push_error("CReplayPlayer.load: 记录不变量未通过 —— %s" % str(p))
 		return false
 	_record = p_record
+	_pose_resets.clear()
+	for event: Variant in _record.events:
+		if str(event.kind) == "upper_body_reset":
+			if not _pose_resets.has(event.time_ms):
+				_pose_resets[event.time_ms] = []
+			_pose_resets[event.time_ms].append(int(event.object_id))
 	reset()
 	return true
 
@@ -331,6 +339,11 @@ func _lerp_puppets(a: Variant, b: Variant, ratio: float) -> Array:
 		var pos_b: Dictionary = pb.get("stage_pos", {})
 		var hand_a: Dictionary = pa.get("hand_angle", {})
 		var hand_b: Dictionary = pb.get("hand_angle", {})
+		var elbow_a: Dictionary = pa.get("elbow_angle", {})
+		var elbow_b: Dictionary = pb.get("elbow_angle", {})
+		var pose_ratio: float = ratio
+		if ratio < 1.0 and _pose_resets.get(b.time_ms, []).has(int(pb.get("puppet_id", i))):
+			pose_ratio = 0.0
 		(
 			out
 			. append(
@@ -353,10 +366,23 @@ func _lerp_puppets(a: Variant, b: Variant, ratio: float) -> Array:
 					"hand_angle":
 					{
 						"left":
-						_lerp_float(hand_a.get("left", 0.0), hand_b.get("left", 0.0), ratio),
+						_lerp_float(hand_a.get("left", 0.0), hand_b.get("left", 0.0), pose_ratio),
 						"right":
-						_lerp_float(hand_a.get("right", 0.0), hand_b.get("right", 0.0), ratio),
+						_lerp_float(hand_a.get("right", 0.0), hand_b.get("right", 0.0), pose_ratio),
 					},
+					"elbow_angle":
+					{
+						"left":
+						_lerp_float(elbow_a.get("left", 0.0), elbow_b.get("left", 0.0), pose_ratio),
+						"right":
+						_lerp_float(
+							elbow_a.get("right", 0.0), elbow_b.get("right", 0.0), pose_ratio
+						),
+					},
+					"head_tilt":
+					_lerp_float(pa.get("head_tilt", 0.0), pb.get("head_tilt", 0.0), pose_ratio),
+					"torso_lean":
+					_lerp_float(pa.get("torso_lean", 0.0), pb.get("torso_lean", 0.0), pose_ratio),
 					"head_id":
 					int(pb.get("head_id", -1)) if ratio >= 1.0 else int(pa.get("head_id", -1)),
 					# 离散量跟随「时间已过 b 的落点」翻转，等价于在 b.time_ms 那一刻跳变。

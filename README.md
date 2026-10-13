@@ -46,6 +46,8 @@ py -3.13 -m venv .venv
 
 ## 测试入口
 
+上半身操作：左键拖手自动弯肘，左键拖头俯仰，Alt+左键拖躯干前倾，R 恢复当前影人的上身。A/D、Shift+A/D、W/S 继续抬落手；松手保持。普通胸签/手边竹签拖动继续移动和蹲站。
+
 先导入资源；修改脚本后先用 `--check-only --script res://<文件>` 做解析检查。行为测试统一使用：
 
 ```powershell
@@ -57,6 +59,8 @@ py -3.13 -m venv .venv
 | 入口 | 覆盖 |
 | --- | --- |
 | `tests/a/run_tests.gd` | 操控、双时钟、判定、补救、灯、道具与第一幕编排 |
+| `tests/a/run_upper_body.gd` | 双臂、头腰、正式输入、复位、旧数据与新姿态录放、实际腕点判定 |
+| `tests/b/run_upper_body_graphics.gd` | Windows 图形环境中的正式输入、提示、持杖/持伞及幕前姿态回放（不加 `--headless`） |
 | `tests/c/run_tests_c.gd` | 录制、回放、记录校验与结果流程 |
 | `tests/c/run_scenery_tests.gd` | 布景与状态绑定 |
 | `tests/b/run_stage_visuals.gd` | 实体/投影几何、灯和道具附件 |
