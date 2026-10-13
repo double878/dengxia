@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-13 上半身：`PuppetState.hand_angle` 保留为肩角，新增 `elbow_angle{left,right}`（0～150°）、`head_tilt`（±30°）、`torso_lean`（0～45°），均为弧度。`UpperBodyPose` 提供固定两段几何和手目标解算；`InputReader` 通过当前受控实体的逆变换读取鼠标目标，`PuppetController` 唯一写状态。头绕颈、腰绕髋，腿和地面路径沿用旧行为；手掌随前臂，伞朝上、锡杖竖直。身体宽度与原稿朝向取既有美术清单，第一幕手高与抬手指标由实际腕点推导，保留原交接位置窗口。`CSnapshot` 缺省、校验及变化检测，`CReplayPlayer` 插值，`PerformanceReplay` 应用和 `CReplayVerifier` 核对均覆盖新字段；旧记录缺字段为零。`upper_body_pose` / `upper_body_reset` 为合法事件，R 在原落点跳变，落点前不预插值到复位姿态。第二关通过原输入宿主复用新操作，尚未提供整关录放。
+
 > 2026-10-12 第二关声音 v2：`assets/audio/act2-opening/score.json` 当前版本为 `act2-opening-dialogue-v2-user-reference-silent-reply`。许仙的 F5 韵律参考取第一关 `return-02.wav`，Seed-VC 身份参考取第一关 `return-02/06/08` 实际对白；法海的身份参考取用户视频前 7.7 秒分离人声，排除后续小沙弥答话，韵律采用自然男声。六句音源沿用上一轮，响度约 −18 LUFS；导入仍禁用裁剪、归一化与循环。七条 WAV 为 48 kHz 双声道 PCM16；第五、六句间静音由 620 ms 增至 1,200 ms，各句 PCM 逐样本保留。主轨 1,504,551 帧（31,345 ms），迎接冻结点为 5,334 ms，暗场起点为 29,345 ms。清单删除 `agreement_gate_ms`，以 `agreement_silence_ms=1200` 记录自动回应前的沉默。制作与听验范围见音频制作记录；游戏逻辑继续读取清单时标。
 
 > 2026-10-12 第一关跳过：`GameFlow` 在第一关 `Hud` 注入“跳过第一关”按钮，复用延后执行的第二关切换路径。点击后禁止重复切换并停止旧宿主输入/处理，移出场景树触发既有 `Level1Harness.shutdown()` 停止音频，再释放宿主并加载第二关；跳过时的完成信号不进入回放选择。第一关输入层将按钮区域的按下事件交给 GUI，暂停时按钮仍可用。

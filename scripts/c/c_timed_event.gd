@@ -103,6 +103,8 @@ const KNOWN_KINDS: Array = [
 	&"opera_score_skipped",
 	&"opera_phase_changed",
 	&"dialogue_line_changed",
+	&"upper_body_pose",
+	&"upper_body_reset",
 ]
 
 ## 灯事件的 object_id 命名空间。A 端 lamp_controller.gd:23 的常量值，

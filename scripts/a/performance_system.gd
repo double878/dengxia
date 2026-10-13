@@ -20,6 +20,7 @@ class_name PerformanceSystem
 
 const CueScript := preload("res://scripts/a/cue.gd")
 const CueHintScript := preload("res://scripts/a/cue_hint.gd")
+const UpperPose := preload("res://scripts/a/upper_body_pose.gd")
 
 var cues: Array = []  ## 由 StageDef 提供的 Cue 列表
 var clock: Object = null  ## 鸭子类型：只需 get_song_time_ms() -> int
@@ -296,8 +297,8 @@ func _evaluate_continuous(song_time_ms: int) -> void:
 			)
 		for hand_key in ["left_angle", "right_angle"]:
 			var before: float = float(previous[hand_key])
-			var after: float = (
-				state.hand_angle.x if hand_key == "left_angle" else state.hand_angle.y
+			var after: float = UpperPose.hand_elevation(
+				state, "left" if hand_key == "left_angle" else "right"
 			)
 			if is_equal_approx(before, after):
 				continue
@@ -319,7 +320,9 @@ func _evaluate_continuous(song_time_ms: int) -> void:
 
 func _snapshot(state: PuppetState) -> Dictionary:
 	return {
-		"x": state.stage_pos.x, "left_angle": state.hand_angle.x, "right_angle": state.hand_angle.y
+		"x": state.stage_pos.x,
+		"left_angle": UpperPose.hand_elevation(state, "left"),
+		"right_angle": UpperPose.hand_elevation(state, "right")
 	}
 
 
@@ -564,9 +567,9 @@ func _metric_value(key: String, object_id: int) -> float:
 		"stance":
 			return state.stance
 		"hand":
-			return state.hand_angle.x
+			return UpperPose.hand_elevation(state, "left")
 		"angle":
-			return state.hand_angle.x
+			return UpperPose.hand_elevation(state, "left")
 		"facing":
 			return state.facing
 		"x":

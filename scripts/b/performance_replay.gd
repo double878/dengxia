@@ -90,6 +90,10 @@ func apply_frame(frame: Dictionary) -> void:
 		var state: PuppetState = _states[int(view.puppet_id)]
 		state.stage_pos = Vector2(float(view.stage_pos.x), float(view.stage_pos.y))
 		state.hand_angle = Vector2(float(view.hand_angle.left), float(view.hand_angle.right))
+		var elbows: Dictionary = view.get("elbow_angle", {})
+		state.elbow_angle = Vector2(float(elbows.get("left", 0.0)), float(elbows.get("right", 0.0)))
+		state.head_tilt = float(view.get("head_tilt", 0.0))
+		state.torso_lean = float(view.get("torso_lean", 0.0))
 		for key: String in [
 			"stance",
 			"facing",
