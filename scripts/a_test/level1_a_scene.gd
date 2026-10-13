@@ -327,6 +327,14 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var button := event as InputEventMouseButton
 		if button.button_index == MOUSE_BUTTON_LEFT and button.pressed:
+			# GameFlow 注入的跳关按钮交给 GUI 消费，避免演出输入抢走点击。
+			var skip := get_node_or_null("Hud/SkipAct1Button") as Button
+			if (
+				skip != null
+				and skip.is_visible_in_tree()
+				and skip.get_global_rect().has_point(button.position)
+			):
+				return
 			if not _handle_left_press(button.position):
 				# 手边的签与影人身上的胸签都能抓：统一换算成控制器认得的热区位置
 				var translated := button.duplicate() as InputEventMouseButton

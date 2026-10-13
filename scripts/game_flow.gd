@@ -25,9 +25,29 @@ func _start_performance() -> void:
 	_level = PERFORMANCE_SCENE.instantiate()
 	_level.performance_finished.connect(_performance_finished)
 	add_child(_level)
+	var skip := Button.new()
+	skip.name = "SkipAct1Button"
+	skip.text = "跳过第一关"
+	skip.position = Vector2(1506, 15)
+	skip.size = Vector2(240, 52)
+	skip.add_theme_font_size_override("font_size", 24)
+	skip.pressed.connect(_skip_act1)
+	_level.get_node("Hud").add_child(skip)
+
+
+func _skip_act1() -> void:
+	if _advancing or _stage_id != 1 or _level == null:
+		return
+	_advancing = true
+	_level.get_node("Hud/SkipAct1Button").disabled = true
+	_level.set_process(false)
+	_level.set_process_input(false)
+	_advance_to_act2.call_deferred()
 
 
 func _performance_finished(record: CPerformanceRecord, stage_id: int, title: String) -> void:
+	if _advancing:
+		return
 	_stage_id = stage_id
 	_title = title
 	_flow = CResultFlow.new()
@@ -171,6 +191,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _advance_to_act2() -> void:
 	_clear_page()
+	if _level != null:
+		remove_child(_level)
+		_level.queue_free()
+		_level = null
 	if _flow != null:
 		_flow.leave_stage()
 		_flow = null
