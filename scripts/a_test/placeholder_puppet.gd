@@ -10,6 +10,7 @@ class_name PlaceholderPuppet
 
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
+const UpperPose := preload("res://scripts/a/upper_body_pose.gd")
 const SKIN_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/puppets/baisuzhen.png"),
 	preload("res://assets/puppets/xuxian.png"),
@@ -106,6 +107,9 @@ func _process(_delta: float) -> void:
 		puppet_state.facing,
 		puppet_state.turn_progress,
 		puppet_state.hand_angle,
+		puppet_state.elbow_angle,
+		puppet_state.head_tilt,
+		puppet_state.torso_lean,
 		puppet_state.head_id,
 		puppet_state.hook_slot,
 		puppet_state.is_controlled,
@@ -249,7 +253,26 @@ func hand_screen_position(hand: String) -> Vector2:
 		ground.y - height * SHOULDER_RATIO + walk_body_offset(height)
 	)
 	var angle: float = puppet_state.hand_angle.y if right_side else puppet_state.hand_angle.x
-	return _skin_figure_transform(ground) * arm_wrist(shoulder, angle, right_side, height)
+	var bend: float = puppet_state.elbow_angle.y if right_side else puppet_state.elbow_angle.x
+	var wrist: Vector2 = UpperPose.arm_points(shoulder, angle, bend, right_side, height).wrist
+	return _skin_figure_transform(ground) * upper_transform() * wrist
+
+
+func upper_transform() -> Transform2D:
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var height: float = figure_px_height()
+	var hip := ground + Vector2(0, -height * HIP_RATIO + walk_body_offset(height))
+	var reference: float = float(_skins[str(_body_skin_id())]["reference_facing"]) if _has_body_skin() else 1.0
+	return UpperPose.torso_transform(hip, puppet_state.torso_lean * reference)
+
+
+func head_screen_position() -> Vector2:
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var height: float = figure_px_height()
+	var shoulder := ground + Vector2(0, -height * SHOULDER_RATIO + walk_body_offset(height))
+	var neck: Vector2 = shoulder + Vector2(0, -height * 0.04)
+	var centre: Vector2 = shoulder + Vector2(0, -height * HEAD_CENTRE_RATIO)
+	return _skin_figure_transform(ground) * upper_transform() * (neck + (centre - neck).rotated(puppet_state.head_tilt))
 
 
 ## 固定枢轴上完成整个人的水平翻面；宽度压缩也作用于肩、手和伞的挂点。
@@ -276,11 +299,7 @@ func head_top_screen_position() -> Vector2:
 	if puppet_state == null:
 		return Vector2.ZERO
 	var height: float = figure_px_height()
-	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
-	var centre := Vector2(
-		ground.x,
-		ground.y - height * (SHOULDER_RATIO + HEAD_CENTRE_RATIO) + walk_body_offset(height)
-	)
+	var centre: Vector2 = head_screen_position()
 	return Vector2(centre.x, centre.y - head_radius_px(height))
 
 
@@ -386,6 +405,7 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 			draw_circle(knee, height * 0.021, joint)
 
 	# 躯干
+	_skin_canvas_transform = _skin_figure_transform(ground) * upper_transform()
 	_draw_skin_accessories(ground, height, alpha)
 	var torso := PackedVector2Array(
 		[
@@ -422,7 +442,8 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	)
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
-	var head_center := Vector2(shoulder.x, shoulder.y - height * HEAD_CENTRE_RATIO)
+	var neck: Vector2 = shoulder + Vector2(0, -height * 0.04)
+	var head_center: Vector2 = neck + Vector2(0, -height * (HEAD_CENTRE_RATIO - 0.04)).rotated(state.head_tilt)
 	var head_r: float = height * HEAD_RADIUS_RATIO if _has_body_skin() else head_radius_px(height)
 	draw_set_transform_matrix(_skin_canvas_transform)
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
@@ -442,8 +463,10 @@ func _draw_arm(
 	joint: Color,
 	flip_width: float
 ) -> Vector2:
-	var elbow: Vector2 = arm_elbow(shoulder, angle, right_side, height)
-	var wrist: Vector2 = arm_wrist(shoulder, angle, right_side, height)
+	var bend: float = puppet_state.elbow_angle.y if right_side else puppet_state.elbow_angle.x
+	var points: Dictionary = UpperPose.arm_points(shoulder, angle, bend, right_side, height)
+	var elbow: Vector2 = points.elbow
+	var wrist: Vector2 = points.wrist
 	# 翻面压扁时手臂同步变细，避免整台只剩两根粗线还挂在外面
 	var thickness: float = maxf(flip_width, 0.25)
 	if _has_body_skin():
@@ -454,7 +477,7 @@ func _draw_arm(
 		_draw_skin_hand(
 			side + "_hand",
 			wrist,
-			arm_direction(angle, right_side),
+			points.direction,
 			height,
 			thickness,
 			right_side,
@@ -485,7 +508,7 @@ func _draw_head(
 		if _has_body_skin():
 			facing = float(_skins[str(_body_skin_id())]["reference_facing"])
 		var mirror: float = facing / float(skin["reference_facing"])
-		_draw_skin_tile(skin_id, "head", centre, 0.0, Vector2(size * mirror, size), alpha)
+		_draw_skin_tile(skin_id, "head", centre, puppet_state.head_tilt, Vector2(size * mirror, size), alpha)
 		return
 	draw_circle(centre, radius, body)
 	draw_arc(centre, radius, 0.0, TAU, 32, rim, 2.0)
@@ -624,14 +647,19 @@ func _draw_skin_accessories(ground: Vector2, height: float, alpha: float) -> voi
 			alpha
 		)
 	if skin["parts"].has("staff"):
-		var wrist: Vector2 = arm_wrist(
+		var wrist: Vector2 = UpperPose.arm_points(
 			shoulder + Vector2(shoulder_half_width_px(height, 1.0), 0),
 			puppet_state.hand_angle.y,
+			puppet_state.elbow_angle.y,
 			true,
 			height
-		)
+		).wrist
 		var staff_size: float = height * float(skin["staff_size_ratio"])
+		var upper_matrix: Transform2D = _skin_canvas_transform
+		_skin_canvas_transform = _skin_figure_transform(ground)
+		wrist = upper_transform() * wrist
 		_draw_skin_tile(id, "staff", wrist, 0.0, Vector2.ONE * staff_size, alpha)
+		_skin_canvas_transform = upper_matrix
 
 
 func _draw_skin_tile(
@@ -714,6 +742,8 @@ func _draw_skin_joint(at: Vector2, radius: float, alpha: float) -> void:
 ## 三根竹签：一根连胸签、两根连手，全部汇到签手的手部。
 ## 这是「借签操演」在画面上唯一的直接证据（PRD 第 4 节）。
 func _draw_sticks(ground: Vector2, height: float, alpha: float) -> void:
+	_left_wrist = hand_screen_position("left")
+	_right_wrist = hand_screen_position("right")
 	if render_mode == RenderMode.ENTITY:
 		_draw_bamboo(Vector2(ground.x, ground.y - height * 0.62), hand_anchor - Vector2(0, 28), 3.7)
 		_draw_bamboo(_left_wrist, hand_anchor + Vector2(-18, -22), 2.5)
