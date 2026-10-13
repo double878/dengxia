@@ -22,8 +22,7 @@ func _run() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await process_frame
-	ActionsInput.advance(hall, 14.0)
-	check(hall.actions.phase == "qing_exit", "先出现小青离场的自然目标")
+	check(ActionsInput.until_phase(hall, "qing_exit"), "先出现小青离场的自然目标")
 	var help: Variant = hall.get("remedy")
 	check(help != null, "正式第二幕应接入第一关补救系统")
 	if help != null:
@@ -57,7 +56,9 @@ func _run() -> void:
 			),
 			"成功仍保留原补救失误"
 		)
-		ActionsInput.advance(hall, 4.0)
+		ActionsInput.advance(hall, 10.0)
+		check(not help.active() and hall.actions.phase == "duet", "正常饮前对唱不算漏做动作")
+		check(ActionsInput.until_phase(hall, "cup"), "唱完后开放取杯目标")
 		ActionsInput.advance(hall, 9.0)
 		check(help.active(), "下一项取杯漏做可独立补救")
 		ActionsInput.advance(hall, 9.0)
@@ -88,6 +89,38 @@ func _run() -> void:
 			hall.controller.get_puppet(0).stage_pos == pose and hall.actions.cup_owner == 1,
 			"恢复不改姿态和道具归属"
 		)
+		ActionsInput.take(hall, 1)
+		ActionsInput.drag(hall, hall._views[1].torso_screen_position(), Vector2(-152, 0))
+		ActionsInput.advance(hall, 0.2)
+		ActionsInput.take(hall, 0)
+		var offered: Vector2 = hall._views[1].hand_screen_position(hall.actions.cup_hand)
+		ActionsInput.drag(
+			hall,
+			hall._views[0].hand_screen_position("left"),
+			offered - hall._views[0].hand_screen_position("left")
+		)
+		ActionsInput.drag(
+			hall,
+			hall._views[0].hand_screen_position("left"),
+			hall._views[0].mouth_screen_position() - hall._views[0].hand_screen_position("left")
+		)
+		ActionsInput.advance(hall, 0.8)
+		check(hall.actions.phase == "bend" and not help.active(), "饮完酒关闭递杯补救并等待弯腰")
+		ActionsInput.advance(hall, 9.0)
+		check(help.active() and help.current_step == "bend", "饮后弯腰有独立补救目标")
+		check(hall._remedy_target().label.contains("Alt"), "师父明确示范 Alt 拖腰操作")
+		ActionsInput.key(hall, KEY_ESCAPE)
+		var bend_remaining: int = help.remaining_ms()
+		ActionsInput.advance(hall, 5.0)
+		check(help.remaining_ms() == bend_remaining, "弯腰补救暂停冻结")
+		ActionsInput.key(hall, KEY_ESCAPE)
+		ActionsInput.advance(hall, 9.0)
+		check(
+			not help.active() and hall.actions.phase == "bend" and not hall.actions.bent,
+			"弯腰补救超时不代演、不提前说不适"
+		)
+		ActionsInput.drag(hall, hall._views[0].torso_screen_position(), Vector2(75, 0), true)
+		check(hall.actions.bent and hall.actions.subtitle().contains("身子有些不适"), "补救超时后仍可真实弯腰继续对白")
 	hall.queue_free()
 	await process_frame
 	await create_timer(0.15).timeout

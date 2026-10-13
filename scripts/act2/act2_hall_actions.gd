@@ -4,23 +4,37 @@ extends RefCounted
 const CUP_POSITION := Vector2(1035, 415)
 const DARK_LIMIT: float = 0.20
 const REVEAL_LIMIT: float = 0.65
+const BEND_MIN: float = PI / 9.0
+const BEND_REARM: float = PI / 18.0
+const LINE_QING_REPLY: int = 4
+const LINE_UNWELL: int = 5
+const LINE_MEDICINE: int = 6
 const LINES: Array[Dictionary] = [
 	{"role": "许仙", "text": "娘子，今日端阳，陪我饮一杯吧。", "ms": 2800},
 	{"role": "小青", "text": "官人，姐姐不善饮酒，莫再劝了。", "ms": 2800},
 	{"role": "许仙", "text": "我想与娘子单独说说话，小青，你去多买些酒菜吧。", "ms": 4000},
 	{"role": "白素贞", "text": "小青，你就去吧。", "ms": 2600},
-	{"role": "许仙", "text": "娘子，就饮这一杯吧。", "ms": 3000},
+	{"role": "小青", "text": "好吧。", "ms": 1800},
 	{"role": "白素贞", "text": "官人……我身子有些不适。", "ms": 3000},
 	{"role": "许仙", "text": "娘子稍候，我去取些药来。", "ms": 3000},
+]
+# 用户同意的流程排练占位；唱词与时长待正式唱腔制作后替换。
+const DUET: Array[Dictionary] = [
+	{"role": "许仙", "text": "端阳佳节共举杯，愿与娘子长相随。", "ms": 4500},
+	{"role": "白素贞", "text": "官人盛意心领会，只怕薄酒也难支。", "ms": 4500},
+	{"role": "许仙", "text": "只此一杯添欢喜，娘子莫再把杯推。", "ms": 4500},
+	{"role": "白素贞", "text": "既是官人再三劝，且饮一杯谢情意。", "ms": 4500},
 ]
 
 var clock: MusicClock
 var phase: String = "dialogue"
 var line_index: int = 0
+var duet_index: int = 0
 var cup_owner: int = -1
 var cup_hand: String = ""
 var qing_departed: bool = false
 var drunk: bool = false
+var bent: bool = false
 var medicine_departed: bool = false
 var white_removed: bool = false
 var returned: bool = false
@@ -29,6 +43,7 @@ var _since_song: int = 0
 var _since_real: int = 0
 var _drink_since: int = -1
 var _exposure: float = 1.0
+var _bend_armed: bool = false
 
 
 func setup(value: MusicClock) -> void:
@@ -40,7 +55,7 @@ func _set_phase(value: String) -> void:
 	phase = value
 	_since_song = clock.get_song_time_ms()
 	_since_real = clock.get_real_time_ms()
-	clock.set_song_frozen(value not in ["dialogue", "startled"])
+	clock.set_song_frozen(value not in ["dialogue", "duet", "startled"])
 
 
 func update(
@@ -50,8 +65,11 @@ func update(
 	positions: Array[Vector2],
 	exposure: float,
 	snake_position: Vector2 = Vector2.ZERO,
-	xu_facing: float = -1.0
+	xu_facing: float = -1.0,
+	bai_lean: float = 0.0
 ) -> void:
+	if clock.is_paused():
+		return
 	_exposure = exposure
 	if hands.size() < 3 or mouths.size() < 3 or positions.size() < 3:
 		push_error("第二幕动作输入缺少三人几何")
@@ -64,15 +82,22 @@ func update(
 			)
 			clock.set_song_frozen(not ready)
 			if ready and clock.get_song_time_ms() - _since_song >= int(LINES[line_index].ms):
-				if line_index == 3:
+				if line_index == LINE_QING_REPLY:
 					_set_phase("qing_exit")
-				elif line_index == 4:
-					_set_phase("cup")
-				elif line_index == 6:
+				elif line_index == LINE_MEDICINE:
 					_set_phase("medicine_exit")
 				else:
 					line_index += 1
 					_set_phase("dialogue")
+		"duet":
+			var ready: bool = on_stage.has(0) and on_stage.has(1)
+			clock.set_song_frozen(not ready)
+			if ready and clock.get_song_time_ms() - _since_song >= int(DUET[duet_index].ms):
+				if duet_index == DUET.size() - 1:
+					_set_phase("cup")
+				else:
+					duet_index += 1
+					_set_phase("duet")
 		"cup":
 			if not on_stage.has(0) or not on_stage.has(1):
 				return
@@ -97,10 +122,19 @@ func update(
 					_drink_since = clock.get_real_time_ms()
 				if clock.get_real_time_ms() - _drink_since >= 550:
 					drunk = true
-					line_index = 5
-					_set_phase("dialogue")
+					_bend_armed = is_finite(bai_lean) and bai_lean < BEND_MIN
+					_set_phase("bend")
 			else:
 				_drink_since = -1
+		"bend":
+			if not on_stage.has(0) or not on_stage.has(1) or not is_finite(bai_lean):
+				return
+			if bai_lean <= BEND_REARM:
+				_bend_armed = true
+			if _bend_armed and bai_lean >= BEND_MIN:
+				bent = true
+				line_index = LINE_UNWELL
+				_set_phase("dialogue")
 		"darken":
 			if exposure <= DARK_LIMIT:
 				_set_phase("replace")
@@ -140,8 +174,8 @@ func _near_hand(hands: Dictionary, target: Vector2, radius: float) -> String:
 func leave(id: int, at_edge: bool) -> void:
 	if id == 2 and phase == "qing_exit" and at_edge:
 		qing_departed = true
-		line_index = 4
-		_set_phase("dialogue")
+		duet_index = 0
+		_set_phase("duet")
 	elif id == 1 and phase == "medicine_exit" and at_edge:
 		medicine_departed = true
 		_set_phase("darken")
@@ -188,9 +222,11 @@ func subtitle() -> String:
 	if phase == "dialogue":
 		return "%s：%s" % [LINES[line_index].role, LINES[line_index].text]
 	if phase == "qing_exit":
-		return "白素贞：小青，你就去吧。"
+		return "小青：好吧。"
+	if phase == "duet":
+		return "%s（临时对唱）：%s" % [DUET[duet_index].role, DUET[duet_index].text]
 	if phase in ["cup", "drink"]:
-		return "许仙：娘子，就饮这一杯吧。"
+		return "%s（临时对唱）：%s" % [DUET[-1].role, DUET[-1].text]
 	if phase == "medicine_exit":
 		return "许仙：娘子稍候，我去取些药来。"
 	if phase in ["startled", "finished"]:
@@ -202,14 +238,22 @@ func hint() -> String:
 	match phase:
 		"dialogue":
 			return "身段自由发挥 · 空格换人 · 拖手、拖头、Alt 拖躯干"
+		"duet":
+			return "饮前对唱排练 · 身段自由发挥，唱完再递杯饮酒"
 		"qing_exit":
 			return "接手小青，向左走到台边，再右键点影人退场买酒菜"
 		"cup":
 			return "接手许仙，拖手到桌上红杯；持杯走近白素贞，双手靠近递酒" if cup_owner < 0 else "许仙已持杯 · 接手两人，让白素贞的手靠近酒杯接过"
 		"drink":
 			return "接手白素贞，把持杯手拖到嘴边，保持片刻饮酒"
+		"bend":
+			return (
+				"酒已饮下 · 接手白素贞，按住 Alt 向前拖躯干弯腰，再说不适"
+				if _bend_armed
+				else "酒已饮下 · 先按 R 扶正白素贞，再按住 Alt 向前拖躯干弯腰"
+			)
 		"medicine_exit":
-			return "白素贞的不适身段自由发挥 · 接手许仙，走到右台边后退场取药"
+			return "接手许仙，走到右台边后退场取药"
 		"darken":
 			return "许仙已去取药 · 按住 Q 压暗灯影，再收走白素贞"
 		"replace":

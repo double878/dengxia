@@ -96,6 +96,14 @@ static func advance(hall: Node, seconds: float) -> void:
 		hall._process(1.0 / 60.0)
 
 
+static func until_phase(hall: Node, phase: String, limit_s: float = 40.0) -> bool:
+	for _i in range(int(ceil(limit_s * 60.0))):
+		if hall.actions.phase == phase:
+			return true
+		hall._process(1.0 / 60.0)
+	return hall.actions.phase == phase
+
+
 static func right(hall: Node, id: int) -> void:
 	var button := InputEventMouseButton.new()
 	button.button_index = MOUSE_BUTTON_RIGHT
@@ -162,7 +170,10 @@ func drama() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await process_frame
-	advance(hall, 20.0)
+	advance(hall, 12.5)
+	check(hall.actions.subtitle() == "小青：好吧。", "白素贞应允后先出现小青应答")
+	check(hall.actions.phase == "dialogue", "小青答完之前不得正式离场")
+	check(until_phase(hall, "qing_exit", 5.0), "小青答完好吧才开放离场")
 	var actions: Variant = hall.get("actions")
 	check(actions != null, "普通字幕结束后应等待小青实际离场")
 	if actions == null:
@@ -185,8 +196,32 @@ func drama() -> void:
 	check(actions.qing_departed and not hall.on_stage.has(2), "走到左台边后小青正式离场")
 	key(hall, KEY_3)
 	check(not hall.on_stage.has(2), "已去买菜的小青不可重新串场")
+	check(actions.phase == "duet", "小青离场后先进入饮前对唱")
+	var duet_line: String = actions.subtitle()
+	key(hall, KEY_ESCAPE)
+	advance(hall, 8.0)
+	check(actions.subtitle() == duet_line, "菜单暂停冻结对唱字幕")
+	key(hall, KEY_ESCAPE)
+	right(hall, 0)
+	# 宿主先 tick 时钟、再消费在场名单；在固定步提交缺场冻结后采样。
+	advance(hall, 1.0 / 60.0)
+	var duet_song: int = hall.clock.get_song_time_ms()
+	advance(hall, 9.0)
+	check(
+		actions.phase == "duet" and hall.clock.get_song_time_ms() == duet_song, "对唱演员缺场时不能唱完或跳到饮酒"
+	)
+	check(hall.remedy.guide_step() == "restore_0", "对唱缺场提示恢复白素贞")
+	key(hall, KEY_1)
+	take(hall, 1)
+	drag(
+		hall,
+		hall._views[1].hand_screen_position("right"),
+		Vector2(1035, 415) - hall._views[1].hand_screen_position("right")
+	)
 	advance(hall, 4.0)
-	check(actions.phase == "cup", "小青离场后等待真实递酒")
+	check(actions.phase == "duet" and actions.cup_owner == -1, "对唱期间不能提前取杯饮酒")
+	key(hall, KEY_R)
+	check(until_phase(hall, "cup"), "临时对唱完整结束后才允许递酒")
 	check(actions.cup_owner == -1, "没有取杯动作时杯仍在桌上")
 	take(hall, 1)
 	drag(
@@ -211,6 +246,8 @@ func drama() -> void:
 	check(actions.cup_owner == 0 and actions.phase == "drink", "两人手实际靠近后转移唯一酒杯")
 	advance(hall, 3.0)
 	check(not actions.drunk, "接杯后没有送到嘴边不能喝完")
+	drag(hall, hall._views[0].torso_screen_position(), Vector2(75, 0), true)
+	check(hall.controller.get_puppet(0).torso_lean > deg_to_rad(20.0), "饮酒前已有弯腰姿态")
 	drag(
 		hall,
 		hall._views[0].hand_screen_position("left"),
@@ -222,8 +259,25 @@ func drama() -> void:
 	key(hall, KEY_ESCAPE)
 	advance(hall, 0.8)
 	check(actions.drunk, "杯送到嘴边并保持后饮酒完成")
-	advance(hall, 8.0)
-	check(actions.phase == "medicine_exit", "不适身段自由，字幕后等待许仙取药离场")
+	advance(hall, 20.0)
+	check(actions.phase == "bend", "饮前弯腰和等待超时都不能触发饮后不适对白")
+	check(not actions.subtitle().contains("身子有些不适"), "饮后实际弯腰之前不说不适")
+	take(hall, 1)
+	drag(hall, hall._views[1].torso_screen_position(), Vector2(-75, 0), true)
+	check(actions.phase == "bend", "许仙弯腰不能替代白素贞动作")
+	key(hall, KEY_R)
+	take(hall, 0)
+	key(hall, KEY_R)
+	advance(hall, 0.1)
+	key(hall, KEY_ESCAPE)
+	drag(hall, hall._views[0].torso_screen_position(), Vector2(75, 0), true)
+	check(actions.phase == "bend", "暂停中的拖腰不推进剧情")
+	key(hall, KEY_ESCAPE)
+	var bend_position: Vector2 = hall.controller.get_puppet(0).stage_pos
+	drag(hall, hall._views[0].torso_screen_position(), Vector2(75, 0), true)
+	check(actions.subtitle() == "白素贞：官人……我身子有些不适。", "饮后实际弯腰到位才开始不适对白")
+	check(hall.controller.get_puppet(0).stage_pos == bend_position, "弯腰门槛读取姿态，不要求移动")
+	check(until_phase(hall, "medicine_exit", 10.0), "饮后两句普通对白结束才允许取药")
 	right(hall, 1)
 	check(not actions.medicine_departed, "当前位置误退场不算取药")
 	key(hall, KEY_2)

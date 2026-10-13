@@ -7,6 +7,7 @@ const STEPS: Dictionary = {
 	"cup_take": 1,
 	"cup_pass": 0,
 	"drink": 0,
+	"bend": 0,
 	"medicine_exit": 1,
 	"darken": 0,
 	"replace": 0,
@@ -57,6 +58,8 @@ func update(actions: RefCounted, on_stage: Array[int], exposure: float) -> void:
 		completed.append("cup_pass")
 	if actions.drunk:
 		completed.append("drink")
+	if actions.bent:
+		completed.append("bend")
 	if actions.medicine_departed:
 		completed.append("medicine_exit")
 	if exposure <= actions.DARK_LIMIT or actions.white_removed:
@@ -104,7 +107,7 @@ func update(actions: RefCounted, on_stage: Array[int], exposure: float) -> void:
 
 func _step(actions: RefCounted, on_stage: Array[int], exposure: float) -> String:
 	match actions.phase:
-		"dialogue", "qing_exit", "cup", "drink", "medicine_exit":
+		"dialogue", "duet", "qing_exit", "cup", "drink", "bend", "medicine_exit":
 			for id: int in [0, 1, 2]:
 				if id == 2 and actions.qing_departed:
 					continue

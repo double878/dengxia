@@ -194,7 +194,8 @@ func _update_actions() -> void:
 		positions,
 		lamp_controller.lamp.exposure,
 		snake.position,
-		visible_facing
+		visible_facing,
+		controller.get_puppet(0).torso_lean
 	)
 	if before != "startled" and actions.phase == "startled":
 		_fall_origin = controller.get_puppet(1).stage_pos
@@ -536,6 +537,9 @@ func _remedy_target() -> Dictionary:
 			start = _views[0].hand_screen_position(actions.cup_hand)
 			target = _views[0].mouth_screen_position()
 			label = "送到嘴边 · 保持"
+		"bend":
+			target = start + Vector2(75 * controller.get_puppet(0).facing, 0)
+			label = "Alt 拖躯干 · 弯腰"
 		"darken", "reveal":
 			start = Vector2(272, 844)
 			target = start + Vector2(0, 60 if id == "darken" else -60)

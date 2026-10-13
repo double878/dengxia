@@ -47,8 +47,14 @@ func _run() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await capture("opening")
-	ActionsInput.advance(hall, 20.0)
-	ActionsInput.advance(hall, 2.0)
+	ActionsInput.advance(hall, 12.5)
+	if hall.actions.subtitle() != "小青：好吧。":
+		push_error("图形流程未先显示小青应答")
+		quit(1)
+		return
+	await capture("qing-reply")
+	ActionsInput.until_phase(hall, "qing_exit")
+	ActionsInput.advance(hall, 9.0)
 	if not hall.remedy.active() or not hall._remedy_banner.visible:
 		push_error("等待动作未出现正式补救手和提示")
 		quit(1)
@@ -68,7 +74,17 @@ func _run() -> void:
 	ActionsInput.take(hall, 2)
 	ActionsInput.drag(hall, hall._views[2].torso_screen_position(), Vector2(-430, 0))
 	ActionsInput.right(hall, 2)
-	ActionsInput.advance(hall, 4.0)
+	if hall.actions.phase != "duet":
+		push_error("小青离场后未进入饮前对唱")
+		quit(1)
+		return
+	await capture("duet-xu")
+	ActionsInput.advance(hall, 5.0)
+	await capture("duet-bai")
+	if not ActionsInput.until_phase(hall, "cup"):
+		push_error("饮前对唱未完整结束")
+		quit(1)
+		return
 	ActionsInput.advance(hall, 9.0)
 	await capture_remedy("remedy-cup-take", "cup_take")
 	ActionsInput.take(hall, 1)
@@ -103,7 +119,27 @@ func _run() -> void:
 		push_error("图形真实输入未完成饮酒")
 		quit(1)
 		return
-	ActionsInput.advance(hall, 8.0)
+	if hall.actions.phase != "bend" or hall.actions.subtitle().contains("身子有些不适"):
+		push_error("饮后未经弯腰就触发不适对白")
+		quit(1)
+		return
+	await capture("before-bend")
+	ActionsInput.advance(hall, 9.0)
+	await capture_remedy("remedy-bend", "bend")
+	ActionsInput.drag(hall, hall._views[0].torso_screen_position(), Vector2(75, 0), true)
+	if (
+		not hall.actions.bent
+		or not hall.actions.subtitle().contains("身子有些不适")
+		or hall.remedy.active()
+	):
+		push_error("实际 Alt 拖腰未完成补救并触发不适对白")
+		quit(1)
+		return
+	await capture("bai-unwell")
+	if not ActionsInput.until_phase(hall, "medicine_exit", 10.0):
+		push_error("饮后对白未进入取药离场")
+		quit(1)
+		return
 	ActionsInput.take(hall, 1)
 	ActionsInput.drag(hall, hall._views[1].torso_screen_position(), Vector2(740, 0))
 	ActionsInput.right(hall, 1)
