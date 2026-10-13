@@ -3,6 +3,7 @@ extends SceneTree
 
 var hall: Node
 const OUTPUT: String = "res://builds/act2-actions"
+const ActionsInput := preload("res://tests/c/run_act2_actions.gd")
 
 
 func _initialize() -> void:
@@ -29,7 +30,28 @@ func _run() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await capture("opening")
+	ActionsInput.advance(hall, 20.0)
+	ActionsInput.take(hall, 2)
+	ActionsInput.drag(hall, hall._views[2].torso_screen_position(), Vector2(-430, 0))
+	ActionsInput.right(hall, 2)
+	ActionsInput.advance(hall, 4.0)
+	ActionsInput.take(hall, 1)
+	ActionsInput.drag(hall, hall._views[1].hand_screen_position("right"), Vector2(1035, 415) - hall._views[1].hand_screen_position("right"))
+	await capture("cup-held")
+	ActionsInput.drag(hall, hall._views[1].torso_screen_position(), Vector2(-152, 0))
+	ActionsInput.advance(hall, 0.2)
+	ActionsInput.take(hall, 0)
+	var offered: Vector2 = hall._views[1].hand_screen_position(hall.actions.cup_hand)
+	ActionsInput.drag(hall, hall._views[0].hand_screen_position("left"), offered - hall._views[0].hand_screen_position("left"))
+	await capture("cup-passed")
+	ActionsInput.drag(hall, hall._views[0].hand_screen_position("left"), hall._views[0].mouth_screen_position() - hall._views[0].hand_screen_position("left"))
+	await capture("drink")
+	ActionsInput.advance(hall, 0.8)
+	if not hall.actions.drunk:
+		push_error("图形真实输入未完成饮酒")
+		quit(1)
+		return
 	hall.queue_free()
 	await process_frame
-	print("ACT2_GRAPHICS opening captured")
+	print("ACT2_GRAPHICS opening / cup-held / cup-passed / drink captured")
 	quit(0)

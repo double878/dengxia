@@ -5,6 +5,8 @@ const PuppetView := preload("res://scripts/a_test/placeholder_puppet.gd")
 const PuppetInput := preload("res://scripts/a_test/input_reader.gd")
 const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
 const OperatorHand := preload("res://scripts/b/operator_hand.gd")
+const Actions := preload("res://scripts/act2/act2_hall_actions.gd")
+const CupView := preload("res://scripts/act2/wine_cup_view.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HALL_STAGE_ID: int = 22
 const FIGURE_HEIGHT: float = 340.0
@@ -34,6 +36,9 @@ var _subtitle: Label
 var _pause_button: Button
 var _paused: bool = false
 var _accumulator: float = 0.0
+var actions := Actions.new()
+var _cup: Node2D
+var _cup_projection: Node2D
 
 
 func _ready() -> void:
@@ -75,6 +80,19 @@ func _ready() -> void:
 		add_child(view)
 		_views.append(view)
 	_puppet_input.set_views(_views)
+	actions.setup(clock)
+	_cup = CupView.new()
+	_cup.actions = actions
+	_cup.views = _views
+	_cup.z_index = 25
+	add_child(_cup)
+	_cup_projection = CupView.new()
+	_cup_projection.actions = actions
+	_cup_projection.views = _surface.projection_views
+	var cup_material := ShaderMaterial.new()
+	cup_material.shader = preload("res://shaders/puppet_transmission.gdshader")
+	_cup_projection.material = cup_material
+	_surface.projection_viewport.add_child(_cup_projection)
 	_lamp = PlaceholderLamp.new()
 	_lamp.z_index = 30
 	add_child(_lamp)
@@ -102,6 +120,7 @@ func _process(delta: float) -> void:
 		controller.take_events()
 		lamp_controller.take_events()
 		_update_seats()
+		_update_actions()
 	if steps == 8:
 		_accumulator = 0.0
 	_refresh_views()
@@ -111,6 +130,18 @@ func _update_seats() -> void:
 	for id in range(2):
 		if seated[id] and absf(controller.get_puppet(id).stage_pos.x - SEAT_X[id]) > 0.025:
 			seated[id] = false
+
+
+func _update_actions() -> void:
+	_refresh_views()
+	var hands: Array[Dictionary] = []
+	var mouths: Array[Vector2] = []
+	var positions: Array[Vector2] = []
+	for id in range(3):
+		hands.append({"left": _views[id].hand_screen_position("left"), "right": _views[id].hand_screen_position("right")})
+		mouths.append(_views[id].mouth_screen_position())
+		positions.append(controller.get_puppet(id).stage_pos * PuppetController.STAGE_PIXEL_SIZE)
+	actions.update(on_stage, hands, mouths, positions, lamp_controller.lamp.exposure)
 
 
 func _input(event: InputEvent) -> void:
@@ -160,7 +191,7 @@ func _notification(what: int) -> void:
 
 
 func _enter(id: int) -> void:
-	if id < 0 or id >= 3 or on_stage.has(id):
+	if id < 0 or id >= 3 or on_stage.has(id) or not actions.can_enter(id):
 		return
 	on_stage.append(id)
 	on_stage.sort()
@@ -177,6 +208,10 @@ func _take_next() -> void:
 
 
 func _exit(id: int) -> void:
+	if id == 0 and actions.phase == "darken":
+		return
+	var at_edge: bool = controller.get_puppet(id).stage_pos.x <= 0.10 if id == 2 else controller.get_puppet(id).stage_pos.x >= 0.90
+	actions.leave(id, at_edge)
 	if controller.controlled_id == id:
 		_puppet_input.release_drag()
 		controller.set_controlled_puppet(-1)
@@ -221,9 +256,16 @@ func _refresh_views() -> void:
 			view.seat_y = SEAT_Y
 	_surface.sync_puppets(controller.puppets, on_stage)
 	_surface.update_light(lamp_controller.lamp, clock.get_real_time_ms(), clock.get_song_time_ms(), clock.bpm)
+	_cup.on_stage = on_stage
+	_cup_projection.on_stage = on_stage
+	_cup_projection.transform = _surface.projection_views[0].transform
+	var scenery := _binding.get("_scenery") as CSceneryView
+	if scenery != null:
+		scenery.set_item_visible("wine_cup_red", actions.cup_owner < 0)
 	_lamp.lamp = lamp_controller.lamp
 	_lamp.set_visual_time(clock.get_real_time_ms(), clock.get_song_time_ms(), clock.bpm)
-	_hint.text = "空格接手 · 1 白素贞 / 2 许仙 / 3 小青 · 拖手、拖头、Alt 拖躯干 · R 恢复上身"
+	_hint.text = actions.hint()
+	_subtitle.text = actions.subtitle()
 	if _paused:
 		_hint.text = "演出已暂停 · ESC 或点击继续"
 	elif controller.controlled_id >= 0:

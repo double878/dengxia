@@ -17,14 +17,14 @@ func check(ok: bool, label: String) -> void:
 		push_error("ACT2_ACTIONS: " + label)
 
 
-func key(hall: Node, code: Key) -> void:
+static func key(hall: Node, code: Key) -> void:
 	var event := InputEventKey.new()
 	event.pressed = true
 	event.keycode = code
 	hall._input(event)
 
 
-func drag(hall: Node, at: Vector2, delta: Vector2, alt: bool = false) -> void:
+static func drag(hall: Node, at: Vector2, delta: Vector2, alt: bool = false) -> void:
 	var button := InputEventMouseButton.new()
 	button.button_index = MOUSE_BUTTON_LEFT
 	button.pressed = true
@@ -80,5 +80,90 @@ func _run() -> void:
 		check(not hall._puppet_input.is_drag_active(), "恢复暂停不继承旧拖动")
 	hall.queue_free()
 	await process_frame
+	await drama()
 	print("ACT2_ACTIONS checks=%d failures=%d" % [checks, failures])
 	quit(1 if failures else 0)
+
+
+static func advance(hall: Node, seconds: float) -> void:
+	for _i in range(int(ceil(seconds * 60.0))):
+		hall._process(1.0 / 60.0)
+
+
+static func right(hall: Node, id: int) -> void:
+	var button := InputEventMouseButton.new()
+	button.button_index = MOUSE_BUTTON_RIGHT
+	button.pressed = true
+	button.position = hall._views[id].head_screen_position()
+	hall._input(button)
+
+
+static func take(hall: Node, id: int) -> void:
+	for _i in range(4):
+		if hall.controller.controlled_id == id:
+			return
+		key(hall, KEY_SPACE)
+
+
+func drama() -> void:
+	var hall: Node = HALL.instantiate()
+	root.add_child(hall)
+	hall.set_process(false)
+	await process_frame
+	advance(hall, 20.0)
+	var actions: Variant = hall.get("actions")
+	check(actions != null, "普通字幕结束后应等待小青实际离场")
+	if actions == null:
+		hall.queue_free()
+		await process_frame
+		return
+	check(actions.phase == "qing_exit", "字幕不得跳过小青离场")
+	var frozen_song: int = hall.clock.get_song_time_ms()
+	advance(hall, 30.0)
+	check(actions.phase == "qing_exit" and hall.clock.get_song_time_ms() == frozen_song, "等待无超时，歌曲时钟冻结")
+	right(hall, 2)
+	check(actions.phase == "qing_exit" and not actions.qing_departed, "当前位置误退场不算买酒菜")
+	key(hall, KEY_3)
+	take(hall, 2)
+	drag(hall, hall._views[2].torso_screen_position(), Vector2(-430, 0))
+	right(hall, 2)
+	check(actions.qing_departed and not hall.on_stage.has(2), "走到左台边后小青正式离场")
+	key(hall, KEY_3)
+	check(not hall.on_stage.has(2), "已去买菜的小青不可重新串场")
+	advance(hall, 4.0)
+	check(actions.phase == "cup", "小青离场后等待真实递酒")
+	check(actions.cup_owner == -1, "没有取杯动作时杯仍在桌上")
+	take(hall, 1)
+	drag(hall, hall._views[1].hand_screen_position("right"), Vector2(1035, 415) - hall._views[1].hand_screen_position("right"))
+	check(actions.cup_owner == 1, "许仙腕点到桌杯后取杯")
+	right(hall, 1)
+	check(actions.cup_owner == 1, "持杯误退场不丢失杯归属")
+	key(hall, KEY_2)
+	take(hall, 1)
+	drag(hall, hall._views[1].torso_screen_position(), Vector2(-152, 0))
+	advance(hall, 0.2)
+	take(hall, 0)
+	var offered: Vector2 = hall._views[1].hand_screen_position(actions.cup_hand)
+	drag(hall, hall._views[0].hand_screen_position("left"), offered - hall._views[0].hand_screen_position("left"))
+	check(actions.cup_owner == 0 and actions.phase == "drink", "两人手实际靠近后转移唯一酒杯")
+	advance(hall, 3.0)
+	check(not actions.drunk, "接杯后没有送到嘴边不能喝完")
+	drag(hall, hall._views[0].hand_screen_position("left"), hall._views[0].mouth_screen_position() - hall._views[0].hand_screen_position("left"))
+	key(hall, KEY_ESCAPE)
+	advance(hall, 3.0)
+	check(not actions.drunk, "暂停时饮酒保持不计时")
+	key(hall, KEY_ESCAPE)
+	advance(hall, 0.8)
+	check(actions.drunk, "杯送到嘴边并保持后饮酒完成")
+	advance(hall, 8.0)
+	check(actions.phase == "medicine_exit", "不适身段自由，字幕后等待许仙取药离场")
+	right(hall, 1)
+	check(not actions.medicine_departed, "当前位置误退场不算取药")
+	key(hall, KEY_2)
+	take(hall, 1)
+	drag(hall, hall._views[1].torso_screen_position(), Vector2(740, 0))
+	right(hall, 1)
+	check(actions.medicine_departed and actions.phase == "darken", "取药必须从右台边离场")
+	check(not actions.can_enter_snake(), "亮灯时不允许上白蛇")
+	hall.queue_free()
+	await process_frame

@@ -58,6 +58,19 @@ var _def: CSceneryDef = null
 var _tex_cache: Dictionary = {}
 ## 实际布景内容画在这个子节点上；本节点自身绘制 = 裁剪模板（见类头「裁剪方案」）。
 var _content: Node2D = null
+## 正式动作场景临时取走道具；默认空列表保持全部布景，数据定义不受修改。
+var hidden_items: Array[String] = []
+
+
+func set_item_visible(id: String, value: bool) -> void:
+	if value == not hidden_items.has(id):
+		return
+	if value:
+		hidden_items.erase(id)
+	else:
+		hidden_items.append(id)
+	if _content != null:
+		_content.queue_redraw()
 
 
 ## 装载一关的布景。传 null 视为空布景（画空白，不报错——第 2~5 关还没做）。
@@ -133,6 +146,8 @@ func _draw_items() -> void:
 	if _def == null:
 		return
 	for item in _def.items:
+		if hidden_items.has(str(item.get("id", ""))):
+			continue
 		var kind: String = str(item.get("kind", ""))
 		var x: float = float(item.get("anchor_x", 0.0)) + float(item.get("pan_x", 0.0))
 		var y: float = float(item.get("anchor_y", DefScript.ANCHOR_Y))
