@@ -180,7 +180,14 @@ func _ready() -> void:
 	_dialogue_label.add_theme_font_size_override("font_size", 30)
 	_dialogue_label.add_theme_color_override("font_color", Color(0.16, 0.11, 0.07))
 	$Hud.add_child(_dialogue_label)
+	var controls_hint := Label.new()
+	controls_hint.position = Vector2(72, 950)
+	controls_hint.add_theme_font_size_override("font_size", 20)
+	controls_hint.text = "拖手签摆双臂 · 拖头调俯仰 · Alt 拖躯干前倾 · R 恢复上身 · A/D、W/S 抬落手"
+	controls_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$Hud.add_child(controls_hint)
 	_refresh_ui()
+	_harness.puppet_input.set_views(_puppet_views)
 	if OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG):
 		_probe_mode = true
 		# 该探针断言的是第一关的布景与时序（35000 ms / 6 条关键动作 / 两钩皆满），
@@ -365,6 +372,16 @@ func _handle_key(keycode: int) -> void:
 		KEY_3:
 			_try_swap_head(2)
 			get_viewport().set_input_as_handled()
+		KEY_R:
+			if not _paused and not _harness.runtime.is_over():
+				_harness.puppet_input.release_drag()
+				_harness.runtime.puppet_controller.reset_upper_body()
+			get_viewport().set_input_as_handled()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT and _harness != null:
+		_harness.puppet_input.release_drag()
 
 
 ## 点击优先给「备用头架」和「挂钩上的影人」，都不命中才当作抓胸签。

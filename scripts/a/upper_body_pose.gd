@@ -37,10 +37,18 @@ static func solve_arm(offset: Vector2, right_side: bool, height: float) -> Vecto
 	var lower: float = height * LOWER_ARM_RATIO
 	var minimum: float = sqrt(upper * upper + lower * lower + 2.0 * upper * lower * cos(ELBOW_MAX))
 	var radius: float = clampf(offset.length(), minimum, upper + lower)
-	var target: Vector2 = offset.normalized() if offset.length_squared() > 0.000001 else Vector2.DOWN
+	var target: Vector2 = (
+		offset.normalized() if offset.length_squared() > 0.000001 else Vector2.DOWN
+	)
 	target.x *= 1.0 if right_side else -1.0
-	var bend: float = acos(clampf((radius * radius - upper * upper - lower * lower) / (2.0 * upper * lower), -1.0, 1.0))
-	var correction: float = acos(clampf((upper * upper + radius * radius - lower * lower) / (2.0 * upper * radius), -1.0, 1.0))
+	var bend: float = acos(
+		clampf((radius * radius - upper * upper - lower * lower) / (2.0 * upper * lower), -1.0, 1.0)
+	)
+	var correction: float = acos(
+		clampf(
+			(upper * upper + radius * radius - lower * lower) / (2.0 * upper * radius), -1.0, 1.0
+		)
+	)
 	var angle: float = wrapf(PI * 0.5 - target.angle() - correction, -PI * 0.5, PI * 1.5)
 	if angle > PI * 1.25:
 		angle = -PI * 0.5
