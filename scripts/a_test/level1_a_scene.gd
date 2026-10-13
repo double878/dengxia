@@ -1034,24 +1034,7 @@ func _action_motion(action: String, sway: float) -> Vector2:
 
 ## 一只手。`outlined` 为 true 时只描边（教学手），false 时实色填充（补救手）。
 func _draw_hand_shape(centre: Vector2, outlined: bool, alpha: float) -> void:
-	var edge := Color(0.44, 0.25, 0.15, alpha)
-	var fill := Color(0.90, 0.73, 0.51, alpha)
-	for i in 4:
-		var root := Vector2(centre.x - 25.0 + float(i) * 17.0, centre.y - 14.0)
-		var tip := Vector2(root.x - 2.0, centre.y - 70.0 - float(i % 2) * 12.0)
-		if not outlined:
-			_draw_canvas.draw_line(root, tip, fill, 11.0)
-		_draw_canvas.draw_line(root, tip, edge, 3.0)
-	var thumb_root: Vector2 = centre + Vector2(-25.0, 16.0)
-	var thumb_tip: Vector2 = centre + Vector2(-62.0, -19.0)
-	if not outlined:
-		_draw_canvas.draw_line(thumb_root, thumb_tip, fill, 14.0)
-	_draw_canvas.draw_line(thumb_root, thumb_tip, edge, 3.0)
-	if outlined:
-		_draw_canvas.draw_arc(centre, 36.0, 0.0, TAU, 32, edge, 4.0)
-	else:
-		_draw_canvas.draw_circle(centre, 36.0, fill)
-		_draw_canvas.draw_arc(centre, 36.0, 0.0, TAU, 36, edge, 3.0)
+	preload("res://scripts/b/teacher_hand.gd").draw_on(_draw_canvas, centre, outlined, alpha)
 
 
 ## 点中备用头架哪个槽位（-1 表示没点中）

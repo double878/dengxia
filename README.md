@@ -71,6 +71,7 @@ py -3.13 -m venv .venv
 | `tests/c/run_act2_entrances.gd` | 法海树后手动出场、许仙门中直接上场、恢复进度、遮挡区命中与 Windows 像素验收 |
 | `tests/c/run_act2_hall.gd` | 第二幕厅堂布景接入（编号 22）、主流程加载 22 号、第一场收场自动换景 |
 | `tests/c/run_act2_actions.gd` | 第二幕实际递杯饮酒、左右正式离场、误退场恢复、换蛇、分节长度与惊倒门槛 |
+| `tests/c/run_act2_remedy.gd` | 第二幕 8 秒补救、成功/超时、暂停、误退恢复与独立目标；音频检查推荐 Windows 图形环境 |
 | `tests/b/run_act2_actions_graphics.gd` | Windows 图形输入完整走第二幕，Q/E 压灯显形、蛇头/躯干拖动和惊倒截图（不加 `--headless`） |
 | `tests/c/run_game_replay.gd` | 实际记录与选择/重看/跳过/再演 |
 | `tests/c/run_game_replay_success.gd` | 完整接还伞与回放 |
@@ -79,6 +80,8 @@ py -3.13 -m venv .venv
 非法输入测试会刻意产生 `ERROR` 日志；A 套件存在既有的退出时 ObjectDB/resource 释放提示。检查断言、退出码和具体日志来源，不把这些提示隐瞒为无警告通过。无头测试不能代替 Windows 下的听感、输入手感、画面与性能验收；音频混音专项使用 `tests/b/run_replay_audio.gd` 并去掉 `--headless`。
 
 ## 第二幕开发基线
+
+第二场沿用第一关补救：当前动作提示出现后准备 8 秒，仍未完成则开启 8 秒补救窗口，显示师父手、目标方向、琥珀框并播放已有慢锣鼓。完成后结束提示，菜单暂停冻结补救计时；超时仍等待真实动作，同一步不反复开窗。第二场暂无唱腔和节拍评分，因此此处按动作停滞触发，详细验收见 [补救交付](docs/act2-remedy-delivery.md)。
 
 用户已确认 [第二关两场设计](docs/superpowers/specs/2026-10-10-act2-design.md)：法海劝酒、端阳惊变；改用数字键上场、空格循环接手、右键退场，完整白蛇替身与灯光显形。时长按实际对白和音乐编排决定，取消固定 105 秒。
 

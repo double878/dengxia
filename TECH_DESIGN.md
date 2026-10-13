@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-13 第二幕补救：`act2_remedy.gd` 仅读真实阶段、单杯归属、在场名单和灯显露，按当前动作 8 秒准备期调度 `RemedySystem` 的 8 秒窗口；通过新增 `update_actions` 按真实完成、超时或收场结算，保留记录，不伪造 `PerformanceSystem` 评分。取杯、递杯、饮酒、左右离场、压灯换蛇、显形与返回分别去重。第一关手形抽到 `teacher_hand.gd` 共用，厅堂 `remedy_guide.gd` 画箭头与真实目标；复用 `assets/audio/act1-natural/remedy.wav`，暂停/退出停止并释放。菜单暂停冻结补救，超时不改变第二场剧情门槛，第二关整关录放仍不在此切片。
+
 > 2026-10-13 第二关第二幕动作（最新交付）：`Act2Hall` 在 22 号厅堂复用现有人形控制与唯一 `MusicClock`，开场三人、两人坐姿；`act2_hall_actions.gd` 消费实际腕点、嘴点、在场名单、位置和显露度，管理短字幕、单杯归属、两次正式离场、暗场换蛇、返回惊倒。等待只冻结歌曲时间，菜单暂停冻结双时钟；未完成动作不超时推进。`wine_cup_view.gd` 的实体/投影读取同一归属，静态杯按需隐藏。人形视图新增默认关闭的 `seated` / `seat_y` / `fall_angle`，所有几何查询共用变换；`snake_pose.gd` 保持分节长度与角度边界，`snake_view.gd` 只读同一蛇姿态并复用透射着色器。数字键 1/2/3/4 对应白素贞/许仙/小青/白蛇，空格接手；返回许仙必须完成翻面、走近显形白蛇才触发一次惊退仰倒。Pillow/NumPy 仅开发期整理参考图，不加入运行依赖。第二关整关评分/录放仍未接入。此补充取代下方“只交付布景”的当前范围，验收见 [交付记录](docs/act2-actions-delivery.md)。
 
 > 2026-10-13 第二关第二幕布景接入：新增 `scenes/act2/hall.tscn`（脚本 `scripts/act2/act2_hall.gd`），复用 `StageBackdrop`、`StageSurface`、`MusicClock`、`LampController` 与 `CStageBinding(stage_id=22, enable_rain=false)`，加载队友 PR #14 的室内厅堂（编号 22，`CSceneryDef.make_level2_act2()`）。第一幕末句应允后按主轨时标暗场、清场，「端阳」章节卡停留 `Act2Opening.DARK_HOLD_S`（1.5 秒）后由 `Act2Opening.scene_finished` 通知 `GameFlow` 换到 22 号；两场同属第二关，中途不结算、不回放。第二幕**本轮只交付布景**：不放影人、不接受操控，递杯、饮酒、换完整白蛇、调灯显形与许仙惊倒仍属后续切片。

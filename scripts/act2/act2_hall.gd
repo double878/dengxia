@@ -9,6 +9,8 @@ const Actions := preload("res://scripts/act2/act2_hall_actions.gd")
 const CupView := preload("res://scripts/act2/wine_cup_view.gd")
 const SnakePose := preload("res://scripts/act2/snake_pose.gd")
 const SnakeView := preload("res://scripts/act2/snake_view.gd")
+const Remedy := preload("res://scripts/act2/act2_remedy.gd")
+const RemedyGuide := preload("res://scripts/act2/remedy_guide.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HALL_STAGE_ID: int = 22
 const FIGURE_HEIGHT: float = 340.0
@@ -50,6 +52,9 @@ var _snake_grab_offset := Vector2.ZERO
 var _snake_initialized: bool = false
 var _fall_origin := Vector2.ZERO
 var _fall_direction: float = 1.0
+var remedy := Remedy.new()
+var _remedy_banner: Label
+var _remedy_audio: AudioStreamPlayer
 
 
 func _ready() -> void:
@@ -92,6 +97,15 @@ func _ready() -> void:
 		_views.append(view)
 	_puppet_input.set_views(_views)
 	actions.setup(clock)
+	remedy.setup(clock)
+	_remedy_audio = AudioStreamPlayer.new()
+	_remedy_audio.name = "RemedyDrums"
+	var loop: AudioStreamWAV = preload("res://assets/audio/act1-natural/remedy.wav").duplicate()
+	loop.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	loop.loop_end = int(round(loop.get_length() * loop.mix_rate))
+	_remedy_audio.stream = loop
+	_remedy_audio.volume_db = -6.0
+	add_child(_remedy_audio)
 	_cup = CupView.new()
 	_cup.actions = actions
 	_cup.views = _views
@@ -143,6 +157,7 @@ func _process(delta: float) -> void:
 		lamp_controller.take_events()
 		_update_seats()
 		_update_actions()
+		_update_remedy()
 	if steps == 8:
 		_accumulator = 0.0
 	_refresh_views()
@@ -318,6 +333,7 @@ func _enter(id: int) -> void:
 		actions.enter_return()
 	on_stage.append(id)
 	on_stage.sort()
+	_update_remedy()
 	_refresh_views()
 
 
@@ -339,6 +355,7 @@ func _exit(id: int) -> void:
 		if _snake_controlled:
 			_release_control()
 			_puppet_input.set_enabled(true)
+		_update_remedy()
 		_refresh_views()
 		return
 	if id == 0 and actions.phase == "darken":
@@ -352,6 +369,7 @@ func _exit(id: int) -> void:
 	if controller.controlled_id == id:
 		_release_control()
 	on_stage.erase(id)
+	_update_remedy()
 	_refresh_views()
 
 
@@ -379,6 +397,7 @@ func _toggle_pause() -> void:
 		not _paused and not _snake_controlled and actions.phase not in ["startled", "finished"]
 	)
 	_lamp_input.set_enabled(not _paused)
+	_remedy_audio.stream_paused = _paused
 	controller.set_input_map({})
 	if _paused:
 		clock.pause()
@@ -422,6 +441,8 @@ func _refresh_views() -> void:
 	_lamp.lamp = lamp_controller.lamp
 	_lamp.set_visual_time(clock.get_real_time_ms(), clock.get_song_time_ms(), clock.bpm)
 	_hint.text = actions.hint()
+	_remedy_banner.visible = remedy.active() and not _paused
+	_remedy_banner.text = "补救中 · 演出已暂停 · " + remedy.instruction(actions) if remedy.active() else ""
 	_subtitle.text = actions.subtitle()
 	if _paused:
 		_hint.text = "演出已暂停 · ESC 或点击继续"
@@ -441,6 +462,9 @@ func _build_hud() -> void:
 	_hint = _label(hud, Vector2(80, 1005), Vector2(1770, 55), 22)
 	_subtitle = _label(hud, Vector2(130, 690), Vector2(1660, 65), 27)
 	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_remedy_banner = _label(hud, Vector2(100, 962), Vector2(1720, 36), 24)
+	_remedy_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_remedy_banner.visible = false
 	_pause_button = Button.new()
 	_pause_button.position = Vector2(1740, 16)
 	_pause_button.size = Vector2(110, 48)
@@ -468,6 +492,67 @@ func _draw_operator_hand() -> void:
 	OperatorHand.draw_on(
 		_foreground, HAND_ANCHOR, 0.65 + 0.35 * StageLight.unit(lamp_controller.lamp.oil)
 	)
+	if remedy.active() and not _paused:
+		var guide: Dictionary = _remedy_target()
+		RemedyGuide.draw_on(
+			_foreground, CLOTH, guide.start, guide.target, guide.label, clock.get_real_time_s()
+		)
+
+
+func _update_remedy() -> void:
+	remedy.update(actions, on_stage, lamp_controller.lamp.exposure)
+	lamp_controller.update(0.0, remedy.take_events())
+	if remedy.active():
+		if not _remedy_audio.playing:
+			_remedy_audio.play()
+	elif _remedy_audio.playing:
+		_remedy_audio.stop()
+
+
+func _remedy_target() -> Dictionary:
+	var id: String = remedy.guide_step()
+	var actor: int = int(remedy.STEPS[id])
+	var start: Vector2 = (
+		_views[actor].torso_screen_position() if actor < 3 else snake.body_position()
+	)
+	var target: Vector2 = start
+	var label: String = ""
+	match id:
+		"qing_exit":
+			target.x = 180
+			label = "向左走 · 右键退场"
+		"medicine_exit":
+			target.x = 1740
+			label = "向右走 · 右键退场"
+		"cup_take":
+			start = _views[1].hand_screen_position("right")
+			target = actions.CUP_POSITION
+			label = "拖手取红杯"
+		"cup_pass":
+			start = _views[0].hand_screen_position("left")
+			target = _views[1].hand_screen_position(actions.cup_hand)
+			label = "两人的手靠近"
+		"drink":
+			start = _views[0].hand_screen_position(actions.cup_hand)
+			target = _views[0].mouth_screen_position()
+			label = "送到嘴边 · 保持"
+		"darken", "reveal":
+			start = Vector2(272, 844)
+			target = start + Vector2(0, 60 if id == "darken" else -60)
+			label = "按住 Q 压暗" if id == "darken" else "按住 E 调亮"
+		"replace":
+			label = "右键收白素贞"
+		"snake_entry":
+			label = "按 4 上白蛇"
+		"return":
+			target = snake.position + Vector2(280, -100)
+			label = "面对白蛇 · 走近"
+		_:
+			if id.begins_with("restore_"):
+				start = Vector2(1400 + actor * 100, 824)
+				target = start + Vector2(0, -80)
+				label = "按 %d 上场 · 空格接手" % (actor + 1)
+	return {"start": start, "target": target, "label": label}
 
 
 func _exit_tree() -> void:
@@ -475,3 +560,6 @@ func _exit_tree() -> void:
 	_puppet_input.set_enabled(false)
 	_lamp_input.set_enabled(false)
 	clock.pause()
+	_remedy_audio.stream_paused = false
+	_remedy_audio.stop()
+	_remedy_audio.stream = null
