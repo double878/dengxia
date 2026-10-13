@@ -99,10 +99,8 @@ func test_hall_scene() -> void:
 	check(order.get("table", -1) < order.get("wine_pot", -1), "酒具没有画在桌子之上")
 	check(scenery.clip_rect == CLOTH, "厅堂布景没有裁入幕布")
 	check(scenery.z_index > hall.get("_surface").z_index, "布景被幕布遮住")
-	check(
-		hall.get_node_or_null("Fahai") == null and hall.get_node_or_null("Xuxian") == null,
-		"第二幕本轮不应放影人"
-	)
+	check(hall.get_node_or_null("Fahai") == null, "厅堂不应残留第一场法海")
+	check(hall.get_node_or_null("Xuxian") != null, "厅堂应接入第二场许仙")
 	hall.queue_free()
 	await process_frame
 

@@ -49,6 +49,10 @@ var upper_hover_part: String = ""
 var upper_drag_part: String = ""
 var _hit_mask_texture: Texture2D = null
 var _hit_mask_image: Image = null
+## 第二幕坐姿/惊倒，默认关闭；宿主向实体/投影视图提供同一参数。
+var seated: bool = false
+var seat_y: float = 0.0
+var fall_angle: float = 0.0
 
 var puppet_state: PuppetState = null
 var lamp_state: LampState = null
@@ -129,7 +133,7 @@ func _process(_delta: float) -> void:
 		puppet_state.walk_phase,
 		puppet_state.walk_amount
 	]
-	draw_state.append_array([show_upper_controls, upper_hover_part, upper_drag_part])
+	draw_state.append_array([show_upper_controls, upper_hover_part, upper_drag_part, seated, seat_y, fall_angle])
 	if render_mode != RenderMode.ENTITY and lamp_state != null:
 		draw_state.append(lamp_state.distance)
 	if render_mode == RenderMode.LEGACY and lamp_state != null:
@@ -339,13 +343,23 @@ func head_screen_position() -> Vector2:
 ## 固定枢轴上完成整个人的水平翻面；宽度压缩也作用于肩、手和伞的挂点。
 ## 参考朝向定义分件原稿的那一面，三具影人使用同一显示变换。
 func _skin_figure_transform(ground: Vector2) -> Transform2D:
-	if not _has_body_skin():
-		return Transform2D.IDENTITY
-	var skin: Dictionary = _skins[str(_body_skin_id())]
-	var width: float = flip_width_ratio() * puppet_state.facing / float(skin["reference_facing"])
-	return Transform2D(
+	var width: float = 1.0
+	if _has_body_skin():
+		var skin: Dictionary = _skins[str(_body_skin_id())]
+		width = flip_width_ratio() * puppet_state.facing / float(skin["reference_facing"])
+	var mirror := Transform2D(
 		Vector2(width, 0.0), Vector2(0.0, 1.0), Vector2(ground.x * (1.0 - width), 0.0)
 	)
+	var offset := Vector2.ZERO
+	if seated:
+		offset.y = seat_y - (ground.y - figure_px_height() * HIP_RATIO)
+	var fall := Transform2D(fall_angle, Vector2.ZERO)
+	fall.origin = ground - fall * ground + fall * offset
+	return fall * mirror
+
+
+func mouth_screen_position() -> Vector2:
+	return head_screen_position() + Vector2(puppet_state.facing * figure_px_height() * 0.04, figure_px_height() * 0.035)
 
 
 ## 头半径（像素）。翻面压扁时头也收窄，但不小于 4 px——侧对观众那一瞬头不能消失。
@@ -481,6 +495,9 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		var foot := Vector2(
 			ground.x + side * half_w * 0.95 + stride * height * 0.065, ground.y - lift
 		)
+		if seated:
+			knee = hip + Vector2(pose_reference_facing() * height * 0.22, side * height * 0.012)
+			foot = knee + Vector2(pose_reference_facing() * height * 0.025, height * 0.22)
 		if _has_body_skin():
 			var leg: String = "left" if side < 0.0 else "right"
 			_draw_skin_segment(leg + "_thigh", hip, knee, flip_width, alpha)
