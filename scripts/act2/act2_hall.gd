@@ -7,6 +7,8 @@ const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
 const OperatorHand := preload("res://scripts/b/operator_hand.gd")
 const Actions := preload("res://scripts/act2/act2_hall_actions.gd")
 const CupView := preload("res://scripts/act2/wine_cup_view.gd")
+const SnakePose := preload("res://scripts/act2/snake_pose.gd")
+const SnakeView := preload("res://scripts/act2/snake_view.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HALL_STAGE_ID: int = 22
 const FIGURE_HEIGHT: float = 340.0
@@ -16,7 +18,7 @@ const HAND_AREA := Rect2(768, 755, 384, 213)
 const GROUND_Y: float = CSceneryDef.LEVEL2_ACT2_GROUND_Y
 const SEAT_Y: float = 525.4
 const SEAT_X: Array[float] = [0.4, 0.6]
-const CAST: Array[String] = ["白素贞", "许仙", "小青"]
+const CAST: Array[String] = ["白素贞", "许仙", "小青", "白蛇"]
 
 var controller := PuppetController.new()
 var clock := MusicClock.new()
@@ -39,6 +41,15 @@ var _accumulator: float = 0.0
 var actions := Actions.new()
 var _cup: Node2D
 var _cup_projection: Node2D
+var snake := SnakePose.new()
+var _snake_view: Node2D
+var _snake_projection: Node2D
+var _snake_controlled: bool = false
+var _snake_part: String = ""
+var _snake_grab_offset := Vector2.ZERO
+var _snake_initialized: bool = false
+var _fall_origin := Vector2.ZERO
+var _fall_direction: float = 1.0
 
 
 func _ready() -> void:
@@ -93,6 +104,16 @@ func _ready() -> void:
 	cup_material.shader = preload("res://shaders/puppet_transmission.gdshader")
 	_cup_projection.material = cup_material
 	_surface.projection_viewport.add_child(_cup_projection)
+	_snake_view = SnakeView.new()
+	_snake_view.name = "WhiteSnake"
+	_snake_view.pose = snake
+	_snake_view.z_index = 20
+	add_child(_snake_view)
+	_snake_projection = SnakeView.new()
+	_snake_projection.pose = snake
+	_snake_projection.projection = true
+	_snake_projection.material = cup_material
+	_surface.projection_viewport.add_child(_snake_projection)
 	_lamp = PlaceholderLamp.new()
 	_lamp.z_index = 30
 	add_child(_lamp)
@@ -113,6 +134,7 @@ func _process(delta: float) -> void:
 		_accumulator -= FIXED_DELTA
 		steps += 1
 		clock.update(FIXED_DELTA)
+		snake.tick(FIXED_DELTA)
 		_puppet_input.poll_keys()
 		_lamp_input.poll_keys()
 		controller.tick(FIXED_DELTA)
@@ -138,10 +160,45 @@ func _update_actions() -> void:
 	var mouths: Array[Vector2] = []
 	var positions: Array[Vector2] = []
 	for id in range(3):
-		hands.append({"left": _views[id].hand_screen_position("left"), "right": _views[id].hand_screen_position("right")})
+		hands.append(
+			{
+				"left": _views[id].hand_screen_position("left"),
+				"right": _views[id].hand_screen_position("right")
+			}
+		)
 		mouths.append(_views[id].mouth_screen_position())
 		positions.append(controller.get_puppet(id).stage_pos * PuppetController.STAGE_PIXEL_SIZE)
-	actions.update(on_stage, hands, mouths, positions, lamp_controller.lamp.exposure)
+	var before: String = actions.phase
+	var xu: PuppetState = controller.get_puppet(1)
+	# 先完成真实翻面，再接惊倒；切断控制不能把影人永久留在压窄的中间帧。
+	var visible_facing: float = xu.facing if xu.turn_progress >= 0.99 else 0.0
+	actions.update(
+		on_stage,
+		hands,
+		mouths,
+		positions,
+		lamp_controller.lamp.exposure,
+		snake.position,
+		visible_facing
+	)
+	if before != "startled" and actions.phase == "startled":
+		_fall_origin = controller.get_puppet(1).stage_pos
+		_fall_direction = signf(_fall_origin.x * 1920.0 - snake.position.x)
+		seated[1] = false
+		_release_control()
+		_puppet_input.set_enabled(false)
+	if actions.phase in ["startled", "finished"]:
+		var state: PuppetState = controller.get_puppet(1)
+		state.stage_pos.x = (
+			_fall_origin.x
+			+ _fall_direction * 55.0 / 1920.0 * smoothstep(0.0, 0.3, actions.collapse_progress)
+		)
+		state.head_tilt = -0.25 * actions.collapse_progress
+		var settle: float = smoothstep(0.3, 0.95, actions.collapse_progress)
+		# 横卧后以衣身厚度支撑在地面上，避免衣摆穿过幕台下缘。
+		state.stage_pos.y = _fall_origin.y - FIGURE_HEIGHT * 0.15 / 1080.0 * settle
+		state.hand_angle = Vector2(lerpf(1.25, -0.6, settle), lerpf(1.45, -0.6, settle))
+		state.elbow_angle = Vector2.ONE * lerpf(0.0, 0.6, settle)
 
 
 func _input(event: InputEvent) -> void:
@@ -149,17 +206,36 @@ func _input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			_toggle_pause()
 		elif not _paused:
+			if actions.phase in ["startled", "finished"]:
+				get_viewport().set_input_as_handled()
+				return
 			match event.keycode:
-				KEY_1: _enter(0)
-				KEY_2: _enter(1)
-				KEY_3: _enter(2)
-				KEY_SPACE: _take_next()
+				KEY_1:
+					_enter(0)
+				KEY_2:
+					_enter(1)
+				KEY_3:
+					_enter(2)
+				KEY_4:
+					_enter(3)
+				KEY_SPACE:
+					_take_next()
 				KEY_R:
-					_puppet_input.release_drag()
-					controller.reset_upper_body()
+					_end_drag()
+					if _snake_controlled:
+						snake.reset()
+					else:
+						controller.reset_upper_body()
 		get_viewport().set_input_as_handled()
 		return
 	if _paused:
+		return
+	_lamp_input.handle_event(event)
+	if actions.phase in ["startled", "finished"]:
+		return
+	if _snake_controlled and _handle_snake(event):
+		get_viewport().set_input_as_handled()
+		_refresh_views()
 		return
 	var puppet_event: InputEvent = event
 	if event is InputEventMouseButton and event.pressed:
@@ -174,11 +250,19 @@ func _input(event: InputEvent) -> void:
 				return
 			var view: PlaceholderPuppet = _views[controller.controlled_id]
 			if view.hit_upper_body(event.position, event.alt_pressed).is_empty():
-				if HAND_AREA.has_point(event.position) or event.position.distance_to(view.torso_screen_position()) < FIGURE_HEIGHT * 0.22:
+				if (
+					HAND_AREA.has_point(event.position)
+					or (
+						event.position.distance_to(view.torso_screen_position())
+						< FIGURE_HEIGHT * 0.22
+					)
+				):
 					var translated := event.duplicate() as InputEventMouseButton
-					translated.position = controller.get_controlled().stage_pos * PuppetController.STAGE_PIXEL_SIZE - Vector2(0, PuppetController.CHEST_TAG_RADIUS_PX * 0.5)
+					translated.position = (
+						controller.get_controlled().stage_pos * PuppetController.STAGE_PIXEL_SIZE
+						- Vector2(0, PuppetController.CHEST_TAG_RADIUS_PX * 0.5)
+					)
 					puppet_event = translated
-	_lamp_input.handle_event(event)
 	if _puppet_input.handle_event(puppet_event):
 		get_viewport().set_input_as_handled()
 	_update_seats()
@@ -187,12 +271,51 @@ func _input(event: InputEvent) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
-		_puppet_input.release_drag()
+		_end_drag()
+
+
+func _end_drag() -> void:
+	_puppet_input.release_drag()
+	_snake_part = ""
+
+
+func _release_control() -> void:
+	_end_drag()
+	_snake_controlled = false
+	controller.set_controlled_puppet(-1)
+
+
+func _handle_snake(event: InputEvent) -> bool:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_snake_part = _snake_view.hit(event.position)
+			_snake_grab_offset = snake.head_position() - event.position
+		else:
+			_snake_part = ""
+		return true
+	if event is InputEventMouseMotion and not _snake_part.is_empty():
+		if _snake_part == "head":
+			snake.drag_head(event.position + _snake_grab_offset)
+		else:
+			snake.move(event.relative)
+		return true
+	return false
 
 
 func _enter(id: int) -> void:
-	if id < 0 or id >= 3 or on_stage.has(id) or not actions.can_enter(id):
+	if id < 0 or id > 3 or on_stage.has(id) or not actions.can_enter(id):
 		return
+	if id == 3:
+		if not _snake_initialized:
+			snake.setup(controller.get_puppet(0).stage_pos * PuppetController.STAGE_PIXEL_SIZE)
+			_snake_initialized = true
+		actions.snake_entered()
+	elif id == 1 and actions.medicine_departed and not actions.returned:
+		var state: PuppetState = controller.get_puppet(1)
+		state.stage_pos = Vector2(0.91, GROUND_Y)
+		state.facing = -1.0
+		state.turn_progress = 1.0
+		actions.enter_return()
 	on_stage.append(id)
 	on_stage.sort()
 	_refresh_views()
@@ -201,20 +324,33 @@ func _enter(id: int) -> void:
 func _take_next() -> void:
 	if on_stage.is_empty():
 		return
-	var next: int = on_stage[(on_stage.find(controller.controlled_id) + 1) % on_stage.size()]
-	_puppet_input.release_drag()
-	controller.set_controlled_puppet(next)
+	var current: int = 3 if _snake_controlled else controller.controlled_id
+	var next: int = on_stage[(on_stage.find(current) + 1) % on_stage.size()]
+	_release_control()
+	_snake_controlled = next == 3
+	controller.set_controlled_puppet(next if next < 3 else -1)
+	_puppet_input.set_enabled(not _snake_controlled)
 	_refresh_views()
 
 
 func _exit(id: int) -> void:
+	if id == 3:
+		on_stage.erase(3)
+		if _snake_controlled:
+			_release_control()
+			_puppet_input.set_enabled(true)
+		_refresh_views()
+		return
 	if id == 0 and actions.phase == "darken":
 		return
-	var at_edge: bool = controller.get_puppet(id).stage_pos.x <= 0.10 if id == 2 else controller.get_puppet(id).stage_pos.x >= 0.90
+	var at_edge: bool = (
+		controller.get_puppet(id).stage_pos.x <= 0.10
+		if id == 2
+		else controller.get_puppet(id).stage_pos.x >= 0.90
+	)
 	actions.leave(id, at_edge)
 	if controller.controlled_id == id:
-		_puppet_input.release_drag()
-		controller.set_controlled_puppet(-1)
+		_release_control()
 	on_stage.erase(id)
 	_refresh_views()
 
@@ -222,6 +358,10 @@ func _exit(id: int) -> void:
 func _puppet_at(at: Vector2) -> int:
 	for index in range(on_stage.size() - 1, -1, -1):
 		var id: int = on_stage[index]
+		if id == 3:
+			if not _snake_view.hit(at).is_empty():
+				return 3
+			continue
 		var view: PlaceholderPuppet = _views[id]
 		var bounds := Rect2(view.head_screen_position() - Vector2(45, 50), Vector2(90, 100))
 		bounds = bounds.expand(view.torso_screen_position())
@@ -234,7 +374,10 @@ func _puppet_at(at: Vector2) -> int:
 
 func _toggle_pause() -> void:
 	_paused = not _paused
-	_puppet_input.set_enabled(not _paused)
+	_end_drag()
+	_puppet_input.set_enabled(
+		not _paused and not _snake_controlled and actions.phase not in ["startled", "finished"]
+	)
 	_lamp_input.set_enabled(not _paused)
 	controller.set_input_map({})
 	if _paused:
@@ -254,11 +397,25 @@ func _refresh_views() -> void:
 			view.visible = on_stage.has(id)
 			view.seated = seated[id]
 			view.seat_y = SEAT_Y
+			view.fall_angle = (
+				_fall_direction * PI * 0.49 * smoothstep(0.15, 0.95, actions.collapse_progress)
+				if id == 1
+				else 0.0
+			)
 	_surface.sync_puppets(controller.puppets, on_stage)
-	_surface.update_light(lamp_controller.lamp, clock.get_real_time_ms(), clock.get_song_time_ms(), clock.bpm)
+	_surface.update_light(
+		lamp_controller.lamp, clock.get_real_time_ms(), clock.get_song_time_ms(), clock.bpm
+	)
 	_cup.on_stage = on_stage
 	_cup_projection.on_stage = on_stage
 	_cup_projection.transform = _surface.projection_views[0].transform
+	_snake_view.visible = on_stage.has(3)
+	_snake_projection.visible = on_stage.has(3)
+	_snake_view.lamp = lamp_controller.lamp
+	_snake_projection.lamp = lamp_controller.lamp
+	_snake_view.controlled = _snake_controlled
+	_snake_view.drag_part = _snake_part
+	_snake_projection.transform = _surface.projection_views[0].transform
 	var scenery := _binding.get("_scenery") as CSceneryView
 	if scenery != null:
 		scenery.set_item_visible("wine_cup_red", actions.cup_owner < 0)
@@ -270,6 +427,8 @@ func _refresh_views() -> void:
 		_hint.text = "演出已暂停 · ESC 或点击继续"
 	elif controller.controlled_id >= 0:
 		_hint.text = "正在接手：%s · %s" % [CAST[controller.controlled_id], _hint.text]
+	elif _snake_controlled:
+		_hint.text = "正在接手：白蛇 · 拖头摆颈身，拖躯干整移 · %s" % _hint.text
 	_foreground.queue_redraw()
 
 
@@ -290,6 +449,8 @@ func _build_hud() -> void:
 	hud.add_child(_pause_button)
 	var lamp_hint := _label(hud, Vector2(72, 918), Vector2(640, 46), 22)
 	lamp_hint.text = "滚轮推拉灯 · Q/E 调整显露 · 空格换人"
+	var cast_hint := _label(hud, Vector2(1210, 795), Vector2(630, 90), 22)
+	cast_hint.text = "1 白素贞    2 许仙\n3 小青      4 白蛇"
 
 
 func _label(parent: Node, at: Vector2, size: Vector2, font_size: int) -> Label:
@@ -304,10 +465,13 @@ func _label(parent: Node, at: Vector2, size: Vector2, font_size: int) -> Label:
 
 
 func _draw_operator_hand() -> void:
-	OperatorHand.draw_on(_foreground, HAND_ANCHOR, 0.65 + 0.35 * StageLight.unit(lamp_controller.lamp.oil))
+	OperatorHand.draw_on(
+		_foreground, HAND_ANCHOR, 0.65 + 0.35 * StageLight.unit(lamp_controller.lamp.oil)
+	)
 
 
 func _exit_tree() -> void:
+	_end_drag()
 	_puppet_input.set_enabled(false)
 	_lamp_input.set_enabled(false)
 	clock.pause()

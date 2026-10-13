@@ -133,7 +133,9 @@ func _process(_delta: float) -> void:
 		puppet_state.walk_phase,
 		puppet_state.walk_amount
 	]
-	draw_state.append_array([show_upper_controls, upper_hover_part, upper_drag_part, seated, seat_y, fall_angle])
+	draw_state.append_array(
+		[show_upper_controls, upper_hover_part, upper_drag_part, seated, seat_y, fall_angle]
+	)
 	if render_mode != RenderMode.ENTITY and lamp_state != null:
 		draw_state.append(lamp_state.distance)
 	if render_mode == RenderMode.LEGACY and lamp_state != null:
@@ -359,7 +361,10 @@ func _skin_figure_transform(ground: Vector2) -> Transform2D:
 
 
 func mouth_screen_position() -> Vector2:
-	return head_screen_position() + Vector2(puppet_state.facing * figure_px_height() * 0.04, figure_px_height() * 0.035)
+	return (
+		head_screen_position()
+		+ Vector2(puppet_state.facing * figure_px_height() * 0.04, figure_px_height() * 0.035)
+	)
 
 
 ## 头半径（像素）。翻面压扁时头也收窄，但不小于 4 px——侧对观众那一瞬头不能消失。

@@ -113,8 +113,7 @@ func test_game_flow_entry() -> void:
 	await process_frame
 	var level: Node = game.get("_level")
 	check(
-		level != null and level.scene_file_path == "res://scenes/act2/hall.tscn",
-		"22 号没有加载第二幕厅堂场景"
+		level != null and level.scene_file_path == "res://scenes/act2/hall.tscn", "22 号没有加载第二幕厅堂场景"
 	)
 	check(game.get_child_count() == 1, "22 号加载了多个场景")
 	game.queue_free()
@@ -148,10 +147,7 @@ func test_auto_advance() -> void:
 	await process_frame
 	check(game.get("_stage_id") == HALL_STAGE_ID, "第一场收场后没有换到第二幕")
 	var level: Node = game.get("_level")
-	check(
-		level != null and level.scene_file_path == "res://scenes/act2/hall.tscn",
-		"换景后的场景不是第二幕厅堂"
-	)
+	check(level != null and level.scene_file_path == "res://scenes/act2/hall.tscn", "换景后的场景不是第二幕厅堂")
 	check(not is_instance_valid(opening), "换景后第一场宿主没有释放")
 	check(game.get_child_count() == 1, "换景加载了多个场景")
 	game.queue_free()

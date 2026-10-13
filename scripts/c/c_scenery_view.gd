@@ -63,7 +63,7 @@ var hidden_items: Array[String] = []
 
 
 func set_item_visible(id: String, value: bool) -> void:
-	if value == not hidden_items.has(id):
+	if value == (not hidden_items.has(id)):
 		return
 	if value:
 		hidden_items.erase(id)

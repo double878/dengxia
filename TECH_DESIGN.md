@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-13 第二关第二幕动作（最新交付）：`Act2Hall` 在 22 号厅堂复用现有人形控制与唯一 `MusicClock`，开场三人、两人坐姿；`act2_hall_actions.gd` 消费实际腕点、嘴点、在场名单、位置和显露度，管理短字幕、单杯归属、两次正式离场、暗场换蛇、返回惊倒。等待只冻结歌曲时间，菜单暂停冻结双时钟；未完成动作不超时推进。`wine_cup_view.gd` 的实体/投影读取同一归属，静态杯按需隐藏。人形视图新增默认关闭的 `seated` / `seat_y` / `fall_angle`，所有几何查询共用变换；`snake_pose.gd` 保持分节长度与角度边界，`snake_view.gd` 只读同一蛇姿态并复用透射着色器。数字键 1/2/3/4 对应白素贞/许仙/小青/白蛇，空格接手；返回许仙必须完成翻面、走近显形白蛇才触发一次惊退仰倒。Pillow/NumPy 仅开发期整理参考图，不加入运行依赖。第二关整关评分/录放仍未接入。此补充取代下方“只交付布景”的当前范围，验收见 [交付记录](docs/act2-actions-delivery.md)。
+
 > 2026-10-13 第二关第二幕布景接入：新增 `scenes/act2/hall.tscn`（脚本 `scripts/act2/act2_hall.gd`），复用 `StageBackdrop`、`StageSurface`、`MusicClock`、`LampController` 与 `CStageBinding(stage_id=22, enable_rain=false)`，加载队友 PR #14 的室内厅堂（编号 22，`CSceneryDef.make_level2_act2()`）。第一幕末句应允后按主轨时标暗场、清场，「端阳」章节卡停留 `Act2Opening.DARK_HOLD_S`（1.5 秒）后由 `Act2Opening.scene_finished` 通知 `GameFlow` 换到 22 号；两场同属第二关，中途不结算、不回放。第二幕**本轮只交付布景**：不放影人、不接受操控，递杯、饮酒、换完整白蛇、调灯显形与许仙惊倒仍属后续切片。
 > 2026-10-13 上半身：`PuppetState.hand_angle` 保留为肩角，新增 `elbow_angle{left,right}`（0～150°）、`head_tilt`（±30°）、`torso_lean`（0～45°），均为弧度。`UpperBodyPose` 提供固定两段几何和手目标解算；`InputReader` 通过当前受控实体的逆变换读取鼠标目标，`PuppetController` 唯一写状态。头绕颈、腰绕髋，腿和地面路径沿用旧行为；手掌随前臂，伞朝上、锡杖竖直。身体宽度与原稿朝向取既有美术清单，第一幕手高与抬手指标由实际腕点推导，保留原交接位置窗口。`CSnapshot` 缺省、校验及变化检测，`CReplayPlayer` 插值，`PerformanceReplay` 应用和 `CReplayVerifier` 核对均覆盖新字段；旧记录缺字段为零。`upper_body_pose` / `upper_body_reset` 为合法事件，R 在原落点跳变，落点前不预插值到复位姿态。第二关通过原输入宿主复用新操作，尚未提供整关录放。
 

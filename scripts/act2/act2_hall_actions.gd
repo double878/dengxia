@@ -43,7 +43,15 @@ func _set_phase(value: String) -> void:
 	clock.set_song_frozen(value not in ["dialogue", "startled"])
 
 
-func update(on_stage: Array[int], hands: Array[Dictionary], mouths: Array[Vector2], positions: Array[Vector2], exposure: float, snake_position: Vector2 = Vector2.ZERO, xu_facing: float = -1.0) -> void:
+func update(
+	on_stage: Array[int],
+	hands: Array[Dictionary],
+	mouths: Array[Vector2],
+	positions: Array[Vector2],
+	exposure: float,
+	snake_position: Vector2 = Vector2.ZERO,
+	xu_facing: float = -1.0
+) -> void:
 	_exposure = exposure
 	if hands.size() < 3 or mouths.size() < 3 or positions.size() < 3:
 		push_error("第二幕动作输入缺少三人几何")
@@ -51,7 +59,9 @@ func update(on_stage: Array[int], hands: Array[Dictionary], mouths: Array[Vector
 		return
 	match phase:
 		"dialogue":
-			var ready: bool = on_stage.has(0) and on_stage.has(1) and (qing_departed or on_stage.has(2))
+			var ready: bool = (
+				on_stage.has(0) and on_stage.has(1) and (qing_departed or on_stage.has(2))
+			)
 			clock.set_song_frozen(not ready)
 			if ready and clock.get_song_time_ms() - _since_song >= int(LINES[line_index].ms):
 				if line_index == 3:
@@ -78,7 +88,11 @@ func update(on_stage: Array[int], hands: Array[Dictionary], mouths: Array[Vector
 					cup_hand = receive
 					_set_phase("drink")
 		"drink":
-			if on_stage.has(0) and on_stage.has(1) and hands[0][cup_hand].distance_to(mouths[0]) <= 24.0:
+			if (
+				on_stage.has(0)
+				and on_stage.has(1)
+				and hands[0][cup_hand].distance_to(mouths[0]) <= 24.0
+			):
 				if _drink_since < 0:
 					_drink_since = clock.get_real_time_ms()
 				if clock.get_real_time_ms() - _drink_since >= 550:
@@ -95,10 +109,19 @@ func update(on_stage: Array[int], hands: Array[Dictionary], mouths: Array[Vector
 				_set_phase("return")
 		"return":
 			var gap: float = positions[1].x - snake_position.x
-			if returned and on_stage.has(1) and on_stage.has(3) and exposure >= REVEAL_LIMIT and absf(gap) <= 340.0 and xu_facing * gap < 0.0:
+			if (
+				returned
+				and on_stage.has(1)
+				and on_stage.has(3)
+				and exposure >= REVEAL_LIMIT
+				and absf(gap) <= 340.0
+				and xu_facing * gap < 0.0
+			):
 				_set_phase("startled")
 		"startled":
-			collapse_progress = clampf(float(clock.get_real_time_ms() - _since_real) / 1500.0, 0.0, 1.0)
+			collapse_progress = clampf(
+				float(clock.get_real_time_ms() - _since_real) / 1500.0, 0.0, 1.0
+			)
 			if collapse_progress >= 1.0:
 				_set_phase("finished")
 
@@ -138,11 +161,17 @@ func can_enter(id: int) -> bool:
 		return not qing_departed
 	if id == 1:
 		return not medicine_departed or phase == "return"
-	return id == 3 and can_enter_snake()
+	return id == 3 and (can_enter_snake() or (white_removed and phase in ["reveal", "return"]))
 
 
 func can_enter_snake() -> bool:
-	return drunk and medicine_departed and white_removed and phase == "snake_entry" and _exposure <= DARK_LIMIT
+	return (
+		drunk
+		and medicine_departed
+		and white_removed
+		and phase == "snake_entry"
+		and _exposure <= DARK_LIMIT
+	)
 
 
 func snake_entered() -> void:
@@ -165,22 +194,34 @@ func subtitle() -> String:
 	if phase == "medicine_exit":
 		return "许仙：娘子稍候，我去取些药来。"
 	if phase in ["startled", "finished"]:
-		return "许仙见白蛇，惊退倒地。" if phase == "startled" else "许仙惊死 · 第二幕动作结束"
+		return "许仙见白蛇，惊退倒地。" if phase == "startled" else "许仙惊死"
 	return ""
 
 
 func hint() -> String:
 	match phase:
-		"dialogue": return "身段自由发挥 · 空格换人 · 拖手、拖头、Alt 拖躯干"
-		"qing_exit": return "接手小青，向左走到台边，再右键点影人退场买酒菜"
-		"cup": return "接手许仙，拖手到桌上红杯；持杯走近白素贞，双手靠近递酒" if cup_owner < 0 else "许仙已持杯 · 接手两人，让白素贞的手靠近酒杯接过"
-		"drink": return "接手白素贞，把持杯手拖到嘴边，保持片刻饮酒"
-		"medicine_exit": return "白素贞的不适身段自由发挥 · 接手许仙，走到右台边后退场取药"
-		"darken": return "许仙已去取药 · 按住 Q 压暗灯影，再收走白素贞"
-		"replace": return "灯已压暗 · 右键点白素贞收走，准备完整白蛇替身"
-		"snake_entry": return "保持暗灯 · 按 4 上完整白蛇，空格接手可拖头和躯干"
-		"reveal": return "白蛇已上场 · 按住 E 调亮灯影显形"
-		"return": return "按 2 让许仙从右台边回来，空格接手后向白蛇走近"
-		"startled": return "许仙见白蛇，惊退、仰倒"
-		"finished": return "第二幕动作完成 · ESC 可暂停 · 本幕暂无整关录放"
+		"dialogue":
+			return "身段自由发挥 · 空格换人 · 拖手、拖头、Alt 拖躯干"
+		"qing_exit":
+			return "接手小青，向左走到台边，再右键点影人退场买酒菜"
+		"cup":
+			return "接手许仙，拖手到桌上红杯；持杯走近白素贞，双手靠近递酒" if cup_owner < 0 else "许仙已持杯 · 接手两人，让白素贞的手靠近酒杯接过"
+		"drink":
+			return "接手白素贞，把持杯手拖到嘴边，保持片刻饮酒"
+		"medicine_exit":
+			return "白素贞的不适身段自由发挥 · 接手许仙，走到右台边后退场取药"
+		"darken":
+			return "许仙已去取药 · 按住 Q 压暗灯影，再收走白素贞"
+		"replace":
+			return "灯已压暗 · 右键点白素贞收走，准备完整白蛇替身"
+		"snake_entry":
+			return "保持暗灯 · 按 4 上完整白蛇，空格接手可拖头和躯干"
+		"reveal":
+			return "白蛇已上场 · 按住 E 调亮灯影显形"
+		"return":
+			return "按 2 让许仙从右台边回来，空格接手后向白蛇走近"
+		"startled":
+			return "许仙见白蛇，惊退、仰倒"
+		"finished":
+			return "第二幕演出结束 · ESC 可暂停"
 	return ""
