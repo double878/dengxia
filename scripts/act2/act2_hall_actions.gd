@@ -1,5 +1,5 @@
 extends RefCounted
-## 第二幕动作许可与短字幕。只用唯一时钟，不以超时替演。
+## 第二幕动作许可与音轨字幕。只用唯一时钟，不以超时替演。
 
 const CUP_POSITION := Vector2(1035, 415)
 const DARK_LIMIT: float = 0.20
@@ -9,22 +9,7 @@ const BEND_REARM: float = PI / 18.0
 const LINE_QING_REPLY: int = 4
 const LINE_UNWELL: int = 5
 const LINE_MEDICINE: int = 6
-const LINES: Array[Dictionary] = [
-	{"role": "许仙", "text": "娘子，今日端阳，陪我饮一杯吧。", "ms": 2800},
-	{"role": "小青", "text": "官人，姐姐不善饮酒，莫再劝了。", "ms": 2800},
-	{"role": "许仙", "text": "我想与娘子单独说说话，小青，你去多买些酒菜吧。", "ms": 4000},
-	{"role": "白素贞", "text": "小青，你就去吧。", "ms": 2600},
-	{"role": "小青", "text": "好吧。", "ms": 1800},
-	{"role": "白素贞", "text": "官人……我身子有些不适。", "ms": 3000},
-	{"role": "许仙", "text": "娘子稍候，我去取些药来。", "ms": 3000},
-]
-# 用户同意的流程排练占位；唱词与时长待正式唱腔制作后替换。
-const DUET: Array[Dictionary] = [
-	{"role": "许仙", "text": "端阳佳节共举杯，愿与娘子长相随。", "ms": 4500},
-	{"role": "白素贞", "text": "官人盛意心领会，只怕薄酒也难支。", "ms": 4500},
-	{"role": "许仙", "text": "只此一杯添欢喜，娘子莫再把杯推。", "ms": 4500},
-	{"role": "白素贞", "text": "既是官人再三劝，且饮一杯谢情意。", "ms": 4500},
-]
+var config: Dictionary
 
 var clock: MusicClock
 var phase: String = "dialogue"
@@ -39,23 +24,26 @@ var medicine_departed: bool = false
 var white_removed: bool = false
 var returned: bool = false
 var collapse_progress: float = 0.0
-var _since_song: int = 0
 var _since_real: int = 0
 var _drink_since: int = -1
 var _exposure: float = 1.0
 var _bend_armed: bool = false
 
 
-func setup(value: MusicClock) -> void:
+func setup(value: MusicClock, score: Dictionary) -> void:
 	clock = value
+	config = score
 	_set_phase("dialogue")
 
 
 func _set_phase(value: String) -> void:
 	phase = value
-	_since_song = clock.get_song_time_ms()
+	if value == "duet" and duet_index == 0:
+		clock.advance_to_ms(int(config.duet_start_ms))
+	elif value == "dialogue" and line_index == LINE_UNWELL:
+		clock.advance_to_ms(int(config.lines[LINE_UNWELL].start_ms) - 100)
 	_since_real = clock.get_real_time_ms()
-	clock.set_song_frozen(value not in ["dialogue", "duet", "startled"])
+	clock.set_song_frozen(value not in ["dialogue", "duet"])
 
 
 func update(
@@ -81,23 +69,31 @@ func update(
 				on_stage.has(0) and on_stage.has(1) and (qing_departed or on_stage.has(2))
 			)
 			clock.set_song_frozen(not ready)
-			if ready and clock.get_song_time_ms() - _since_song >= int(LINES[line_index].ms):
-				if line_index == LINE_QING_REPLY:
-					_set_phase("qing_exit")
-				elif line_index == LINE_MEDICINE:
-					_set_phase("medicine_exit")
-				else:
+			if ready:
+				var now: int = clock.get_song_time_ms()
+				while (
+					line_index < LINE_QING_REPLY
+					and now >= int(config.lines[line_index + 1].start_ms)
+				):
 					line_index += 1
-					_set_phase("dialogue")
+				if line_index == LINE_UNWELL and now >= int(config.lines[LINE_MEDICINE].start_ms):
+					line_index = LINE_MEDICINE
+				if line_index == LINE_QING_REPLY and now >= int(config.qing_gate_ms):
+					_set_phase("qing_exit")
+				elif line_index == LINE_MEDICINE and now >= int(config.medicine_gate_ms):
+					_set_phase("medicine_exit")
 		"duet":
 			var ready: bool = on_stage.has(0) and on_stage.has(1)
 			clock.set_song_frozen(not ready)
-			if ready and clock.get_song_time_ms() - _since_song >= int(DUET[duet_index].ms):
-				if duet_index == DUET.size() - 1:
-					_set_phase("cup")
-				else:
+			if ready:
+				var now: int = clock.get_song_time_ms()
+				while (
+					duet_index < config.duet.size() - 1
+					and now >= int(config.duet[duet_index + 1].start_ms)
+				):
 					duet_index += 1
-					_set_phase("duet")
+				if now >= int(config.duet_gate_ms):
+					_set_phase("cup")
 		"cup":
 			if not on_stage.has(0) or not on_stage.has(1):
 				return
@@ -220,13 +216,13 @@ func enter_return() -> void:
 
 func subtitle() -> String:
 	if phase == "dialogue":
-		return "%s：%s" % [LINES[line_index].role, LINES[line_index].text]
+		return "%s：%s" % [config.lines[line_index].role_name, config.lines[line_index].text]
 	if phase == "qing_exit":
 		return "小青：好吧。"
 	if phase == "duet":
-		return "%s（临时对唱）：%s" % [DUET[duet_index].role, DUET[duet_index].text]
+		return "%s：%s" % [config.duet[duet_index].role_name, config.duet[duet_index].text]
 	if phase in ["cup", "drink"]:
-		return "%s（临时对唱）：%s" % [DUET[-1].role, DUET[-1].text]
+		return "%s：%s" % [config.duet[-1].role_name, config.duet[-1].text]
 	if phase == "medicine_exit":
 		return "许仙：娘子稍候，我去取些药来。"
 	if phase in ["startled", "finished"]:
@@ -239,7 +235,7 @@ func hint() -> String:
 		"dialogue":
 			return "身段自由发挥 · 空格换人 · 拖手、拖头、Alt 拖躯干"
 		"duet":
-			return "饮前对唱排练 · 身段自由发挥，唱完再递杯饮酒"
+			return "饮前对唱 · 身段自由发挥，唱完再递杯饮酒"
 		"qing_exit":
 			return "接手小青，向左走到台边，再右键点影人退场买酒菜"
 		"cup":

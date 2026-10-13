@@ -47,7 +47,7 @@ func _run() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await capture("opening")
-	ActionsInput.advance(hall, 12.5)
+	ActionsInput.until_line(hall, 4)
 	if hall.actions.subtitle() != "小青：好吧。":
 		push_error("图形流程未先显示小青应答")
 		quit(1)
@@ -79,7 +79,10 @@ func _run() -> void:
 		quit(1)
 		return
 	await capture("duet-xu")
-	ActionsInput.advance(hall, 5.0)
+	ActionsInput.advance(
+		hall,
+		float(hall.audio.config.duet[1].start_ms - hall.audio.config.duet_start_ms) / 1000.0 + .1
+	)
 	await capture("duet-bai")
 	if not ActionsInput.until_phase(hall, "cup"):
 		push_error("饮前对唱未完整结束")

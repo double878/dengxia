@@ -11,6 +11,8 @@ const SnakePose := preload("res://scripts/act2/snake_pose.gd")
 const SnakeView := preload("res://scripts/act2/snake_view.gd")
 const Remedy := preload("res://scripts/act2/act2_remedy.gd")
 const RemedyGuide := preload("res://scripts/act2/remedy_guide.gd")
+const MusicCues := preload("res://scripts/act2/act2_music_cues.gd")
+const HallAudio := preload("res://scripts/act2/act2_hall_audio.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HALL_STAGE_ID: int = 22
 const FIGURE_HEIGHT: float = 340.0
@@ -55,6 +57,8 @@ var _fall_direction: float = 1.0
 var remedy := Remedy.new()
 var _remedy_banner: Label
 var _remedy_audio: AudioStreamPlayer
+var music_cues := MusicCues.new()
+var audio := HallAudio.new()
 
 
 func _ready() -> void:
@@ -96,7 +100,15 @@ func _ready() -> void:
 		add_child(view)
 		_views.append(view)
 	_puppet_input.set_views(_views)
-	actions.setup(clock)
+	add_child(audio)
+	if not audio.setup(clock):
+		clock.set_song_frozen(true)
+		set_process(false)
+		set_process_input(false)
+		return
+	actions.setup(clock, audio.config)
+	add_child(music_cues)
+	music_cues.setup()
 	remedy.setup(clock)
 	_remedy_audio = AudioStreamPlayer.new()
 	_remedy_audio.name = "RemedyDrums"
@@ -157,6 +169,7 @@ func _process(delta: float) -> void:
 		lamp_controller.take_events()
 		_update_seats()
 		_update_actions()
+		music_cues.update_fall(actions.collapse_progress)
 		_update_remedy()
 	if steps == 8:
 		_accumulator = 0.0
@@ -370,6 +383,8 @@ func _exit(id: int) -> void:
 	if controller.controlled_id == id:
 		_release_control()
 	on_stage.erase(id)
+	if actions.phase in ["dialogue", "duet"]:
+		clock.set_song_frozen(true)
 	_update_remedy()
 	_refresh_views()
 
@@ -399,6 +414,7 @@ func _toggle_pause() -> void:
 	)
 	_lamp_input.set_enabled(not _paused)
 	_remedy_audio.stream_paused = _paused
+	music_cues.set_paused(_paused)
 	controller.set_input_map({})
 	if _paused:
 		clock.pause()
@@ -564,6 +580,7 @@ func _exit_tree() -> void:
 	_puppet_input.set_enabled(false)
 	_lamp_input.set_enabled(false)
 	clock.pause()
-	_remedy_audio.stream_paused = false
-	_remedy_audio.stop()
-	_remedy_audio.stream = null
+	if _remedy_audio != null:
+		_remedy_audio.stream_paused = false
+		_remedy_audio.stop()
+		_remedy_audio.stream = null

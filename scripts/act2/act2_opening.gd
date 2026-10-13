@@ -11,6 +11,7 @@ const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
 const OperatorHand := preload("res://scripts/b/operator_hand.gd")
 const Entrance := preload("res://scripts/act2/act2_entrance.gd")
 const Dialogue := preload("res://scripts/act2/act2_dialogue.gd")
+const MusicCues := preload("res://scripts/act2/act2_music_cues.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HAND_ANCHOR := Vector2(960, 856)
 const HAND_AREA := Rect2(768, 712, 384, 256)
@@ -43,6 +44,7 @@ var _accumulator: float = 0.0
 var _entrance := Entrance.new()
 var _entrance_complete: Array[bool] = [false, false]
 var dialogue := Dialogue.new()
+var music_cues := MusicCues.new()
 ## 暗场后章节卡的剩余停留时间（秒）。< 0 表示尚未进入收场。
 var _dark_hold: float = -1.0
 var _subtitle: Label
@@ -104,6 +106,8 @@ func _ready() -> void:
 	add_child(dialogue)
 	dialogue.finished.connect(_finish_first_scene)
 	dialogue.setup(clock, controller)
+	add_child(music_cues)
+	music_cues.setup()
 	_refresh_views()
 	_puppet_input.set_views(_views)
 
@@ -125,6 +129,7 @@ func _process(delta: float) -> void:
 		lamp_controller.take_events()
 		_sync_entrances()
 		dialogue.update(on_stage, _entrance_complete[0])
+		music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	if steps == 8:
 		_accumulator = 0.0
 	_refresh_views()
@@ -214,6 +219,7 @@ func _enter(id: int) -> void:
 		return
 	on_stage.append(id)
 	on_stage.sort()
+	music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	_refresh_views()
 
 
@@ -236,6 +242,7 @@ func _exit(id: int) -> void:
 	if controller.controlled_id == id:
 		_release_control()
 	on_stage.erase(id)
+	music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	_refresh_views()
 
 
@@ -259,6 +266,7 @@ func _puppet_at(at: Vector2) -> int:
 
 func _toggle_pause() -> void:
 	_paused = not _paused
+	music_cues.set_paused(_paused)
 	_puppet_input.set_enabled(not _paused)
 	_lamp_input.set_enabled(not _paused)
 	controller.set_input_map({})

@@ -92,11 +92,29 @@ func _run() -> void:
 
 
 static func advance(hall: Node, seconds: float) -> void:
+	deterministic_clock(hall)
 	for _i in range(int(ceil(seconds * 60.0))):
 		hall._process(1.0 / 60.0)
 
 
-static func until_phase(hall: Node, phase: String, limit_s: float = 40.0) -> bool:
+static func deterministic_clock(hall: Node) -> void:
+	# 快速几何/动作回归不用声卡位置；真实音频另由 Windows 实时回归验证。
+	if hall.get("audio") != null and hall.clock.player != null:
+		hall.audio.player.stop()
+		hall.clock.set_player(null)
+
+
+static func until_line(hall: Node, line: int, limit_s: float = 60.0) -> bool:
+	deterministic_clock(hall)
+	for _i in range(int(ceil(limit_s * 60.0))):
+		if hall.actions.phase == "dialogue" and hall.actions.line_index == line:
+			return true
+		hall._process(1.0 / 60.0)
+	return false
+
+
+static func until_phase(hall: Node, phase: String, limit_s: float = 80.0) -> bool:
+	deterministic_clock(hall)
 	for _i in range(int(ceil(limit_s * 60.0))):
 		if hall.actions.phase == phase:
 			return true
@@ -170,7 +188,7 @@ func drama() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await process_frame
-	advance(hall, 12.5)
+	check(until_line(hall, 4), "读取真实音轨时标进入小青应答")
 	check(hall.actions.subtitle() == "小青：好吧。", "白素贞应允后先出现小青应答")
 	check(hall.actions.phase == "dialogue", "小青答完之前不得正式离场")
 	check(until_phase(hall, "qing_exit", 5.0), "小青答完好吧才开放离场")
@@ -221,7 +239,7 @@ func drama() -> void:
 	advance(hall, 4.0)
 	check(actions.phase == "duet" and actions.cup_owner == -1, "对唱期间不能提前取杯饮酒")
 	key(hall, KEY_R)
-	check(until_phase(hall, "cup"), "临时对唱完整结束后才允许递酒")
+	check(until_phase(hall, "cup"), "真实对唱完整结束后才允许递酒")
 	check(actions.cup_owner == -1, "没有取杯动作时杯仍在桌上")
 	take(hall, 1)
 	drag(
@@ -275,7 +293,7 @@ func drama() -> void:
 	key(hall, KEY_ESCAPE)
 	var bend_position: Vector2 = hall.controller.get_puppet(0).stage_pos
 	drag(hall, hall._views[0].torso_screen_position(), Vector2(75, 0), true)
-	check(actions.subtitle() == "白素贞：官人……我身子有些不适。", "饮后实际弯腰到位才开始不适对白")
+	check(actions.subtitle() == "白素贞：官人，我身子有些不适。", "饮后实际弯腰到位才开始不适对白")
 	check(hall.controller.get_puppet(0).stage_pos == bend_position, "弯腰门槛读取姿态，不要求移动")
 	check(until_phase(hall, "medicine_exit", 10.0), "饮后两句普通对白结束才允许取药")
 	right(hall, 1)

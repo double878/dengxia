@@ -1,0 +1,759 @@
+{
+  "audio_version": "act2-hall-speech-continuous-wine-duet-v1",
+  "scene_id": "wine_transformation",
+  "main_path": "res://assets/audio/act2-hall/main.wav",
+  "duration_ms": 69517,
+  "lines": [
+    {
+      "line_id": "xu-offer",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "娘子，今日端阳，陪我饮一杯吧。",
+      "start_ms": 500,
+      "end_ms": 4262,
+      "start_frame": 24000,
+      "end_frame": 204559,
+      "delivery": "speech",
+      "seed": 2026101300
+    },
+    {
+      "line_id": "qing-stop",
+      "role_id": "xiaoqing",
+      "role_name": "小青",
+      "text": "官人，姐姐不善饮酒，莫再劝了。",
+      "start_ms": 4612,
+      "end_ms": 8373,
+      "start_frame": 221359,
+      "end_frame": 401918,
+      "delivery": "speech",
+      "seed": 2026101301
+    },
+    {
+      "line_id": "xu-send",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "我想与娘子单独说说话，小青，你去多买些酒菜吧。",
+      "start_ms": 8723,
+      "end_ms": 14389,
+      "start_frame": 418718,
+      "end_frame": 690671,
+      "delivery": "speech",
+      "seed": 2026101302
+    },
+    {
+      "line_id": "bai-allow",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "小青，你就去吧。",
+      "start_ms": 14739,
+      "end_ms": 16933,
+      "start_frame": 707471,
+      "end_frame": 812797,
+      "delivery": "speech",
+      "seed": 2026101303
+    },
+    {
+      "line_id": "qing-reply",
+      "role_id": "xiaoqing",
+      "role_name": "小青",
+      "text": "好吧。",
+      "start_ms": 17283,
+      "end_ms": 19269,
+      "start_frame": 829597,
+      "end_frame": 924892,
+      "delivery": "speech",
+      "seed": 2026101304
+    },
+    {
+      "line_id": "bai-unwell",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "官人，我身子有些不适。",
+      "start_ms": 61969,
+      "end_ms": 64871,
+      "start_frame": 2974492,
+      "end_frame": 3113812,
+      "delivery": "speech",
+      "seed": 2026101305
+    },
+    {
+      "line_id": "xu-medicine",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "娘子稍候，我去取些药来。",
+      "start_ms": 65221,
+      "end_ms": 68367,
+      "start_frame": 3130612,
+      "end_frame": 3281635,
+      "delivery": "speech",
+      "seed": 2026101306
+    }
+  ],
+  "duet": [
+    {
+      "line_id": "duet-1",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "端阳佳节共举杯，愿与娘子长相随。",
+      "start_ms": 20119,
+      "end_ms": 31357,
+      "start_frame": 965692,
+      "end_frame": 1505138,
+      "delivery": "singing",
+      "seed": 2026101401
+    },
+    {
+      "line_id": "duet-2",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "官人盛意心领会，只怕薄酒也难支。",
+      "start_ms": 31369,
+      "end_ms": 42653,
+      "start_frame": 1505692,
+      "end_frame": 2047367,
+      "delivery": "singing",
+      "seed": 2026101402
+    },
+    {
+      "line_id": "duet-3",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "只此一杯添欢喜，娘子莫再把杯推。",
+      "start_ms": 42669,
+      "end_ms": 51121,
+      "start_frame": 2048092,
+      "end_frame": 2453791,
+      "delivery": "singing",
+      "seed": 2026101403
+    },
+    {
+      "line_id": "duet-4",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "既是官人再三劝，且饮一杯谢情意。",
+      "start_ms": 51119,
+      "end_ms": 61103,
+      "start_frame": 2453692,
+      "end_frame": 2932952,
+      "delivery": "singing",
+      "seed": 2026101404
+    }
+  ],
+  "qing_gate_ms": 19419,
+  "duet_start_ms": 20119,
+  "duet_end_ms": 61119,
+  "duet_gate_ms": 61269,
+  "medicine_gate_ms": 68517,
+  "assets": [
+    {
+      "asset_id": "xu-offer",
+      "path": "res://assets/audio/act2-hall/xu-offer.wav",
+      "sha256": "d0568d17277aaab1ca721d8c90074ed3afad341d67b081378c4942556b49408a",
+      "frames": 180559,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.517791748046875
+    },
+    {
+      "asset_id": "qing-stop",
+      "path": "res://assets/audio/act2-hall/qing-stop.wav",
+      "sha256": "e6ba719bd2be828ed4443a592823256b33212f8da1a79c78cbee5a98375ac757",
+      "frames": 180559,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.599578857421875
+    },
+    {
+      "asset_id": "xu-send",
+      "path": "res://assets/audio/act2-hall/xu-send.wav",
+      "sha256": "c8de040707ba4f9bb7ec3756f8504ccf2da99f736f5485ef76690ec564cb5c3a",
+      "frames": 271953,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.607330322265625
+    },
+    {
+      "asset_id": "bai-allow",
+      "path": "res://assets/audio/act2-hall/bai-allow.wav",
+      "sha256": "3d52b9bbfc3449cf526f957185a94f103eb68fc47ddd9cc6952008f5b7afdac5",
+      "frames": 105326,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.74151611328125
+    },
+    {
+      "asset_id": "qing-reply",
+      "path": "res://assets/audio/act2-hall/qing-reply.wav",
+      "sha256": "87b28ed87f3e3454e0b5197b78da05cc53d0ce7ad09033eb52814e3866d0e26a",
+      "frames": 95295,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.362518310546875
+    },
+    {
+      "asset_id": "bai-unwell",
+      "path": "res://assets/audio/act2-hall/bai-unwell.wav",
+      "sha256": "7abe78c2f6dfb69cda253bb9b83e35e5687a7f19c88b0d38180b968432ccb71d",
+      "frames": 139320,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.50982666015625
+    },
+    {
+      "asset_id": "xu-medicine",
+      "path": "res://assets/audio/act2-hall/xu-medicine.wav",
+      "sha256": "46f16c621768011d2a690c9fbde6e86ce6e99da247d01b86d3c3d4ece5df1675",
+      "frames": 151023,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.631622314453125
+    },
+    {
+      "asset_id": "wine-duet",
+      "path": "res://assets/audio/act2-hall/wine-duet.wav",
+      "sha256": "ad390750f8daed131a36607ce8d5ee94023d97a4692777c8c5abeaed76e41303",
+      "frames": 1968000,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.667205810546875
+    },
+    {
+      "asset_id": "main",
+      "path": "res://assets/audio/act2-hall/main.wav",
+      "sha256": "1799bd3e48c41e40050875cee7b3d7174bb0acaf0407c5766a0da82d4ed65635",
+      "frames": 3336835,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.74151611328125
+    }
+  ],
+  "references": {
+    "xuxian": {
+      "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\return-02.wav",
+      "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+      "text": "些小之事，何劳娘子专程回来。"
+    },
+    "baisuzhen": {
+      "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\opening-02.wav",
+      "sha256": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
+      "text": "青妹，你看，柳色映着湖波，果然是好风光。"
+    },
+    "xiaoqing": {
+      "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\opening-01.wav",
+      "sha256": "057d01d7a00572a695589dd9ed68766df0bc98bad45ad94683bcef2ee2871dfe",
+      "text": "姐姐，你看，湖上人来人往，可比峨眉热闹多啦！"
+    }
+  },
+  "singing_parameters": {
+    "nfe_step": 32,
+    "cfg_strength": 3.0,
+    "t_shift": 0.5,
+    "sil_len_to_end": 0.5,
+    "lrc_align_mode": "sentence_level"
+  },
+  "singing_source": "https://tv.cctv.com/2020/07/02/VIDEGhi9Sw6SpdWEg573OBfO200702.shtml",
+  "plot_reference": "https://scripts.xikao.com/play/06000050",
+  "user_video": {
+    "filename": "20261013-1538-24.6072238.mp4",
+    "sha256": "b9118e9678f40981c69426d84bead1e6e500d968f87b39e9a48472a2a46f43fc",
+    "music_cues": {
+      "source": "D:\\Cursor_program\\灯下\\builds\\act2-hall-audio\\user-music-full.wav",
+      "source_sha256": "b017d8b87996411910e1c7afe4c5a7b3ffdfcd050e9e48e37573ecd0ca670efc",
+      "attack_s": 6.435,
+      "hit_end_s": 7.735,
+      "outputs": {
+        "fahai-entry": {
+          "path": "D:\\Cursor_program\\灯下\\builds\\worktrees\\feat-act2-actions\\assets\\audio\\act2-hall\\fahai-entry.wav",
+          "sha256": "bb93e07b781ad770fc15690ae1689ab46e294b79a5e91f9b794134c97a892f2c",
+          "frames": 396288,
+          "rate": 48000,
+          "fixed_gain": 0.65
+        },
+        "xu-fall-hit": {
+          "path": "D:\\Cursor_program\\灯下\\builds\\worktrees\\feat-act2-actions\\assets\\audio\\act2-hall\\xu-fall-hit.wav",
+          "sha256": "4a2152dd277c94ef6e02f253bd0f30338ca61bf920b79689f3a35d4f4d854ec2",
+          "frames": 62400,
+          "rate": 48000,
+          "fixed_gain": 1.0
+        }
+      },
+      "processing": "source music preserved; boundary fades and fixed gain only",
+      "human_listening_verified": false
+    }
+  },
+  "source_fingerprints": {
+    "speech": "6e76d83a39af2a7dbe595c24926e44a7b1a9d4963d518fec68e979a47a172fe3",
+    "singing": "3363c302a4e65d8e24a65937f9a5b6acaaa81d0c536be27c3b0a64008370c0de",
+    "assembly": "6008dda9f43e4248637e8dcb973baf488d7ea9085bb42aff2ad77cf66ca7cf0a"
+  },
+  "full_generated_samples_preserved": true,
+  "backing_role_splices": 0,
+  "loudness": [
+    {
+      "asset_id": "xu-offer",
+      "gain_db": 0.7199999999999989,
+      "before": {
+        "input_i": "-18.72",
+        "input_tp": "-6.43",
+        "input_lra": "2.60",
+        "input_thresh": "-29.11",
+        "output_i": "-15.61",
+        "output_tp": "-3.15",
+        "output_lra": "0.00",
+        "output_thresh": "-26.09",
+        "normalization_type": "dynamic",
+        "target_offset": "-2.39"
+      },
+      "after": {
+        "input_i": "-18.00",
+        "input_tp": "-5.71",
+        "input_lra": "2.60",
+        "input_thresh": "-28.39",
+        "output_i": "-15.61",
+        "output_tp": "-3.14",
+        "output_lra": "0.00",
+        "output_thresh": "-26.09",
+        "normalization_type": "dynamic",
+        "target_offset": "-2.39"
+      },
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+    },
+    {
+      "asset_id": "qing-stop",
+      "gain_db": -2.51,
+      "before": {
+        "input_i": "-15.49",
+        "input_tp": "-1.93",
+        "input_lra": "0.80",
+        "input_thresh": "-26.05",
+        "output_i": "-16.94",
+        "output_tp": "-3.83",
+        "output_lra": "0.00",
+        "output_thresh": "-27.47",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.06"
+      },
+      "after": {
+        "input_i": "-18.00",
+        "input_tp": "-4.44",
+        "input_lra": "0.70",
+        "input_thresh": "-28.56",
+        "output_i": "-16.94",
+        "output_tp": "-3.83",
+        "output_lra": "0.00",
+        "output_thresh": "-27.47",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.06"
+      },
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+    },
+    {
+      "asset_id": "xu-send",
+      "gain_db": 2.9299999999999997,
+      "before": {
+        "input_i": "-20.93",
+        "input_tp": "-7.17",
+        "input_lra": "1.00",
+        "input_thresh": "-31.52",
+        "output_i": "-17.14",
+        "output_tp": "-3.13",
+        "output_lra": "0.50",
+        "output_thresh": "-27.86",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.86"
+      },
+      "after": {
+        "input_i": "-18.00",
+        "input_tp": "-4.24",
+        "input_lra": "1.10",
+        "input_thresh": "-28.76",
+        "output_i": "-17.15",
+        "output_tp": "-3.13",
+        "output_lra": "0.50",
+        "output_thresh": "-27.87",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.85"
+      },
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+    },
+    {
+      "asset_id": "bai-allow",
+      "gain_db": -0.16000000000000014,
+      "before": {
+        "input_i": "-17.84",
+        "input_tp": "-2.38",
+        "input_lra": "0.00",
+        "input_thresh": "-28.50",
+        "output_i": "-18.03",
+        "output_tp": "-2.54",
+        "output_lra": "0.00",
+        "output_thresh": "-28.69",
+        "normalization_type": "linear",
+        "target_offset": "0.03"
+      },
+      "after": {
+        "input_i": "-18.03",
+        "input_tp": "-2.54",
+        "input_lra": "0.00",
+        "input_thresh": "-28.69",
+        "output_i": "-17.98",
+        "output_tp": "-2.51",
+        "output_lra": "0.00",
+        "output_thresh": "-28.64",
+        "normalization_type": "linear",
+        "target_offset": "-0.02"
+      },
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+    },
+    {
+      "asset_id": "qing-reply",
+      "gain_db": -5.48,
+      "before": {
+        "input_i": "-12.52",
+        "input_tp": "-3.31",
+        "input_lra": "0.00",
+        "input_thresh": "-25.07",
+        "output_i": "-17.98",
+        "output_tp": "-8.79",
+        "output_lra": "0.00",
+        "output_thresh": "-30.53",
+        "normalization_type": "linear",
+        "target_offset": "-0.02"
+      },
+      "after": {
+        "input_i": "-17.98",
+        "input_tp": "-8.79",
+        "input_lra": "0.00",
+        "input_thresh": "-30.53",
+        "output_i": "-18.02",
+        "output_tp": "-8.81",
+        "output_lra": "0.00",
+        "output_thresh": "-30.57",
+        "normalization_type": "linear",
+        "target_offset": "0.02"
+      },
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+    },
+    {
+      "asset_id": "bai-unwell",
+      "gain_db": 0.1999999999999993,
+      "before": {
+        "input_i": "-18.20",
+        "input_tp": "-6.03",
+        "input_lra": "0.00",
+        "input_thresh": "-28.83",
+        "output_i": "-18.00",
+        "output_tp": "-5.83",
+        "output_lra": "0.00",
+        "output_thresh": "-28.63",
+        "normalization_type": "linear",
+        "target_offset": "-0.00"
+      },
+      "after": {
+        "input_i": "-18.00",
+        "input_tp": "-5.83",
+        "input_lra": "0.00",
+        "input_thresh": "-28.63",
+        "output_i": "-18.00",
+        "output_tp": "-5.83",
+        "output_lra": "0.00",
+        "output_thresh": "-28.63",
+        "normalization_type": "linear",
+        "target_offset": "-0.00"
+      },
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+    },
+    {
+      "asset_id": "xu-medicine",
+      "gain_db": 2.5199999999999996,
+      "before": {
+        "input_i": "-20.52",
+        "input_tp": "-6.46",
+        "input_lra": "0.70",
+        "input_thresh": "-30.70",
+        "output_i": "-16.87",
+        "output_tp": "-2.80",
+        "output_lra": "0.00",
+        "output_thresh": "-27.06",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.13"
+      },
+      "after": {
+        "input_i": "-18.01",
+        "input_tp": "-3.94",
+        "input_lra": "0.70",
+        "input_thresh": "-28.19",
+        "output_i": "-16.87",
+        "output_tp": "-2.80",
+        "output_lra": "0.00",
+        "output_thresh": "-27.06",
+        "normalization_type": "dynamic",
+        "target_offset": "-1.13"
+      },
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+    },
+    {
+      "asset_id": "wine-duet",
+      "gain_db": -1.9499999999999993,
+      "before": {
+        "input_i": "-16.05",
+        "input_tp": "-1.55",
+        "input_lra": "4.20",
+        "input_thresh": "-26.23",
+        "output_i": "-18.48",
+        "output_tp": "-5.31",
+        "output_lra": "3.60",
+        "output_thresh": "-28.63",
+        "normalization_type": "dynamic",
+        "target_offset": "0.48"
+      },
+      "after": {
+        "input_i": "-17.99",
+        "input_tp": "-3.50",
+        "input_lra": "4.30",
+        "input_thresh": "-28.18",
+        "output_i": "-18.49",
+        "output_tp": "-5.31",
+        "output_lra": "3.60",
+        "output_thresh": "-28.63",
+        "normalization_type": "dynamic",
+        "target_offset": "0.49"
+      },
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+    }
+  ],
+  "human_listening_verified": false,
+  "speech_input_fingerprint": {
+    "request_sha256": "6e76d83a39af2a7dbe595c24926e44a7b1a9d4963d518fec68e979a47a172fe3",
+    "production_script_sha256": "4384e1fb4a9d5c2783cd4e4d567ad5f8f754113a709b7626711e0004a5fe23ff",
+    "f5_loader_sha256": "8fb0fe4c81fc16967d6db286ab5f0bf7ae315f52d8150f2a101941f1b4d78132",
+    "seed_loader_sha256": "7a10ff4f9b6c2b77e1e195682c8fd682a68a63036d4552b43c0ca864844d801d",
+    "model_inputs": [
+      {
+        "repository": "SWivid/F5-TTS",
+        "revision": "84e5a410d9cead4de2f847e7c9369a6440bdfaca",
+        "file": "F5TTS_v1_Base/vocab.txt",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\weights\\tts\\F5TTS_v1_Base\\vocab.txt",
+        "bytes": 13800,
+        "sha256": "2a05f992e00af9b0bd3800a8d23e78d520dbd705284ed2eedb5f4bd29398fa3c",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "charactr/vocos-mel-24khz",
+        "revision": "0feb3fdd929bcd6649e0e7c5a688cf7dd012ef21",
+        "file": "config.yaml",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\weights\\vocoder\\config.yaml",
+        "bytes": 461,
+        "sha256": "da9033922f969a47f0c160010226919e59f27761fd5066f3828d46de6650b0fc",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "SWivid/F5-TTS",
+        "revision": "84e5a410d9cead4de2f847e7c9369a6440bdfaca",
+        "file": "F5TTS_v1_Base/model_1250000.safetensors",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\weights\\tts\\F5TTS_v1_Base\\model_1250000.safetensors",
+        "bytes": 1348435761,
+        "sha256": "670900fd14e6c458b95da6e9ed317cdb20dbaf7a1c02ac06a05475a9d32b6a38",
+        "published_lfs_sha256": "670900fd14e6c458b95da6e9ed317cdb20dbaf7a1c02ac06a05475a9d32b6a38"
+      },
+      {
+        "repository": "charactr/vocos-mel-24khz",
+        "revision": "0feb3fdd929bcd6649e0e7c5a688cf7dd012ef21",
+        "file": "pytorch_model.bin",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\weights\\vocoder\\pytorch_model.bin",
+        "bytes": 54365991,
+        "sha256": "97ec976ad1fd67a33ab2682d29c0ac7df85234fae875aefcc5fb215681a91b2a",
+        "published_lfs_sha256": "97ec976ad1fd67a33ab2682d29c0ac7df85234fae875aefcc5fb215681a91b2a"
+      },
+      {
+        "repository": "Plachta/Seed-VC",
+        "revision": "257283f9f41585055e8f858fba4fd044e5caed6e",
+        "file": "config_dit_mel_seed_uvit_whisper_small_wavenet.yml",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\seed\\config_dit_mel_seed_uvit_whisper_small_wavenet.yml",
+        "bytes": 2289,
+        "sha256": "27a91ac41bdb41d0b6951c63642d791b4a70d60b9fc5550eb645f9ddcb3c94da",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "config.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\config.json",
+        "bytes": 1967,
+        "sha256": "e6a2b489da1b5aed65a8eb8d1e7466fa867ad5643a8bc138ba708bd56b2875c4",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "generation_config.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\generation_config.json",
+        "bytes": 3868,
+        "sha256": "71565b8ef50d0bf7a1193ed4bbed195b94e70c18894d81bba2f1233dcec3ab53",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "preprocessor_config.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\preprocessor_config.json",
+        "bytes": 184990,
+        "sha256": "9b5cd03a36fbb8a627c64d98a5b5b126ead95a77720723944487311f0110b666",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "tokenizer_config.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\tokenizer_config.json",
+        "bytes": 282683,
+        "sha256": "2a4c4281cf9f51ac6ccc406fdc711a087afe6530f671fa7b80953edc498275ce",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "tokenizer.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\tokenizer.json",
+        "bytes": 2480466,
+        "sha256": "27fc476bfe7f17299480be2273fc0608e4d5a99aba2ab5dec5374b4482d1a566",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "special_tokens_map.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\special_tokens_map.json",
+        "bytes": 2194,
+        "sha256": "e67ae3a0aaa99abcd9f187138e12db1f65c16a14761c50ef10eef2c174a7a691",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "added_tokens.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\added_tokens.json",
+        "bytes": 34604,
+        "sha256": "9715fd2243b6f06a5858b5e32950d2853f73dd5bc201aafcf76f5082a2d8acd1",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "normalizer.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\normalizer.json",
+        "bytes": 52666,
+        "sha256": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "merges.txt",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\merges.txt",
+        "bytes": 493869,
+        "sha256": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "vocab.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\vocab.json",
+        "bytes": 835550,
+        "sha256": "8f680bba319e01a653d2e8a5dbc17a9157179e0576e6ce74ce0c06356c6e24f9",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "nvidia/bigvgan_v2_22khz_80band_256x",
+        "revision": "633ff708ed5b74903e86ff1298cf4a98e921c513",
+        "file": "config.json",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\vocoder\\config.json",
+        "bytes": 1405,
+        "sha256": "88a1f47acf747db0b21e97a389d838566147f7a5464583ff5c8d819d870f03ee",
+        "published_lfs_sha256": null
+      },
+      {
+        "repository": "Plachta/Seed-VC",
+        "revision": "257283f9f41585055e8f858fba4fd044e5caed6e",
+        "file": "DiT_seed_v2_uvit_whisper_small_wavenet_bigvgan_pruned.pth",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\seed\\DiT_seed_v2_uvit_whisper_small_wavenet_bigvgan_pruned.pth",
+        "bytes": 440312082,
+        "sha256": "8ec8841b20bb46df9f7e8e570a6946a4b87b940133c7f0e778487ff33841f720",
+        "published_lfs_sha256": "8ec8841b20bb46df9f7e8e570a6946a4b87b940133c7f0e778487ff33841f720"
+      },
+      {
+        "repository": "openai/whisper-small",
+        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
+        "file": "model.safetensors",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\model.safetensors",
+        "bytes": 966995080,
+        "sha256": "1d7734884874f1a1513ed9aa760a4f8e97aaa02fd6d93a3a85d27b2ae9ca596b",
+        "published_lfs_sha256": "1d7734884874f1a1513ed9aa760a4f8e97aaa02fd6d93a3a85d27b2ae9ca596b"
+      },
+      {
+        "repository": "nvidia/bigvgan_v2_22khz_80band_256x",
+        "revision": "633ff708ed5b74903e86ff1298cf4a98e921c513",
+        "file": "bigvgan_generator.pt",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\vocoder\\bigvgan_generator.pt",
+        "bytes": 449228171,
+        "sha256": "e95ba25972d3de0628d99cd156e9315a9c018899bf739988959ebe3544080ced",
+        "published_lfs_sha256": "e95ba25972d3de0628d99cd156e9315a9c018899bf739988959ebe3544080ced"
+      },
+      {
+        "repository": "funasr/campplus",
+        "revision": "e4b6ede7ce16997aff4ae69fbca1f0175e2afede",
+        "file": "campplus_cn_common.bin",
+        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\speaker\\campplus_cn_common.bin",
+        "bytes": 28036335,
+        "sha256": "3388cf5fd3493c9ac9c69851d8e7a8badcfb4f3dc631020c4961371646d5ada8",
+        "published_lfs_sha256": "3388cf5fd3493c9ac9c69851d8e7a8badcfb4f3dc631020c4961371646d5ada8"
+      }
+    ]
+  },
+  "generation_parameters": {
+    "tts_steps": 32,
+    "tts_cfg": 2.0,
+    "tts_sway_sampling_coef": -1,
+    "vc_steps": 25,
+    "vc_cfg": 0.7,
+    "vc_length_adjust": 1.0,
+    "f0_condition": false,
+    "auto_f0_adjust": false,
+    "semitone_shift": 0,
+    "device": "cpu",
+    "dtype": "float32",
+    "threads_per_model": 8
+  },
+  "singing_model_verification": [
+    {
+      "file": "ckpts/config_vocals_mel_band_roformer_kj.yaml",
+      "sha256": "f63f38eb1e6e40a7db0dade714a5ae257555dd8748f4e774eae8679275a81926",
+      "expected": "f63f38eb1e6e40a7db0dade714a5ae257555dd8748f4e774eae8679275a81926"
+    },
+    {
+      "file": "config.json",
+      "sha256": "8c01e299f82d8a4a9851cfb5072f11363a1fca48fcc27443eae5fcb9211602bb",
+      "expected": "8c01e299f82d8a4a9851cfb5072f11363a1fca48fcc27443eae5fcb9211602bb"
+    },
+    {
+      "file": "ckpts/MelBandRoformer.ckpt",
+      "sha256": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e",
+      "expected": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e"
+    },
+    {
+      "file": "model.safetensors",
+      "sha256": "b32dc225a6cfff37f2252b7d3b60cbf536f656de349eba6d5b773aa5f5b780e4",
+      "expected": "b32dc225a6cfff37f2252b7d3b60cbf536f656de349eba6d5b773aa5f5b780e4"
+    }
+  ]
+}
