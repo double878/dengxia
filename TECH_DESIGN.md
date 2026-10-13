@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-13 第二关第二幕布景接入：新增 `scenes/act2/hall.tscn`（脚本 `scripts/act2/act2_hall.gd`），复用 `StageBackdrop`、`StageSurface`、`MusicClock`、`LampController` 与 `CStageBinding(stage_id=22, enable_rain=false)`，加载队友 PR #14 的室内厅堂（编号 22，`CSceneryDef.make_level2_act2()`）。第一幕末句应允后按主轨时标暗场、清场，「端阳」章节卡停留 `Act2Opening.DARK_HOLD_S`（1.5 秒）后由 `Act2Opening.scene_finished` 通知 `GameFlow` 换到 22 号；两场同属第二关，中途不结算、不回放。第二幕**本轮只交付布景**：不放影人、不接受操控，递杯、饮酒、换完整白蛇、调灯显形与许仙惊倒仍属后续切片。
+
 > 2026-10-12 第二关声音 v2：`assets/audio/act2-opening/score.json` 当前版本为 `act2-opening-dialogue-v2-user-reference-silent-reply`。许仙的 F5 韵律参考取第一关 `return-02.wav`，Seed-VC 身份参考取第一关 `return-02/06/08` 实际对白；法海的身份参考取用户视频前 7.7 秒分离人声，排除后续小沙弥答话，韵律采用自然男声。六句音源沿用上一轮，响度约 −18 LUFS；导入仍禁用裁剪、归一化与循环。七条 WAV 为 48 kHz 双声道 PCM16；第五、六句间静音由 620 ms 增至 1,200 ms，各句 PCM 逐样本保留。主轨 1,504,551 帧（31,345 ms），迎接冻结点为 5,334 ms，暗场起点为 29,345 ms。清单删除 `agreement_gate_ms`，以 `agreement_silence_ms=1200` 记录自动回应前的沉默。制作与听验范围见音频制作记录；游戏逻辑继续读取清单时标。
 
 > 2026-10-12 第一关跳过：`GameFlow` 在第一关 `Hud` 注入“跳过第一关”按钮，复用延后执行的第二关切换路径。点击后禁止重复切换并停止旧宿主输入/处理，移出场景树触发既有 `Level1Harness.shutdown()` 停止音频，再释放宿主并加载第二关；跳过时的完成信号不进入回放选择。第一关输入层将按钮区域的按下事件交给 GUI，暂停时按钮仍可用。

@@ -125,3 +125,42 @@ A 套件的非法输入用例会故意输出 ERROR。完整第一关无头启动
 更新既有出场回归后，旧实现先复现 6 项位置／完整显露／胸签抓取失败；修正后 Windows OpenGL 出场测试 40 项、两关衔接与操演 117 项全部通过。实体和投影的许仙初始可见像素与无遮挡画面完全一致，已检查 `builds/act2-opening/entrance-xuxian-start.png`，人物落在门洞中间。三个变动脚本解析、gdformat 和 gdlint 通过；资源导入、60 帧无头启动和 Windows Release 导出均退出 0，本次启动日志没有退出资源提示。不表示此前间歇出现的第一关退出资源提示已被修复。
 
 实际命令继续使用 `tools/run_godot.ps1`：`--headless --path . --check-only --script <三个变动脚本>`、`--path . --script res://tests/c/run_act2_entrances.gd`、`--path . --script res://tests/c/run_act2_opening.gd`、`--headless --path . --import`、`--headless --path . --quit-after 60`、`--headless --path . --export-release "Windows Desktop" builds/dengxia.exe`。本轮日志前缀 `door-center-*`，版本仍为 `4.7.2.stable.official.ed1daf0bf`。未重跑其他完整套件或人工完整试玩；没有新建临时测试入口，沿用现有分支和 PR #12。
+
+## 2026-10-13 第二幕厅堂布景接入（编号 22）
+
+用户要求「游戏里要能看到第二幕的景」。此前编号 22 的室内厅堂布景（队友 PR #14 交付）**只有数据，游戏里没有任何地方取用它**——第一场末句应允后的暗场只是停在全黑加「端阳」标题，没有下一场。本轮把它接进正式入口。
+
+改了什么：
+
+- 新增 `scenes/act2/hall.tscn` 与 `scripts/act2/act2_hall.gd`：复用 `StageBackdrop`、`StageSurface`、`MusicClock`、`LampController`，挂 `CStageBinding(stage_id=22, enable_rain=false)`，与第一场同一套层级（背幕 -2 → 幕布 -1 → 布景 0）和同一块幕布 `Rect2(66, 92, 1788, 588)`。本幕**没有主音轨**，时钟只提供真实时间给火光与幕面闪烁，歌曲时间保持冻结。
+- `scripts/act2/act2_opening.gd`：新增 `scene_finished` 信号与 `DARK_HOLD_S = 1.5`。末句应允后暗场、清场，幕面全黑（`duration_ms`）之际「端阳」章节卡停留 1.5 秒，再发信号；不留这段时间标题一帧都不会显示。暂停时倒计时随之停住。
+- `scripts/game_flow.gd`：新增编号常量与 `HALL_SCENE`。`_start_performance()` 把 22 当一幕加载；第一场的 `scene_finished` 经 `call_deferred` 换景到 22（信号来自正在运行的场景自身，不在发送过程中释放发送方）。两场之间不结算、不回放。
+- 新增 `tests/c/run_act2_hall.gd`（38 项）：厅堂场景取到 22、13 件贴图实际加载、酒具绘制顺序在桌子之后、裁入幕布、层级正确、不放影人；主流程能把 22 当一幕加载；第一场收场后在章节卡走完前不换景、推迟到帧末执行、换景后旧宿主释放且只加载一个场景。
+
+**本轮交付边界（用户 2026-10-13 定案「只把厅堂景摆进游戏」）**：第二场只显示布景，**不放影人、不接受操控输入**；递杯、抬杯饮酒、人身退场换完整白蛇、调灯显形与许仙惊倒仍属后续切片。整关录放、计分与时长预算同样未接入。
+
+验证（`D:\Godot\4.7.2\godot.exe`，`4.7.2.stable.official.ed1daf0bf`）：
+
+| 检查 | 本轮实际结果 |
+| --- | --- |
+| 三个变动/新增脚本解析（`--check-only`） | 全部退出 0 |
+| `tests/c/run_act2_hall.gd`，无头 | 38 项，0 失败 |
+| `tests/c/run_act2_opening.gd` | 133 项，0 失败 |
+| `tests/c/run_act2_dialogue.gd` / `run_act2_entrances.gd` | 40 / 28 项，0 失败 |
+| `tests/a/run_tests.gd` | 1284 + 22 项，0 失败 |
+| `tests/b/run_stage_visuals.gd` | 379 项，0 失败 |
+| `tests/c/run_tests_c.gd` / `run_scenery_tests.gd` | 459 / 480 项，0 失败 |
+| 正式第一关回放 / 成功演出回放 / 旧教学关回放 | 37 / 12 / 11 项，0 失败 |
+| 导入、60 帧无头启动、Windows Release 导出 | 全部退出 0 |
+| 真实窗口抓帧（1920×1080） | 厅堂 13 件全部可见，见下 |
+
+真实图形环境证据（`builds/act2-hall/`，`builds/` 已忽略）：
+
+- `hall-onstage.png`：直接启动 `scenes/act2/hall.tscn` 的一帧——两柱围合、四根横梁、花架花盆、圆桌与桌上酒具、两凳，台口标题「第二关 · 端阳惊变　第二幕 · 端阳饮酒」。
+- `chapter-card.png`：第一场收场瞬间，幕面全黑（alpha 1.00）加「端阳」章节卡。
+- `after-switch.png`：同一趟运行 3 秒后，`_stage_id` 已为 22、宿主场景已换成 `res://scenes/act2/hall.tscn`。
+
+抓帧用一次性 `SceneTree` 钩子（`root.get_texture().get_image().save_png`）在带窗口的引擎里取真实 GL 帧，用完已删；钩子里同时打印了 `stage_id` 与 13 件 id 作为逻辑读数。无头模式拿不到画面，故画面结论以这三张为准。
+
+顺带修掉一个既有缺陷：`tests/c/run_tutorial_replay.gd` 缺少 `-- stage=2` 时只在第 24 行记一条失败就继续跑，随后在 `Nil` 上脚本错误、`quit()` 永不执行，**进程会一直挂着**（本轮实际挂满 20 分钟）。现在缺参数时提前干净退出并返回 1（实测 2 秒），带参数仍 11 项全过。该文件与本次功能无关，单独一个提交便于回退。
+
