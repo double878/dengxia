@@ -3,7 +3,12 @@ extends Node
 
 const PERFORMANCE_SCENE := preload("res://scenes/a_test/level1_a.tscn")
 const ACT2_SCENE := preload("res://scenes/act2/opening.tscn")
+const HALL_SCENE := preload("res://scenes/act2/hall.tscn")
 const ReplayView := preload("res://scripts/b/performance_replay.gd")
+## 关卡/幕编号。第二关分两场，各占一个编号：第一场「法海劝酒」= 2，
+## 第二场「端阳饮酒」= 22（与 `CSceneryDef.LEVEL2_ACT2_STAGE_ID` 同值）。
+const ACT2_STAGE_ID: int = 2
+const ACT2_HALL_STAGE_ID: int = 22
 var _level: Node = null
 var _replay: Node = null
 var _page: Control = null
@@ -18,8 +23,14 @@ func _ready() -> void:
 
 
 func _start_performance() -> void:
-	if _stage_id == 2:
+	if _stage_id == ACT2_HALL_STAGE_ID:
+		_level = HALL_SCENE.instantiate()
+		add_child(_level)
+		return
+	if _stage_id == ACT2_STAGE_ID:
 		_level = ACT2_SCENE.instantiate()
+		# 第一幕末句应允 → 暗场 → 清场，走完章节卡后换景进第二幕（不结算、不回放）。
+		_level.scene_finished.connect(_on_first_scene_finished)
 		add_child(_level)
 		return
 	_level = PERFORMANCE_SCENE.instantiate()
@@ -201,6 +212,27 @@ func _advance_to_act2() -> void:
 	_stage_id = 2
 	_start_performance()
 	_advancing = false
+
+
+## 信号由**正在运行的场景自身**在 `_process` 里发出，故推迟到本帧末再换景，
+## 不在信号发送过程中释放发送方。
+func _on_first_scene_finished() -> void:
+	_advance_to_act2_hall.call_deferred()
+
+
+## 第二关第一场 → 第二场：暗场清场后换上编号 22 的室内厅堂布景。
+## 两场同属第二关，中途不结算、不回放（PRD 第 6.2 节）。
+func _advance_to_act2_hall() -> void:
+	_clear_page()
+	if _level != null:
+		remove_child(_level)
+		_level.queue_free()
+		_level = null
+	if _flow != null:
+		_flow.leave_stage()
+		_flow = null
+	_stage_id = ACT2_HALL_STAGE_ID
+	_start_performance()
 
 
 func _exit_tree() -> void:

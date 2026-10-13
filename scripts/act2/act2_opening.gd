@@ -1,6 +1,10 @@
 extends Node2D
 ## 第二关第一幕操演与动作许可对白；整关录放由后续切片接入。
 
+## 第一幕收场（末句应允 → 暗场 → 「端阳」标题停留）走完，可以换景进第二幕了。
+## 由宿主 `game_flow.gd` 接住：换到 `scenes/act2/hall.tscn`（编号 22 的厅堂布景）。
+signal scene_finished
+
 const PuppetView := preload("res://scripts/a_test/placeholder_puppet.gd")
 const PuppetInput := preload("res://scripts/a_test/input_reader.gd")
 const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
@@ -14,6 +18,11 @@ const HAND_AREA := Rect2(768, 712, 384, 256)
 const FIGURE_HEIGHT: float = 200.0
 const FIXED_DELTA: float = 1.0 / 60.0
 const CAST: Array[String] = ["法海", "许仙"]
+## 暗场后到换景之间，让「端阳」标题停留的时间（秒）。
+## PRD 第 6.2 节要求「应允后自动暗场、清场换景」，两场之间不出现结算或回放。
+## 幕面在 `duration_ms` 处已经全黑，此处只留一小段章节卡时间再发 `scene_finished`；
+## 不留这段时间的话，「端阳」标题一帧都不会被看到。
+const DARK_HOLD_S: float = 1.5
 
 var controller := PuppetController.new()
 var clock := MusicClock.new()
@@ -34,6 +43,8 @@ var _accumulator: float = 0.0
 var _entrance := Entrance.new()
 var _entrance_complete: Array[bool] = [false, false]
 var dialogue := Dialogue.new()
+## 暗场后章节卡的剩余停留时间（秒）。< 0 表示尚未进入收场。
+var _dark_hold: float = -1.0
 var _subtitle: Label
 var _dark: ColorRect
 var _transition_title: Label
@@ -116,6 +127,19 @@ func _process(delta: float) -> void:
 	if steps == 8:
 		_accumulator = 0.0
 	_refresh_views()
+	_advance_dark_hold(delta)
+
+
+## 收场章节卡倒计时。倒计时结束后发一次 `scene_finished`，由宿主换景进第二幕。
+## 停在暂停时 `_process` 提前返回，倒计时也随之停住（与演出其余部分同口径）。
+func _advance_dark_hold(delta: float) -> void:
+	if _dark_hold < 0.0:
+		return
+	_dark_hold -= delta
+	if _dark_hold > 0.0:
+		return
+	_dark_hold = -1.0
+	scene_finished.emit()
 
 
 func _input(event: InputEvent) -> void:
@@ -396,4 +420,6 @@ func _finish_first_scene() -> void:
 	on_stage.clear()
 	_puppet_input.set_enabled(false)
 	_lamp_input.set_enabled(false)
+	# 末句应允 → 暗场 → 清场；标题停留 DARK_HOLD_S 后换景进第二幕。
+	_dark_hold = DARK_HOLD_S
 	_refresh_views()
