@@ -1,5 +1,7 @@
 # 录放契约（REPLAY_CONTRACT）
 
+> 2026-10-13 上半身补充：PuppetState.to_dict() 新增双肘 `elbow_angle{left,right}`、`head_tilt`、`torso_lean`，旧记录缺字段按零读取。快照保留、校验与变化检测覆盖这三个字段，任一实际变化触发补采样；回放直接插值实际角度，不重新执行鼠标解算。事件白名单新增 `upper_body_pose`、`upper_body_reset`。R 复位在记录落点瞬时应用，上一个样本至复位样本之间保持原上身姿态，位置与下半身继续正常插值；回放显示不提供操控提示。本补充不代表第二关完整录放已经接入。
+
 > 2026-10-11 正式入口补充（以下优先于后文历史原型口径）：`Level1Harness.start_recording()` 在应用开场站位之后写入 t=0 帧；固定步末 `CLiveCapture.capture()` 读取状态和宿主统一事件，不调用 Runtime.tick、不自行取 Runtime 事件。正式记录的 time_ms 使用唯一 MusicClock 的真实演出时间，payload 保留 song_time_ms、real_time_ms、sequence；duration_ms 为实际终点，包括全部等待和补救，菜单暂停除外。CSnapshot.performance 保存 song_ms、on_stage、umbrella（归属、交接起点及进度）、audio（各轨播放位置/暂停、等待增益）。PuppetState 增加 walk_phase/walk_amount，回放保留步态。新增合法类别为 puppet_hook、puppet_take_back、head_swap、opera_wait_begin/end、opera_take_close、opera_score_skipped、opera_phase_changed、dialogue_line_changed；音频事件的 object_id 为 performance_audio。CResultFlow.offer_replay 只进入 choice，choose_replay 才播放或进入 result；显式 begin_replay 保留为旧测试/探针兼容 API。GameFlow 使用选择 API，不自动回放。后文 CRecorder/CStageRecorder 的固定歌曲长度及歌曲时间口径只适用于旧原型，不用于正式游戏。
 
 > 本文件是 C 侧录放行为的**唯一契约**，由 C 负责维护。

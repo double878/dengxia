@@ -6,6 +6,7 @@ const State := preload("res://scripts/a/puppet_state.gd")
 const View := preload("res://scripts/a_test/placeholder_puppet.gd")
 const Controller := preload("res://scripts/a/puppet_controller.gd")
 const Reader := preload("res://scripts/a_test/input_reader.gd")
+const TimedEvent := preload("res://scripts/c/c_timed_event.gd")
 
 
 func _initialize() -> void:
@@ -19,6 +20,8 @@ func _initialize() -> void:
 	_test_view(t)
 	_test_input(t)
 	_test_pose_events(t)
+	_test_capture_replay(t)
+	_test_hand_judgment(t, pose)
 	quit(t.report())
 
 
@@ -130,6 +133,11 @@ func _test_input(t: ATestBase) -> void:
 	reader.handle_event(_button(view.call("torso_screen_position"), true, true))
 	reader.handle_event(_motion(Vector2(35, 0)))
 	t.check(state.torso_lean > 0.1, "Alt 拖躯干应前倾")
+	state.stance = 0.3
+	state.turn_progress = 0.7
+	state.walk_phase = 1.1
+	state.walk_amount = 0.4
+	var lower_before: Dictionary = state.to_dict()
 	var reset := InputEventKey.new()
 	reset.keycode = KEY_R
 	reset.pressed = true
@@ -138,6 +146,17 @@ func _test_input(t: ATestBase) -> void:
 	t.check(state.head_tilt == 0 and state.torso_lean == 0, "R 恢复头腰")
 	t.check(not reader.is_drag_active(), "R 结束旧拖动")
 	t.check_eq(state.stage_pos, Vector2(before.stage_pos.x, before.stage_pos.y), "R 不移动脚点")
+	for key in [
+		"stance",
+		"facing",
+		"turn_progress",
+		"walk_phase",
+		"walk_amount",
+		"head_id",
+		"hook_slot",
+		"is_controlled"
+	]:
+		t.check_eq(state.to_dict()[key], lower_before[key], "R 保留 " + key)
 	reader.set_enabled(false)
 	t.check(not reader.handle_event(_button(view.hand_screen_position("right"), true)), "暂停不接受拖手")
 	reader.set_enabled(true)
@@ -156,8 +175,89 @@ func _test_pose_events(t: ATestBase) -> void:
 	controller.set_hand_target("left", Vector2(-30, -12), 200)
 	controller.reset_upper_body()
 	for source: Dictionary in controller.take_events():
-		var event := preload("res://scripts/c/c_timed_event.gd").new(
+		var event := TimedEvent.new(
 			0, StringName(source.kind), source.object_id, "", source.payload
 		)
 		t.check(event.validate().is_empty(), "记录器应接受 " + str(source.kind))
 	t.finish("上身操作事件不被白名单拒写")
+
+
+func _test_capture_replay(t: ATestBase) -> void:
+	t.begin("上身快照、插值、旧记录与瞬时复位")
+	var Snapshot := preload("res://scripts/c/c_snapshot.gd")
+	var states: Array = [State.new(0), State.new(1), State.new(2)]
+	var views: Array = []
+	for state: PuppetState in states:
+		views.append(state.to_dict())
+	var first: Variant = Snapshot.from_views(0, views)
+	states[0].elbow_angle = Vector2(0.8, 1.2)
+	states[0].head_tilt = 0.3
+	states[0].torso_lean = 0.4
+	views[0] = states[0].to_dict()
+	var posed: Variant = Snapshot.from_views(100, views)
+	t.check_eq(posed.puppets[0].get("elbow_angle", {}), views[0].elbow_angle, "快照保留双肘")
+	for key in ["elbow_angle", "head_tilt", "torso_lean"]:
+		t.check(posed.changed_fields(first).has("puppets[0]." + key), "姿态变化触发补采样 " + key)
+	var record := preload("res://scripts/c/c_performance_record.gd").new(1, 200)
+	record.append_snapshot(first)
+	record.append_snapshot(posed)
+	var reset: Variant = Snapshot.from_views(200, [State.new(0).to_dict(), views[1], views[2]])
+	record.append_snapshot(reset)
+	record.append_event(TimedEvent.new(200, &"upper_body_reset", 0))
+	var player := preload("res://scripts/c/c_replay_player.gd").new()
+	t.check(player.load(record), "正式播放器装载记录")
+	var midway: Dictionary = player.sample(50).puppets[0]
+	t.check_approx(float(midway.get("head_tilt", -1)), 0.15, 0.00001, "头部按实际角插值")
+	t.check_approx(float(midway.get("torso_lean", -1)), 0.2, 0.00001, "躯干按实际角插值")
+	t.check_approx(float(midway.get("elbow_angle", {}).get("right", -1)), 0.6, 0.00001, "肘角插值")
+	t.check_eq(
+		player.sample(199).puppets[0].get("elbow_angle", {}), views[0].elbow_angle, "R 前不能提前收肘"
+	)
+	t.check_approx(
+		float(player.sample(199).puppets[0].get("head_tilt", -1)), 0.3, 0.00001, "R 前不能提前归头"
+	)
+	t.check_approx(
+		float(player.sample(200).puppets[0].get("head_tilt", -1)), 0.0, 0.00001, "R 在原时间复位"
+	)
+	t.check(preload("res://scripts/c/c_replay_verifier.gd").new().verify(record).ok, "独立核对涵盖新姿态")
+	for view: Dictionary in views:
+		for key in ["elbow_angle", "head_tilt", "torso_lean"]:
+			view.erase(key)
+	var legacy: Variant = Snapshot.from_views(0, views)
+	t.check_eq(legacy.puppets[0].get("elbow_angle", {}), {"left": 0.0, "right": 0.0}, "旧数据缺省直臂")
+	t.check_eq(legacy.puppets[0].get("head_tilt", -1), 0.0, "旧数据缺省头归正")
+	t.finish("实际姿态完整录放，复位不提前")
+
+
+func _test_hand_judgment(t: ATestBase, pose: Variant) -> void:
+	t.begin("接伞和抬手读实际腕点")
+	var umbrella := preload("res://scripts/a/umbrella_controller.gd").new()
+	var states: Array = [State.new(0), State.new(1), State.new(2)]
+	states[0].stage_pos.x = 0.236
+	states[1].stage_pos.x = 0.13
+	states[0].hand_angle.x = PI * 0.5
+	states[1].hand_angle.y = PI * 0.5
+	umbrella.setup(StageDef.make_level1(), states)
+	t.check(umbrella.alignment().aligned, "原打伞位仍可接伞")
+	states[0].elbow_angle.x = PI * 0.5
+	t.check(not umbrella.alignment().aligned, "同肩角弯肘后手高不同不能接伞")
+	var performance := preload("res://scripts/a/performance_system.gd").new()
+	performance.setup([], null, states)
+	t.check(float(performance._metric_value("hand", 0)) > PI * 0.5 + 0.1, "抬手指标读取弯肘后的高度")
+	for id in [0, 1, 2]:
+		var state: PuppetState = states[id]
+		state.head_id = id
+		state.torso_lean = 0.4
+		state.stance = 0.3
+		state.walk_phase = 0.7
+		state.walk_amount = 0.8
+		var view := View.new()
+		view.render_mode = View.RenderMode.ENTITY
+		view.puppet_state = state
+		var wrist: Vector2 = view.hand_screen_position("left")
+		var expected: float = (
+			(view.stage_to_screen(state.stage_pos).y - wrist.y) / view.figure_height
+		)
+		t.check_approx(pose.hand_height(state, "left"), expected, 0.00001, "判定与身体美术朝向的腕高一致")
+		view.free()
+	t.finish("肘腰进入接伞与抬手判定")

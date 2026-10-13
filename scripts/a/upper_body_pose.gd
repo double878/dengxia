@@ -10,6 +10,7 @@ const HEAD_CENTRE_RATIO: float = 0.115
 const ELBOW_MAX: float = PI * 5.0 / 6.0
 const HEAD_LIMIT: float = PI / 6.0
 const LEAN_MAX: float = PI / 4.0
+const SKIN_MANIFEST := preload("res://assets/puppets/puppet_assets.json")
 
 
 static func direction(angle: float, right_side: bool) -> Vector2:
@@ -61,14 +62,38 @@ static func torso_transform(hip: Vector2, lean: float) -> Transform2D:
 	return rotation
 
 
-## 沿用旧判定的归一化高度原点；实际弯肘、前倾和站蹲进入同一几何。
+## 接地点上方腕高 / 站立身高；与显示端相同的身体宽度、朝向和步态。
 static func hand_height(state: PuppetState, hand: String) -> float:
+	return -hand_offset(state, hand).y
+
+
+static func hand_offset(state: PuppetState, hand: String) -> Vector2:
 	var right: bool = hand != "left"
 	var height: float = 1.0 - 0.32 * state.stance
 	var angle: float = state.hand_angle.y if right else state.hand_angle.x
 	var bend: float = state.elbow_angle.y if right else state.elbow_angle.x
-	var shoulder := Vector2(0.0, -height * SHOULDER_RATIO)
+	var skin: Dictionary = {}
+	for candidate: Dictionary in SKIN_MANIFEST.data.characters.values():
+		if int(candidate.get("skin_id", candidate.get("puppet_id", -1))) == state.puppet_id:
+			skin = candidate
+			break
+	var reference: float = float(skin.get("reference_facing", 1.0))
+	var width: float = float(skin.get("shoulder_half_width_ratio", 0.105)) * height
+	var bob: float = -absf(sin(state.walk_phase)) * height * 0.008 * state.walk_amount
+	var shoulder := Vector2(width if right else -width, -height * SHOULDER_RATIO + bob)
 	var wrist: Vector2 = arm_points(shoulder, angle, bend, right, height).wrist
-	var hip := Vector2(0.0, -height * HIP_RATIO)
-	wrist = torso_transform(hip, state.torso_lean) * wrist
-	return 1.0 - 0.12 * state.stance - height * SHOULDER_RATIO - wrist.y
+	var hip := Vector2(0.0, -height * HIP_RATIO + bob)
+	return torso_transform(hip, state.torso_lean * reference) * wrist
+
+
+## 保留原 Cue 的角度单位；有弯肘/前倾时以实际腕高换算等效抬手角。
+static func hand_elevation(state: PuppetState, hand: String) -> float:
+	var right: bool = hand != "left"
+	var angle: float = state.hand_angle.y if right else state.hand_angle.x
+	var bend: float = state.elbow_angle.y if right else state.elbow_angle.x
+	if is_zero_approx(bend) and is_zero_approx(state.torso_lean):
+		return angle
+	var height: float = 1.0 - 0.32 * state.stance
+	var bob: float = -absf(sin(state.walk_phase)) * height * 0.008 * state.walk_amount
+	var drop: float = hand_offset(state, hand).y + height * SHOULDER_RATIO - bob
+	return acos(clampf(drop / (height * (UPPER_ARM_RATIO + LOWER_ARM_RATIO)), -1.0, 1.0))

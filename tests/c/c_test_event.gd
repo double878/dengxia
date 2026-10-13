@@ -42,7 +42,7 @@ func _mk(
 
 
 func _test_01_known_kinds_count(t: Variant) -> void:
-	t.begin("KNOWN_KINDS：正式宿主共 34 个事件 kind")
+	t.begin("KNOWN_KINDS：正式宿主共 36 个事件 kind")
 	# 权威口径（实测自 A 端代码，非推算）：
 	#   puppet_controller 5：drag_begin/drag_end/pose_stance/facing_turn/hand_motion
 	#   performance_system 4：cue_hint/cue_fire/cue_hit/cue_miss
@@ -58,7 +58,9 @@ func _test_01_known_kinds_count(t: Variant) -> void:
 	# stage_director.gd:13 写明冻结区间「供 B 提示、C 记录回放节奏」，
 	# umbrella_controller.gd:38-39 定义借伞/还伞且 A-to-B 交接文档 §5 已列。
 	# 正式宿主另有 3 个道具/头架类别、5 个剧情类别和 1 个对白类别。
-	t.check_eq(CTimedEventScript.KNOWN_KINDS.size(), 34, "kind 全集应为 34 个")
+	t.check_eq(CTimedEventScript.KNOWN_KINDS.size(), 36, "kind 全集应为 36 个")
+	t.check(CTimedEventScript.KNOWN_KINDS.has(&"upper_body_pose"), "接受上半身姿态事件")
+	t.check(CTimedEventScript.KNOWN_KINDS.has(&"upper_body_reset"), "接受上半身复位事件")
 	t.finish("kind 数量对齐 A 端")
 
 
