@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-14 第二关整关录放与收场：`scripts/c/c_act2_capture.gd` 在两场宿主固定步末只读状态与事件，复用 CPerformanceRecord/CSnapshot/CReplayPlayer。第二关记录 stage_id=2，performance.scene_id=2/22；换场时累计上一场真实终点，追加 1 ms 区分两个离散首末状态，后续仅使用各宿主唯一 MusicClock 的真实时间。scene_real_ms 保留场内灯影时标；歌曲位置、字幕、在场名单、入口遮挡、暗场、坐姿、倒地角、杯归属、蛇六节/翻面/复位及各音源状态原样保存。跨场不预插值，复位在落点应用，音乐冻结与前向跳段不播放被跳过内容。第二场惊倒结束后收势 2200 ms，完成信号只发送一次；GameFlow 延迟释放演出，复用 CResultFlow 的 choice/replaying/result，收场点击防透传/重复进入第三关。正式第三关入口为 scenes/act3/opening.tscn，当前只有开场页。详见 [录放契约](docs/REPLAY_CONTRACT.md) 和 [交付验证](docs/act2-replay-delivery.md)。
+
 > 2026-10-14 第二关声音：`act2_hall_audio.gd` 校验 `assets/audio/act2-hall/score.json` 的七句普通对白、四组对唱、角色身份、动作保护静音及 48k 双声道 PCM16 主轨，并绑定宿主唯一 `MusicClock`。`act2_hall_actions.gd` 读取绝对波形时标，实际小青退场、实际饮后弯腰才通过 `advance_to_ms()` 前向进入下一音频段，保留真实时间；惊倒只读真实时间，主轨继续冻结。`act2_music_cues.gd` 独立管理用户视频出场循环与一次落地重音，遵循同一宿主暂停；不增加判定时钟。主轨 69,517 ms，连续对唱约 41 秒，三处动作等待前留完整声音、后留至少 700 ms 静音。所有 WAV 导入关闭裁剪、归一化、循环与有损压缩。快速动作测试在测试助手中解除声卡时钟，Windows 实时回归保留真实主轨与 WASAPI，两个结论范围分别记录。详见 [声音交付](docs/audio/2026-10-14-act2-wine-dialogue-integration.md)。
 
 > 2026-10-13 第二幕剧情顺序修订：动作调度器在小青应答结束后才开放离场，正式离场后进入独立 `duet` 阶段；当前四句临时对唱字幕各 4.5 秒仅用于排练，正式唱词/音频时标待制作。两人不在场或菜单暂停时不推进对唱，对唱完整结束前不开放酒杯动作。宿主增加实际白素贞 `torso_lean` 输入，饮后进入 `bend` 等待；达到 20°才开启不适普通对白，旧弯腰须扶正到 10°以下再弯，另一演员与超时不能替代。弯腰作为独立补救目标，沿用原 8 秒准备与 8 秒窗口。后续取药对白仍是普通对白，不制作新音源。最新验证见 [剧情修订记录](docs/act2-plot-order-delivery.md)。

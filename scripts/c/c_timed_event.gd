@@ -207,6 +207,20 @@ func _validate_object_id() -> String:
 		if (
 			s != LAMP_OBJECT_ID
 			and not (
+				s == "white_snake"
+				and (
+					kind
+					in [
+						KIND_CUE_MISS,
+						KIND_REMEDY_OPEN,
+						KIND_REMEDY_SUCCESS,
+						KIND_REMEDY_TIMEOUT,
+						KIND_REMEDY_SHOW,
+						KIND_REMEDY_HIDE
+					]
+				)
+			)
+			and not (
 				s == "performance_audio"
 				and (
 					kind

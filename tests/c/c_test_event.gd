@@ -81,6 +81,8 @@ func _test_formal_audio_and_prop_kinds(t: Variant) -> void:
 	t.check(_mk(100, &"cue_miss", -1).validate().is_empty(), "无人受控时仍保留动作未完成事件")
 	t.check(_mk(100, &"remedy_open", -1).validate().is_empty(), "无人受控时仍保留补救事件")
 	t.check(not _mk(100, &"head_swap", -1).validate().is_empty(), "具体影人的操作不允许无对象")
+	t.check(_mk(100, &"remedy_open", "white_snake").validate().is_empty(), "白蛇补救使用独立道具命名空间")
+	t.check(not _mk(100, &"head_swap", "white_snake").validate().is_empty(), "白蛇不能伪装成人形换头")
 	t.finish("正式事件白名单及命名空间完整")
 
 

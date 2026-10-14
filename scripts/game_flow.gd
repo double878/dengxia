@@ -4,6 +4,8 @@ extends Node
 const PERFORMANCE_SCENE := preload("res://scenes/a_test/level1_a.tscn")
 const ACT2_SCENE := preload("res://scenes/act2/opening.tscn")
 const HALL_SCENE := preload("res://scenes/act2/hall.tscn")
+const ACT3_SCENE := preload("res://scenes/act3/opening.tscn")
+const Act2Capture := preload("res://scripts/c/c_act2_capture.gd")
 const ReplayView := preload("res://scripts/b/performance_replay.gd")
 ## 关卡/幕编号。第二关分两场，各占一个编号：第一场「法海劝酒」= 2，
 ## 第二场「端阳饮酒」= 22（与 `CSceneryDef.LEVEL2_ACT2_STAGE_ID` 同值）。
@@ -16,6 +18,8 @@ var _flow: CResultFlow = null
 var _stage_id: int = 1
 var _title: String = ""
 var _advancing: bool = false
+var _act2_capture: RefCounted
+var _result_ready: bool = false
 
 
 func _ready() -> void:
@@ -23,12 +27,22 @@ func _ready() -> void:
 
 
 func _start_performance() -> void:
+	if _stage_id == 3:
+		_level = ACT3_SCENE.instantiate()
+		add_child(_level)
+		return
 	if _stage_id == ACT2_HALL_STAGE_ID:
+		if _act2_capture == null:
+			_act2_capture = Act2Capture.new()
 		_level = HALL_SCENE.instantiate()
+		_level.capture = _act2_capture
+		_level.scene_finished.connect(_on_second_scene_finished)
 		add_child(_level)
 		return
 	if _stage_id == ACT2_STAGE_ID:
+		_act2_capture = Act2Capture.new()
 		_level = ACT2_SCENE.instantiate()
+		_level.capture = _act2_capture
 		# 第一幕末句应允 → 暗场 → 清场，走完章节卡后换景进第二幕（不结算、不回放）。
 		_level.scene_finished.connect(_on_first_scene_finished)
 		add_child(_level)
@@ -67,11 +81,13 @@ func _performance_finished(record: CPerformanceRecord, stage_id: int, title: Str
 		return
 	_level.queue_free()
 	_level = null
+	_act2_capture = null
 	_show_page(true)
 
 
 func _show_page(choice: bool) -> void:
 	_clear_page()
+	_result_ready = false
 	_page = Control.new()
 	_page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_page)
@@ -97,8 +113,9 @@ func _show_page(choice: bool) -> void:
 	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detail.add_theme_font_size_override("font_size", 32)
 	_page.add_child(detail)
-	if not choice and _stage_id == 1:
-		detail.text = "点击任意位置，进入第二关《端阳惊变》"
+	if not choice and _stage_id in [1, 2]:
+		detail.text = "点击任意位置，进入第二关《端阳惊变》" if _stage_id == 1 else "点击任意位置，进入第三关《盗仙草》"
+		_arm_result_click.call_deferred()
 		return
 	_add_button(
 		"观看幕前回放",
@@ -186,10 +203,21 @@ func _clear_page() -> void:
 		_page.hide()
 		_page.queue_free()
 		_page = null
+	_result_ready = false
+
+
+func _arm_result_click() -> void:
+	_result_ready = _flow != null and _flow.get_flow_state() == &"result" and _page != null
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _advancing or _stage_id != 1 or _flow == null or _flow.get_flow_state() != &"result":
+	if (
+		_advancing
+		or not _result_ready
+		or _stage_id not in [1, 2]
+		or _flow == null
+		or _flow.get_flow_state() != &"result"
+	):
 		return
 	if not event is InputEventMouseButton or not event.pressed:
 		return
@@ -197,7 +225,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	get_viewport().set_input_as_handled()
 	_advancing = true
-	_advance_to_act2.call_deferred()
+	if _stage_id == 1:
+		_advance_to_act2.call_deferred()
+	else:
+		_advance_to_act3.call_deferred()
 
 
 func _advance_to_act2() -> void:
@@ -212,6 +243,27 @@ func _advance_to_act2() -> void:
 	_stage_id = 2
 	_start_performance()
 	_advancing = false
+
+
+func _advance_to_act3() -> void:
+	_clear_page()
+	if _flow != null:
+		_flow.leave_stage()
+		_flow = null
+	_act2_capture = null
+	_stage_id = 3
+	_start_performance()
+	_advancing = false
+
+
+func _on_second_scene_finished() -> void:
+	_finish_act2.call_deferred()
+
+
+func _finish_act2() -> void:
+	if _stage_id != ACT2_HALL_STAGE_ID or _act2_capture == null or not _act2_capture.finished:
+		return
+	_performance_finished(_act2_capture.record, 2, "端阳惊变")
 
 
 ## 信号由**正在运行的场景自身**在 `_process` 里发出，故推迟到本帧末再换景，

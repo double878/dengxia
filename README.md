@@ -1,6 +1,6 @@
 # 灯下
 
-Godot 4.7.2 Standard 的 Windows 皮影戏 Demo。正式入口为 `scenes/game_flow.tscn`，包含第一幕幕后演出、观众选择、幕前回放、点击收场页进入第二关第一场「法海劝酒」，以及第一场暗场后自动换景进入第二场「端阳饮酒」：三人对坐服侍、递杯饮酒、取药离返、压灯换白蛇和许仙惊倒。
+Godot 4.7.2 Standard 的 Windows 皮影戏 Demo。正式入口为 `scenes/game_flow.tscn`，包含第一幕幕后演出、观众选择、幕前回放、点击收场页进入第二关第一场「法海劝酒」，以及第一场暗场后自动换景进入第二场「端阳饮酒」：三人对坐服侍、递杯饮酒、取药离返、压灯换白蛇和许仙惊倒。第二场收势后也选择观看或不看第二关整关真实回放，回放可暂停或跳过；收场页点击任意位置进入第三关《盗仙草》开场。第三关正式操演尚未制作。详见 [第二关回放交付](docs/act2-replay-delivery.md)。
 
 开始修改前阅读 [AGENTS.md](AGENTS.md)、[PRD.md](PRD.md) 与 [TECH_DESIGN.md](TECH_DESIGN.md)。当前录放行为以 [录放契约顶部的正式入口补充](docs/REPLAY_CONTRACT.md) 和当前代码为准；`docs/handoff/`、早期计划中的参数属于历史交接记录。
 
@@ -74,6 +74,7 @@ py -3.13 -m venv .venv
 | `tests/c/run_act2_remedy.gd` | 第二幕 8 秒补救、成功/超时、暂停、误退恢复与独立目标；音频检查推荐 Windows 图形环境 |
 | `tests/c/run_act2_hall_audio.gd` | 七句对白、连续唱腔、真实动作许可、主轨冻结与前向跳段 |
 | `tests/c/run_act2_music_cues.gd` | 法海出场音乐、开口停乐与真实落地一次重音 |
+| `tests/c/run_act2_replay.gd` | 正式两场整关录放、观看/不看/暂停/跳过/自然结束、收场点击和第三关入口；Windows 模式另检查实际混音与暂停像素，追加 `-- realtime` 跑完整实时 1:1 回放，追加 `-- live` 连实际音轨录制也实时执行 |
 | `tests/b/run_act2_voice_graphics.gd` | Windows 实时主轨、暂停/缺场静音、完整演唱、饮后对白与倒地混音（不加 `--headless`） |
 | `tests/b/run_act2_actions_graphics.gd` | Windows 图形输入完整走第二幕，Q/E 压灯显形、蛇头/躯干拖动和惊倒截图（不加 `--headless`） |
 | `tests/c/run_game_replay.gd` | 实际记录与选择/重看/跳过/再演 |

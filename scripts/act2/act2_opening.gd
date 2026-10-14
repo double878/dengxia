@@ -1,5 +1,5 @@
 extends Node2D
-## 第二关第一幕操演与动作许可对白；整关录放由后续切片接入。
+## 第二关第一场操演与动作许可对白；固定步末读取状态供整关录放。
 
 ## 第一幕收场（末句应允 → 暗场 → 「端阳」标题停留）走完，可以换景进第二幕了。
 ## 由宿主 `game_flow.gd` 接住：换到 `scenes/act2/hall.tscn`（编号 22 的厅堂布景）。
@@ -50,6 +50,7 @@ var _dark_hold: float = -1.0
 var _subtitle: Label
 var _dark: ColorRect
 var _transition_title: Label
+var capture: RefCounted
 
 
 func _ready() -> void:
@@ -110,6 +111,8 @@ func _ready() -> void:
 	music_cues.setup()
 	_refresh_views()
 	_puppet_input.set_views(_views)
+	if capture != null:
+		capture.begin_scene(self, 2)
 
 
 func _process(delta: float) -> void:
@@ -125,11 +128,13 @@ func _process(delta: float) -> void:
 		_lamp_input.poll_keys()
 		controller.tick(FIXED_DELTA)
 		lamp_controller.update(FIXED_DELTA)
-		controller.take_events()
-		lamp_controller.take_events()
+		var events: Array = controller.take_events()
+		events.append_array(lamp_controller.take_events())
 		_sync_entrances()
 		dialogue.update(on_stage, _entrance_complete[0])
 		music_cues.update_entrance(dialogue.phase, on_stage.has(0))
+		if capture != null:
+			capture.capture(self, events)
 	if steps == 8:
 		_accumulator = 0.0
 	_refresh_views()

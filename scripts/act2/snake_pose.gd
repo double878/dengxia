@@ -15,6 +15,51 @@ var facing: float = -1.0
 var flip_progress: float = 1.0
 var _flip_from: float = -1.0
 var _flip_to: float = -1.0
+var _reset_count: int = 0
+
+
+func recorded_view() -> Dictionary:
+	var vertices: Array = []
+	for point: Vector2 in points:
+		vertices.append({"x": point.x, "y": point.y})
+	return {
+		"position": {"x": position.x, "y": position.y},
+		"points": vertices,
+		"facing": facing,
+		"flip_progress": flip_progress,
+		"flip_from": _flip_from,
+		"flip_to": _flip_to,
+		"reset_count": _reset_count
+	}
+
+
+func apply_recorded_view(view: Dictionary) -> bool:
+	if view.is_empty():
+		return false
+	var vertices: Array = view.get("points", [])
+	if vertices.size() != REST.size():
+		push_error("白蛇回放分节数不符")
+		return false
+	var next := PackedVector2Array()
+	for point: Dictionary in vertices:
+		var value := Vector2(float(point.get("x", NAN)), float(point.get("y", NAN)))
+		if not value.is_finite():
+			push_error("白蛇回放分节坐标非法")
+			return false
+		next.append(value)
+	var at: Dictionary = view.get("position", {})
+	var origin := Vector2(float(at.get("x", NAN)), float(at.get("y", NAN)))
+	if not origin.is_finite():
+		push_error("白蛇回放位置非法")
+		return false
+	position = origin
+	points = next
+	facing = float(view.facing)
+	flip_progress = float(view.flip_progress)
+	_flip_from = float(view.flip_from)
+	_flip_to = float(view.flip_to)
+	_reset_count = int(view.get("reset_count", 0))
+	return true
 
 
 func setup(at: Vector2) -> void:
@@ -26,6 +71,7 @@ func setup(at: Vector2) -> void:
 
 
 func reset() -> void:
+	_reset_count += 1
 	points = PackedVector2Array(REST)
 	flip_progress = 1.0
 	_flip_from = facing

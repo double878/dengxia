@@ -1,6 +1,8 @@
 extends Node2D
 ## 第二关第二幕正式幕后宿主，复用现有控制、时钟、灯与厅堂。
 
+signal scene_finished
+
 const PuppetView := preload("res://scripts/a_test/placeholder_puppet.gd")
 const PuppetInput := preload("res://scripts/a_test/input_reader.gd")
 const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
@@ -17,6 +19,7 @@ const CLOTH := Rect2(66, 92, 1788, 588)
 const HALL_STAGE_ID: int = 22
 const FIGURE_HEIGHT: float = 340.0
 const FIXED_DELTA: float = 1.0 / 60.0
+const END_HOLD_MS: int = 2200
 const HAND_ANCHOR := Vector2(960, 856)
 const HAND_AREA := Rect2(768, 755, 384, 213)
 const GROUND_Y: float = CSceneryDef.LEVEL2_ACT2_GROUND_Y
@@ -59,6 +62,10 @@ var _remedy_banner: Label
 var _remedy_audio: AudioStreamPlayer
 var music_cues := MusicCues.new()
 var audio := HallAudio.new()
+var capture: RefCounted
+var _end_since_ms: int = -1
+var _finished_sent: bool = false
+var _pending_remedy_events: Array = []
 
 
 func _ready() -> void:
@@ -149,6 +156,8 @@ func _ready() -> void:
 	add_child(_foreground)
 	_build_hud()
 	_refresh_views()
+	if capture != null:
+		capture.begin_scene(self, HALL_STAGE_ID)
 
 
 func _process(delta: float) -> void:
@@ -165,15 +174,33 @@ func _process(delta: float) -> void:
 		_lamp_input.poll_keys()
 		controller.tick(FIXED_DELTA)
 		lamp_controller.update(FIXED_DELTA)
-		controller.take_events()
-		lamp_controller.take_events()
+		var events: Array = controller.take_events()
+		events.append_array(lamp_controller.take_events())
 		_update_seats()
 		_update_actions()
 		music_cues.update_fall(actions.collapse_progress)
 		_update_remedy()
+		events.append_array(_pending_remedy_events)
+		_pending_remedy_events = []
+		if capture != null:
+			_refresh_views()
+			capture.capture(self, events)
+		_check_finished()
 	if steps == 8:
 		_accumulator = 0.0
 	_refresh_views()
+
+
+func _check_finished() -> void:
+	if _finished_sent or actions.phase != "finished":
+		return
+	if _end_since_ms < 0:
+		_end_since_ms = clock.get_real_time_ms()
+	if clock.get_real_time_ms() - _end_since_ms < END_HOLD_MS:
+		return
+	_finished_sent = true
+	if capture == null or capture.finish():
+		scene_finished.emit()
 
 
 func _update_seats() -> void:
@@ -518,12 +545,21 @@ func _draw_operator_hand() -> void:
 
 func _update_remedy() -> void:
 	remedy.update(actions, on_stage, lamp_controller.lamp.exposure)
-	lamp_controller.update(0.0, remedy.take_events())
+	var events: Array = remedy.take_events()
+	# 第二关漏做的剧情动作没有 cue_fire，明确记录为 missed_outright。
+	for event: Dictionary in events:
+		if str(event.kind) == "cue_miss":
+			event.payload["reason"] = "missed_outright"
+		if int(event.get("object_id", 0)) == 3:
+			event["object_id"] = "white_snake"
+	lamp_controller.update(0.0, events)
 	if remedy.active():
 		if not _remedy_audio.playing:
 			_remedy_audio.play()
 	elif _remedy_audio.playing:
 		_remedy_audio.stop()
+	# 输入帧也可能完成补救；把事件留在宿主队列供下一固定步采集。
+	_pending_remedy_events.append_array(events)
 
 
 func _remedy_target() -> Dictionary:

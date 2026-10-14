@@ -330,6 +330,8 @@ func _blend_at(now_ms: int) -> Dictionary:
 ## 头和挂钩是道具归属，在两帧之间取中间值等于造出从未存在过的第三个头。
 ## 它们的正确表现是在原时间点跳变，由事件与快照的跳变呈现。
 func _lerp_puppets(a: Variant, b: Variant, ratio: float) -> Array:
+	if a.performance.get("scene_id", 0) != b.performance.get("scene_id", 0):
+		return _copy_puppets(a if ratio < 1.0 else b)
 	var out: Array = []
 	var count: int = mini(a.puppets.size(), b.puppets.size())
 	for i in count:
@@ -402,9 +404,32 @@ func _lerp_puppets(a: Variant, b: Variant, ratio: float) -> Array:
 
 ## 歌曲/音源位置连续插值，跳段和归属按记录落点离散切换。
 func _lerp_performance(a: Dictionary, b: Dictionary, ratio: float, span: int) -> Dictionary:
+	if ratio <= 0.0:
+		return a.duplicate(true)
 	if ratio >= 1.0:
 		return b.duplicate(true)
+	if a.get("scene_id", 0) != b.get("scene_id", 0):
+		return a.duplicate(true)
 	var out: Dictionary = a.duplicate(true)
+	if a.has("scene_real_ms"):
+		out.scene_real_ms = int(round(lerpf(float(a.scene_real_ms), float(b.scene_real_ms), ratio)))
+	for key: String in ["fall_angle", "fade"]:
+		if a.has(key) and b.has(key):
+			out[key] = lerpf(float(a[key]), float(b[key]), ratio)
+	if a.has("snake") and b.has("snake"):
+		var sa: Dictionary = a.snake
+		var sb: Dictionary = b.snake
+		for key: String in ["x", "y"]:
+			out.snake.position[key] = lerpf(float(sa.position[key]), float(sb.position[key]), ratio)
+		if sa.get("reset_count", 0) == sb.get("reset_count", 0):
+			for i in range(sa.points.size()):
+				for key: String in ["x", "y"]:
+					out.snake.points[i][key] = lerpf(
+						float(sa.points[i][key]), float(sb.points[i][key]), ratio
+					)
+		# 翻面重新起步时，在记录落点切换，不能提前压窄。
+		if sa.flip_from == sb.flip_from and sa.flip_to == sb.flip_to:
+			out.snake.flip_progress = lerpf(float(sa.flip_progress), float(sb.flip_progress), ratio)
 	# 前向跳段只在记录落点发生，不能把被跳过的对白插值播出来。
 	var song_delta: int = int(b.get("song_ms", 0)) - int(a.get("song_ms", 0))
 	if song_delta >= 0 and song_delta <= span * 2 + 100:
@@ -419,10 +444,15 @@ func _lerp_performance(a: Dictionary, b: Dictionary, ratio: float, span: int) ->
 		)
 	var aa: Dictionary = a.get("audio", {})
 	var ab: Dictionary = b.get("audio", {})
-	for key: String in ["main", "wait", "slow"]:
+	for key: String in ["main", "wait", "slow", "entry", "hit"]:
 		if aa.has(key) and ab.has(key):
 			var delta_ms: float = float(ab[key].position_ms) - float(aa[key].position_ms)
-			if delta_ms >= 0 and delta_ms <= span * 2 + 100:
+			if (
+				aa[key].get("playing") == ab[key].get("playing")
+				and aa[key].get("paused") == ab[key].get("paused")
+				and delta_ms >= 0
+				and delta_ms <= span * 2 + 100
+			):
 				out.audio[key].position_ms = lerpf(
 					float(aa[key].position_ms), float(ab[key].position_ms), ratio
 				)
