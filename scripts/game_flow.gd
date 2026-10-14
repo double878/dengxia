@@ -4,6 +4,7 @@ extends Node
 const PERFORMANCE_SCENE := preload("res://scenes/a_test/level1_a.tscn")
 const ACT2_SCENE := preload("res://scenes/act2/opening.tscn")
 const HALL_SCENE := preload("res://scenes/act2/hall.tscn")
+const ACT3_SCENE := preload("res://scenes/act3/opening.tscn")
 const ReplayView := preload("res://scripts/b/performance_replay.gd")
 ## 关卡/幕编号。第二关分两场，各占一个编号：第一场「法海劝酒」= 2，
 ## 第二场「端阳饮酒」= 22（与 `CSceneryDef.LEVEL2_ACT2_STAGE_ID` 同值）。
@@ -23,6 +24,10 @@ func _ready() -> void:
 
 
 func _start_performance() -> void:
+	if _stage_id == 3:
+		_level = ACT3_SCENE.instantiate()
+		add_child(_level)
+		return
 	if _stage_id == ACT2_HALL_STAGE_ID:
 		_level = HALL_SCENE.instantiate()
 		add_child(_level)
