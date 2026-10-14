@@ -103,6 +103,8 @@ const KNOWN_KINDS: Array = [
 	&"opera_score_skipped",
 	&"opera_phase_changed",
 	&"dialogue_line_changed",
+	&"upper_body_pose",
+	&"upper_body_reset",
 ]
 
 ## 灯事件的 object_id 命名空间。A 端 lamp_controller.gd:23 的常量值，
@@ -204,6 +206,20 @@ func _validate_object_id() -> String:
 		var s: String = String(object_id)
 		if (
 			s != LAMP_OBJECT_ID
+			and not (
+				s == "white_snake"
+				and (
+					kind
+					in [
+						KIND_CUE_MISS,
+						KIND_REMEDY_OPEN,
+						KIND_REMEDY_SUCCESS,
+						KIND_REMEDY_TIMEOUT,
+						KIND_REMEDY_SHOW,
+						KIND_REMEDY_HIDE
+					]
+				)
+			)
 			and not (
 				s == "performance_audio"
 				and (

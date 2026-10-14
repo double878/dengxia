@@ -10,6 +10,7 @@ class_name PlaceholderPuppet
 
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
 const PuppetControllerScript := preload("res://scripts/a/puppet_controller.gd")
+const UpperPose := preload("res://scripts/a/upper_body_pose.gd")
 const SKIN_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/puppets/baisuzhen.png"),
 	preload("res://assets/puppets/xuxian.png"),
@@ -43,6 +44,15 @@ var _view_material: ShaderMaterial = null
 var _last_draw_state: Array = []
 ## 仅第二关首次出场遮挡使用；空值不影响其余场景或第一关回放。
 var entrance_mask: Texture2D = null
+var show_upper_controls: bool = false
+var upper_hover_part: String = ""
+var upper_drag_part: String = ""
+var _hit_mask_texture: Texture2D = null
+var _hit_mask_image: Image = null
+## 第二幕坐姿/惊倒，默认关闭；宿主向实体/投影视图提供同一参数。
+var seated: bool = false
+var seat_y: float = 0.0
+var fall_angle: float = 0.0
 
 var puppet_state: PuppetState = null
 var lamp_state: LampState = null
@@ -106,6 +116,9 @@ func _process(_delta: float) -> void:
 		puppet_state.facing,
 		puppet_state.turn_progress,
 		puppet_state.hand_angle,
+		puppet_state.elbow_angle,
+		puppet_state.head_tilt,
+		puppet_state.torso_lean,
 		puppet_state.head_id,
 		puppet_state.hook_slot,
 		puppet_state.is_controlled,
@@ -120,6 +133,9 @@ func _process(_delta: float) -> void:
 		puppet_state.walk_phase,
 		puppet_state.walk_amount
 	]
+	draw_state.append_array(
+		[show_upper_controls, upper_hover_part, upper_drag_part, seated, seat_y, fall_angle]
+	)
 	if render_mode != RenderMode.ENTITY and lamp_state != null:
 		draw_state.append(lamp_state.distance)
 	if render_mode == RenderMode.LEGACY and lamp_state != null:
@@ -249,18 +265,105 @@ func hand_screen_position(hand: String) -> Vector2:
 		ground.y - height * SHOULDER_RATIO + walk_body_offset(height)
 	)
 	var angle: float = puppet_state.hand_angle.y if right_side else puppet_state.hand_angle.x
-	return _skin_figure_transform(ground) * arm_wrist(shoulder, angle, right_side, height)
+	var bend: float = puppet_state.elbow_angle.y if right_side else puppet_state.elbow_angle.x
+	var wrist: Vector2 = UpperPose.arm_points(shoulder, angle, bend, right_side, height).wrist
+	return _skin_figure_transform(ground) * upper_transform() * wrist
+
+
+func upper_transform() -> Transform2D:
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var height: float = figure_px_height()
+	var hip := ground + Vector2(0, -height * HIP_RATIO + walk_body_offset(height))
+	return UpperPose.torso_transform(hip, puppet_state.torso_lean * pose_reference_facing())
+
+
+func pose_reference_facing() -> float:
+	return float(_skins[str(_body_skin_id())]["reference_facing"]) if _has_body_skin() else 1.0
+
+
+func torso_screen_position() -> Vector2:
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var height: float = figure_px_height()
+	var centre := (
+		ground + Vector2(0, -height * (SHOULDER_RATIO + HIP_RATIO) * 0.5 + walk_body_offset(height))
+	)
+	return _skin_figure_transform(ground) * upper_transform() * centre
+
+
+func hand_target_offset(point: Vector2, hand: String) -> Vector2:
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var matrix: Transform2D = _skin_figure_transform(ground) * upper_transform()
+	var height: float = figure_px_height()
+	var right: bool = hand == "right"
+	var shoulder := (
+		ground
+		+ Vector2(
+			shoulder_half_width_px(height, 1.0) * (1.0 if right else -1.0),
+			-height * SHOULDER_RATIO + walk_body_offset(height)
+		)
+	)
+	return matrix.affine_inverse() * point - shoulder
+
+
+func hit_upper_body(point: Vector2, alt: bool) -> String:
+	if puppet_state == null or not puppet_state.is_controlled or not visible:
+		return ""
+	if entrance_mask != _hit_mask_texture:
+		_hit_mask_texture = entrance_mask
+		_hit_mask_image = entrance_mask.get_image() if entrance_mask != null else null
+	if (
+		_hit_mask_image != null
+		and Rect2(Vector2.ZERO, Vector2(_hit_mask_image.get_size())).has_point(point)
+	):
+		if _hit_mask_image.get_pixel(int(point.x), int(point.y)).r > 0.5:
+			return ""
+	var height: float = figure_px_height()
+	if alt and point.distance_to(torso_screen_position()) <= height * 0.23:
+		return "torso"
+	var left_distance: float = point.distance_to(hand_screen_position("left"))
+	var right_distance: float = point.distance_to(hand_screen_position("right"))
+	if minf(left_distance, right_distance) <= maxf(height * 0.10, 16.0):
+		return "left" if left_distance < right_distance else "right"
+	if point.distance_to(head_screen_position()) <= maxf(height * 0.16, 20.0):
+		return "head"
+	return ""
+
+
+func head_screen_position() -> Vector2:
+	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
+	var height: float = figure_px_height()
+	var shoulder := ground + Vector2(0, -height * SHOULDER_RATIO + walk_body_offset(height))
+	var neck: Vector2 = shoulder + Vector2(0, -height * 0.04)
+	var centre: Vector2 = shoulder + Vector2(0, -height * HEAD_CENTRE_RATIO)
+	return (
+		_skin_figure_transform(ground)
+		* upper_transform()
+		* (neck + (centre - neck).rotated(puppet_state.head_tilt))
+	)
 
 
 ## 固定枢轴上完成整个人的水平翻面；宽度压缩也作用于肩、手和伞的挂点。
 ## 参考朝向定义分件原稿的那一面，三具影人使用同一显示变换。
 func _skin_figure_transform(ground: Vector2) -> Transform2D:
-	if not _has_body_skin():
-		return Transform2D.IDENTITY
-	var skin: Dictionary = _skins[str(_body_skin_id())]
-	var width: float = flip_width_ratio() * puppet_state.facing / float(skin["reference_facing"])
-	return Transform2D(
+	var width: float = 1.0
+	if _has_body_skin():
+		var skin: Dictionary = _skins[str(_body_skin_id())]
+		width = flip_width_ratio() * puppet_state.facing / float(skin["reference_facing"])
+	var mirror := Transform2D(
 		Vector2(width, 0.0), Vector2(0.0, 1.0), Vector2(ground.x * (1.0 - width), 0.0)
+	)
+	var offset := Vector2.ZERO
+	if seated:
+		offset.y = seat_y - (ground.y - figure_px_height() * HIP_RATIO)
+	var fall := Transform2D(fall_angle, Vector2.ZERO)
+	fall.origin = ground - fall * ground + fall * offset
+	return fall * mirror
+
+
+func mouth_screen_position() -> Vector2:
+	return (
+		head_screen_position()
+		+ Vector2(puppet_state.facing * figure_px_height() * 0.04, figure_px_height() * 0.035)
 	)
 
 
@@ -276,11 +379,7 @@ func head_top_screen_position() -> Vector2:
 	if puppet_state == null:
 		return Vector2.ZERO
 	var height: float = figure_px_height()
-	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
-	var centre := Vector2(
-		ground.x,
-		ground.y - height * (SHOULDER_RATIO + HEAD_CENTRE_RATIO) + walk_body_offset(height)
-	)
+	var centre: Vector2 = head_screen_position()
 	return Vector2(centre.x, centre.y - head_radius_px(height))
 
 
@@ -307,6 +406,32 @@ func _draw() -> void:
 		_draw_sticks(ground, height, alpha)
 	if render_mode != RenderMode.PROJECTION and (show_chest_tag or puppet_state.is_controlled):
 		_draw_chest_tag()
+	if show_upper_controls and render_mode != RenderMode.PROJECTION and puppet_state.is_controlled:
+		_draw_upper_hint()
+
+
+func _draw_upper_hint() -> void:
+	var part: String = upper_drag_part if not upper_drag_part.is_empty() else upper_hover_part
+	if part.is_empty():
+		return
+	var point: Vector2 = torso_screen_position() if part == "torso" else head_screen_position()
+	if part in ["left", "right"]:
+		point = hand_screen_position(part)
+	var radius: float = 10.0 if upper_drag_part.is_empty() else 13.0
+	draw_circle(point, radius + 3, Color(0.10, 0.08, 0.05, 0.75))
+	draw_arc(point, radius, 0, TAU, 32, Color("#eac973"), 2.0, true)
+	var label: String = (
+		"Alt · 前倾" if part == "torso" else ("拖动 · 俯仰" if part == "head" else "拖动 · 手签")
+	)
+	draw_string(
+		ThemeDB.fallback_font,
+		point + Vector2(18, -8),
+		label,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		16,
+		Color("#f7e9c7")
+	)
 
 
 ## 接地点的一小片暗影：让人看出影子是「落在幕布上」的，尺寸随灯距同步变化。
@@ -375,6 +500,9 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		var foot := Vector2(
 			ground.x + side * half_w * 0.95 + stride * height * 0.065, ground.y - lift
 		)
+		if seated:
+			knee = hip + Vector2(pose_reference_facing() * height * 0.22, side * height * 0.012)
+			foot = knee + Vector2(pose_reference_facing() * height * 0.025, height * 0.22)
 		if _has_body_skin():
 			var leg: String = "left" if side < 0.0 else "right"
 			_draw_skin_segment(leg + "_thigh", hip, knee, flip_width, alpha)
@@ -386,6 +514,7 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 			draw_circle(knee, height * 0.021, joint)
 
 	# 躯干
+	_skin_canvas_transform = _skin_figure_transform(ground) * upper_transform()
 	_draw_skin_accessories(ground, height, alpha)
 	var torso := PackedVector2Array(
 		[
@@ -422,7 +551,10 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	)
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
-	var head_center := Vector2(shoulder.x, shoulder.y - height * HEAD_CENTRE_RATIO)
+	var neck: Vector2 = shoulder + Vector2(0, -height * 0.04)
+	var head_center: Vector2 = (
+		neck + Vector2(0, -height * (HEAD_CENTRE_RATIO - 0.04)).rotated(state.head_tilt)
+	)
 	var head_r: float = height * HEAD_RADIUS_RATIO if _has_body_skin() else head_radius_px(height)
 	draw_set_transform_matrix(_skin_canvas_transform)
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
@@ -442,8 +574,10 @@ func _draw_arm(
 	joint: Color,
 	flip_width: float
 ) -> Vector2:
-	var elbow: Vector2 = arm_elbow(shoulder, angle, right_side, height)
-	var wrist: Vector2 = arm_wrist(shoulder, angle, right_side, height)
+	var bend: float = puppet_state.elbow_angle.y if right_side else puppet_state.elbow_angle.x
+	var points: Dictionary = UpperPose.arm_points(shoulder, angle, bend, right_side, height)
+	var elbow: Vector2 = points.elbow
+	var wrist: Vector2 = points.wrist
 	# 翻面压扁时手臂同步变细，避免整台只剩两根粗线还挂在外面
 	var thickness: float = maxf(flip_width, 0.25)
 	if _has_body_skin():
@@ -452,13 +586,7 @@ func _draw_arm(
 		_draw_skin_segment(side + "_forearm", elbow, wrist, thickness, body.a)
 		_draw_skin_joint(elbow, height * 0.020 * thickness, body.a)
 		_draw_skin_hand(
-			side + "_hand",
-			wrist,
-			arm_direction(angle, right_side),
-			height,
-			thickness,
-			right_side,
-			body.a
+			side + "_hand", wrist, points.direction, height, thickness, right_side, body.a
 		)
 		return _skin_canvas_transform * wrist
 	draw_line(shoulder, elbow, body, height * 0.042 * thickness)
@@ -485,7 +613,9 @@ func _draw_head(
 		if _has_body_skin():
 			facing = float(_skins[str(_body_skin_id())]["reference_facing"])
 		var mirror: float = facing / float(skin["reference_facing"])
-		_draw_skin_tile(skin_id, "head", centre, 0.0, Vector2(size * mirror, size), alpha)
+		_draw_skin_tile(
+			skin_id, "head", centre, puppet_state.head_tilt, Vector2(size * mirror, size), alpha
+		)
 		return
 	draw_circle(centre, radius, body)
 	draw_arc(centre, radius, 0.0, TAU, 32, rim, 2.0)
@@ -624,14 +754,23 @@ func _draw_skin_accessories(ground: Vector2, height: float, alpha: float) -> voi
 			alpha
 		)
 	if skin["parts"].has("staff"):
-		var wrist: Vector2 = arm_wrist(
-			shoulder + Vector2(shoulder_half_width_px(height, 1.0), 0),
-			puppet_state.hand_angle.y,
-			true,
-			height
+		var wrist: Vector2 = (
+			UpperPose
+			. arm_points(
+				shoulder + Vector2(shoulder_half_width_px(height, 1.0), 0),
+				puppet_state.hand_angle.y,
+				puppet_state.elbow_angle.y,
+				true,
+				height
+			)
+			. wrist
 		)
 		var staff_size: float = height * float(skin["staff_size_ratio"])
+		var upper_matrix: Transform2D = _skin_canvas_transform
+		_skin_canvas_transform = _skin_figure_transform(ground)
+		wrist = upper_transform() * wrist
 		_draw_skin_tile(id, "staff", wrist, 0.0, Vector2.ONE * staff_size, alpha)
+		_skin_canvas_transform = upper_matrix
 
 
 func _draw_skin_tile(
@@ -714,6 +853,8 @@ func _draw_skin_joint(at: Vector2, radius: float, alpha: float) -> void:
 ## 三根竹签：一根连胸签、两根连手，全部汇到签手的手部。
 ## 这是「借签操演」在画面上唯一的直接证据（PRD 第 4 节）。
 func _draw_sticks(ground: Vector2, height: float, alpha: float) -> void:
+	_left_wrist = hand_screen_position("left")
+	_right_wrist = hand_screen_position("right")
 	if render_mode == RenderMode.ENTITY:
 		_draw_bamboo(Vector2(ground.x, ground.y - height * 0.62), hand_anchor - Vector2(0, 28), 3.7)
 		_draw_bamboo(_left_wrist, hand_anchor + Vector2(-18, -22), 2.5)

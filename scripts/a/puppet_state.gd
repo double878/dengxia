@@ -22,6 +22,9 @@ var stance: float = 0.0  ## 0.0 完全站立，1.0 完全蹲下
 var facing: float = FACING_FRONT  ## 二值：+1 正面朝外，-1 反面朝外
 var turn_progress: float = 1.0  ## 翻面过渡完成度：1 = 已停稳在某一面
 var hand_angle: Vector2 = Vector2.ZERO  ## x = 左手，y = 右手（弧度）
+var elbow_angle: Vector2 = Vector2.ZERO  ## 左右肘的屈曲角，零为直臂
+var head_tilt: float = 0.0  ## 头部绕颈部俯仰，弧度
+var torso_lean: float = 0.0  ## 腰部前倾，弧度；下半身不参与
 var head_id: int = HEAD_ID_NONE
 var hook_slot: int = HOOK_SLOT_NONE
 var is_controlled: bool = false
@@ -61,6 +64,10 @@ func clamp_continuous() -> void:
 	walk_amount = clampf(walk_amount, 0.0, 1.0)
 	hand_angle.x = clampf(hand_angle.x, HAND_ANGLE_MIN, HAND_ANGLE_MAX)
 	hand_angle.y = clampf(hand_angle.y, HAND_ANGLE_MIN, HAND_ANGLE_MAX)
+	elbow_angle.x = clampf(elbow_angle.x, 0.0, PI * 5.0 / 6.0)
+	elbow_angle.y = clampf(elbow_angle.y, 0.0, PI * 5.0 / 6.0)
+	head_tilt = clampf(head_tilt, -PI / 6.0, PI / 6.0)
+	torso_lean = clampf(torso_lean, 0.0, PI / 4.0)
 
 
 ## 幂等的合法性修复：编号越界时报告错误并回到最近的合法值，不静默通过。
@@ -85,6 +92,9 @@ func to_dict() -> Dictionary:
 		"facing": facing,
 		"turn_progress": turn_progress,
 		"hand_angle": {"left": hand_angle.x, "right": hand_angle.y},
+		"elbow_angle": {"left": elbow_angle.x, "right": elbow_angle.y},
+		"head_tilt": head_tilt,
+		"torso_lean": torso_lean,
 		"head_id": head_id,
 		"hook_slot": hook_slot,
 		"is_controlled": is_controlled,
