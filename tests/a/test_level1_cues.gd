@@ -164,7 +164,8 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		"还伞目标带应与接伞同一段窗口"
 	)
 
-	# —— 开局站位与朝向（用户 2026-10-08 定案：白素贞与小青并肩立在台右）——
+	# —— 开局站位与朝向（用户 2026-10-15 定案：白素贞与小青并肩立在**柳树右侧**，
+	#    小青贴树 0.26、白素贞靠场中 0.32）——
 	# 站位一动就会悄悄踩到四件事，因此全部在这里钉住：
 	var start: Array = def.initial["positions"][UmbrellaControllerScript.BAISUZHEN_ID]
 	var start_x: float = float(start[0])
@@ -177,27 +178,34 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 			% [start_x, float(take_band["min"]), float(take_band["max"])]
 		)
 	)
-	# ② 要站在小青**左侧**，且拉开到两具影身不叠（各宽约 0.026 个幕宽）。
+	# ② 要站在小青**右侧**，且拉开到两具影身不叠（各宽约 0.026 个幕宽）。
+	#    ⚠️ 方向 2026-10-15 翻面：用户「里外互换」——小青贴树（左）、白素贞靠场中（右）。
+	#    旧断言写的是 `start_x < 小青`（那时小青在外侧）；互换后必须整体反号，
+	#    否则这条会以「白素贞应站在小青左侧」的旧口径误报，而**画面是对的**。
 	t.check(
-		start_x < StageDef.LEVEL1_XIAOPING_X,
-		"白素贞应站在小青左侧（%.2f < %.2f）" % [start_x, StageDef.LEVEL1_XIAOPING_X]
+		start_x > StageDef.LEVEL1_XIAOPING_X,
+		"白素贞应站在小青右侧（%.2f > %.2f）" % [start_x, StageDef.LEVEL1_XIAOPING_X]
 	)
 	t.check(
-		StageDef.LEVEL1_XIAOPING_X - start_x >= 0.05,
-		"两人间距应 ≥ 0.05 个幕宽（影身各宽约 0.026），实际 %.2f" % (StageDef.LEVEL1_XIAOPING_X - start_x)
+		start_x - StageDef.LEVEL1_XIAOPING_X >= 0.05,
+		"两人间距应 ≥ 0.05 个幕宽（影身各宽约 0.026），实际 %.2f" % (start_x - StageDef.LEVEL1_XIAOPING_X)
 	)
 	# ③ 小青这一折只作陪：双手放下，且**面向**白素贞。
 	#    facing 的约定是「-1 朝左、+1 朝右」；小青的参考原稿脸朝左，默认 +1 会把她镜像成朝右。
+	#    互换后白素贞在小青**右侧** → 小青该朝右，即**默认 +1**（数据里不再出现）→ 必须按有效值读。
 	var xiaoqing_hands: Array = def.initial["hand_angles"][2]
 	t.check_approx(float(xiaoqing_hands[0]), 0.0, 1e-9, "小青开局左手应自然垂下")
 	t.check_approx(float(xiaoqing_hands[1]), 0.0, 1e-9, "小青开局右手应自然垂下")
-	t.check_approx(float(def.initial["facing"][2]), -1.0, 1e-9, "小青开局应面向白素贞（facing = -1，即朝左）")
-	# ④ 白素贞**读出来**必须仍是 +1（朝右）——她右边就是小青，两人由此相对而立。
+	#    🔴 这里原本是 `def.initial["facing"][2]` 硬取下标；默认值不入表后会直接抛键错，
+	#    故改为 `.get(2, 1.0)`——断言的仍是**有效朝向**。
+	var xiaoqing_facing: float = float(def.initial.get("facing", {}).get(2, 1.0))
+	t.check_approx(xiaoqing_facing, 1.0, 1e-9, "小青开局应面向白素贞（她在其右侧，故 facing = +1 即朝右）")
+	# ④ 白素贞**读出来**必须为 -1（朝左）——她左边就是小青，两人由此相对而立。
 	#    这里断言的是**有效值**，因此无论它由默认值给出、还是日后被显式写进数据都成立。
 	var baisuzhen_facing: float = float(
 		def.initial.get("facing", {}).get(UmbrellaControllerScript.BAISUZHEN_ID, 1.0)
 	)
-	t.check_approx(baisuzhen_facing, 1.0, 1e-9, "白素贞开局应朝右（朝向小青）")
+	t.check_approx(baisuzhen_facing, -1.0, 1e-9, "白素贞开局应朝左（朝向小青）")
 
 	# —— 长距离移动的时间预算（2026-10-04 教训，用户报「根本来不及向右走」）——
 	# 两次横移各走约 0.5~0.55 个舞台宽（960~1060 画布像素，拖动 1:1 映射），
