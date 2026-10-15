@@ -7,11 +7,11 @@ class_name CTestScenery
 ##
 ## 断言依据（用户 2026-10-08 逐条定案）：
 ##   ① 第一关布景只有柳树 + 拱桥（无花草、无边界线）
-##   ② 柳树树干 anchor_x ≈ 0.12485374、anchor_y ≈ 0.61346776、缩放 0.25482124
-##      —— 三个都是**派生式**，只依赖「树高 470.4px = 0.8 × 幕布高」这一个定案数；
+##   ② 柳树树干 anchor_x ≈ 0.13421046、anchor_y ≈ 0.61343826、缩放 0.28667389
+##      —— 三个都是**派生式**，只依赖「树高 529.2px = 0.9 × 幕布高」这一个定案数；
 ##      2026-10-15 用户「下移 95」后又「上移 5」→ 净下移 90px，底缘 572.8 → 662.8px；
-##      同日再定「树高 0.8 × 幕布高」⇒ 树高 416 → 441 → **470.4px**（底缘不动、左缘不动，
-##      树顶由 246.8 升到 192.4px、右缘由 419.2 长到 461.92px）；
+##      同日再定「树高 0.9 × 幕布高」⇒ 树高 416 → 441 → 470.4 → **529.2px**（底缘不动、左缘不动，
+##      树顶由 246.8 升到 133.6px、右缘由 419.2 长到 507.66px）；
 ##      拱桥 = **完整拱**，桥基中心 x = 0.73（2026-10-09「桥头左移，使桥能够
 ##      完整展现在幕布中」定案；半拱读作被裁断，完整解 = 恢复 woop 全拱）
 ##   ③ 纵轴容差口径：Y_TOLERANCE = 0.5（用户第三次定案「放宽至 0.5」），
@@ -384,26 +384,27 @@ func _geometry_on_canvas(t: RefCounted) -> void:
 	# ③ 树左缘贴画布左侧，留「适当内边距」（20~60px，不贴死也不留大片空白）
 	var pad: float = willow_rect.position.x - cloth.position.x
 	t.check(pad >= 20.0 and pad <= 60.0, "树左缘内边距 = %.0f px（要求 20~60，避免贴死或左侧空白过多）" % pad)
-	# ④ 树高（2026-10-15 用户定案：**0.8 × 幕布高 = 470.4px**，由 416 → 441px 两轮上调）与随之的树顶留白。
-	#    幕布顶 92 → 景物接地线 662.8 的可用高是 570.8px，减去树高 470.4 ⇒ 留白 100.4px。
-	#    树高单独钉一条：只判留白的话，「树高变大 + 接地线下移」这类同向抵消会蒙混过关。
+	# ④ 树高（2026-10-15 用户定案：**0.9 × 幕布高 = 529.2px**，由 416 → 441 → 470.4px 三轮上调）
+	#    与随之的树顶留白。幕布顶 92 → 景物接地线 662.8 的可用高是 570.8px，减树高 529.2 ⇒ 留白 41.6px
+	#    （已接近幕布顶，距裁切只剩 41.6px）。树高单独钉一条：只判留白的话，
+	#    「树高变大 + 接地线下移」这类同向抵消会蒙混过关。
 	t.check_approx(
 		willow_rect.size.y,
-		0.8 * cloth.size.y,
+		0.9 * cloth.size.y,
 		2.0,
 		(
-			"树高 = %.1f px ≈ 0.8 × 幕布高（%.1f），占幕布高 %.1f%%"
-			% [willow_rect.size.y, 0.8 * cloth.size.y, 100.0 * willow_rect.size.y / cloth.size.y]
+			"树高 = %.1f px ≈ 0.9 × 幕布高（%.1f），占幕布高 %.1f%%"
+			% [willow_rect.size.y, 0.9 * cloth.size.y, 100.0 * willow_rect.size.y / cloth.size.y]
 		)
 	)
 	var top_gap: float = willow_rect.position.y - cloth.position.y
 	t.check_approx(
 		top_gap,
-		570.8 - 0.8 * cloth.size.y,
+		570.8 - 0.9 * cloth.size.y,
 		2.0,
 		(
 			"树顶留白 = %.1f px ≈ 可用高 570.8 − 树高（%.1f）；树顶边 %.1fpx"
-			% [top_gap, 0.8 * cloth.size.y, willow_rect.position.y]
+			% [top_gap, 0.9 * cloth.size.y, willow_rect.position.y]
 		)
 	)
 	# ⑤ 树冠/树干比例协调：干基段（素材里树干露出部分）不得被放大到喧宾夺主。
@@ -990,10 +991,10 @@ func _constants_consistency(t: RefCounted) -> void:
 	var bridge: Dictionary = _find(def, "bridge_right")
 	t.check_approx(
 		float(willow.get("anchor_x", 0.0)),
-		0.12485374,
+		0.13421046,
 		1e-6,
 		(
-			"LEVEL1_WILLOW_X ≈ 0.12485374（派生式：贴图左缘恒在 x=96＝幕布左 66 + 内边距 30px，"
+			"LEVEL1_WILLOW_X ≈ 0.13421046（派生式：贴图左缘恒在 x=96＝幕布左 66 + 内边距 30px，"
 			+ "scale 变则本值自动跟着变）"
 		)
 	)
@@ -1005,15 +1006,15 @@ func _constants_consistency(t: RefCounted) -> void:
 	)
 	t.check_approx(
 		DefScript.LEVEL1_WILLOW_HEIGHT_PX,
-		0.8 * 588.0,
+		0.9 * 588.0,
 		1e-6,
-		"LEVEL1_WILLOW_HEIGHT_PX = 470.4（用户 2026-10-15 定案「树高 = 0.8 × 幕布高 588」）"
+		"LEVEL1_WILLOW_HEIGHT_PX = 529.2（用户 2026-10-15 定案「树高 = 0.9 × 幕布高 588」）"
 	)
 	t.check_approx(
 		DefScript.LEVEL1_WILLOW_SCALE,
-		0.25482124,
+		0.28667389,
 		1e-6,
-		"LEVEL1_WILLOW_SCALE ≈ 0.25482124（派生式：树高 470.4px ÷ 素材高 1846）"
+		"LEVEL1_WILLOW_SCALE ≈ 0.28667389（派生式：树高 529.2px ÷ 素材高 1846）"
 	)
 	t.check_approx(
 		DefScript.LEVEL1_Y_DOWN,
@@ -1023,10 +1024,10 @@ func _constants_consistency(t: RefCounted) -> void:
 	)
 	t.check_approx(
 		DefScript.LEVEL1_WILLOW_BASE_Y,
-		0.61346776,
+		0.61343826,
 		1e-6,
 		(
-			"LEVEL1_WILLOW_BASE_Y ≈ 0.61346776（派生式：(572.8 + 下移 90 − scale)/1080，"
+			"LEVEL1_WILLOW_BASE_Y ≈ 0.61343826（派生式：(572.8 + 下移 90 − scale)/1080，"
 			+ "贴图底缘恒 662.8px、与桥同线）"
 		)
 	)
