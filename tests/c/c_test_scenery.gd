@@ -7,8 +7,9 @@ class_name CTestScenery
 ##
 ## 断言依据（用户 2026-10-08 逐条定案）：
 ##   ① 第一关布景只有柳树 + 拱桥（无花草、无边界线）
-##   ② 柳树树干 x = 0.1354、基线 0.6294、缩放 0.26（2026-10-09 构图定案：
-##      再大一点 + 树冠完整入幕布 + 幕布上方留 1/5~1/6）；
+##   ② 柳树树干 anchor_x = 0.116112、anchor_y = 0.530162 + 整关下移 95px（≈0.618125）、
+##      缩放 0.225063（2026-10-09 构图定案「再大一点 + 树冠完整入幕布 + 幕布上方留白」；
+##      2026-10-15 用户「下移 95」再整体下移，底缘 572.8 → 667.8px）；
 ##      拱桥 = **完整拱**，桥基中心 x = 0.73（2026-10-09「桥头左移，使桥能够
 ##      完整展现在幕布中」定案；半拱读作被裁断，完整解 = 恢复 woop 全拱）
 ##   ③ 纵轴容差口径：Y_TOLERANCE = 0.5（用户第三次定案「放宽至 0.5」），
@@ -381,14 +382,15 @@ func _geometry_on_canvas(t: RefCounted) -> void:
 	# ③ 树左缘贴画布左侧，留「适当内边距」（20~60px，不贴死也不留大片空白）
 	var pad: float = willow_rect.position.x - cloth.position.x
 	t.check(pad >= 20.0 and pad <= 60.0, "树左缘内边距 = %.0f px（要求 20~60，避免贴死或左侧空白过多）" % pad)
-	# ④ 树顶仍有留白（用户 2026-10-09 16:51「树整体放大」定案：留 1/9 幕布高）
+	# ④ 树顶留白：2026-10-09 定案为「幕布高 1/9」（65.3px）；2026-10-15 整关下移 95px 后
+	#    留白随之变为 65.3 + 95 = 160.3px。锁「原 1/9 留白 + 下移量」，改下移量时同步失效提醒。
 	var top_gap: float = willow_rect.position.y - cloth.position.y
 	t.check_approx(
 		top_gap,
-		cloth.size.y / 9.0,
+		cloth.size.y / 9.0 + 95.0,
 		2.0,
 		(
-			"树顶留白 = %.1f px ≈ 幕布高 1/9（%.1f），树高占 %.1f%%"
+			"树顶留白 = %.1f px ≈ 幕布高 1/9（%.1f）+ 下移 95，树高占 %.1f%%"
 			% [top_gap, cloth.size.y / 9.0, 100.0 * willow_rect.size.y / cloth.size.y]
 		)
 	)
@@ -403,6 +405,14 @@ func _geometry_on_canvas(t: RefCounted) -> void:
 			trunk_px >= willow_rect.size.y * 0.25 and trunk_px <= willow_rect.size.y * 0.40,
 			"树干露出段 %.0f px = 树高的 %.1f%%（要求 25%%~40%%，树冠仍为主体）" % [trunk_px, 100.0 * trunk_ratio]
 		)
+	# ⑥ 整关下移 95px 后的底边落点（用户 2026-10-15 定案）：572.8 + 95 = 667.8px。
+	#    ① 只判「越界总量为 0」，这里把具体落点钉住，避免「整体悄悄漂走但仍在幕布内」漏检。
+	t.check_approx(
+		willow_rect.end.y, 667.8, 1.0, "树底缘 = %.1f ≈ 667.8（原 572.8 + 整关下移 95）" % willow_rect.end.y
+	)
+	t.check_approx(
+		bridge_rect.end.y, 667.8, 1.0, "桥底缘 = %.1f ≈ 667.8（原 572.8 + 整关下移 95）" % bridge_rect.end.y
+	)
 
 
 ## 未知关卡返回空布景，而不是静默顶替成第一关的
@@ -985,10 +995,16 @@ func _constants_consistency(t: RefCounted) -> void:
 		"LEVEL1_WILLOW_SCALE = 0.225063（底对齐+顶留白1/9 联立解；上限被底对齐锁死）"
 	)
 	t.check_approx(
+		DefScript.LEVEL1_Y_DOWN,
+		95.0 / 1080.0,
+		1e-9,
+		"LEVEL1_Y_DOWN = 95/1080（用户 2026-10-15「下移 95」；1/5 幕布高 117.6px 会越界被裁）"
+	)
+	t.check_approx(
 		DefScript.LEVEL1_WILLOW_BASE_Y,
-		0.530162,
+		0.530162 + 95.0 / 1080.0,
 		1e-6,
-		"LEVEL1_WILLOW_BASE_Y = 0.530162（与桥贴图底缘 572.8px 同线，随 scale 重算）"
+		"LEVEL1_WILLOW_BASE_Y ≈ 0.618125（原 0.530162 + 整关下移 95px，底缘 667.8px，与桥同线）"
 	)
 	t.check_approx(
 		float(willow.get("anchor_y", 0.0)),
@@ -996,9 +1012,12 @@ func _constants_consistency(t: RefCounted) -> void:
 		1e-6,
 		"柳树 anchor_y = LEVEL1_WILLOW_BASE_Y（与桥底同线）"
 	)
-	# 接地线（用户二次定案：0.50 → 0.53；现容差已放宽至 0.5，0.53 不再是边界值）
+	# 接地线（用户二次定案：0.50 → 0.53；2026-10-15 再整关下移 95px）
 	t.check_approx(
-		DefScript.LEVEL1_GROUND_Y, 0.53, 1e-6, "LEVEL1_GROUND_Y = 0.53（用户定案「再往下移动 0.03」）"
+		DefScript.LEVEL1_GROUND_Y,
+		0.53 + 95.0 / 1080.0,
+		1e-6,
+		"LEVEL1_GROUND_Y ≈ 0.617963（用户定案「再往下移动 0.03」+ 2026-10-15「下移 95」）"
 	)
 	t.check_approx(
 		float(bridge.get("anchor_y", 0.0)),
