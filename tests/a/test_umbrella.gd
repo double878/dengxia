@@ -4,8 +4,10 @@ class_name TestUmbrella
 ##
 ## 流程逐条对应：
 ##   开场 → 伞在许仙右手；接伞 → 白素贞走到他面前、左手与他右手**相接**（手距与手高都在容差内）；
-##   向右走 → 伞跟白素贞的手；走到小青身旁（折返点）→ 记下「已到过折返点」；
-##   转身向左返回 → 反向拖动；还伞 → 已经到过折返点且走回交接窗口才自动交回。
+##   向左走 → 伞跟白素贞的手；走到小青身旁（折返点，台左）→ 记下「已到过折返点」；
+##   转身向右返回 → 反向拖动；还伞 → 已经到过折返点且走回交接窗口才自动交回。
+## 🔴 2026-10-15 折返点镜像：小青由台右 0.86 换到台左 0.26，两次横移的方向整体对调
+## （原「先向右走到小青身旁、再向左走回还伞」→ 现「先向左、再向右」）。
 
 const ATestBaseScript := preload("res://tests/a/a_test_base.gd")
 const StageDefScript := preload("res://scripts/a/stage_def.gd")
@@ -17,13 +19,17 @@ const PlaceholderPuppetScript := preload("res://scripts/a_test/placeholder_puppe
 ## 伞面几何（中心 / 半径 / 下垂量）定义在显示端场景里，这里取来独立复算。
 const Level1SceneScript := preload("res://scripts/a_test/level1_a_scene.gd")
 
-## 许仙站位与举伞角：与 StageDef.make_level1 的开演布景一致
-## （他举到 90°（打伞位）持伞；90° 同时是第一关的手角上限，所以白素贞抬到顶就是这个姿势）。
-const XUXIAN_X: float = 0.13
+## 许仙站位与举伞角：**直接读关卡数据**，不另写一个数。
+## （他举到 90°（打伞位）持伞；90° 同时是第一关的手角上限，所以白素贞抬到顶就是这个姿势。）
+## ⚠️ 2026-10-15 教训：这里曾硬写 0.13，站位改到桥旁后本文件的 4 条「交接窗口对表」
+## 断言全部误报——数据是对的、测试却拿旧锚点算窗口。这类跨文件数值对表，
+## 锚点必须只有一处来源，否则每改一次站位就要手工同步一遍。
+const XUXIAN_X: float = StageDefScript.LEVEL1_XUXIAN_X
 const XUXIAN_RAISE: float = PI * 0.5
-## 折返点（小青身旁）的位置：控制器的 TURN_POINT_X = 0.74，落点目标带是 [0.74, 0.84]。
-## 取带内的 0.80，代表「她停在小青旁边」。
-const TURN_X: float = 0.80
+## 折返点（小青身旁）的位置：控制器的 TURN_POINT_X = 0.32，落点目标带是 [0.28, 0.32]
+## （2026-10-15 折返点镜像后折返点由台右翻到台左）。取带**中值**代表「她停在小青旁边」——
+## 同样由关卡数据算出，带一改这里跟着走。
+const TURN_X: float = (StageDefScript.LEVEL1_TURN_MIN + StageDefScript.LEVEL1_TURN_MAX) * 0.5
 
 
 ## 交接窗口（两只手相接的位置带）：与关卡数据里的落点目标带、控制器判据同一处来源。
@@ -257,11 +263,13 @@ func _test_join_window_matches_data_and_display(t: ATestBase) -> void:
 		var band: Dictionary = cue.get("target_range", {})
 		t.check_approx(float(band.get("min", -1.0)), window.x, 1e-6, "%s 的目标带下界应与交接窗口一致" % cue_id)
 		t.check_approx(float(band.get("max", -1.0)), window.y, 1e-6, "%s 的目标带上界应与交接窗口一致" % cue_id)
-	# 「走到小青身旁」的目标带必须与交接窗口不重叠，否则那一步会先被还伞抢走伞
+	# 「走到小青身旁」的目标带必须与交接窗口不重叠，否则那一步会先被还伞抢走伞。
+	# 🔴 2026-10-15 折返点镜像后折返点翻到台左 → 判据由「带的 min 在窗口右侧」
+	# 改为「带的 max 在窗口左侧」。
 	var turn: Dictionary = _find_cue(def, "l1_c5_move_to_xiaoping").get("target_range", {})
 	t.check(
-		float(turn.get("min", 0.0)) > window.y,
-		"折返点目标带（%.4f 起）应完全在交接窗口（到 %.4f）右侧" % [float(turn.get("min", 0.0)), window.y]
+		float(turn.get("max", 1.0)) < window.x,
+		"折返点目标带（到 %.4f）应完全在交接窗口（%.4f 起）左侧" % [float(turn.get("max", 1.0)), window.x]
 	)
 
 	# 画面对表：把两人都摆到窗口中心、手都抬到 90°，显示端算出的两只手腕应当几乎重合。
@@ -274,8 +282,10 @@ func _test_join_window_matches_data_and_display(t: ATestBase) -> void:
 		view.lamp_state = LampStateScript.new()  # 灯距默认 0.5
 	xuxian_view.puppet_state = puppets[UmbrellaControllerScript.XUXIAN_ID]
 	baisuzhen_view.puppet_state = puppets[UmbrellaControllerScript.BAISUZHEN_ID]
-	# 真实接伞时白素贞向左走，已经面向许仙。
-	baisuzhen_view.puppet_state.facing = -1.0
+	# 真实接伞时白素贞**向右**走，已经面向许仙。朝向与关卡数据一致：
+	# 白素贞 facing = +1（朝右、面向桥头的许仙）、许仙 facing = -1（朝左、面向来人）。
+	xuxian_view.puppet_state.facing = -1.0
+	baisuzhen_view.puppet_state.facing = 1.0
 	var his_hand: Vector2 = xuxian_view.hand_screen_position(UmbrellaControllerScript.XUXIAN_HAND)
 	var her_hand: Vector2 = baisuzhen_view.hand_screen_position(
 		UmbrellaControllerScript.BAISUZHEN_HAND
@@ -328,18 +338,18 @@ func _find_cue(def: StageDef, cue_id: String) -> Dictionary:
 
 func _test_misaligned_take_does_not_transfer(t: ATestBase) -> void:
 	t.begin("未相接时不应凭空接伞")
-	# 位置没到：白素贞还站在 x=0.60，远在交接窗口（约 0.176~0.296）右侧，手够不到
+	# 位置没到：白素贞还站在 x=0.10，远在交接窗口（0.3625~0.4825）**左侧**，手够不到
 	var far: Array = _aligned_puppets()
-	far[UmbrellaControllerScript.BAISUZHEN_ID].stage_pos = Vector2(0.60, 0.5)
+	far[UmbrellaControllerScript.BAISUZHEN_ID].stage_pos = Vector2(0.10, 0.5)
 	var far_controller: UmbrellaController = _controller(1, far)
 	far_controller.update(8750, [])
 	t.check_eq(far_controller.holder_id_of(), UmbrellaControllerScript.XUXIAN_ID, "位置没到时伞仍应在许仙手里")
 	t.check(far_controller.take_events().is_empty(), "位置没到时不应发出交接事件")
 
-	# **走过许仙站到他左侧**也不算相接：她抬起的左手朝的是反方向，手根本碰不上
+	# **走过许仙站到他右侧**也不算相接：她抬起的左手朝的是反方向，手根本碰不上
 	# （2026-10-04 用户报的正是这个现象：原先按「两人接地点距离」判，她必须穿过他才换手）
 	var passed: Array = _aligned_puppets()
-	passed[UmbrellaControllerScript.BAISUZHEN_ID].stage_pos = Vector2(0.05, 0.5)
+	passed[UmbrellaControllerScript.BAISUZHEN_ID].stage_pos = Vector2(0.95, 0.5)
 	var passed_controller: UmbrellaController = _controller(1, passed)
 	passed_controller.update(8750, [])
 	t.check_eq(
@@ -416,14 +426,14 @@ func _test_return_requires_turn_point_then_join_window(t: ATestBase) -> void:
 	controller.update(11000, [])
 	t.check(controller.has_reached_turn_point(), "走到小青身旁后应记下已到折返点")
 
-	# 回程途中、还没走回交接窗口（0.50 在交接窗口右侧、折返点左侧）→ 不能还伞
-	state.stage_pos.x = 0.50
+	# 回程途中、还没走回交接窗口（0.34 在折返点右侧、交接窗口左侧）→ 不能还伞
+	state.stage_pos.x = 0.34
 	controller.update(12000, [])
 	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "尚未走回交接窗口时不能还伞")
 
-	# 从右侧一路向左走回交接窗口 → 自动还伞。中途每一帧的 x 都比上一帧小，
-	# 因此「又往更右边走」这条作废标记的条件不会误清标记。
-	for x in [0.40, _join_window().y + 0.02, _borrow_x()]:
+	# 从左侧一路**向右**走回交接窗口 → 自动还伞。中途每一帧的 x 都比上一帧大，
+	# 因此「又往更左边走」这条作废标记的条件不会误清标记。
+	for x in [0.34, _join_window().x - 0.02, _borrow_x()]:
 		state.stage_pos.x = x
 		controller.update(13000 + int(x * 1000.0), [])
 	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.XUXIAN_ID, "走回交接窗口后应自动还给许仙")
@@ -432,9 +442,9 @@ func _test_return_requires_turn_point_then_join_window(t: ATestBase) -> void:
 	t.finish("返回路径必须经过小青身旁（折返点）并走回交接窗口")
 
 
-## 流程表「转身返回」：反向拖动（向左走回）才算返回；站着不动或还在向右走都不算。
+## 流程表「转身返回」：反向拖动（向右走回）才算返回；站着不动或还在向左走都不算。
 func _test_return_requires_returning_direction(t: ATestBase) -> void:
-	t.begin("只有向左走回时才还伞")
+	t.begin("只有向右走回时才还伞")
 	var puppets: Array = _aligned_puppets()
 	var controller: UmbrellaController = _controller(1, puppets)
 	controller.update(8750, [])
@@ -443,19 +453,24 @@ func _test_return_requires_returning_direction(t: ATestBase) -> void:
 	state.stage_pos.x = TURN_X
 	controller.update(11000, [])
 
-	# 先退到交接窗口右侧之外（一路向左），再从右边**往回踏进**窗口：
-	# 这一刻她的方向是向右，不该还伞——还伞要求她正在往回走。
-	state.stage_pos.x = 0.15
+	# 先越过交接窗口到它**右侧之外**（从折返点一路向右），再向左**踏回**窗口：
+	# 踏进那一下她的方向是向左，不该还伞——还伞要求她正在往回（向右）走。
+	state.stage_pos.x = 0.60
 	controller.update(11200, [])
-	state.stage_pos.x = 0.20
+	state.stage_pos.x = 0.45
 	controller.update(11400, [])
-	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "向右移动时踏进交接窗口不应还伞")
+	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "向左移动时踏进交接窗口不应还伞")
 
-	# 改成向左走进窗口：方向正确
-	state.stage_pos.x = 0.18
+	# 仍在窗口内继续向左，方向依旧不对
+	state.stage_pos.x = 0.42
+	controller.update(11500, [])
+	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "向左移动时仍在窗口内也不应还伞")
+
+	# 改成向右走进窗口：方向正确
+	state.stage_pos.x = 0.47
 	controller.update(11600, [])
-	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.XUXIAN_ID, "向左走回交接窗口后应还伞")
-	t.finish("还伞要求方向为向左返回")
+	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.XUXIAN_ID, "向右走回交接窗口后应还伞")
+	t.finish("还伞要求方向为向右返回")
 
 
 ## 流程表「还伞」：不要求白素贞重新抬手；手位较低时用短暂递伞过渡衔接。
