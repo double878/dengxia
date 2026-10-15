@@ -25,17 +25,28 @@ func run_all() -> Dictionary:
 		return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed}
 	var clock := MusicClock.new()
 	clock.start()
+	# 站位**直接取关卡数据**（2026-10-15 折返点镜像前这里硬写着 0.8 / 0.13 的旧站位，
+	# 站位一改就与现实脱钩）。
+	var def: StageDef = StageDef.make_level1()
+	var slots: Dictionary = def.initial["positions"]
 	var puppets: Array = [PuppetState.new(), PuppetState.new(), PuppetState.new()]
 	for i in puppets.size():
 		puppets[i].puppet_id = i
-		puppets[i].stage_pos = Vector2(0.8 if i != 1 else 0.13, 0.5)
+		var slot: Array = slots[i]
+		puppets[i].stage_pos = Vector2(float(slot[0]), float(slot[1]))
 	puppets[1].hand_angle.y = PI / 2.0
 	var umbrella := UmbrellaController.new()
-	umbrella.setup(StageDef.make_level1(), puppets)
+	umbrella.setup(def, puppets)
 	var flow: RefCounted = load(FLOW_PATH).new()
 	t.check(flow.setup(CONFIG, clock, umbrella), "时间表有效")
 	flow.start()
-	puppets[0].stage_pos.x = 0.24
+	# 三个位置全部由判据算出、不写死，镜像后自动跟着走：
+	#   交接 = 窗口中心；折返点 = 控制器阈值；离开窗口的一侧 = 窗口左界再往左 0.10。
+	var window: Vector2 = UmbrellaController.join_window_x(StageDef.LEVEL1_XUXIAN_X)
+	var at_join: float = (window.x + window.y) * 0.5
+	var at_turn: float = UmbrellaController.TURN_POINT_X
+	var off_join: float = window.x - 0.10
+	puppets[0].stage_pos.x = at_join
 	puppets[0].hand_angle.x = PI / 2.0
 	clock.set_free_time_ms(2800)
 	_step(flow, umbrella, clock)
@@ -44,10 +55,10 @@ func run_all() -> Dictionary:
 	_step(flow, umbrella, clock)
 	t.check_eq(umbrella.holder_id_of(), 0, "唱完后按当前手位交接")
 	t.check_eq(flow.phase, "tour", "真实接伞才进入游湖")
-	puppets[0].stage_pos.x = 0.75
+	puppets[0].stage_pos.x = at_turn
 	clock.set_free_time_ms(6000)
 	_step(flow, umbrella, clock)
-	puppets[0].stage_pos.x = 0.24
+	puppets[0].stage_pos.x = at_join
 	clock.set_free_time_ms(7000)
 	_step(flow, umbrella, clock)
 	t.check_eq(umbrella.holder_id_of(), 1, "到过小青身旁才能实际还伞")
@@ -57,9 +68,9 @@ func run_all() -> Dictionary:
 	clock.set_free_time_ms(8500)
 	_step(flow, umbrella, clock)
 	t.check_eq(flow.phase, "return_dialogue", "只有实际还伞后播放奉还对白")
-	puppets[0].stage_pos.x = 0.5
+	puppets[0].stage_pos.x = off_join
 	_step(flow, umbrella, clock)
-	puppets[0].stage_pos.x = 0.24
+	puppets[0].stage_pos.x = at_join
 	_step(flow, umbrella, clock)
 	t.check_eq(umbrella.holder_id_of(), 1, "还伞后不会再次借走或响第二次锣")
 	var events: Array = flow.take_events()
@@ -78,12 +89,15 @@ func _test_timeout(t: ATestBase) -> void:
 	t.begin("等待与菜单暂停、超时不伪造奉还")
 	var clock := MusicClock.new()
 	clock.start()
+	var def: StageDef = StageDef.make_level1()
+	var slots: Dictionary = def.initial["positions"]
 	var puppets: Array = [PuppetState.new(), PuppetState.new(), PuppetState.new()]
 	for i in puppets.size():
 		puppets[i].puppet_id = i
-		puppets[i].stage_pos = Vector2(0.8 if i != 1 else 0.13, 0.5)
+		var slot: Array = slots[i]
+		puppets[i].stage_pos = Vector2(float(slot[0]), float(slot[1]))
 	var umbrella := UmbrellaController.new()
-	umbrella.setup(StageDef.make_level1(), puppets)
+	umbrella.setup(def, puppets)
 	var flow: RefCounted = load(FLOW_PATH).new()
 	flow.setup(CONFIG, clock, umbrella)
 	flow.start()
@@ -118,14 +132,20 @@ func _test_return_timeout(t: ATestBase) -> void:
 	t.begin("持伞未还的超时不会播放奉还对白")
 	var clock := MusicClock.new()
 	clock.start()
+	var def: StageDef = StageDef.make_level1()
+	var slots: Dictionary = def.initial["positions"]
 	var puppets: Array = [PuppetState.new(), PuppetState.new(), PuppetState.new()]
 	for i in puppets.size():
 		puppets[i].puppet_id = i
-		puppets[i].stage_pos = Vector2(0.24 if i == 0 else 0.13, 0.5)
+		var slot: Array = slots[i]
+		puppets[i].stage_pos = Vector2(float(slot[0]), float(slot[1]))
+	# 白素贞挪到交接窗口中心（站在许仙身旁、手抬平），其余人保持关卡开演站位
+	var window: Vector2 = UmbrellaController.join_window_x(StageDef.LEVEL1_XUXIAN_X)
+	puppets[0].stage_pos.x = (window.x + window.y) * 0.5
 	puppets[0].hand_angle.x = PI / 2.0
 	puppets[1].hand_angle.y = PI / 2.0
 	var umbrella := UmbrellaController.new()
-	umbrella.setup(StageDef.make_level1(), puppets)
+	umbrella.setup(def, puppets)
 	var flow: RefCounted = load(FLOW_PATH).new()
 	flow.setup(CONFIG, clock, umbrella)
 	flow.start()
