@@ -178,7 +178,8 @@ func _automate(delta: float) -> void:
 			#    照抄会让自动化永远不往回走——这一条就是被实际耗时对不上抓出来的。
 			goal = UmbrellaController.TURN_POINT_X - 0.04
 			visited_qing = bai.stage_pos.x <= goal
-		# 归位收关后时钟跳到 closing_ms，再等 0.7 s 放下双手收势（对 l1_opera_lower_hand）。
+		# 归位收关后时钟跳到 closing_ms 即收场（收势落手 cue 已于 2026-10-16 下线，
+		# 不再需要落手——这里保留放下双手只是让收场画面自然，不再对应任何 cue）。
 		_key(KEY_S, harness.clock.get_song_time_ms() >= int(config.closing_ms) + 700)
 	elif opera.phase == "opening":
 		# 唱段（带字幕）期间玩家不操作，跟着听即可。

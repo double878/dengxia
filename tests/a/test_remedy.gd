@@ -210,11 +210,8 @@ func _test_01c_borrow_then_home_journey(t: ATestBase) -> void:
 	b.end_drag()
 	t.check(umb.is_at_home(), "走回小青身旁后应判为归位（本关的完成条件）")
 
-	# 放下持伞的左手收势（落点 30000，判定窗 29750~30250）：放手速度 4.5 rad/s，
-	# 从 90° 落进下落区间（≤ 0.35 rad）约需 0.27 s，因此从 29800 ms 开始按住。
-	b.advance_to(29800)
-	b.hold_left_lower(80)
-	b.idle(1)
+	# 收势落手 cue（l1_c7_hand_lower）已于 2026-10-16 用户定案下线（「最后不用放下手」），
+	# 走回小青身旁即收关——这里不再做落手动作，也不再到 30000 ms。
 
 	var hits: Array[String] = []
 	for cue_id in [
@@ -223,8 +220,7 @@ func _test_01c_borrow_then_home_journey(t: ATestBase) -> void:
 		"l1_c2_move_left",
 		"l1_c3_hand_raise",
 		"l1_c4_take_umbrella",
-		"l1_c5_move_to_xiaoping",
-		"l1_c7_hand_lower"
+		"l1_c5_move_to_xiaoping"
 	]:
 		var outcome: Dictionary = b.director.performance.get_outcome(cue_id)
 		if bool(outcome.get("hit", false)):
@@ -237,9 +233,9 @@ func _test_01c_borrow_then_home_journey(t: ATestBase) -> void:
 					% [cue_id, str(outcome.get("offset_ms", "无判定")), b.state().stage_pos.x]
 				)
 			)
-	t.check_eq(hits.size(), 7, "七条关键动作应全部命中（实际命中 %d 条）" % hits.size())
+	t.check_eq(hits.size(), 6, "六条关键动作应全部命中（实际命中 %d 条）" % hits.size())
 	t.check_eq(b.events_of("remedy_open").size(), 0, "整条流程做对时不应开出任何补救窗口")
-	t.finish("接到伞、走回小青身旁、放手收势全部命中，全程零补救")
+	t.finish("接到伞、走回小青身旁全部命中，全程零补救（收势落手 cue 已下线）")
 
 
 func _test_02_miss_opens_window_and_freezes(t: ATestBase) -> void:

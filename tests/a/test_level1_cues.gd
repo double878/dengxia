@@ -92,7 +92,7 @@ func run_all() -> Dictionary:
 func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.begin("01 第一关关键动作表覆盖 PRD 要求")
 	var def: StageDef = StageDefScript.make_level1()
-	t.check_eq(def.cues.size(), 7, "应有 7 条关键动作（取消还伞后：蹲/起/移/抬/接/归位/落手）")
+	t.check_eq(def.cues.size(), 6, "应有 6 条关键动作（取消还伞后：蹲/起/移/抬/接/归位；落手收势 2026-10-16 下线）")
 	var problems: Array[String] = def.validate()
 	t.check_eq(problems.size(), 0, "数据应通过校验：%s" % str(problems))
 
@@ -203,6 +203,21 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		start_x - StageDef.LEVEL1_XIAOPING_X >= 0.05,
 		"两人间距应 ≥ 0.05 个幕宽（影身各宽约 0.026），实际 %.2f" % (start_x - StageDef.LEVEL1_XIAOPING_X)
 	)
+	# ②b 许仙**站在桥上**（2026-10-16 用户定案「许仙初始位置站桥上」）：他的初值 y 必须
+	#    与桥面路径**同源**——`height_at(他的 x, 落地线)`。数据抄一份旧高度而不跟桥面改，
+	#    不走路径的测试台就会把他摆到半空或地下。
+	var xuxian_start: Array = def.initial["positions"][UmbrellaControllerScript.XUXIAN_ID]
+	var walk_path: RefCounted = load("res://scripts/a/stage_walk_path.gd").new()
+	t.check(
+		walk_path.is_on_deck(float(xuxian_start[0])),
+		"许仙开局站位（%.4f）应在桥跨之内" % float(xuxian_start[0])
+	)
+	t.check_approx(
+		float(xuxian_start[1]),
+		float(walk_path.height_at(float(xuxian_start[0]), StageDef.LEVEL1_GROUND_Y)),
+		1e-4,
+		"许仙的初值脚点应等于桥面高度（height_at 同源）"
+	)
 	# ③ 小青这一折仍只作陪，开局亮相按用户 2026-10-16 16:08 截图定案（标签「elbow100_Rdown」，
 	#    = 姿势试穿探针的 B 变体）：下标 0（左手 = 画面右/白素贞侧，见 stage_def 常量注的
 	#    镜像推导）**高举过头 + 肘弯 100°**；下标 1（右手 = 柳树侧）**自然垂下**。
@@ -225,12 +240,12 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		float(xiaoqing_hands[1]) <= StageDef.HAND_LOWER_MAX_RAD,
 		"小青放下的手应落在「垂下」档（≤ %.2f rad）" % StageDef.HAND_LOWER_MAX_RAD
 	)
-	#    🔴 高举的 160° **故意超过本折上限 90°**：那条上限是玩家手感装置，只约束受控影人。
-	#    本断言把这份「故意」钉住——若日后有人把它当成数据错误而「修」回 90° 以内，
-	#    这里会立刻红。上半界仍须守住 PuppetState 的硬边界（180°）。
+	#    2026-10-16 用户定案「白素贞的手臂最大角度可以到竖直」后，本折上限 = π（竖直），
+	#    小青的 160° 亮相**落在上限之内**了（旧版上限 90° 时她是刻意越过的——历史注保留在
+	#    stage_def 的 validate() 注里）。这里改钉「亮相不越硬边界、且确实是高举」。
 	t.check(
-		float(xiaoqing_hands[0]) > def.hand_angle_max_rad,
-		"小青的亮相手角应刻意越过本折手感上限（%.2f）" % def.hand_angle_max_rad
+		float(xiaoqing_hands[0]) <= def.hand_angle_max_rad + 1e-9,
+		"小青的亮相手角应落在本折上限（%.2f）之内" % def.hand_angle_max_rad
 	)
 	t.check(
 		float(xiaoqing_hands[0]) <= PI + 1e-9 and float(xiaoqing_hands[1]) <= PI + 1e-9,
@@ -296,16 +311,13 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 			lead >= StageDef.MOVE_BUDGET_MS,
 			"「%s」是长距离移动，线索提前量 %d ms 应 ≥ 移动预算 %d ms" % [pair[1], lead, StageDef.MOVE_BUDGET_MS]
 		)
-	# 尾部不能留长空档（2026-10-05 教训，用户报「所有动作做完还有约 10 秒没事做」）：
-	# 最后一条落点必须贴近关卡结尾，只留 <= LEVEL1_TAIL_MS 收势。
-	var tail: int = def.duration_ms - int(_find(def, "l1_c7_hand_lower")["beat_time_ms"])
-	t.check(
-		tail <= StageDef.LEVEL1_TAIL_MS,
-		"最后一条落点之后只剩 %d ms，应不超过 %d ms（否则玩家做完动作要干等）" % [tail, StageDef.LEVEL1_TAIL_MS]
-	)
+	# 尾部空档检查（2026-10-05 教训）已随收势 cue 下线一并取消：本关收尾现在是**流程驱动**——
+	# 白素贞走回小青身旁的那一刻 Act1OperaFlow 直接把时钟跳到 closing_ms 收关，
+	# 不存在「做完动作干等」的空档，因此不再有「最后一条落点须贴近结尾」的结构约束
+	# （原检查钉的是第 48 拍 l1_c7_hand_lower，该 cue 已于 2026-10-16 下线）。
 	# 原地动作仍按 1 s 提前：不要被顺手改成 3 s（提前量过大等于上一拍刚做完就提示下一步）
 	for cue_id in [
-		"l1_c0_crouch", "l1_c1_stand", "l1_c3_hand_raise", "l1_c4_take_umbrella", "l1_c7_hand_lower"
+		"l1_c0_crouch", "l1_c1_stand", "l1_c3_hand_raise", "l1_c4_take_umbrella"
 	]:
 		t.check_eq(
 			int(_find(def, cue_id)["hint_lead_ms"]),
@@ -323,7 +335,7 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		UmbrellaControllerScript.BAISUZHEN_ID,
 		"接伞落点的 target_object 应为接手的白素贞"
 	)
-	t.finish("7 条关键动作覆盖蹲下/站起/左右移动/抬手/接伞/归位/落手，含重音落点，全部在时长内")
+	t.finish("6 条关键动作覆盖蹲下/站起/移动/抬手/接伞/归位，含重音落点，全部在时长内")
 
 
 func _test_02_hints_before_deadline(t: ATestBase) -> void:
@@ -603,10 +615,10 @@ func _test_09_unchosen_cues_remain_pending(t: ATestBase) -> void:
 	t.begin("09 未做的关键动作保持待判定，不被静默跳过")
 	var b: CueTestBench = _bench()
 	b.advance(1)
-	t.check_eq(b.performance.pending_count(), 7, "开演时 7 条全部待判定")
+	t.check_eq(b.performance.pending_count(), 6, "开演时 6 条全部待判定")
 	b.advance_to(7000)  # 已过前两条落点，但什么都没做
 	t.check(not b.performance.has_outcome("l1_c1_stand"), "没做动作就不应产生判定结果（留给切片 4 的补救处理）")
-	t.check_eq(b.performance.pending_count(), 7, "未做的仍计入待判定")
+	t.check_eq(b.performance.pending_count(), 6, "未做的仍计入待判定")
 	t.check_eq(_filter(b.judge_log, "cue_hit").size(), 0, "不应凭空产生命中")
 	t.check(_has_cue_event(b.judge_log, "cue_hint", "l1_c1_stand"), "线索仍应按时发出（目标在落点前已被告知）")
 	t.finish("未做的关键动作保持待判定，不静默跳过、不凭空判定")
@@ -763,12 +775,13 @@ func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 ## 两者若错配，玩家就会遇到「拍点算抬手到位、伞却不换手」。这里用数值扫描反推对齐窗口
 ## （而不是把公式再抄一遍），再要求它落在落点区间之内。
 func _test_15_level1_contact_pose_and_window(t: ATestBase) -> void:
-	t.begin("15 打伞位：许仙举伞在头顶、她抬到 90° 即相接，抬手落点包住对齐窗口")
+	t.begin("15 打伞位：许仙举伞在头顶、她的手到打伞位以上即相接，抬手落点包住对齐窗口")
 	var def: StageDef = StageDefScript.make_level1()
+	# 🔴 2026-10-16 用户定案「白素贞的手臂最大角度可以到竖直」：本折上限 = π（竖直），
+	# 旧版收在 90° 的手感装置随之取消——「按住到顶」现在是竖直，接伞判据改看「不低于打伞位」。
 	t.check_approx(
-		def.hand_angle_max_rad, StageDef.LEVEL1_HAND_MAX_RAD, 1e-9, "第一关的手角上限应是 90°（打伞位）"
+		def.hand_angle_max_rad, PI, 1e-9, "第一关的手角上限应是 π（竖直，用户 2026-10-16 定案）"
 	)
-	t.check_approx(def.hand_angle_max_rad, PI * 0.5, 1e-9, "90° 即 π/2")
 	# 许仙（布景影人）：右手把伞举在头顶、左臂自然垂下（用户 2026-10-16 参考图）。
 	var angles: Array = def.initial["hand_angles"][UmbrellaControllerScript.XUXIAN_ID]
 	t.check_approx(
@@ -782,22 +795,24 @@ func _test_15_level1_contact_pose_and_window(t: ATestBase) -> void:
 		"举伞的手应落在「举过头顶」档（≥ %.2f rad）" % StageDef.HAND_OVERHEAD_MIN_RAD
 	)
 	t.check_approx(float(angles[0]), 0.0, 1e-9, "许仙开局左臂应自然垂下（参考图里另一臂垂着）")
-	# 🔴 他这一角**故意超过本折手感上限 90°**：那条上限只约束玩家操控的那一具（见 validate() 注）。
+	# 上限放开到 π 之后，他的 140° 自然落在上限之内（旧版「刻意越过 90° 上限」的注已入档）。
 	t.check(
-		float(angles[1]) > def.hand_angle_max_rad,
-		"举伞角应刻意越过本折手感上限（%.2f）" % def.hand_angle_max_rad
+		float(angles[1]) <= def.hand_angle_max_rad + 1e-9,
+		"举伞角应落在本折上限（竖直）之内"
 	)
-	# 接伞的参考角必须**就是**打伞位（= 本折上限）：玩家手感与旧版一致的前提。
+	# 接伞的参考角必须**就是**打伞位：它是新判据（手高不低于打伞位）的下界。
 	t.check_approx(
 		UmbrellaControllerScript.CONTACT_HAND_ANGLE_RAD,
 		StageDef.LEVEL1_HAND_MAX_RAD,
 		1e-9,
-		"接伞的参考手角应等于打伞位（本折上限），否则玩家要抬的角度会跟着许仙的姿势漂"
+		"接伞的参考手角应等于打伞位（判据下界），否则玩家要抬的角度会跟着许仙的姿势漂"
 	)
 
 	var cue: Dictionary = _find(def, "l1_c3_hand_raise")
 	t.check(not cue.is_empty(), "应存在抬手落点 l1_c3_hand_raise")
 	var range: Dictionary = cue.get("target_range", {})
+	# 数值扫描反推对齐窗口：新判据是「手高 ≥ 打伞位 − 容差」，因此窗口是
+	# [打伞位−容差对应角, 本折上限]，扫描到上限为止而不是抄公式。
 	var reference: float = UmbrellaController.hand_height(StageDef.LEVEL1_HAND_MAX_RAD, 0.0)
 	var tolerance: float = UmbrellaControllerScript.HAND_HEIGHT_TOLERANCE
 	var step: float = 0.0025
@@ -805,11 +820,16 @@ func _test_15_level1_contact_pose_and_window(t: ATestBase) -> void:
 	var window_max: float = -INF
 	var angle: float = 0.0
 	while angle <= def.hand_angle_max_rad + step * 0.5:
-		if absf(UmbrellaController.hand_height(angle, 0.0) - reference) <= tolerance:
+		# 只统计不越上限的角（步进可能略微越过 π，钳住后窗口上界才与判据一致）。
+		if angle <= def.hand_angle_max_rad and UmbrellaController.hand_height(angle, 0.0) >= reference - tolerance:
 			window_min = minf(window_min, angle)
 			window_max = maxf(window_max, angle)
 		angle += step
-	t.check(window_min < INF, "本关上限之内应存在与许仙右手齐平的角度（容差 %.3f）" % tolerance)
+	t.check(window_min < INF, "本关上限之内应存在与打伞位齐平或更高的角度（容差 %.3f）" % tolerance)
+	t.check(
+		window_max >= def.hand_angle_max_rad - step,
+		"对齐窗口应一直开到本折上限（竖直也能接，扫到 %.4f）" % window_max
+	)
 	t.check(
 		(
 			window_min >= float(range.get("min", 0.0)) - 1e-9
@@ -820,4 +840,4 @@ func _test_15_level1_contact_pose_and_window(t: ATestBase) -> void:
 			% [float(range.get("min", 0.0)), float(range.get("max", PI)), window_min, window_max]
 		)
 	)
-	t.finish("打伞位 90°：抬手到位与接伞对齐落在同一段角度里")
+	t.finish("打伞位为下界：任一只手抬到打伞位以上（最高竖直）即相接，抬手落点包住对齐窗口")

@@ -27,7 +27,9 @@ const Level1SceneScript := preload("res://scripts/a_test/level1_a_scene.gd")
 ## 锚点必须只有一处来源，否则每改一次站位就要手工同步一遍。
 const XUXIAN_X: float = StageDefScript.LEVEL1_XUXIAN_X
 const XUXIAN_RAISE: float = StageDefScript.LEVEL1_XUXIAN_UMBRELLA_RAISE_RAD
-## 接伞的参考手角（打伞位）。她抬到这里就算相接——与玩家「按住抬手键到顶」是同一个角。
+## 接伞的参考手角（打伞位）。🔴 2026-10-16 用户定案放宽：左手右手都可以接，且
+## 「抬到打伞位**或更高**」（最高竖直）都算相接——本角现在是判据的**下界**，
+## 不再是「按住抬手键到顶」的位置（上限已放开到 π）。
 const CATCH_ANGLE: float = StageDefScript.LEVEL1_HAND_MAX_RAD
 ## 归位点（小青身旁）：控制器的 `TURN_POINT_X` = 0.32，落点目标带是 [0.28, 0.32]
 ## （2026-10-16 许仙回到桥头后「回到小青身旁」是**向左**走）。取带**中值**代表「她停在小青旁边」——
@@ -83,6 +85,8 @@ func run_all() -> Dictionary:
 	_test_baisuzhen_hands_mirror_with_umbrella(t)
 	_test_join_window_matches_data_and_display(t)
 	_test_take_requires_alignment(t)
+	_test_take_with_right_hand(t)
+	_test_take_with_raised_hand(t)
 	_test_misaligned_take_does_not_transfer(t)
 	_test_umbrella_follows_lowered_hand(t)
 	_test_home_requires_reaching_xiaoping(t)
@@ -251,10 +255,54 @@ func _test_take_requires_alignment(t: ATestBase) -> void:
 	var controller: UmbrellaController = _controller(1, _aligned_puppets())
 	controller.update(8750, [])
 	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "相接后伞的持有者应为白素贞")
-	t.check_eq(controller.holder_hand_of(), UmbrellaControllerScript.BAISUZHEN_HAND, "接伞后应握在白素贞左手")
+	t.check_eq(controller.holder_hand_of(), UmbrellaControllerScript.BAISUZHEN_HAND, "左手到位时伞应记到左手")
 	t.check_approx(controller.borrow_position(), _borrow_x(), 0.0001, "应记录接伞位置")
 	t.check(_has_event(controller, UmbrellaControllerScript.KIND_TAKE), "应发出 umbrella_take 事件")
 	t.finish("走进交接窗口且手高齐平时接伞")
+
+
+## 🔴 2026-10-16 用户定案：**左手右手都可以接伞**——右手到位时伞应转到**右手**，
+## 且事件/录制里的 `holder_hand` 也要如实记 "right"（显示端靠它把伞画到那只手腕上）。
+func _test_take_with_right_hand(t: ATestBase) -> void:
+	t.begin("右手抬到打伞位也能接伞")
+	var puppets: Array = _puppets()
+	puppets[UmbrellaControllerScript.BAISUZHEN_ID].stage_pos = Vector2(_borrow_x(), 0.5)
+	puppets[UmbrellaControllerScript.BAISUZHEN_ID].hand_angle.y = CATCH_ANGLE
+	var controller: UmbrellaController = _controller(1, puppets)
+	controller.update(8750, [])
+	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "右手到位也应接伞")
+	t.check_eq(controller.holder_hand_of(), "right", "伞应记到实际到位的右手")
+	t.check(_has_event(controller, UmbrellaControllerScript.KIND_TAKE), "右手接伞也应发出 umbrella_take 事件")
+	_settle(controller)
+	t.check_approx(
+		controller.position.y,
+		UmbrellaControllerScript.hand_height(CATCH_ANGLE, 0.0),
+		0.0001,
+		"伞应跟到右手的手高上"
+	)
+	t.finish("任一只手抬到打伞位即接伞，伞画到那只手")
+
+
+## 手举得**比打伞位更高**同样算相接（2026-10-16 用户定案「手臂最大角度可以到竖直」）：
+## 判据的下界是打伞位，上界开到竖直（π）。
+func _test_take_with_raised_hand(t: ATestBase) -> void:
+	t.begin("举过打伞位（乃至竖直）也能接伞")
+	# 左手举到 140°（与许仙托伞同高）——旧判据（±7.6° 容差带）会拒收，新判据应收。
+	var high: Array = _aligned_puppets()
+	high[UmbrellaControllerScript.BAISUZHEN_ID].hand_angle.x = PI * 140.0 / 180.0
+	var high_controller: UmbrellaController = _controller(1, high)
+	high_controller.update(8750, [])
+	t.check_eq(high_controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "左手举过打伞位也应接伞")
+	high_controller.take_events()
+	# 右手一路举到竖直（π）——上限放开后的极限位置。
+	var vertical: Array = _puppets()
+	vertical[UmbrellaControllerScript.BAISUZHEN_ID].stage_pos = Vector2(_borrow_x(), 0.5)
+	vertical[UmbrellaControllerScript.BAISUZHEN_ID].hand_angle.y = PI
+	var vertical_controller: UmbrellaController = _controller(1, vertical)
+	vertical_controller.update(8750, [])
+	t.check_eq(vertical_controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "右手举到竖直也应接伞")
+	t.check_eq(vertical_controller.holder_hand_of(), "right", "竖直到位的是右手，伞应记到右手")
+	t.finish("打伞位以上（含竖直）都算到位")
 
 
 ## 交接窗口的三方对表：控制器的判据、关卡数据的落点目标带、以及**画面上两只手的位置**。

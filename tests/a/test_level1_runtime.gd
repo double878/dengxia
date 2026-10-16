@@ -72,7 +72,7 @@ func _test_start_to_end(t: ATestBase) -> void:
 	var run: Dictionary = _new_run()
 	var runtime: Object = run["runtime"]
 	t.check_eq(runtime.stage_def.duration_ms, 35000, "使用第一关 35 秒数据")
-	t.check_eq(runtime.stage_def.cues.size(), 7, "使用第一关 7 条关键动作")
+	t.check_eq(runtime.stage_def.cues.size(), 6, "使用第一关 6 条关键动作（收势落手 cue 已于 2026-10-16 下线）")
 	t.check_eq(_events(run, "stage_start").size(), 1, "开演只发一次 stage_start")
 	_advance(run, 35000)
 	t.check(runtime.is_over(), "35 秒（歌曲时间）时结束")
@@ -296,15 +296,16 @@ func _test_mixed_event_stream_object_ids(t: ATestBase) -> void:
 	t.finish("两类 object_id 类型明确，接收端按字符串/整型分流")
 
 
-## 关卡数据里的手角上限要真的落到操控控制器上（第一关 = 90° 的打伞位）。
-## 只断言「数据里有这个值」不够——漏掉这段接线时数据会静默失效，手感悄悄退回 180°，
-## 而「白素贞抬到 90° 就能接伞」这件事正是建立在这个上限上。
+## 关卡数据里的手角上限要真的落到操控控制器上。
+## 🔴 2026-10-16 用户定案「白素贞的手臂最大角度可以到竖直」：第一关上限 = π（竖直），
+## 旧版收在 90° 的手感装置取消——「按住到顶」现在是竖直，接伞判据改看「不低于打伞位」。
+## 只断言「数据里有这个值」不够——漏掉这段接线时数据会静默失效（退回默认或被收到别处）。
 func _test_hand_angle_cap_is_wired(t: ATestBase) -> void:
-	t.begin("第一关的手角上限（90° 打伞位）接进了操控控制器")
+	t.begin("第一关的手角上限（π 竖直）接进了操控控制器")
 	var run: Dictionary = _new_run()
 	var runtime: Object = run["runtime"]
 	t.check_approx(
-		runtime.stage_def.hand_angle_max_rad, StageDef.LEVEL1_HAND_MAX_RAD, 1e-9, "第一关数据的手角上限应是 90°"
+		runtime.stage_def.hand_angle_max_rad, PI, 1e-9, "第一关数据的手角上限应是 π（竖直）"
 	)
 	t.check_approx(
 		runtime.puppet_controller.hand_angle_max,
@@ -313,11 +314,11 @@ func _test_hand_angle_cap_is_wired(t: ATestBase) -> void:
 		"运行编排应把它交给操控控制器"
 	)
 	runtime.puppet_controller.set_input_map({"both_raise": true})
-	_steps(run, 60)
+	_steps(run, 240)
 	t.check_approx(
 		runtime.puppet_controller.get_controlled().hand_angle.x,
-		StageDef.LEVEL1_HAND_MAX_RAD,
+		runtime.stage_def.hand_angle_max_rad,
 		1e-6,
-		"按住抬手键到顶应停在 90°，不再举到 180°"
+		"按住抬手键到顶应停在竖直（π）"
 	)
-	t.finish("90° 是能停住的打伞位，且由关卡数据驱动")
+	t.finish("竖直是能停住的上限，且由关卡数据驱动")

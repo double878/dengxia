@@ -31,17 +31,9 @@ static func make_stage(config: Dictionary) -> StageDef:
 	for i in names.size():
 		def.segments.append({"name": names[i], "start_ms": starts[i], "end_ms": starts[i + 1]})
 	# 交接改为真实条件触发，不用固定拍点考玩家；对白期间不安排评分动作。
-	# 保留收势姿态的原有评分/补救通路，移动指导由当前剧情阶段提供。
-	def.cues = [
-		Cue.make(
-			"l1_opera_lower_hand",
-			int(config.closing_ms) + 900,
-			Cue.ACTION_HAND_LOWER,
-			0,
-			{"key": "angle", "min": -0.15, "max": 0.15},
-			250,
-			"hand_lower"
-		)
-	]
-	def.cues[0]["segment"] = "收势"
+	# 🔴 2026-10-16 用户定案「最后白素贞手不用放下」：原「收势落手」cue
+	# （l1_opera_lower_hand，closing_ms+900 判落手）**下线**——她走回小青身旁的那一刻
+	# Act1OperaFlow 直接收关，不再要求任何落手动作。cue 表随之清空； UmbrellaController
+	# 的交接事件照常走 PerformanceSystem（与其它动作同一条判定路径）。
+	def.cues = []
 	return def

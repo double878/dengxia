@@ -28,15 +28,14 @@ func _run() -> void:
 	var bai: PuppetState = controller.get_puppet(0)
 	var qing: PuppetState = controller.get_puppet(2)
 	var xuxian: PuppetState = controller.get_puppet(1)
-	# 开局三具影人**都不在桥上**：2026-10-16 定案把两位娘子放在柳树下（0.26 / 0.32）、
-	# 许仙放在桥头（0.5285，正是桥跨左缘 0.52853）。脚点因此落在**各自的落地线**上：
-	# 许仙 0.587963（635px）、两位娘子 0.597222（645px）——都在 `scripts/a/stage_def.gd`
-	# 的 `initial.positions` 里，这里**与它同源取数**（不另写一份数字，站位改了自动跟随）。
+	# 开局站位（2026-10-16 第三轮定案）：两位娘子在柳树下（0.26 / 0.32，桥外 → 各自落地线
+	# 645px）；🔴 许仙**在桥上**（0.58，桥跨内）→ 脚点是桥面高度（588px）。
+	# 数据初值与运行时同源：initial.positions 与 `height_at` 由下面的断言钉住。
 	#
 	# 🔴 2026-10-16 口径改动（用户看游戏后报「人物站位太高」）：旧版锁的是
 	#    「三具影人 y 全部 == 0.5」。那是 `set_walk_path()` 对所有影人一律写 `height_at(x)`、
 	#    而它在桥跨之外的兜底是 0.5 造成的：三具影人开局正好全在桥跨外，脚点被统一抬到
-	#    540px，关卡数据里的 635/645px 从未生效。现在**桥外回各自的落地线**。
+	#    540px，关卡数据里的 635/645px 从未生效。现在**桥外回各自的落地线**、桥内贴桥面。
 	var lines: Dictionary = StageDef.make_level1().initial["positions"]
 	var bai_ground: float = controller.ground_y(0)
 	for state: PuppetState in [bai, xuxian, qing]:
@@ -56,7 +55,13 @@ func _run() -> void:
 		path = load("res://scripts/a/stage_walk_path.gd").new()
 		check(not path.is_on_deck(0.23), "0.23 不在桥跨内，却算成了桥面")
 		check(path.is_on_deck(0.73), "桥心 0.73 必须落在桥跨内")
-		check(not path.is_on_deck(xuxian.stage_pos.x), "桥头 0.5285 不该算在桥跨内")
+		check(path.is_on_deck(xuxian.stage_pos.x), "许仙 0.58 应在桥跨内（用户定案「站桥上」）")
+		check(
+			is_equal_approx(
+				xuxian.stage_pos.y, path.height_at(xuxian.stage_pos.x, controller.ground_y(1))
+			),
+			"许仙脚点应贴桥面（站桥上）"
+		)
 		var shore: float = path.height_at(0.23, bai_ground)
 		check(is_equal_approx(shore, bai_ground), "接伞岸边的高度不是落地线")
 		check(path.height_at(0.73) < path.height_at(0.80), "桥顶与下坡高度颠倒")

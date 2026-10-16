@@ -18,13 +18,15 @@ class_name UmbrellaController
 ## 画出的手腕（`PlaceholderPuppet.hand_screen_position()`）。理由与实测见 A→B 交接文档 6.2 节。
 ##
 ## 对照流程表（2026-10-16 用户定案版：借伞 → 回到小青身旁 → 结束）：
-##   开场      许仙立在**桥头**（0.5285）、右手举到 140° 把伞托在头顶；玩家控制白素贞。
+##   开场      许仙立在**桥上**（0.58，桥面高 588px）、右手举到 140° 把伞托在头顶；玩家控制白素贞。
 ##             白素贞与小青立在柳树一带（0.32 / 0.26）——白素贞在小青靠许仙的那一侧。
-##   接伞      白素贞向右走到许仙面前（**不必贴住他、更不必穿过他**）、把左手抬到 90°（打伞位），
-##             她的手与打伞位齐平（手距与手高都在容差内）→ 伞自动转到白素贞左手。
-##   走回小青身旁 接到伞后立即向左走；许仙右手一直举着；白素贞可自行放下左手，伞跟随她的手。
+##   接伞      白素贞向右走到许仙面前（**不必贴住他、更不必穿过他**）、把一只手抬到
+##             打伞位（90°）或更高（🔴 2026-10-16 用户定案：**左手右手都可以**，手臂最大
+##             可以举到**竖直**）→ 手一到打伞位以上，伞自动转到那只手。
+##   走回小青身旁 接到伞后立即向左走；许仙右手一直举着；伞跟随她的手（她可自行放手的高度）。
 ##             她走回**小青身旁**（x ≤ `TURN_POINT_X`）→ 本关收尾（这就是完成条件）。
-##   收势      放下左手。
+##   收势      🔴 2026-10-16 用户定案：**最后不用放下手**——原第 48 拍「落手收势」cue 已下线，
+##             流程收在「走回小青身旁」即结束，不再要求任何落手动作。
 ##
 ## ⚠️ 本控制器只说「伞归谁」，**关卡何时收尾由 `Act1OperaFlow` 读 `is_at_home()` 决定**。
 ##
@@ -51,6 +53,9 @@ const UMBRELLA_NAME: String = "umbrella_main"
 const XUXIAN_ID: int = 1  ## 许仙：固定站位、右手举伞
 const BAISUZHEN_ID: int = 0  ## 白素贞：玩家控制
 const XUXIAN_HAND: String = "right"
+## 🔴 历史名：许仙固定用右手，白素贞**左右手都可以接伞**（2026-10-16 用户定案）——
+## 实际接在哪儿由 `_meeting_hand()` 现场判断并写进 `_holder_hand`，本常量只作
+## 测试与旧数据引用的「默认接伞手」保留，不再参与判定。**不要改名**（测试在用）。
 const BAISUZHEN_HAND: String = "left"
 
 ## —— 「两只手相接」判据（本流程的核心，用户 2026-10-04 定案）——
@@ -94,12 +99,12 @@ const HAND_HEIGHT_TOLERANCE: float = 0.04
 ## 改名会牵动 StageDef 与多处测试的字面量，故保留名字、以本注释为准。
 ## 读方一律走 `is_at_home()`，不要直接拿它做别的比较。
 ##
-## 🔴 2026-10-16 定案（许仙回桥头 **0.5285**、小青 **0.26**、白素贞 **0.32**）：
-## 两位娘子都在许仙**左侧**，白素贞去程**向右**入窗（窗口 0.3803~0.5003），
+## 🔴 2026-10-16 定案（许仙上桥 **0.58**、小青 **0.26**、白素贞 **0.32**）：
+## 两位娘子都在许仙**左侧**，白素贞去程**向右**入窗（窗口 0.4318~0.5518），
 ## 「回到小青身旁」因此是**向左**走回 0.32 以内，判据为 **`x ≤ 0.32`**。
 ## 0.32 = 小青（0.26）+ 0.06 = 115px，恰是白素贞自己的开局站位（走回原处就算到了）。
 ##
-## ⚠️ 阈值必须**小于交接窗口的下沿**（0.3803）：接伞那一刻她必然在窗口里（x ≥ 0.3803 > 0.32），
+## ⚠️ 阈值必须**小于交接窗口的下沿**（0.4318）：接伞那一刻她必然在窗口里（x ≥ 0.4318 > 0.32），
 ## 所以「刚接到伞」绝不会被误读成「已归位」，玩家一定得真的往回走一趟。
 ## 这正是阈值与窗口必须分居阈值两侧的原因（旧版镜像时是反过来的：阈值在窗口右侧）。
 ##
@@ -107,12 +112,14 @@ const HAND_HEIGHT_TOLERANCE: float = 0.04
 ## 两者若错开，会出现「拍点判命中、控制器却没判归位」——这一趟就白走。
 const TURN_POINT_X: float = 0.32
 
-## 交接窗口的**参考手角**：判定用「她的手抬到这个角度」而不是「两手齐平」。
+## 交接窗口的**参考手角**：判定用「她的手抬到**不低于**这个角度」。
 ##
 ## 理由（2026-10-16 用户参考图定案：许仙把伞举在头顶）：伞是**竖持**的，许仙握在伞杆上段、
 ## 白素贞握下段，两人的手本来就不在同一高度上，因此「两手齐平」不再是正确的判据。
-## 这里取**打伞位 90°**（= `StageDef.LEVEL1_HAND_MAX_RAD`，也是玩家按住抬手键到顶的位置），
-## 于是玩家手感与旧版完全一致：走过去、把左手抬到底，伞就换手。
+## 这里取**打伞位 90°**（= `StageDef.LEVEL1_HAND_MAX_RAD`）作为**下界参考**：
+## 手高到达打伞位（减去容差）即算到位。
+## 🔴 2026-10-16 用户定案两条放宽：**左手右手都可以接**；且她的手角上限放宽到竖直（π），
+## 「举得比打伞位更高」同样算到位（见 `_meeting_hand()`）。
 ## ⚠️ 它必须与 `StageDef.LEVEL1_UMBRELLA_RAISE_*` 的到位区间自洽，否则会出现
 ## 「拍点算抬手到位、伞却不换手」——见 `tests/a/test_level1_cues.gd` 的数值扫描断言。
 const CONTACT_HAND_ANGLE_RAD: float = PI * 0.5
@@ -230,11 +237,12 @@ func set_clock(p_clock: Object) -> void:
 ## 手相接的位置在许仙**左方** `CONTACT_REACH_X` 处，所以这里是**减号**。
 ## 2026-10-16 定案（许仙回桥头）时**必须连同这个符号一起改**：只改站位不改它，窗口会落到许仙
 ## 右边——她得绕过他走到他右后方才接得到伞。
-## 减号后窗口 = 0.5285 − 0.0882 ± 0.06 = **0.3803~0.5003**（730~961px，柳树与桥头之间的空地）。
+## 减号后窗口 = 0.58 − 0.0882 ± 0.06 = **0.4318~0.5518**（829~1059px，空地到桥面左段；
+## 窗口右半落在桥跨上——白素贞站在那段时脚点随桥拱升起，见 `StageWalkPath`）。
 ##
 ## 沿革：最初是加号（许仙在台左 0.13、白素贞在台右 0.80）；2026-10-15 站位镜像（许仙换到
 ## 桥头 0.5285、白素贞换到台左 0.32）时改成减号；2026-10-16 一度改回加号（许仙在岸边 0.28），
-## 同日定案再把许仙放回桥头，于是又回到**减号**。
+## 同日定案再把许仙放回桥头，于是又回到**减号**；同日第三轮他再上桥面（0.58），窗口右移。
 ## **每次左右关系一变，这个符号都要跟着翻一次**——它和站位是同一条数据的两面。
 ## `StageDef.LEVEL1_APPROACH_*` 也照抄同一个符号，`test_level1_cues` 用等式把两者钉住。
 ##
@@ -371,22 +379,22 @@ func take_events() -> Array[Dictionary]:
 
 
 ## —— 接伞 ——
-## 白素贞走到交接窗口里（两只手相接的那一段）、把左手抬到打伞位（90°）→ 伞自动转到她左手。
+## 白素贞走到交接窗口里（两只手相接的那一段）、把**一只手**抬到打伞位（90°）或更高
+## （🔴 2026-10-16 用户定案：左手右手都可以，最大可以举到竖直）→ 伞自动转到那只手。
 ## 她**不需要**贴到许仙身上、更不需要穿过他：判据是两只手之间的距离，不是两人的接地点距离。
 func _try_take(song_time_ms: int) -> void:
-	if not _hands_meet():
+	var hand: String = _meeting_hand()
+	if hand.is_empty():
 		return
 	var previous_id: int = _holder_id
 	var previous_hand: String = _holder_hand
 	_borrow_x = _puppet_x(BAISUZHEN_ID)
 	_holder_id = BAISUZHEN_ID
-	_holder_hand = BAISUZHEN_HAND
-	# 换手当帧她必然在交接窗口里（窗口下沿 0.3803 > 归位阈值 0.32），故这里显式清一次即可：
+	_holder_hand = hand
+	# 换手当帧她必然在交接窗口里（窗口下沿 0.4318 > 归位阈值 0.32），故这里显式清一次即可：
 	# 「刚接到伞」绝不能被读成「已回到小青身旁」。
 	_at_home = false
-	_begin_handoff(
-		position, hand_position(BAISUZHEN_ID, BAISUZHEN_HAND), previous_id, previous_hand
-	)
+	_begin_handoff(position, hand_position(BAISUZHEN_ID, hand), previous_id, previous_hand)
 	if not _take_reported:
 		_emit(song_time_ms, KIND_TAKE, BAISUZHEN_ID, _baisuzhen_x())
 		_take_reported = true
@@ -415,39 +423,49 @@ func in_join_window() -> bool:
 	return x >= window.x and x <= window.y
 
 
-## 接伞的相接条件：位置（在交接窗口里）与手（她抬到**打伞位**）两条都要。
+## 接伞的相接条件：位置（在交接窗口里）与手（**一只手**抬到**打伞位或更高**）两条都要。
 ##
 ## 🔴 2026-10-16 起这里不再拿许仙的**实时手高**做参考（他改成把伞举在头顶 140°）：
 ## 伞是**竖持**的，他握上段、她握下段，两人的手本来就不在同一高度。
-## 现在比较的是「她的手与打伞位（90°）之差」——手高按幕布上的实际高度算，
-## 已经把站蹲与手臂角度折进去了，因此「蹲着随手一伸」仍不算入位，
-## 而「站着把左手抬到底（90°）」正好齐平。玩家手感与旧版**完全一致**。
+## 🔴 同日用户定案放宽为两条：
+##   ① **左手右手都可以**——两只手任一只到位即可换手（伞转到实际到位的那只）；
+##   ② **到位 = 手高不低于打伞位**（下界仍是原来的容差带，约 82.4°），上界放开到竖直——
+##      因为她的手角上限本日也放宽到 π（竖直），「举得比打伞位更高」同样握得住伞杆下段。
+## 手高按幕布上的实际高度算，已把站蹲与手臂角度折进去，因此「蹲着随手一伸」仍不算入位。
 func _hands_meet() -> bool:
+	return not _meeting_hand().is_empty()
+
+
+## 哪只手已经到位（"left" / "right"；都没到位返回 ""）。两只都到位时**优先左手**（原判据的手感）。
+func _meeting_hand() -> String:
 	if not in_join_window():
-		return false
+		return ""
 	var baisuzhen: PuppetState = _puppet(BAISUZHEN_ID)
 	if baisuzhen == null:
-		return false
-	var left: float = hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
+		return ""
 	var contact: float = hand_height(CONTACT_HAND_ANGLE_RAD, 0.0)
-	return absf(left - contact) <= HAND_HEIGHT_TOLERANCE
+	var floor: float = contact - HAND_HEIGHT_TOLERANCE
+	if hand_height(baisuzhen.hand_angle.x, baisuzhen.stance) >= floor:
+		return "left"
+	if hand_height(baisuzhen.hand_angle.y, baisuzhen.stance) >= floor:
+		return "right"
+	return ""
 
 
 ## 位置与手高的读数，供显示端/测试读取（不参与判定）。
 ## `dx` 是**接地点**间距、`window` 是交手窗口、`aligned` 是接伞条件是否成立——
 ## 「两只手之间的实际距离」由显示端按画出来的手腕算（A→B 交接文档 6.2 节）。
-## `dy` 是她左手与**打伞位**的高度差（不再是「与许仙右手的高度差」，见 `_hands_meet()`）。
+## `dy` 是她**更接近打伞位的那只手**与打伞位的高度差（🔴 2026-10-16 起两只手都可接，
+## 不再只看左手）；`hand` 是已经到位的那只手（"" = 都没到位）。
 func alignment() -> Dictionary:
 	var window: Vector2 = join_window_x(_puppet_x(XUXIAN_ID))
 	var baisuzhen: PuppetState = _puppet(BAISUZHEN_ID)
 	var dy: float = 0.0
 	if baisuzhen != null:
-		dy = absf(
-			(
-				hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
-				- hand_height(CONTACT_HAND_ANGLE_RAD, 0.0)
-			)
-		)
+		var contact: float = hand_height(CONTACT_HAND_ANGLE_RAD, 0.0)
+		var left: float = absf(hand_height(baisuzhen.hand_angle.x, baisuzhen.stance) - contact)
+		var right: float = absf(hand_height(baisuzhen.hand_angle.y, baisuzhen.stance) - contact)
+		dy = minf(left, right)
 	return {
 		"dx": absf(_puppet_x(BAISUZHEN_ID) - _puppet_x(XUXIAN_ID)),
 		"dy": dy,
@@ -455,6 +473,7 @@ func alignment() -> Dictionary:
 		"window_max": window.y,
 		"in_window": in_join_window(),
 		"aligned": _hands_meet(),
+		"hand": _meeting_hand(),
 	}
 
 
