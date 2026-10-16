@@ -16,7 +16,8 @@ var graphics: bool = false
 var sample_wall: int = 0
 var frame_times: Array[float] = []
 var last_opera_phase: String = ""
-var observed_gongs: int = 0
+## 整段回放里收锣轨是否响过（在回放进行中逐帧采样，见 `_step` 的注）。
+var replay_take_sound: bool = false
 var handoff_x: float = 0.0
 
 
@@ -113,9 +114,15 @@ func _step(delta: float) -> void:
 				_start_replay()
 	elif phase == "replay":
 		var flow: CResultFlow = game._flow
-		if game._replay != null:
-			observed_gongs = game._replay._audio.replay_gong_count
 		if flow.is_replaying():
+			# 收锣轨有没有响，必须在**回放进行中**采样：回放一结束 `game._replay` 就被释放了
+			# （这正是旧代码在 117 行顺手把计数抄下来的原因）。这里逐帧取「或」，整段回放
+			# 只要响过一帧就算失败。
+			if game._replay != null:
+				var take_player: AudioStreamPlayer = game._replay._audio.get_node(
+					"Act1_take_close"
+				)
+				replay_take_sound = replay_take_sound or take_player.playing
 			if not paused_once and flow.get_player().get_now_ms() > 2000:
 				game._replay.toggle_pause()
 				paused_once = true
@@ -132,7 +139,10 @@ func _step(delta: float) -> void:
 			check(flow.get_flow_state() == &"result", "完整回放没有回收场")
 			check(flow.get_player().get_dispatched_event_count() == record.events.size(), "回放漏事件")
 			check(flow.get_player().get_now_ms() == record.duration_ms, "回放时长不一致")
-			check(observed_gongs == 1, "回放收锣没有且仅有一次")
+			# 🔴 2026-10-16 用户定案「接过伞不要有噔的一声」：回放里接伞同样不出声。
+			# 旧断言 `observed_gongs == 1`（回放收锣恰好一次）锁的是已作废的行为，已删；
+			# 现在改为「整段回放里收锣轨一帧都没响过」（`replay_take_sound` 在回放期间采样）。
+			check(not replay_take_sound, "回放里接伞不该有收锣声")
 			phase = "done"
 
 

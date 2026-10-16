@@ -1,6 +1,11 @@
 extends Node
 class_name Act1OperaAudio
 ## 表现层消费剧情与唯一 MusicClock，主轨包含自然对白及已通过的唱段。
+##
+## 🔴 2026-10-16 用户定案「接过伞不要有噔的一声」：接伞（`opera_take_close`）
+##   **不再播任何声音**。清单里的第 3 轨 `take_close`（一次收锣重音）仍按资产契约
+##   加载与校验，只是不再被播——见 `update()` 与 `apply_replay()` 的注。
+##   事件本身照旧由 A 侧剧情发出（它标记接伞时刻，进记录、进回放、进 C 侧事件白名单）。
 
 const MANIFEST_PATH := "res://assets/audio/act1-youhu-opera/score.json"
 var config: Dictionary = {}
@@ -15,8 +20,6 @@ var _line: Dictionary = {}
 var _events: Array[Dictionary] = []
 var _wait_gain: float = 0.0
 var _replay_paused: bool = false
-var _last_gong_seq: int = -1
-var replay_gong_count: int = 0
 
 
 static func read_config() -> Dictionary:
@@ -96,6 +99,9 @@ func setup(value: Dictionary, p_clock: MusicClock, p_flow: Act1OperaFlow) -> boo
 			"wait_loop":
 				_wait = player
 			"take_close":
+				# ⚠️ 2026-10-16 起本轨**只加载、不播放**（用户定案「接过伞不要有噔的一声」）。
+				# 仍然加载是刻意的：清单里声明了它，资产就得存在且合规——
+				# 去掉这一支等于让清单里的键悄悄失效，那才是更难查的问题。
 				_gong = player
 			"remedy":
 				_slow = player
@@ -127,19 +133,18 @@ func setup_replay(value: Dictionary) -> bool:
 	return setup(value, null, null)
 
 
-## 幕前只消费音频快照和已记录的收锣事件，不运行剧情、不推进 MusicClock。
-func apply_replay(view: Dictionary, events: Array, paused: bool) -> void:
+## 幕前只消费音频快照，不运行剧情、不推进 MusicClock。
+## ⚠️ `_events`（已记录的收锣事件）自 2026-10-16 起**不再被消费**：用户定案接伞不出声。
+## 形参保留是为了与 `update(_events, …)` 的调用口径一致——删掉它得连 `performance_replay.gd`
+## 一起改，而那一改除了少传一个实参没有任何收益，反而更容易在两边漂移。
+func apply_replay(view: Dictionary, _events: Array, paused: bool) -> void:
 	_replay_paused = paused
 	for pair: Array in [["main", _main], ["wait", _wait], ["slow", _slow]]:
 		_sync_recorded_player(pair[1], view.get(pair[0], {}), paused)
 	_wait.volume_db = linear_to_db(maxf(float(view.get("wait_gain", 0)), 0.001))
-	_gong.stream_paused = paused
-	for event: Variant in events:
-		if str(event.kind) == "opera_take_close" and int(event.seq) > _last_gong_seq:
-			_last_gong_seq = int(event.seq)
-			replay_gong_count += 1
-			_gong.play()
-			_gong.stream_paused = paused
+	# ⚠️ 收锣轨不参与暂停：它从来不播，去碰它的 `stream_paused` 只会制造一个隐患
+	# （Godot 的 `set_stream_paused(false)` 是能唤醒播放器的，位置落在别处就是一声凭空的重音）。
+	# 「只加载、不出声」见 `setup()` 与 `update()` 的注。
 
 
 func _sync_recorded_player(player: AudioStreamPlayer, view: Dictionary, paused: bool) -> void:
@@ -154,26 +159,27 @@ func _sync_recorded_player(player: AudioStreamPlayer, view: Dictionary, paused: 
 	player.stream_paused = paused or bool(view.get("paused", false))
 
 
+## 幕前暂停/继续。只管**主轨 / 等待器乐 / 缓板**——收锣轨从不播放，不需要也不该被暂停
+## （见 `apply_replay` 的注：动它的 `stream_paused` 是个隐患）。
 func set_replay_paused(value: bool) -> void:
 	_replay_paused = value
 	if value:
-		for player: AudioStreamPlayer in [_main, _wait, _gong, _slow]:
+		for player: AudioStreamPlayer in [_main, _wait, _slow]:
 			player.stream_paused = true
-	else:
-		_gong.stream_paused = false
 
 
 func is_replay_paused() -> bool:
 	return _replay_paused
 
 
-func update(events: Array = [], delta: float = 1.0 / 60.0) -> void:
-	for event in events:
-		if str(event.get("kind", "")) == "opera_take_close":
-			_gong.play()
+func update(_events: Array = [], delta: float = 1.0 / 60.0) -> void:
+	# ⚠️ 2026-10-16 用户定案：「接过伞不要有噔的一声」。
+	# 旧版在这里对 `opera_take_close` 调 `_gong.play()`（清单第 3 轨 `take_close` 的收锣重音）。
+	# 现在接伞**一次声音都不出**：既不播这一轨，也不改动主轨 / wait / slow 的任何状态。
+	# 收锣原本是「切断等待循环、交回基础轨」的重音，而那一件事由剧情与时钟负责，不是音效。
+	# `_events` 形参因此不再被消费，保留只为不动调用口径（见 `apply_replay`）。
 	var paused := clock.is_paused()
 	_wait.stream_paused = paused
-	_gong.stream_paused = paused
 	_slow.stream_paused = paused
 	if paused:
 		return
