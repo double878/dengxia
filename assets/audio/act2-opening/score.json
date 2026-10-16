@@ -1,240 +1,235 @@
 {
-  "audio_version": "act2-opening-original-6626be44b24f",
+  "audio_version": "act2-opening-act1-xuxian-e52d83ca6a00",
   "stage_id": 2,
   "scene_id": "fahai_advice",
   "main_path": "res://assets/audio/act2-opening/main.wav",
-  "duration_ms": 84709,
-  "dark_start_ms": 82709,
+  "duration_ms": 79507,
+  "dark_start_ms": 77507,
   "greeting_gate_ms": 0,
-  "splice_frame": 979968,
-  "splice_ms": 20416,
+  "splice_frame": 1351808,
+  "splice_ms": 28163,
   "lines": [
     {
       "line_id": "act2_original_01",
-      "role_id": "xuxian",
-      "role_name": "许仙",
-      "text": "原来是位老师父，请了。",
+      "role_id": "fahai",
+      "role_name": "法海",
+      "text": "许施主，请了。",
       "delivery": "original",
       "source_id": "video-1",
-      "start_frame": 43200,
-      "end_frame": 225600,
-      "start_ms": 900,
-      "end_ms": 4700
+      "start_frame": 0,
+      "end_frame": 276000,
+      "start_ms": 0,
+      "end_ms": 5750
     },
     {
       "line_id": "act2_original_02",
-      "role_id": "fahai",
-      "role_name": "法海",
-      "text": "请了，足下莫非就是许官人么？",
-      "delivery": "original",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "啊，你是？",
+      "delivery": "voice_converted",
       "source_id": "video-1",
-      "start_frame": 225600,
-      "end_frame": 523200,
-      "start_ms": 4700,
-      "end_ms": 10900
+      "start_frame": 276000,
+      "end_frame": 468000,
+      "start_ms": 5750,
+      "end_ms": 9750
     },
     {
       "line_id": "act2_original_03",
-      "role_id": "xuxian",
-      "role_name": "许仙",
-      "text": "正是卑人，请问师父上下？",
-      "delivery": "original",
-      "source_id": "video-1",
-      "start_frame": 523200,
-      "end_frame": 724800,
-      "start_ms": 10900,
-      "end_ms": 15100
-    },
-    {
-      "line_id": "act2_original_04",
       "role_id": "fahai",
       "role_name": "法海",
       "text": "老僧法海。",
       "delivery": "original",
       "source_id": "video-1",
-      "start_frame": 724800,
-      "end_frame": 921600,
-      "start_ms": 15100,
-      "end_ms": 19200
+      "start_frame": 468000,
+      "end_frame": 636000,
+      "start_ms": 9750,
+      "end_ms": 13250
+    },
+    {
+      "line_id": "act2_original_04",
+      "role_id": "fahai",
+      "role_name": "法海",
+      "text": "施主可还记得？",
+      "delivery": "original",
+      "source_id": "video-1",
+      "start_frame": 636000,
+      "end_frame": 864000,
+      "start_ms": 13250,
+      "end_ms": 18000
     },
     {
       "line_id": "act2_original_05",
       "role_id": "xuxian",
       "role_name": "许仙",
-      "text": "哦，原来是法海老禅师。",
-      "delivery": "original",
+      "text": "哦，原来你是金山寺的老禅师啊。",
+      "delivery": "voice_converted",
       "source_id": "video-1",
-      "start_frame": 921600,
-      "end_frame": 979968,
-      "start_ms": 19200,
-      "end_ms": 20416
+      "start_frame": 864000,
+      "end_frame": 1351808,
+      "start_ms": 18000,
+      "end_ms": 28163
     },
     {
       "line_id": "act2_original_06",
       "role_id": "fahai",
       "role_name": "法海",
-      "text": "老僧查明，",
+      "text": "可记得保和堂里点化你",
       "delivery": "original",
       "source_id": "video-2",
-      "start_frame": 1018368,
-      "end_frame": 1143168,
-      "start_ms": 21216,
-      "end_ms": 23816
+      "start_frame": 1351808,
+      "end_frame": 1891808,
+      "start_ms": 28163,
+      "end_ms": 39413
     },
     {
       "line_id": "act2_original_07",
       "role_id": "fahai",
       "role_name": "法海",
-      "text": "你那妻子乃是千年蛇妖所化。",
+      "text": "说你被那妖魔缠",
       "delivery": "original",
       "source_id": "video-2",
-      "start_frame": 1143168,
-      "end_frame": 1531968,
-      "start_ms": 23816,
-      "end_ms": 31916
+      "start_frame": 1891808,
+      "end_frame": 2251808,
+      "start_ms": 39413,
+      "end_ms": 46913
     },
     {
       "line_id": "act2_original_08",
-      "role_id": "xuxian",
-      "role_name": "许仙",
-      "text": "哎，师父！",
+      "role_id": "fahai",
+      "role_name": "法海",
+      "text": "你妻本是妖蛇变",
       "delivery": "original",
       "source_id": "video-2",
-      "start_frame": 1992768,
-      "end_frame": 2151168,
-      "start_ms": 41516,
-      "end_ms": 44816
+      "start_frame": 2251808,
+      "end_frame": 2575808,
+      "start_ms": 46913,
+      "end_ms": 53663
     },
     {
       "line_id": "act2_original_09",
-      "role_id": "xuxian",
-      "role_name": "许仙",
-      "text": "我那娘子乃是贤德之人，",
+      "role_id": "fahai",
+      "role_name": "法海",
+      "text": "变化人形在你的身边",
       "delivery": "original",
       "source_id": "video-2",
-      "start_frame": 2151168,
-      "end_frame": 2376768,
-      "start_ms": 44816,
-      "end_ms": 49516
+      "start_frame": 2575808,
+      "end_frame": 2959808,
+      "start_ms": 53663,
+      "end_ms": 61663
     },
     {
       "line_id": "act2_original_10",
-      "role_id": "xuxian",
-      "role_name": "许仙",
-      "text": "怎说是蛇妖所化？",
+      "role_id": "fahai",
+      "role_name": "法海",
+      "text": "五月端阳可曾应验",
       "delivery": "original",
       "source_id": "video-2",
-      "start_frame": 2376768,
-      "end_frame": 2487168,
-      "start_ms": 49516,
-      "end_ms": 51816
+      "start_frame": 2959808,
+      "end_frame": 3283808,
+      "start_ms": 61663,
+      "end_ms": 68413
     },
     {
       "line_id": "act2_original_11",
-      "role_id": "xuxian",
-      "role_name": "许仙",
-      "text": "师父讲话太无理了！",
-      "delivery": "original",
-      "source_id": "video-2",
-      "start_frame": 2487168,
-      "end_frame": 2669568,
-      "start_ms": 51816,
-      "end_ms": 55616
-    },
-    {
-      "line_id": "act2_original_12",
       "role_id": "fahai",
       "role_name": "法海",
-      "text": "看你入迷已深，",
+      "text": "现出原形在你的身边",
       "delivery": "original",
       "source_id": "video-2",
-      "start_frame": 2669568,
-      "end_frame": 2851968,
-      "start_ms": 55616,
-      "end_ms": 59416
-    },
-    {
-      "line_id": "act2_original_13",
-      "role_id": "fahai",
-      "role_name": "法海",
-      "text": "待等端阳佳节，",
-      "delivery": "original",
-      "source_id": "video-2",
-      "start_frame": 2851968,
-      "end_frame": 2957568,
-      "start_ms": 59416,
-      "end_ms": 61616
-    },
-    {
-      "line_id": "act2_original_14",
-      "role_id": "fahai",
-      "role_name": "法海",
-      "text": "与她多饮几杯雄黄酒，",
-      "delivery": "original",
-      "source_id": "video-2",
-      "start_frame": 2957568,
-      "end_frame": 3235968,
-      "start_ms": 61616,
-      "end_ms": 67416
-    },
-    {
-      "line_id": "act2_original_15",
-      "role_id": "fahai",
-      "role_name": "法海",
-      "text": "方知我言不谬矣。",
-      "delivery": "original",
-      "source_id": "video-2",
-      "start_frame": 3331968,
-      "end_frame": 3619968,
-      "start_ms": 69416,
-      "end_ms": 75416
-    },
-    {
-      "line_id": "act2_original_16",
-      "role_id": "fahai",
-      "role_name": "法海",
-      "text": "告辞了。",
-      "delivery": "original",
-      "source_id": "video-2",
-      "start_frame": 3619968,
-      "end_frame": 3811968,
-      "start_ms": 75416,
-      "end_ms": 79416
+      "start_frame": 3283808,
+      "end_frame": 3720320,
+      "start_ms": 68413,
+      "end_ms": 77507
     }
   ],
   "sources": [
     {
       "source_id": "video-1",
-      "file_name": "85b6e08ce1128fc542b11b16a60f5d24.mp4",
-      "video_sha256": "d490934b646d7ad97d2414dbe1bd006470a08af977d4399561baee5e67555393",
-      "decoded_pcm_sha256": "afc58f308f9a73815ea5ed44dd173f52e4e8963165fa179574bbc8620696491a",
+      "file_name": "a544af721c118308a367784dc4b0ff67.mp4",
+      "video_sha256": "c6eb11c8cebf4ed954b10b39544a65ff5971cd2bd6759a12c4a44e290699ea13",
+      "decoded_pcm_sha256": "1d3a77c18b81322fc30b3bfd6a6bebd86683cee60f201dcbb8663f085cf4beff",
       "source_start_frame": 0,
-      "source_end_frame": 979968,
+      "source_end_frame": 1353728,
       "main_start_frame": 0,
-      "main_end_frame": 979968,
-      "processing": "Full decoded original PCM; no trim, gain, crossfade, voice conversion or time stretching."
+      "main_end_frame": 1353728,
+      "processing": "Original decoded PCM outside declared Xu Xian edits and 40 ms source overlap."
     },
     {
       "source_id": "video-2",
-      "file_name": "b5283e8e28ef933e73ae8fda070cf3f7.mp4",
-      "video_sha256": "5b8ce1e523339226ad65efe6a51c64d5106b2e005dd3b71379c12c71fb4f3cc6",
-      "decoded_pcm_sha256": "d9df83e76d88d8781662c9266c2a740a31c9f229b435b28169cda2484c43dde4",
+      "file_name": "5b0f4a74b22bfab46696d30f1c62ccc3.mp4",
+      "video_sha256": "6f8fe55eee803528b9c9df89eeec0731e8e24f59414e5058f7f2d606fa49d769",
+      "decoded_pcm_sha256": "15fcbc6afc8b17e7c9cf38cd5bd3070feb5cf10f17ddc82c589d09339445feec",
       "source_start_frame": 0,
-      "source_end_frame": 2990080,
-      "main_start_frame": 979968,
-      "main_end_frame": 3970048,
-      "processing": "Full decoded original PCM; no trim, gain, crossfade, voice conversion or time stretching."
+      "source_end_frame": 2368512,
+      "main_start_frame": 1351808,
+      "main_end_frame": 3720320,
+      "processing": "Original decoded PCM outside declared Xu Xian edits and 40 ms source overlap."
     }
   ],
   "assets": [
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-opening/main.wav",
-      "frames": 4066048,
-      "sha256": "03495dfb09c7644c8d038bffd0eea634fd0c7fd6d76487f30a82cf3b38e7793a",
-      "pcm_sha256": "6626be44b24f7164b416d61f5babe238dcc2e58d2569ced7048d584286d65df0"
+      "frames": 3816320,
+      "sha256": "39748691df7d4397f3d6830ebdc29e9b1fd0f199bb59d404aaaedc1e9a938d9d",
+      "pcm_sha256": "e52d83ca6a00b0d2f25ab86f2b0298f526824d6f4139d820f72a8906f8994f1c"
     }
   ],
   "subtitle_basis": "Visible source subtitles, manually checked against extracted video frames; not ASR-certified speech alignment.",
-  "listening_scope": "Original user recordings; technical and Windows playback checks recorded separately. No human listening certification."
+  "listening_scope": "Original user recordings; technical and Windows playback checks recorded separately. No human listening certification.",
+  "voice_edits": [
+    {
+      "part": 0,
+      "role_id": "xuxian",
+      "line_id": "xu-question",
+      "start_frame": 292800,
+      "end_frame": 434400,
+      "replacement_sha256": "f95845d0445d10d00b78aeda7e7ccc21ebb8b450331fadb595d172f00a099764",
+      "converted_sha256": "2cef8fef7217650c2ac328065614eeda2c1890f656da20fea6ea3da5ef852d43",
+      "source_vocals_sha256": "aa82967bbb99a729e3f335d7f1049e937f9d5078c2cb6285d161706333918c60"
+    },
+    {
+      "part": 0,
+      "role_id": "xuxian",
+      "line_id": "xu-recognition",
+      "start_frame": 842400,
+      "end_frame": 1353728,
+      "replacement_sha256": "97607475ff495c421b33b70a01429b7e1d3bc50a57348a41545a934e2cea5a96",
+      "converted_sha256": "4a5e665db155f29f5e5c2186ba0bc654ded10425d3568bcccc101234cf77a88f",
+      "source_vocals_sha256": "629f47e7b4577f6b11ebcca1fe17783058c7f44f435c065a6663dd05f4b5bba9"
+    }
+  ],
+  "voice_conversion": {
+    "method": "Seed-VC direct voice conversion; no text synthesis",
+    "reference_sources": [
+      {
+        "path": "res://assets/audio/act1-natural/return-02.wav",
+        "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a"
+      },
+      {
+        "path": "res://assets/audio/act1-natural/return-06.wav",
+        "sha256": "37ae12ab01c5cc1fe46e1d50ae9cd70aa8c05b4385f2c07ead564407bd1cc978"
+      },
+      {
+        "path": "res://assets/audio/act1-natural/return-08.wav",
+        "sha256": "e5e9263e5b97b3a71551f4dc64adc85e9509d3b4a3b4713f5f62f127271dd17a"
+      }
+    ],
+    "identity_sha256": "a0c3eb9895438eb1572c74e82053907e68156217eb1a929e16b50aa739acdf25",
+    "model_sha256": "8ec8841b20bb46df9f7e8e570a6946a4b87b940133c7f0e778487ff33841f720",
+    "diffusion_steps": 25,
+    "cfg": 0.7,
+    "length_adjust": 1.0,
+    "f0_condition": false,
+    "auto_f0_adjust": false,
+    "pitch_shift": 0,
+    "seeds": [
+      2026101610,
+      2026101611
+    ],
+    "human_listening_verified": false
+  },
+  "splice_overlap_frames": 1920,
+  "entrance_music_enabled": false,
+  "production_recipe_sha256": "be26246dc310d0547f7f54186a1324eeda61bc5171a261964229fd974653800f"
 }

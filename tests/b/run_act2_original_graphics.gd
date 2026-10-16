@@ -1,7 +1,7 @@
 extends SceneTree
 ## 完整原声实时播放回归：真实 Windows/WASAPI，不改歌曲时间和播放速度。
 const Helper := preload("res://tests/c/run_act2_actions.gd")
-const OUTPUT := "res://builds/act2-video-singing"
+const OUTPUT := "res://builds/act2-xuxian-voice-20261016"
 var opening: Node
 var capture: AudioEffectCapture
 var checks: int = 0
@@ -70,7 +70,7 @@ func _run() -> void:
 	opening.scene_finished.connect(func(): completed = true)
 	Helper.key(opening, KEY_1)
 	await pump(.8, "entry")
-	check(levels.entry.peak > .001, "法海入场音乐无实际混音")
+	check(levels.entry.peak < .001 and not opening.music_cues.entry.playing, "法海入场应保持静音")
 	Helper.key(opening, KEY_SPACE)
 	Helper.drag(opening, opening.HAND_ANCHOR, Vector2(-400, 0))
 	await pump(.1, "arrival")

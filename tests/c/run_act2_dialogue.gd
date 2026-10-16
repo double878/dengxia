@@ -61,12 +61,18 @@ func _run() -> void:
 	opening._process(.02)
 	check(dialogue.phase == "dialogue" and not clock.is_song_frozen(), "真实迎接后原声未开始")
 	check(controller.get_puppet(0).stage_pos == fahai_position, "迎接自动移动法海")
-	check(dialogue.config.lines[0].role_id == "xuxian", "原片首句身份应为许仙")
+	check(dialogue.config.lines[0].role_id == "fahai", "新原片首句身份应为法海")
+	check(not opening.music_cues.entry.playing, "法海出场不得另加背景音乐")
+	var converted_lines: int = 0
 	for row: Dictionary in dialogue.config.lines:
+		if row.role_id == "xuxian":
+			converted_lines += 1
+			check(row.delivery == "voice_converted", "许仙没有使用第一关音色：" + row.line_id)
 		clock.set_free_time_ms(int(row.start_ms))
 		opening._process(.02)
 		check(dialogue.get_line().get("line_id") == row.line_id, "原片字幕未按时切换：" + row.line_id)
 		check(dialogue.phase == "dialogue", "旧六句应允逻辑截断新原声：" + row.line_id)
+	check(converted_lines == 2, "新视频应保留许仙两次完整回应")
 	var splice: int = int(dialogue.config.splice_ms)
 	clock.set_free_time_ms(splice - 100)
 	opening._process(.02)
@@ -79,7 +85,7 @@ func _run() -> void:
 	opening._toggle_pause()
 	clock.set_free_time_ms(splice + 1000)
 	opening._process(.02)
-	check(dialogue.get_line().get("text") == "老僧查明，", "第二段未按接头时标接续")
+	check(dialogue.get_line().get("text") == "可记得保和堂里点化你", "第二段未按接头时标接续")
 	opening._exit(1)
 	opening._process(.02)
 	var missing_song: int = clock.get_song_time_ms()

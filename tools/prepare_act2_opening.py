@@ -1,7 +1,9 @@
 """Build Act 2 opening from the user's two original recordings, without synthesis."""
 import argparse
+from array import array
 import hashlib
 import json
+import math
 from pathlib import Path
 import subprocess
 import wave
@@ -11,6 +13,49 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def apply_edits(parts, sources, recipe_path):
+    recipe = json.loads(recipe_path.read_text(encoding="utf-8"))
+    assert [row["video_sha256"] for row in sources] == recipe["video_sha256"]
+    edits = []
+    previous = {}
+    for item in recipe["voice_edits"]:
+        index = int(item["part"])
+        begin, end = int(item["start_frame"]), int(item["end_frame"])
+        assert 0 <= index < len(parts) and previous.get(index, 0) <= begin < end <= len(parts[index]) // 4
+        assert item["role_id"] == "xuxian"
+        path = Path(item["replacement_path"])
+        assert digest(path.read_bytes()) == item["replacement_sha256"]
+        with wave.open(str(path), "rb") as stream:
+            assert stream.getparams()[:3] == (2, 2, 48000)
+            replacement = stream.readframes(stream.getnframes())
+        assert len(replacement) == (end - begin) * 4
+        parts[index] = parts[index][:begin * 4] + replacement + parts[index][end * 4:]
+        previous[index] = end
+        edits.append({key: value for key, value in item.items() if key not in ["replacement_path", "composition"]})
+    overlap = int(recipe["splice_overlap_frames"])
+    assert 0 < overlap <= 4800 and overlap < min(len(part) // 4 for part in parts)
+    left, right = array("h"), array("h")
+    left.frombytes(parts[0][-overlap * 4:])
+    right.frombytes(parts[1][:overlap * 4])
+    blended = array("h")
+    for frame in range(overlap):
+        amount = (1 - math.cos(math.pi * frame / (overlap - 1))) / 2
+        for channel in range(2):
+            value = round(left[frame * 2 + channel] * (1 - amount) + right[frame * 2 + channel] * amount)
+            assert -32768 < value < 32767
+            blended.append(value)
+    splice = len(parts[0]) // 4 - overlap
+    sources[1]["main_start_frame"] = splice
+    sources[1]["main_end_frame"] = splice + len(parts[1]) // 4
+    for row in sources:
+        row["processing"] = "Original decoded PCM outside declared Xu Xian edits and 40 ms source overlap."
+    original = parts[0][:-overlap * 4] + blended.tobytes() + parts[1][overlap * 4:]
+    captions = [(int(row["part"]), row["start_s"], row["end_s"], row["role_id"], row["text"]) for row in recipe["captions"]]
+    return original, captions, dict(voice_edits=edits, voice_conversion=recipe["voice_conversion"],
+        splice_overlap_frames=overlap, entrance_music_enabled=False,
+        production_recipe_sha256=digest(recipe_path.read_bytes()))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("first", type=Path)
@@ -18,6 +63,7 @@ def main():
     parser.add_argument("--ffmpeg", type=Path, required=True)
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--edit-manifest", type=Path)
     args = parser.parse_args()
     args.work.mkdir(parents=True, exist_ok=True)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -65,6 +111,12 @@ def main():
         (1, 49.0, 55.0, "fahai", "方知我言不谬矣。"),
         (1, 55.0, 59.0, "fahai", "告辞了。"),
     ]
+    metadata = {}
+    if args.edit_manifest:
+        original, captions, metadata = apply_edits(pcm, sources, args.edit_manifest)
+        cursor = len(original) // 4
+    else:
+        original = b"".join(pcm)
     lines = []
     for index, (part, begin, end, role, text) in enumerate(captions, 1):
         src = sources[part]
@@ -74,11 +126,10 @@ def main():
         lines.append(dict(
             line_id=f"act2_original_{index:02d}", role_id=role,
             role_name="法海" if role == "fahai" else "许仙", text=text,
-            delivery="original", source_id=src["source_id"],
+            delivery="voice_converted" if args.edit_manifest and role == "xuxian" else "original", source_id=src["source_id"],
             start_frame=first, end_frame=last,
             start_ms=round(first / 48), end_ms=round(last / 48)
         ))
-    original = b"".join(pcm)
     # Keep all source tails before the established two-second scene fade.
     data = original + bytes(2 * 48000 * 4)
     main_path = args.output / "main.wav"
@@ -86,7 +137,7 @@ def main():
         output.setparams((2, 2, 48000, 0, "NONE", "not compressed"))
         output.writeframes(data)
     score = dict(
-        audio_version="act2-opening-original-" + digest(data)[:12],
+        audio_version=("act2-opening-act1-xuxian-" if args.edit_manifest else "act2-opening-original-") + digest(data)[:12],
         stage_id=2, scene_id="fahai_advice",
         main_path="res://assets/audio/act2-opening/main.wav",
         duration_ms=round(len(data) / 4 / 48),
@@ -100,6 +151,7 @@ def main():
         subtitle_basis="Visible source subtitles, manually checked against extracted video frames; not ASR-certified speech alignment.",
         listening_scope="Original user recordings; technical and Windows playback checks recorded separately. No human listening certification."
     )
+    score.update(metadata)
     (args.output / "score.json").write_text(json.dumps(score, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(dict(frames=len(data) // 4, original_frames=cursor,
                           splice_frame=score["splice_frame"], duration_ms=score["duration_ms"])))

@@ -342,7 +342,7 @@ func audio_probe(replay: Node, player: CReplayPlayer) -> void:
 		await create_timer(.6).timeout
 		var peak: float = buffer_peak(capture)
 		report.peaks[key] = peak
-		check(peak < .001 if key == "cup" else peak > .001, "实际回放混音/等待静音 " + key)
+		check(peak < .001 if key in ["entry", "cup"] else peak > .001, "实际回放混音/等待静音 " + key)
 		if key == "speech":
 			check(not replay.get("_act2_audio").players.entry.playing, "回放法海开口必须停止视频音乐")
 		if key == "duet":

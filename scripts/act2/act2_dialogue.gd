@@ -53,7 +53,8 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 			or ids.has(id)
 			or str(row.get("text", "")).is_empty()
 			or str(row.get("role_name", "")).is_empty()
-			or str(row.get("delivery", "")) != "original"
+			or str(row.get("delivery", "")) not in ["original", "voice_converted"]
+			or (str(row.get("role_id", "")) == "fahai" and str(row.get("delivery", "")) != "original")
 			or str(row.get("role_id", "")) not in ["fahai", "xuxian"]
 			or begin < previous
 			or end <= begin
@@ -63,8 +64,8 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 		ids[id] = true
 		previous = end
 	var greeting_gate := int(config.get("greeting_gate_ms", -1))
-	if greeting_gate != 0 or str(lines[0].role_id) != "xuxian":
-		return _fail("第二关原声须从许仙实际迎接后开口，不得提前播放")
+	if greeting_gate != 0:
+		return _fail("第二关原声须从实际迎接后完整播放，不得提前消耗首句")
 	var path := str(config.get("main_path", ""))
 	if not ResourceLoader.exists(path):
 		return _fail("缺少第二关第一幕主轨：" + path)

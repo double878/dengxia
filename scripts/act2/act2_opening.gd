@@ -134,7 +134,6 @@ func _process(delta: float) -> void:
 		events.append_array(lamp_controller.take_events())
 		_sync_entrances()
 		dialogue.update(on_stage, _entrance_complete[0])
-		music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 		if capture != null:
 			capture.capture(self, events)
 	if steps == 8:
@@ -253,7 +252,6 @@ func _enter(id: int) -> void:
 		return
 	on_stage.append(id)
 	on_stage.sort()
-	music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	_refresh_views()
 
 
@@ -276,7 +274,6 @@ func _exit(id: int) -> void:
 	if controller.controlled_id == id:
 		_release_control()
 	on_stage.erase(id)
-	music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	_refresh_views()
 
 

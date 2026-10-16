@@ -82,7 +82,7 @@ func _run() -> void:
 	InputHelper.key(opening, KEY_1)
 	label = "fahai_entry"
 	await pump(1.3)
-	check(opening.music_cues.entry.playing and levels[label].peak > .001, "法海出场有视频音乐真实混音")
+	check(not opening.music_cues.entry.playing and levels[label].peak < .001, "法海出场不另加背景音乐")
 	await shot("fahai-entry")
 	InputHelper.key(opening, KEY_ESCAPE)
 	check(await silence() < .001, "出场音乐暂停后实际静音")
