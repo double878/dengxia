@@ -18,7 +18,7 @@
       "role_name": "小青",
       "text": "姐姐　雨下大了",
       "start_ms": 80,
-      "end_ms": 5540,
+      "end_ms": 5300,
       "delivery": "singing"
     },
     {
@@ -26,8 +26,8 @@
       "role_id": "xiaoqing",
       "role_name": "小青",
       "text": "我们到那边柳树下躲避一时吧",
-      "start_ms": 5800,
-      "end_ms": 8610,
+      "start_ms": 5350,
+      "end_ms": 8050,
       "delivery": "singing"
     },
     {
