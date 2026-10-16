@@ -1,0 +1,166 @@
+{
+  "opening_end_ms": 58600,
+  "arrival_ms": 64000,
+  "take_ms": 66000,
+  "closing_ms": 68000,
+  "duration_ms": 91100,
+  "audio_version": "act1-youhu-opera-v7",
+  "reference": "https://www.bilibili.com/video/BV1uD4y1R7jH",
+  "generation": "粤剧《白蛇传》「游湖」折录屏（用户提供）→ 人声/伴奏分离 → 裁剪拼接 + 交叉淡化 + 线性响度归一；v6 收场追加「借伞对话」：用户提供京剧《白蛇传·游湖借伞》录屏（戏曲陈天宇，21.17s）经响度对齐（+24.48 dB，RMS 对齐）后 0.20s 等功率交叉淡化接于 v5 尾部，起唱句源截断处 0.9s 余弦淡出；v7 重建收场：交叉淡化 0.20→0.60 s（等功率）使两段衔接自然，源片段裁到 20.30 s 去掉末尾「西」音，新增 dialogue_ms 锚点由接伞触发",
+  "main_path": "res://assets/audio/act1-youhu-opera/main.wav",
+  "wait_loop_path": "res://assets/audio/act1-youhu-opera/wait_loop.wav",
+  "take_close_path": "res://assets/audio/act1-youhu-opera/take_close.wav",
+  "remedy_path": "res://assets/audio/act1-youhu-opera/remedy.wav",
+  "lines": [
+    {
+      "line_id": "opera-01",
+      "role_id": "xiaoqing",
+      "role_name": "小青",
+      "text": "姐姐　雨下大了",
+      "start_ms": 80,
+      "end_ms": 5300,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-02",
+      "role_id": "xiaoqing",
+      "role_name": "小青",
+      "text": "我们到那边柳树下躲避一时吧",
+      "start_ms": 5350,
+      "end_ms": 8050,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-03",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "柳下避雨怎相宜",
+      "start_ms": 11420,
+      "end_ms": 26790,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-04",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "二位娘子　你们要到哪里去呀",
+      "start_ms": 29390,
+      "end_ms": 35600,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-05",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "我们要回钱塘门去",
+      "start_ms": 36320,
+      "end_ms": 38480,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opera-06",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "哎呀呀　雨下大了",
+      "start_ms": 38510,
+      "end_ms": 39770,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-07",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "二位娘子不用推辞　待我叫船",
+      "start_ms": 40690,
+      "end_ms": 49610,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-08",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "如此　多谢君子",
+      "start_ms": 50510,
+      "end_ms": 58010,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-09",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "雨伞小姐拿去",
+      "start_ms": 70900,
+      "end_ms": 73000,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opera-10",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "待我改日去取",
+      "start_ms": 73200,
+      "end_ms": 77800,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opera-11",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "如此　多谢君子",
+      "start_ms": 78100,
+      "end_ms": 89000,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opera-12",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "谢君子恩义广",
+      "start_ms": 90600,
+      "end_ms": 91100,
+      "delivery": "singing"
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "main",
+      "path": "res://assets/audio/act1-youhu-opera/main.wav",
+      "sha256": "4cd655647ef67c8ff190fdd8c2ad4ca0bd838c6b3c99dfe96c23ea37c061b11c",
+      "frames": 4372800,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "wait_loop",
+      "path": "res://assets/audio/act1-youhu-opera/wait_loop.wav",
+      "sha256": "97fb429b18f9e538f86798774799dec49c338f7ec8f2b941f634191324edf664",
+      "frames": 104160,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "take_close",
+      "path": "res://assets/audio/act1-youhu-opera/take_close.wav",
+      "sha256": "5744854b80c3ff27ed028b9a8a3c76e55f4c45a1bdb9a88ced10bae22f6653c7",
+      "frames": 76800,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "remedy",
+      "path": "res://assets/audio/act1-youhu-opera/remedy.wav",
+      "sha256": "06ca5de627534f260608be923e1608b3e25828888bc2aedf52a232ed039452fb",
+      "frames": 240000,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    }
+  ],
+  "waiting_guard_ms": 500,
+  "rights_status": "local_prototype_only; external reference permission unverified",
+  "notes": "整轨结构 A[src17.32-53.81]+B[64.83-67.05]+S'[100.20-121.79]+E[inst121.79-134.00]，交叉淡化 0.20/0.20/0.35 s。句界取 10 ms hop 包络实测；开场句按句内停顿(源 22.86-23.12)拆两条。delivery 无法由声学特征机械判别（拖腔稳态占比对纯念白块与唱段无区分力，实测 87.8% vs 94.6%），故沿用素材既有标注：100.38-121.68 整块标为「唱」，其中 102-111 的伴奏电平仅 -77 dB 与之冲突，未采信。 v6：收场对白句界取录屏字幕帧实测（2.2/7.0/18.2/19.8 s，打击乐干扰下包络无判别力，以画面字幕为地面真相）；片段整体电平极低（峰值 -34.6 dBFS），增益后峰值 -10.1 dBFS 无削波。 v7：末尾「西」音经频谱定位在源片段 20.34-20.54 s（4-10 kHz 能量突增约 5 倍，金属镲/小锣），故裁至 20.30 s + 0.25 s 余弦淡出；衔接改为 0.60 s 等功率交叉淡化；新增 dialogue_ms=71160，接伞即跳到此处（不再先播 3.2 s 收势器乐）。",
+  "dialogue_ms": 70800
+}

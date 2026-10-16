@@ -18,6 +18,21 @@ var _subtitle: Label
 var _last_frame: Dictionary = {}
 
 
+## 把开演肘弯（`StageDef.initial["elbow_bends"]`）套到投影视图上——与操影端
+## （`level1_a_scene._apply_elbow_bends`）读同一份关卡数据。弯是**视图字段**，
+## 不在 C 侧录制帧里；不在这里补套，回放里高举臂会退回直臂。
+func _apply_elbow_bends() -> void:
+	var def: StageDef = StageDef.make_stage(stage_id)
+	if def == null:
+		return
+	var elbow_bends: Dictionary = def.initial.get("elbow_bends", {})
+	for puppet_id: int in elbow_bends.keys():
+		if puppet_id < 0 or puppet_id >= _surface.projection_views.size():
+			continue
+		var bends: Array = elbow_bends[puppet_id]
+		_surface.projection_views[puppet_id].hand_bend = Vector2(float(bends[0]), float(bends[1]))
+
+
 func _ready() -> void:
 	var background := ColorRect.new()
 	background.size = Vector2(1920, 1080)
@@ -29,6 +44,7 @@ func _ready() -> void:
 	_surface.z_index = -1
 	add_child(_surface)
 	_surface.configure(Rect2(66, 92, 1788, 588))
+	_apply_elbow_bends()
 	_binding = preload("res://scripts/c/c_stage_binding.gd").new()
 	_binding.stage_id = stage_id
 	# 布景和雨幕先于影人合成，再随整个幕面镜像；布景不受影人灯距变换影响。

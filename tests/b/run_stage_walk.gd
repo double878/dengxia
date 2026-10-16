@@ -27,20 +27,54 @@ func _run() -> void:
 	var controller: PuppetController = harness.runtime.puppet_controller
 	var bai: PuppetState = controller.get_puppet(0)
 	var qing: PuppetState = controller.get_puppet(2)
-	check(bai.stage_pos.y < 0.45, "白素贞开场未在桥面")
-	check(qing.stage_pos.y < 0.48, "小青开场未在桥面")
+	var xuxian: PuppetState = controller.get_puppet(1)
+	# 开局站位（2026-10-16 第三轮定案）：两位娘子在柳树下（0.26 / 0.32，桥外 → 各自落地线
+	# 645px）；🔴 许仙**在桥上**（0.58，桥跨内）→ 脚点是桥面高度（588px）。
+	# 数据初值与运行时同源：initial.positions 与 `height_at` 由下面的断言钉住。
+	#
+	# 🔴 2026-10-16 口径改动（用户看游戏后报「人物站位太高」）：旧版锁的是
+	#    「三具影人 y 全部 == 0.5」。那是 `set_walk_path()` 对所有影人一律写 `height_at(x)`、
+	#    而它在桥跨之外的兜底是 0.5 造成的：三具影人开局正好全在桥跨外，脚点被统一抬到
+	#    540px，关卡数据里的 635/645px 从未生效。现在**桥外回各自的落地线**、桥内贴桥面。
+	var lines: Dictionary = StageDef.make_level1().initial["positions"]
+	var bai_ground: float = controller.ground_y(0)
+	for state: PuppetState in [bai, xuxian, qing]:
+		var line: float = float(lines[state.puppet_id][1])
+		check(
+			is_equal_approx(state.stage_pos.y, line),
+			(
+				"影人 %d 开场脚点不是自己的落地线（y=%.6f，落地线 %.6f）"
+				% [state.puppet_id, state.stage_pos.y, line]
+			)
+		)
 	await capture(level, "opening")
+	var path: RefCounted = null
 	if not ResourceLoader.exists("res://scripts/a/stage_walk_path.gd"):
 		check(false, "缺少桥面路径")
 	else:
-		var path: RefCounted = load("res://scripts/a/stage_walk_path.gd").new()
-		var shore: float = path.height_at(0.23)
-		check(is_equal_approx(shore, 0.5), "接伞岸边高度不正确")
+		path = load("res://scripts/a/stage_walk_path.gd").new()
+		check(not path.is_on_deck(0.23), "0.23 不在桥跨内，却算成了桥面")
+		check(path.is_on_deck(0.73), "桥心 0.73 必须落在桥跨内")
+		check(path.is_on_deck(xuxian.stage_pos.x), "许仙 0.58 应在桥跨内（用户定案「站桥上」）")
+		check(
+			is_equal_approx(
+				xuxian.stage_pos.y, path.height_at(xuxian.stage_pos.x, controller.ground_y(1))
+			),
+			"许仙脚点应贴桥面（站桥上）"
+		)
+		var shore: float = path.height_at(0.23, bai_ground)
+		check(is_equal_approx(shore, bai_ground), "接伞岸边的高度不是落地线")
 		check(path.height_at(0.73) < path.height_at(0.80), "桥顶与下坡高度颠倒")
 		for x in [0.529, 0.530, 0.531, 0.73, 0.80, 0.86, 0.93]:
 			check(absf(path.height_at(x + 0.0001) - path.height_at(x)) < 0.001, "桥面不连续")
-		check(is_equal_approx(bai.stage_pos.y, path.height_at(bai.stage_pos.x)), "白素贞脚点偏离桥面")
-		check(is_equal_approx(qing.stage_pos.y, path.height_at(qing.stage_pos.x)), "小青脚点偏离桥面")
+		check(
+			is_equal_approx(bai.stage_pos.y, path.height_at(bai.stage_pos.x, bai_ground)),
+			"白素贞脚点偏离落地线"
+		)
+		check(
+			is_equal_approx(qing.stage_pos.y, path.height_at(qing.stage_pos.x, controller.ground_y(2))),
+			"小青脚点偏离落地线"
+		)
 	if bai.get("walk_phase") == null:
 		check(false, "影人缺少可记录步态")
 	else:
@@ -59,11 +93,22 @@ func _run() -> void:
 		check(bai.walk_amount == 0.0 and bai.walk_phase == phase, "站定没有收脚")
 		controller.drag_to(Vector2((0.23 - bai.stage_pos.x) * 1920, 0))
 		controller.end_drag()
-		check(is_equal_approx(bai.stage_pos.y, 0.5), "下桥没有到岸边")
+		# 走到桥跨左端之外（0.23）→ 脚点必须回**她自己的**落地线，而不是任何固定常数。
+		check(
+			is_equal_approx(bai.stage_pos.y, bai_ground),
+			"下桥没回到自己的落地线（y=%.6f，落地线 %.6f）" % [bai.stage_pos.y, bai_ground]
+		)
 		controller.begin_drag(0, Vector2(bai.stage_pos.x * 1920, bai.stage_pos.y * 1080 - 45))
 		controller.drag_to(Vector2((0.80 - bai.stage_pos.x) * 1920, 0))
 		controller.end_drag()
-		check(bai.stage_pos.y < 0.45, "返回没有上桥")
+		# 走回 0.80（桥面下坡段）后脚点必须跟着桥面抬高、明显高于落地线。
+		# 🔴 阈值不写死：直接与路径自己的读数、以及她自己的落地线比。旧写法是 `y < 0.45`，
+		#    而景物整体下移 90px（`LEVEL1_Y_DOWN`）之后桥面 0.80 处是 **0.4503**——只差
+		#    0.3px 就误报，这种「擦边阈值」在下一次挪动布景时必然再炸一次。
+		if path != null:
+			var deck: float = path.height_at(0.80, bai_ground)
+			check(is_equal_approx(bai.stage_pos.y, deck), "返回后的脚点偏离桥面")
+			check(deck < bai_ground - 0.02, "桥面 0.80 处没有明显高于落地线（%.4f）" % deck)
 		check(bai.to_dict().has("walk_phase"), "步态未进入数据视图")
 		check(qing.get("walk_amount") == 0.0, "未移动的小青在走路")
 	harness.shutdown()

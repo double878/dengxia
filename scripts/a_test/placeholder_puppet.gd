@@ -47,6 +47,13 @@ var entrance_mask: Texture2D = null
 var puppet_state: PuppetState = null
 var lamp_state: LampState = null
 
+## 前臂偏折（弧度；x = 左手，y = 右手）。0 = 肩 → 肘 → 腕共线（**默认值**，
+## 与加这条通道之前的几何逐位等价）；肘内角 = π − |偏折|。
+## 🔴 这是**显示层的布景姿势**：只改画出来的手臂造型，**不进 `PuppetState`、不进 C 侧录制契约**
+##    （`c_snapshot.gd` 的字段表因此无需改）。谁摆姿势谁负责写它——第一关的开场姿势见
+##    `StageDef.initial["elbow_bends"]`。
+var hand_bend: Vector2 = Vector2.ZERO
+
 ## 灯的推拉把全场影子一起缩放，不能只缩放单个影人（PRD 第 4.3 节）
 const SHADOW_SCALE_MIN: float = 0.78
 const SHADOW_SCALE_MAX: float = 1.36
@@ -106,6 +113,7 @@ func _process(_delta: float) -> void:
 		puppet_state.facing,
 		puppet_state.turn_progress,
 		puppet_state.hand_angle,
+		hand_bend,
 		puppet_state.head_id,
 		puppet_state.hook_slot,
 		puppet_state.is_controlled,
@@ -216,6 +224,14 @@ static func arm_direction(hand_angle: float, right_side: bool) -> Vector2:
 	return Vector2(cos(screen_angle), sin(screen_angle))
 
 
+## 前臂方向（单位向量）。`bend` = 前臂**再转过**的屏幕角（弧度）：
+## 0 即与上臂同向（肩 → 肘 → 腕共线、肘内角 180°），非 0 时肘内角 = π − |bend|。
+## 两侧加的是**同一个** `bend`：侧视里近臂与远臂折的是同一个物理方向。
+static func forearm_direction(hand_angle: float, right_side: bool, bend: float = 0.0) -> Vector2:
+	var screen_angle: float = (PI * 0.5 - hand_angle) if right_side else (PI * 0.5 + hand_angle)
+	return Vector2(cos(screen_angle + bend), sin(screen_angle + bend))
+
+
 ## 肘点：肩 + 上臂。
 static func arm_elbow(
 	shoulder: Vector2, hand_angle: float, right_side: bool, height: float
@@ -224,12 +240,13 @@ static func arm_elbow(
 
 
 ## 腕点（= 手的位置）：肩 → 肘 → 腕走完，与 `_draw_arm` 画的完全同一条链。
+## `bend` 见 `forearm_direction()`；默认 0 时与加这条通道之前**逐位等价**。
 static func arm_wrist(
-	shoulder: Vector2, hand_angle: float, right_side: bool, height: float
+	shoulder: Vector2, hand_angle: float, right_side: bool, height: float, bend: float = 0.0
 ) -> Vector2:
 	return (
 		arm_elbow(shoulder, hand_angle, right_side, height)
-		+ arm_direction(hand_angle, right_side) * height * LOWER_ARM_RATIO
+		+ forearm_direction(hand_angle, right_side, bend) * height * LOWER_ARM_RATIO
 	)
 
 
@@ -249,7 +266,8 @@ func hand_screen_position(hand: String) -> Vector2:
 		ground.y - height * SHOULDER_RATIO + walk_body_offset(height)
 	)
 	var angle: float = puppet_state.hand_angle.y if right_side else puppet_state.hand_angle.x
-	return _skin_figure_transform(ground) * arm_wrist(shoulder, angle, right_side, height)
+	var bend: float = hand_bend.y if right_side else hand_bend.x
+	return _skin_figure_transform(ground) * arm_wrist(shoulder, angle, right_side, height, bend)
 
 
 ## 固定枢轴上完成整个人的水平翻面；宽度压缩也作用于肩、手和伞的挂点。
@@ -401,7 +419,8 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		draw_colored_polygon(torso, body)
 		draw_polyline(torso + PackedVector2Array([torso[0]]), rim, 2.0)
 
-	# 双臂：肩 → 肘 → 腕。手角 0 = 自然垂下，+π/2 = 水平前伸，+π = 举过头顶
+	# 双臂：肩 → 肘 → 腕。手角 0 = 自然垂下，+π/2 = 水平前伸，+π = 举过头顶；
+	# 肘角由 `hand_bend` 给（0 = 共线，见该字段的注）。
 	_left_wrist = _draw_arm(
 		Vector2(shoulder.x - shoulder_half_w, shoulder.y),
 		state.hand_angle.x,
@@ -409,7 +428,8 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		height,
 		body,
 		joint,
-		flip_width
+		flip_width,
+		hand_bend.x
 	)
 	_right_wrist = _draw_arm(
 		Vector2(shoulder.x + shoulder_half_w, shoulder.y),
@@ -418,7 +438,8 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		height,
 		body,
 		joint,
-		flip_width
+		flip_width,
+		hand_bend.y
 	)
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
@@ -440,10 +461,11 @@ func _draw_arm(
 	height: float,
 	body: Color,
 	joint: Color,
-	flip_width: float
+	flip_width: float,
+	bend: float = 0.0
 ) -> Vector2:
 	var elbow: Vector2 = arm_elbow(shoulder, angle, right_side, height)
-	var wrist: Vector2 = arm_wrist(shoulder, angle, right_side, height)
+	var wrist: Vector2 = arm_wrist(shoulder, angle, right_side, height, bend)
 	# 翻面压扁时手臂同步变细，避免整台只剩两根粗线还挂在外面
 	var thickness: float = maxf(flip_width, 0.25)
 	if _has_body_skin():
@@ -454,7 +476,7 @@ func _draw_arm(
 		_draw_skin_hand(
 			side + "_hand",
 			wrist,
-			arm_direction(angle, right_side),
+			forearm_direction(angle, right_side, bend),
 			height,
 			thickness,
 			right_side,
@@ -628,7 +650,8 @@ func _draw_skin_accessories(ground: Vector2, height: float, alpha: float) -> voi
 			shoulder + Vector2(shoulder_half_width_px(height, 1.0), 0),
 			puppet_state.hand_angle.y,
 			true,
-			height
+			height,
+			hand_bend.y
 		)
 		var staff_size: float = height * float(skin["staff_size_ratio"])
 		_draw_skin_tile(id, "staff", wrist, 0.0, Vector2.ONE * staff_size, alpha)

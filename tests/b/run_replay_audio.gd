@@ -60,12 +60,19 @@ func _run() -> void:
 		capture.clear_buffer()
 		await create_timer(0.2).timeout
 		check(_peak(capture) > 0.001, "等待器乐输出真实样本")
+	# 🔴 2026-10-16 用户定案：「接过伞不要有噔的一声」。
+	# 收锣轨（清单第 3 轨 `take_close`）仍然按资产契约**加载**，但实演与回放都**不再播**它。
+	# 这里把收锣事件喂进去，锁住「喂了也不出声」——旧的 `replay_gong_count == 1` 断言
+	# 锁的是相反的行为，已随定案作废。
+	check(audio.get_node("Act1_take_close") != null, "收锣轨仍按清单加载")
 	var gong := CTimedEvent.new(1000, &"opera_take_close", "performance_audio")
 	gong.seq = 42
+	var gong_player: AudioStreamPlayer = audio.get_node("Act1_take_close")
 	audio.apply_replay(view, [gong], false)
+	check(not gong_player.playing, "接伞（回放）在事件当帧就出声了")
 	audio.apply_replay(view, [gong], true)
-	check(audio.replay_gong_count == 1, "暂停/重复帧没有重复收锣")
-	check(audio.get_node("Act1_take_close").stream_paused, "暂停冻结收锣")
+	await create_timer(0.2).timeout
+	check(not gong_player.playing, "接伞（回放）随后出声了")
 	view.main.paused = false
 	view.wait.playing = false
 	audio.apply_replay(view, [], false)

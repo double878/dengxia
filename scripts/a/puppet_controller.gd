@@ -71,13 +71,47 @@ var _stance_last_emitted: float = 0.0
 var _flip_target: float = 0.0  ## 当前这次翻面的目标面；0.0 表示还没翻过面
 var _hand_dir: Vector2i = Vector2i.ZERO
 var walk_path: RefCounted = null
+## 桥跨之外的**落地线**（归一化 y），按影人编号存。
+## 值 = `set_walk_path()` 接管之前各自的 `stage_pos.y`，也就是 `StageDef.initial.positions`
+## 给的落地线（第一关：许仙 0.587963 = 635px、两位娘子 0.597222 = 645px）。
+## 之所以按影人分别存而不是共用一个数：第一关的许仙比两位娘子高 10px（用户逐轮定案），
+## 桥外的脚点必须各回各的线。
+var _ground_y: Dictionary = {}
 
 
+## 安装桥面步态路径。**先记下各自当前的 y 作为落地线**，再按路径采样一次：
+## 桥跨以内随桥面抬升，桥跨以外回到自己的落地线。
+##
+## 🔴 旧写法（2026-10-16 之前）对所有影人一律写 `height_at(x)`，而它在桥外的兜底是 0.5：
+##   第一关三具影人（0.26 / 0.32 / 0.5285）开局**全都在桥跨外**（0.5285 恰在桥头），
+##   脚点因此被统一抬到 540px，关卡数据里的 635/645px 从未生效——用户 2026-10-16
+##   看过游戏后报「人物站位太高」，本次即按此改口径。
 func set_walk_path(path: RefCounted) -> void:
 	walk_path = path
-	if path != null:
-		for state: PuppetState in puppets:
-			state.stage_pos.y = path.height_at(state.stage_pos.x)
+	if path == null:
+		_ground_y.clear()
+		return
+	for state: PuppetState in puppets:
+		if not _ground_y.has(state.puppet_id):
+			_ground_y[state.puppet_id] = state.stage_pos.y
+		_apply_walk_height(state)
+
+
+## 某影人的落地线（桥跨以外的脚点高度，归一化）。没装桥面路径时就是它当前的 y。
+## 公开给测试用：断言「首帧脚点 = 落地线」时要能与控制器读同一个数，而不是另写一份。
+func ground_y(puppet_id: int) -> float:
+	var state: PuppetState = get_puppet(puppet_id)
+	if state == null:
+		return 0.5
+	return float(_ground_y.get(puppet_id, state.stage_pos.y))
+
+
+## 按桥面路径定脚点：桥跨以内随桥面、桥跨以外回**本条影人自己的**落地线。
+## `_apply_drag` 与 `set_walk_path` 共用这一处，横移时的纵向行为不会两处漂移。
+func _apply_walk_height(state: PuppetState) -> void:
+	if walk_path == null:
+		return
+	state.stage_pos.y = walk_path.height_at(state.stage_pos.x, ground_y(state.puppet_id))
 
 
 func _init() -> void:
@@ -91,6 +125,7 @@ func setup(puppet_count: int = 3) -> void:
 		puppet_count = 1
 	puppets.clear()
 	walk_path = null
+	_ground_y.clear()
 	_events.clear()
 	_drag_active = false
 	_drag_puppet_id = -1
@@ -338,7 +373,7 @@ func _apply_drag(controlled: PuppetState) -> void:
 		controlled.walk_phase += moved_px * TAU / 96.0
 		controlled.walk_amount = 1.0
 	if walk_path != null:
-		controlled.stage_pos.y = walk_path.height_at(controlled.stage_pos.x)
+		_apply_walk_height(controlled)
 
 	var before_stance: float = controlled.stance
 	controlled.stance = clampf(

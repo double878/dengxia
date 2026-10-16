@@ -152,6 +152,7 @@ func _ready() -> void:
 	_stage_surface.z_index = -1
 	add_child(_stage_surface)
 	_stage_surface.configure(CLOTH)
+	_apply_elbow_bends()
 	_stage_binding = StageBindingScript.new()
 	_stage_binding.name = "CStageBinding"
 	_stage_binding.stage_id = _stage_def.id
@@ -236,6 +237,22 @@ func _configure_initial_stage() -> void:
 	_on_stage = on_stage if not on_stage.is_empty() else [0, 1, 2]
 	if _stage_def.id == 1:
 		controller.set_walk_path(WalkPathScript.new())
+
+
+## 把开演肘弯（`initial["elbow_bends"]`）套到两套视图上：前视图 + 幕面透射投影视图。
+## 🔴 不能放进 `_configure_initial_stage()`：那里跑在 `_stage_surface` 创建**之前**，
+## 而肘弯是**视图字段**（`PlaceholderPuppet.hand_bend`，不进状态、不进录制契约）；
+## B 侧回放（performance_replay）从同一份 `initial` 另行套用。
+func _apply_elbow_bends() -> void:
+	var elbow_bends: Dictionary = _stage_def.initial.get("elbow_bends", {})
+	for puppet_id: int in elbow_bends.keys():
+		if puppet_id < 0 or puppet_id >= _puppet_views.size():
+			continue
+		var bends: Array = elbow_bends[puppet_id]
+		var bend := Vector2(float(bends[0]), float(bends[1]))
+		_puppet_views[puppet_id].hand_bend = bend
+		if puppet_id < _stage_surface.projection_views.size():
+			_stage_surface.projection_views[puppet_id].hand_bend = bend
 
 
 func _process(delta: float) -> void:
@@ -492,17 +509,12 @@ func _refresh_ui() -> void:
 	else:
 		_cue_label.text = _active_cue_text()
 		if _harness.opera_flow != null:
+			# 阶段 → 画面提示（2026-10-16 第四轮流程：唱完 → 借伞 → 接到伞即收场对话）。
 			match _harness.opera_flow.phase:
-				"opening", "return_dialogue":
+				"opening", "closing":
 					_cue_label.text = ""
-				"approach", "wait_arrival":
-					_cue_label.text = "拖动胸签，走到许仙身旁"
-				"borrow_dialogue":
-					_cue_label.text = "唱完后，抬起左手接伞"
-				"wait_take":
-					_cue_label.text = "按 A 抬左手，与许仙的手相接"
-				"tour", "wait_return":
-					_cue_label.text = "持伞走到小青身旁，再回许仙处还伞"
+				"borrow", "wait_arrival":
+					_cue_label.text = "唱完了　·　走到许仙身旁，按 D 抬起靠他那侧的手臂接伞"
 	if _dialogue_label != null and _harness.opera_audio != null:
 		var line: Dictionary = _harness.opera_audio.current_line()
 		_dialogue_label.text = (
@@ -590,7 +602,7 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_MOVE_LEFT:
 			return "向左拖动胸签，走向许仙"
 		CueScript.ACTION_MOVE_RIGHT:
-			return "向右拖动胸签，走回小青身旁"
+			return "向右拖动胸签"
 		CueScript.ACTION_REACH:
 			return "把影人带回幕布中央"
 		CueScript.ACTION_HOOK:
@@ -604,7 +616,7 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_LAMP_EXPOSURE:
 			return "按 Q / E 调整影子的显露"
 		CueScript.ACTION_UMBRELLA_TAKE:
-			return "走到许仙面前，按 A 抬左手到 90°，两只手碰到就接伞"
+			return "走到许仙面前，按 D 抬起靠他那侧的手臂（A 是靠小青那侧），抬过打伞位就接伞"
 		CueScript.ACTION_UMBRELLA_RETURN:
 			return "向左走回许仙身旁，把伞还回他的右手"
 	return "跟着鼓点继续演出"

@@ -1,23 +1,23 @@
 extends SceneTree
-## 同一正式入口的完整接还伞演出；带窗口时按实际音频时间跑完整幕及回放。
+## 同一正式入口的完整借伞演出（2026-10-16 第四轮流程：唱完 → 借伞 → 接到伞即收关对话）；
+## 带窗口时按实际音频时间跑完整幕及回放。
 
 var game: Node
 var harness: Level1Harness
 var checks: int = 0
 var failures: int = 0
-var visited_qing: bool = false
-var arrival_wait_start: int = -1
-var take_wait_start: int = -1
-var return_wait_start: int = -1
+var visited_qing: bool = false  ## 🔴 历史名：归位环节已退役，现无消费者（保留给旧记录兼容）
 var phase: String = "live"
 var record: CPerformanceRecord
+var config: Dictionary = {}
 var replay_pause_wall: int = -1
 var paused_once: bool = false
 var graphics: bool = false
 var sample_wall: int = 0
 var frame_times: Array[float] = []
 var last_opera_phase: String = ""
-var observed_gongs: int = 0
+## 整段回放里收锣轨是否响过（在回放进行中逐帧采样，见 `_step` 的注）。
+var replay_take_sound: bool = false
 var handoff_x: float = 0.0
 
 
@@ -34,6 +34,7 @@ func check(value: bool, label: String) -> void:
 
 func _run() -> void:
 	graphics = DisplayServer.get_name() != "headless"
+	config = Act1OperaAudio.read_config()
 	game = load("res://scenes/game_flow.tscn").instantiate()
 	root.add_child(game)
 	harness = game._level._harness
@@ -78,14 +79,31 @@ func _step(delta: float) -> void:
 			_key(KEY_S, false)
 			record = harness.capture.record
 			game._level._process(0)
-			check(game._flow.get_flow_state() == &"choice", "接还伞后没有选择页")
-			check(record.validate_invariants().is_empty(), "接还伞记录无效")
-			for kind: String in ["umbrella_take", "umbrella_return", "opera_take_close"]:
+			check(game._flow.get_flow_state() == &"choice", "借伞收关后没有选择页")
+			check(record.validate_invariants().is_empty(), "借伞记录无效")
+			for kind: String in ["umbrella_take", "opera_take_close"]:
 				check(
 					record.events.any(func(e: Variant) -> bool: return str(e.kind) == kind),
 					"缺少 " + kind
 				)
-			check(record.duration_ms > 111811, "实际等待没有增加时长")
+			# 2026-10-16 流程简化后本关**不再还伞**：多出一条还伞事件就是流程回退了。
+			check(
+				not record.events.any(func(e: Variant) -> bool: return str(e.kind) == "umbrella_return"),
+				"本关不应再产生 umbrella_return"
+			)
+			# 记录时长取**真实耗时**（CLiveCapture 口径）。⚠️「接到伞即收关」会把歌曲时钟
+			# 直接跳到 closing_ms，本轨因此跳掉约 8.3 s 的过场，真实耗时**必然短于整轨**；
+			# 这条同时防住两种回归：跳过头把尾奏整段吞掉、或根本没跳让玩家干等过场。
+			check(
+				(
+					record.duration_ms > int(config.opening_end_ms)
+					and record.duration_ms < int(config.duration_ms)
+				),
+				(
+					"实际耗时 %d 应落在 (唱段结束 %d, 整轨 %d) 内"
+					% [record.duration_ms, int(config.opening_end_ms), int(config.duration_ms)]
+				)
+			)
 			var is_handoff: Callable = func(s: Variant) -> bool:
 				return bool(s.performance.umbrella.get("handing_off", false))
 			check(record.snapshots.any(is_handoff), "未记录递伞过渡")
@@ -96,9 +114,15 @@ func _step(delta: float) -> void:
 				_start_replay()
 	elif phase == "replay":
 		var flow: CResultFlow = game._flow
-		if game._replay != null:
-			observed_gongs = game._replay._audio.replay_gong_count
 		if flow.is_replaying():
+			# 收锣轨有没有响，必须在**回放进行中**采样：回放一结束 `game._replay` 就被释放了
+			# （这正是旧代码在 117 行顺手把计数抄下来的原因）。这里逐帧取「或」，整段回放
+			# 只要响过一帧就算失败。
+			if game._replay != null:
+				var take_player: AudioStreamPlayer = game._replay._audio.get_node(
+					"Act1_take_close"
+				)
+				replay_take_sound = replay_take_sound or take_player.playing
 			if not paused_once and flow.get_player().get_now_ms() > 2000:
 				game._replay.toggle_pause()
 				paused_once = true
@@ -115,7 +139,10 @@ func _step(delta: float) -> void:
 			check(flow.get_flow_state() == &"result", "完整回放没有回收场")
 			check(flow.get_player().get_dispatched_event_count() == record.events.size(), "回放漏事件")
 			check(flow.get_player().get_now_ms() == record.duration_ms, "回放时长不一致")
-			check(observed_gongs == 1, "回放收锣没有且仅有一次")
+			# 🔴 2026-10-16 用户定案「接过伞不要有噔的一声」：回放里接伞同样不出声。
+			# 旧断言 `observed_gongs == 1`（回放收锣恰好一次）锁的是已作废的行为，已删；
+			# 现在改为「整段回放里收锣轨一帧都没响过」（`replay_take_sound` 在回放期间采样）。
+			check(not replay_take_sound, "回放里接伞不该有收锣声")
 			phase = "done"
 
 
@@ -139,28 +166,19 @@ func _automate(delta: float) -> void:
 		)
 		last_opera_phase = opera.phase
 	var goal: float = bai.stage_pos.x
-	if opera.phase == "wait_arrival":
-		if arrival_wait_start < 0:
-			arrival_wait_start = real
-		if real - arrival_wait_start > 800:
-			goal = handoff_x
-	elif opera.phase == "wait_take":
-		if take_wait_start < 0:
-			take_wait_start = real
-		_key(KEY_A, real - take_wait_start > 700)
-	elif opera.taken and not opera.returned:
+	if opera.taken:
+		# 🔴 2026-10-16 第四轮定案：**接到伞即收关**（她已站在许仙旁，不用走回小青身旁）——
+		# 接伞瞬间歌曲时钟直接跳到 closing_ms，流程随即收场。自动化这里只按住 S 让
+		# 收场画面自然（放下双手只是姿态，不再对应任何 cue）。
 		_key(KEY_A, false)
-		if not visited_qing:
-			goal = 0.80
-			visited_qing = bai.stage_pos.x >= 0.79
-		elif opera.phase == "wait_return":
-			if return_wait_start < 0:
-				return_wait_start = real
-			if real - return_wait_start > 700:
-				goal = handoff_x
-				_key(KEY_S, true)
-	elif opera.returned:
-		_key(KEY_S, true)
+		_key(KEY_S, harness.clock.get_song_time_ms() >= int(config.closing_ms) + 700)
+	elif opera.phase == "opening":
+		# 唱段（带字幕）期间玩家不操作，跟着听即可。
+		_key(KEY_A, false)
+	else:
+		# 唱完了：**向右**走进交接窗口（她在柳树下 0.32，许仙在桥头），并把左手抬到打伞位。
+		goal = handoff_x
+		_key(KEY_A, absf(bai.stage_pos.x - handoff_x) < 0.03)
 	var controller: PuppetController = harness.runtime.puppet_controller
 	if absf(goal - bai.stage_pos.x) > 0.0001:
 		if not controller.is_dragging():

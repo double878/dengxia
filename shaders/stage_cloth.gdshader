@@ -39,10 +39,12 @@ void fragment() {
 	float hem = 0.90 + 0.10 * smoothstep(3.0, 14.0, edge);
 	float seam = exp(-abs(edge - 6.0) * 1.7) * 0.022;
 	float tension = sin((edge_px.x + edge_px.y * 0.7) * 0.20) * exp(-edge_px.x / 50.0 - edge_px.y / 42.0) * 0.017;
-	float light = (0.70 + 0.17 * UV.y) * (0.65 + 0.35 * oil) * flicker;
+	// 2026-10-16 用户反馈「感觉颜色有点暗」：受光基准 0.70→0.82、幕布底色整体抬一档。
+	// 显示端经过 pow(1/2.2)，故受光 +14% 只换来亮度约 +13%；幕布底色同步抬一档才够。
+	float light = (0.82 + 0.15 * UV.y) * (0.65 + 0.35 * oil) * flicker;
 	light *= 0.93 + 0.07 * (1.0 - pow(abs(UV.x - 0.5) * 2.0, 2.0));
 	light *= 0.97 + 0.03 * distance;
-	vec3 cloth = mix(vec3(0.82, 0.80, 0.73), vec3(0.95, 0.90, 0.77), 0.38 + 0.12 * UV.y);
+	vec3 cloth = mix(vec3(0.88, 0.86, 0.79), vec3(0.98, 0.94, 0.82), 0.38 + 0.12 * UV.y);
 	vec3 linear_color = pow(cloth, vec3(2.2)) * light * transmitted * (hem + fibres + tension - seam);
 	vec3 display = pow(max(linear_color, vec3(0.0)), vec3(1.0 / 2.2));
 	float grain = fract(sin(dot(floor(UV * cloth_size), vec2(12.9898, 78.233)) + visual_seconds * 0.11) * 43758.5453) - 0.5;
