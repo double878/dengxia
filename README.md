@@ -18,7 +18,7 @@ Godot 4.7.2 Standard 的 Windows 皮影戏 Demo。正式入口为 `scenes/game_f
 ```powershell
 New-Item -ItemType Directory -Path builds -Force | Out-Null
 & 'D:\Godot\4.7.2\godot.exe' --headless --path . --import
-& 'D:\Godot\4.7.2\godot.exe' --headless --path . --quit-after 60
+& 'D:\Godot\4.7.2\godot.exe' --headless --path . --quit-after 150
 & 'D:\Godot\4.7.2\godot.exe' --headless --path . --export-release 'Windows Desktop' 'builds/dengxia.exe'
 ```
 
@@ -66,7 +66,7 @@ py -3.13 -m venv .venv
 | `tests/c/run_act2_opening.gd` | 三条第一关收场路径、点击切关、法海外观绑定、第二关开场键鼠与暂停 |
 | `tests/c/run_act2_entrances.gd` | 法海树后手动出场、许仙门中直接上场、恢复进度、遮挡区命中与 Windows 像素验收 |
 | `tests/c/run_game_replay.gd` | 实际记录与选择/重看/跳过/再演 |
-| `tests/c/run_game_replay_success.gd` | 完整接还伞与回放 |
+| `tests/c/run_game_replay_success.gd` | 完整借伞流程与回放（接伞 → 回到小青身旁） |
 | `tests/c/run_tutorial_replay.gd`（追加 `-- stage=2`） | 旧教学关挂起、取回、换头与节拍回放 |
 
 非法输入测试会刻意产生 `ERROR` 日志；A 套件存在既有的退出时 ObjectDB/resource 释放提示。检查断言、退出码和具体日志来源，不把这些提示隐瞒为无警告通过。无头测试不能代替 Windows 下的听感、输入手感、画面与性能验收；音频混音专项使用 `tests/b/run_replay_audio.gd` 并去掉 `--headless`。
