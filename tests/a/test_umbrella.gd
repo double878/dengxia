@@ -1,10 +1,11 @@
 extends RefCounted
 class_name TestUmbrella
-## 第一关「借伞 → 回到小青身旁」流程的行为测试。
+## 第一关「借伞」流程的行为测试。
 ##
-## 流程逐条对应（2026-10-16 用户定案简化版）：
-##   开场 → 伞在许仙右手；接伞 → 白素贞走到他面前、左手与他右手**相接**（手距与手高都在容差内）；
-##   回到小青身旁 → 伞跟白素贞的手；走到**小青身旁**（x ≤ `TURN_POINT_X`）= 本关完成条件。
+## 流程逐条对应（2026-10-16 第四轮用户定案简化版）：
+##   开场 → 伞在许仙右手；接伞 → 白素贞走到他面前、任一只手抬过打伞位即**相接**
+##   （左右手皆可、最高竖直）；**接到伞即收关**——她此刻就站在许仙旁的交接窗口里，
+##   收场段将接入对话（内容待用户提供）。「走回小青身旁」环节已退役。
 ## 🔴 还伞已取消：伞接过去之后不会再交回许仙，因此「还伞」相关的落点、
 ##   事件与判定都已从数据与控制器里下线（见 `UmbrellaController` 头注）。
 
@@ -31,10 +32,10 @@ const XUXIAN_RAISE: float = StageDefScript.LEVEL1_XUXIAN_UMBRELLA_RAISE_RAD
 ## 「抬到打伞位**或更高**」（最高竖直）都算相接——本角现在是判据的**下界**，
 ## 不再是「按住抬手键到顶」的位置（上限已放开到 π）。
 const CATCH_ANGLE: float = StageDefScript.LEVEL1_HAND_MAX_RAD
-## 归位点（小青身旁）：控制器的 `TURN_POINT_X` = 0.32，落点目标带是 [0.28, 0.32]
-## （2026-10-16 许仙回到桥头后「回到小青身旁」是**向左**走）。取带**中值**代表「她停在小青旁边」——
-## 同样由关卡数据算出，带一改这里跟着走。
-const TURN_X: float = (StageDefScript.LEVEL1_TURN_MIN + StageDefScript.LEVEL1_TURN_MAX) * 0.5
+## 🔴 历史口径：旧「归位点」= 控制器的 `TURN_POINT_X`（0.32，小青身旁）。第四轮定案
+## 「接到伞即收关」后归位环节退役，本值只供「走到旧归位点伞也不易主」这类**负向断言**
+## 继续使用；不再是任何完成条件。
+const TURN_X: float = UmbrellaControllerScript.TURN_POINT_X
 
 
 ## 交接窗口（两只手相接的位置带）：与关卡数据里的落点目标带、控制器判据同一处来源。
@@ -89,7 +90,6 @@ func run_all() -> Dictionary:
 	_test_take_with_raised_hand(t)
 	_test_misaligned_take_does_not_transfer(t)
 	_test_umbrella_follows_lowered_hand(t)
-	_test_home_requires_reaching_xiaoping(t)
 	_test_umbrella_stays_with_baisuzhen(t)
 	_test_take_reported_once(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}
@@ -322,17 +322,7 @@ func _test_join_window_matches_data_and_display(t: ATestBase) -> void:
 		var band: Dictionary = cue.get("target_range", {})
 		t.check_approx(float(band.get("min", -1.0)), window.x, 1e-6, "%s 的目标带下界应与交接窗口一致" % cue_id)
 		t.check_approx(float(band.get("max", -1.0)), window.y, 1e-6, "%s 的目标带上界应与交接窗口一致" % cue_id)
-	# 「回到小青身旁」的目标带必须完全落在交接窗口**左侧**，否则「刚接到伞就已归位」，
-	# 玩家一步都不用走。
-	# 🔴 2026-10-16 定案（许仙回桥头、两位娘子在台左）后：归位是向左走，带回到窗口左侧。
-	var turn: Dictionary = _find_cue(def, "l1_c5_move_to_xiaoping").get("target_range", {})
-	t.check(
-		float(turn.get("max", 1.0)) < window.x,
-		(
-			"归位目标带（到 %.4f 止）应完全在交接窗口（从 %.4f 起）左侧"
-			% [float(turn.get("max", 1.0)), window.x]
-		)
-	)
+	# 🔴 归位落点（l1_c5）已随「接到伞即收关」退役——本折落点带只剩交接窗口这一条。
 
 	# 画面对表：把两人都摆到窗口中心、各自把该伸的手伸到位，
 	# 显示端算出的两只手腕应当落在**同一条竖线**上（伞杆是竖的）。
@@ -477,42 +467,6 @@ func _test_umbrella_follows_lowered_hand(t: ATestBase) -> void:
 	t.finish("伞始终跟随持伞的那只手")
 
 
-## —— 归位（本关的完成条件）——
-## 接到伞后走回**小青身旁**（x ≤ `TURN_POINT_X`）即完成本关（用户 2026-10-16：「操作完成即结束」）。
-##
-## ⚠️ 与旧版「折返点」的两点区别，都在这里钉住：
-##   ① 它不再是「还伞的前置条件」，而是**完成条件本身**；
-##   ② 它按**当前位置**如实反映（走开就撤销），不是「到过一次就永久置起」的锁存。
-func _test_home_requires_reaching_xiaoping(t: ATestBase) -> void:
-	t.begin("接到伞后走回小青身旁才算归位（本关的完成条件）")
-	var puppets: Array = _aligned_puppets()
-	var controller: UmbrellaController = _controller(1, puppets)
-	# 接伞之前恒不成立：她开局站在 0.32，**恰好就在**归位阈值上（x ≤ 0.32）。若不加这层门，
-	# 关卡会在第 0 帧就判「已归位」并收尾——这是把「折返点」改成「完成条件」时最容易漏的一条。
-	t.check(not controller.is_at_home(), "接伞之前不应判为已归位（哪怕开局站位恰在阈值上）")
-	controller.update(8750, [])
-	controller.take_events()
-	t.check_eq(controller.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "先接住伞")
-	var state: PuppetState = puppets[UmbrellaControllerScript.BAISUZHEN_ID]
-
-	# 换手点落在交接窗口中心（0.4403），在归位阈值（0.32）**右侧** → 刚接到伞还不算归位。
-	t.check(
-		not controller.is_at_home(),
-		"刚接到伞时（仍在交接窗口 0.4403 处）不应判为已归位"
-	)
-
-	# 持伞**向左**走到小青身旁
-	state.stage_pos.x = TURN_X
-	controller.update(11000, [])
-	t.check(controller.is_at_home(), "走回小青身旁后应判为已归位（关卡据此收关）")
-
-	# 作为完成条件，它如实反映**此刻**的位置：又走开就该撤销（不带锁存）
-	state.stage_pos.x = 0.34
-	controller.update(12000, [])
-	t.check(not controller.is_at_home(), "又走开之后不应继续算作已归位")
-	t.finish("归位是「此刻在不在小青身旁」的连续判据，且接伞前恒为 false")
-
-
 ## 本关没有还伞：伞接过去之后一直跟着白素贞，不会再交回许仙。
 ## （旧版那条「走回交接窗口自动还伞」的通路 2026-10-16 已随流程简化删除。）
 func _test_umbrella_stays_with_baisuzhen(t: ATestBase) -> void:
@@ -523,10 +477,10 @@ func _test_umbrella_stays_with_baisuzhen(t: ATestBase) -> void:
 	controller.take_events()
 	var state: PuppetState = puppets[UmbrellaControllerScript.BAISUZHEN_ID]
 
-	# 三种情形下伞都不该易主：走到小青身旁、再走回交接窗口、停在原地不动。
+	# 三种情形下伞都不该易主：走到旧归位点、再走回交接窗口、停在原地不动。
 	# 其中「走回交接窗口」正是旧版会触发还伞的那一刻——这条断言就是钉住它不再发生。
 	for step: Dictionary in [
-		{"x": TURN_X, "t": 11000, "label": "小青身旁"},
+		{"x": TURN_X, "t": 11000, "label": "旧归位点"},
 		{"x": _borrow_x(), "t": 12000, "label": "走回交接窗口"},
 		{"x": _borrow_x(), "t": 13000, "label": "停在原地"},
 	]:

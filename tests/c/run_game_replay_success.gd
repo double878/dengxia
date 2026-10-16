@@ -1,12 +1,12 @@
 extends SceneTree
-## 同一正式入口的完整借伞演出（2026-10-16 流程：唱完 → 借伞 → 回到小青身旁 → 结束）；
+## 同一正式入口的完整借伞演出（2026-10-16 第四轮流程：唱完 → 借伞 → 接到伞即收关对话）；
 ## 带窗口时按实际音频时间跑完整幕及回放。
 
 var game: Node
 var harness: Level1Harness
 var checks: int = 0
 var failures: int = 0
-var visited_qing: bool = false
+var visited_qing: bool = false  ## 🔴 历史名：归位环节已退役，现无消费者（保留给旧记录兼容）
 var phase: String = "live"
 var record: CPerformanceRecord
 var config: Dictionary = {}
@@ -91,7 +91,7 @@ func _step(delta: float) -> void:
 				not record.events.any(func(e: Variant) -> bool: return str(e.kind) == "umbrella_return"),
 				"本关不应再产生 umbrella_return"
 			)
-			# 记录时长取**真实耗时**（CLiveCapture 口径）。⚠️「回到小青身旁」会把歌曲时钟
+			# 记录时长取**真实耗时**（CLiveCapture 口径）。⚠️「接到伞即收关」会把歌曲时钟
 			# 直接跳到 closing_ms，本轨因此跳掉约 8.3 s 的过场，真实耗时**必然短于整轨**；
 			# 这条同时防住两种回归：跳过头把尾奏整段吞掉、或根本没跳让玩家干等过场。
 			check(
@@ -167,19 +167,10 @@ func _automate(delta: float) -> void:
 		last_opera_phase = opera.phase
 	var goal: float = bai.stage_pos.x
 	if opera.taken:
-		# 接到伞：立刻**向左**走回小青身旁（x ≤ TURN_POINT_X 即本关完成条件）。
+		# 🔴 2026-10-16 第四轮定案：**接到伞即收关**（她已站在许仙旁，不用走回小青身旁）——
+		# 接伞瞬间歌曲时钟直接跳到 closing_ms，流程随即收场。自动化这里只按住 S 让
+		# 收场画面自然（放下双手只是姿态，不再对应任何 cue）。
 		_key(KEY_A, false)
-		if not visited_qing:
-			# 目标刻意**越过**阈值 0.04：`move_toward` 若把目标设成恰好 0.32，
-			# 位置会停在阈值右侧、`is_at_home()` 永远不成立（实测就是她卡在窗口中心、
-			# 由时间轴到 closing_ms 才收场，真实耗时等于整轨）。
-			# 🔴 符号随站位翻面：2026-10-16 定案后「回到小青身旁」是**向左**走，
-			#    旧写法 `TURN_POINT_X + 0.04` 是「向右走」时代的（那时阈值 0.74 在右侧），
-			#    照抄会让自动化永远不往回走——这一条就是被实际耗时对不上抓出来的。
-			goal = UmbrellaController.TURN_POINT_X - 0.04
-			visited_qing = bai.stage_pos.x <= goal
-		# 归位收关后时钟跳到 closing_ms 即收场（收势落手 cue 已于 2026-10-16 下线，
-		# 不再需要落手——这里保留放下双手只是让收场画面自然，不再对应任何 cue）。
 		_key(KEY_S, harness.clock.get_song_time_ms() >= int(config.closing_ms) + 700)
 	elif opera.phase == "opening":
 		# 唱段（带字幕）期间玩家不操作，跟着听即可。

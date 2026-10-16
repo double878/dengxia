@@ -92,7 +92,7 @@ func run_all() -> Dictionary:
 func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.begin("01 第一关关键动作表覆盖 PRD 要求")
 	var def: StageDef = StageDefScript.make_level1()
-	t.check_eq(def.cues.size(), 6, "应有 6 条关键动作（取消还伞后：蹲/起/移/抬/接/归位；落手收势 2026-10-16 下线）")
+	t.check_eq(def.cues.size(), 5, "应有 5 条关键动作（蹲/起/移/抬/接；归位 2026-10-16 第四轮、还伞与落手更早，均已下线）")
 	var problems: Array[String] = def.validate()
 	t.check_eq(problems.size(), 0, "数据应通过校验：%s" % str(problems))
 
@@ -104,17 +104,16 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		"应含蹲下与站起（蹲下为站起提供起点）"
 	)
 	t.check(
-		actions.has(CueScript.ACTION_MOVE_LEFT) and actions.has(CueScript.ACTION_MOVE_RIGHT),
-		"应含向左移动与向右移动（走向许仙 → 持伞走回小青身旁）"
+		actions.has(CueScript.ACTION_MOVE_RIGHT),
+		"应含向右移动（走向桥上的许仙；`cue_id` 里的 left 是历史名）"
 	)
 	t.check(actions.has(CueScript.ACTION_HAND_RAISE), "应含抬手")
-	# 2026-10-16 流程定案（用户：「借伞 → 回到小青身旁 → 结束」）：本折只有**一次**交接（接伞），
-	# 还伞已取消；两条移动落点分别是「走向许仙」（第 8 拍，**向右**，他在桥头）
-	# 与「持伞回到小青身旁」（第 26 拍，**向左**，同时就是本关的完成条件）。
+	# 2026-10-16 第四轮定案（用户：「借到伞后不用返回，站在许仙旁对话」）：本折只有**一次**
+	# 交接（接伞），接到伞即收关；还伞与归位（走回小青身旁）两条落点均已下线。
 	t.check(actions.has(CueScript.ACTION_UMBRELLA_TAKE), "应含接伞")
 	t.check(
 		not actions.has(CueScript.ACTION_UMBRELLA_RETURN),
-		"不应再有还伞落点（流程简化后落到小青身旁即收关）"
+		"不应再有还伞落点（接到伞即收关，不用返回）"
 	)
 
 	# 重音每 4 拍一次；至少一次关键动作落在重音上
@@ -138,33 +137,6 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.check(stand_max <= 0.1, "站起到位范围应接近完全站立（stance≈0），实际 max=%.4f" % stand_max)
 	t.check(crouch_min >= 0.8, "蹲下到位范围应接近完全蹲下（stance≈1），实际 min=%.4f" % crouch_min)
 
-	# 「回到小青身旁」的目标带必须**完全落在交接窗口之外**：落进窗口就等于
-	# 「刚接到伞就已归位」，玩家一步都不用走，这条落点形同虚设。
-	# 🔴 2026-10-16 定案（许仙回桥头、两位娘子在台左）：归位是**向左**走，因此带在窗口**左侧**。
-	var turn_band: Dictionary = _find(def, "l1_c5_move_to_xiaoping")["target_range"]
-	var take_band: Dictionary = _find(def, "l1_c4_take_umbrella")["target_range"]
-	t.check(
-		float(turn_band["max"]) < float(take_band["min"]),
-		(
-			"归位目标带（≤%.2f）应完全在交接窗口（≥%.2f）左侧"
-			% [float(turn_band["max"]), float(take_band["min"])]
-		)
-	)
-	# **上界**必须与控制器的 `TURN_POINT_X` **完全一致**：若落点带的上界更低，
-	# 玩家停在两者之间时会出现最坏的错配——拍点判命中、但控制器没判「已归位」，
-	# 这一趟白走、关卡不收尾。（这条曾经真的踩过：落点带写 0.94、控制器要求 0.95。）
-	t.check_approx(
-		float(turn_band["max"]),
-		UmbrellaControllerScript.TURN_POINT_X,
-		1e-9,
-		"归位目标带上界应等于控制器的 TURN_POINT_X"
-	)
-	# 带要**紧邻小青**（≤ 0.05 个幕宽），否则「回到小青身旁」这个说法在数据上就不成立。
-	# ⚠️ 下界（= 小青 + 0.02）刻意落在小青**右侧**一点：再往左两具影身会明显重叠。
-	t.check(
-		float(turn_band["min"]) - StageDef.LEVEL1_XIAOPING_X <= 0.05,
-		"归位目标带下界（%.2f）应紧邻小青（%.2f）" % [float(turn_band["min"]), StageDef.LEVEL1_XIAOPING_X]
-	)
 	# 「走向许仙」的落点带必须与 `join_window_x()` **逐位相等**：它是派生式，
 	# 两边符号抄错的后果是「拍点说走到了、控制器却不换手」，而两边单看都「像是对的」。
 	var approach_band: Dictionary = _find(def, "l1_c2_move_left")["target_range"]
@@ -184,10 +156,10 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	# ① 起点**不能落在交接窗口里**——落进去就等于「一开局两只手就已相接」，
 	#    接伞会在第 0 帧触发，整条流程从起点就错。
 	t.check(
-		start_x < float(take_band["min"]) or start_x > float(take_band["max"]),
+		start_x < join_window.x or start_x > join_window.y,
 		(
 			"白素贞开局站位（%.2f）应落在交接窗口（%.2f~%.2f）之外"
-			% [start_x, float(take_band["min"]), float(take_band["max"])]
+			% [start_x, join_window.x, join_window.y]
 		)
 	)
 	# ② 要站在小青**右侧**（用户 2026-10-16：「白素贞站小青靠近许仙那侧」——许仙在台右的桥头），
@@ -289,33 +261,14 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.check_approx(baisuzhen_facing, -1.0, 1e-9, "白素贞开局应朝左（朝向小青）")
 
 	# —— 长距离移动的时间预算（2026-10-04 教训，用户报「根本来不及向右走」）——
-	# 两次横移各走约 0.5~0.55 个舞台宽（960~1060 画布像素，拖动 1:1 映射），
-	# 按正常拖速 450~600 px/s 需 1.6~2.4 s，再加反应时间。曾经这两条按原地动作处理：
-	# 线索只提前 1 s、拍间只留 2.5 s——玩家看到提示就只剩 1 s，实测走不到。
-	# 因此这里把「拍间间隔」与「线索提前量」两条都钉住：任何一条被改小都会被拦下。
-	for pair in [
-		["l1_c4_take_umbrella", "l1_c5_move_to_xiaoping"],
-	]:
-		var gap: int = (
-			int(_find(def, pair[1])["beat_time_ms"]) - int(_find(def, pair[0])["beat_time_ms"])
-		)
-		var lead: int = int(_find(def, pair[1])["hint_lead_ms"])
-		t.check(
-			gap >= StageDef.MOVE_BUDGET_MS,
-			(
-				"「%s」→「%s」的拍间间隔 %d ms 应 ≥ 移动预算 %d ms（要走 0.5~0.55 个舞台宽）"
-				% [pair[0], pair[1], gap, StageDef.MOVE_BUDGET_MS]
-			)
-		)
-		t.check(
-			lead >= StageDef.MOVE_BUDGET_MS,
-			"「%s」是长距离移动，线索提前量 %d ms 应 ≥ 移动预算 %d ms" % [pair[1], lead, StageDef.MOVE_BUDGET_MS]
-		)
+	# 归位落点（l1_c5）已随「接到伞即收关」退役，本折不再有移动落点对：
+	# 唯一剩下的移动是「走向许仙」（第 8 拍），其线索提前量由 MOVE_BUDGET_MS 档保证。
 	# 尾部空档检查（2026-10-05 教训）已随收势 cue 下线一并取消：本关收尾现在是**流程驱动**——
-	# 白素贞走回小青身旁的那一刻 Act1OperaFlow 直接把时钟跳到 closing_ms 收关，
+	# 接到伞那一刻 Act1OperaFlow.after_update 直接把时钟跳到 closing_ms 收关，
 	# 不存在「做完动作干等」的空档，因此不再有「最后一条落点须贴近结尾」的结构约束
-	# （原检查钉的是第 48 拍 l1_c7_hand_lower，该 cue 已于 2026-10-16 下线）。
-	# 原地动作仍按 1 s 提前：不要被顺手改成 3 s（提前量过大等于上一拍刚做完就提示下一步）
+	# （原检查钉的是第 48 拍 l1_c7_hand_lower 与第 26 拍 l1_c5，均已下线）。
+	# 原地动作仍按 1 s 提前：不要被顺手改成 3 s（提前量过大等于上一拍刚做完就提示下一步）。
+	# ⚠️ l1_c2_move_left（走向许仙）是**移动档**（3 s），不在本清单里。
 	for cue_id in [
 		"l1_c0_crouch", "l1_c1_stand", "l1_c3_hand_raise", "l1_c4_take_umbrella"
 	]:
@@ -335,7 +288,7 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		UmbrellaControllerScript.BAISUZHEN_ID,
 		"接伞落点的 target_object 应为接手的白素贞"
 	)
-	t.finish("6 条关键动作覆盖蹲下/站起/移动/抬手/接伞/归位，含重音落点，全部在时长内")
+	t.finish("5 条关键动作覆盖蹲下/站起/移动/抬手/接伞，含重音落点，全部在时长内；接到伞即收关")
 
 
 func _test_02_hints_before_deadline(t: ATestBase) -> void:
@@ -615,10 +568,10 @@ func _test_09_unchosen_cues_remain_pending(t: ATestBase) -> void:
 	t.begin("09 未做的关键动作保持待判定，不被静默跳过")
 	var b: CueTestBench = _bench()
 	b.advance(1)
-	t.check_eq(b.performance.pending_count(), 6, "开演时 6 条全部待判定")
+	t.check_eq(b.performance.pending_count(), 5, "开演时 5 条全部待判定")
 	b.advance_to(7000)  # 已过前两条落点，但什么都没做
 	t.check(not b.performance.has_outcome("l1_c1_stand"), "没做动作就不应产生判定结果（留给切片 4 的补救处理）")
-	t.check_eq(b.performance.pending_count(), 6, "未做的仍计入待判定")
+	t.check_eq(b.performance.pending_count(), 5, "未做的仍计入待判定")
 	t.check_eq(_filter(b.judge_log, "cue_hit").size(), 0, "不应凭空产生命中")
 	t.check(_has_cue_event(b.judge_log, "cue_hint", "l1_c1_stand"), "线索仍应按时发出（目标在落点前已被告知）")
 	t.finish("未做的关键动作保持待判定，不静默跳过、不凭空判定")
@@ -743,26 +696,30 @@ func _test_13_early_action_can_be_retried_on_beat(t: ATestBase) -> void:
 func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.begin("14 松开鼠标当帧的末段位移进入目标区仍判到位")
 	var b: CueTestBench = _bench()
-	t.check(_find(b.stage_def, "l1_c5_move_to_xiaoping").size() > 0, "本折的「回到小青身旁」落点存在（第 26 拍）")
-	# 目标带是 x ∈ [0.28, 0.32]（2026-10-16 流程简化后它就是本关的完成条件），落点 16250、
-	# 判定窗 16000~16500。她开局**恰在带的右端**（0.32），因此要先把白素贞拖到目标带**右侧**，
-	# 再在松开当帧用一次位移跨进目标带——验证 drag_end 不会抢先关掉到位判定
-	# （末段位移必须仍按「进入目标区」计）。
-	# 起点同样摆回她的开局站位（测试台默认 0.5，见 _test_06 的说明）。
-	b.state().stage_pos.x = StageDef.LEVEL1_BAISUZHEN_X
-	b.advance_to(16050)
+	# 载体说明：原用归位落点 l1_c5 当载体，它已随「接到伞即收关」退役（2026-10-16 第四轮），
+	# 换成同为移动档的 l1_c2_move_left——机制断言与载体无关，只要求「有一条落点在前方」。
+	t.check(_find(b.stage_def, "l1_c2_move_left").size() > 0, "本折的「走向许仙」移动落点存在（第 8 拍）")
+	# 目标带 = 交接窗口（0.4318~0.5518，与 join_window 同源），落点 5000、判定窗 4750~5250。
+	# 🔴 方向由 metric 决定：l1_c2 是**向右**进带（走向许仙），因此从带**左侧外**出发、
+	# 先向右挪一小步（仍在带外），松开当帧用一次更大的向右位移跨进目标带——验证 drag_end
+	# 不会抢先关掉到位判定（末段位移必须仍按「进入目标区」计）。
+	var band: Dictionary = _find(b.stage_def, "l1_c2_move_left")["target_range"]
+	var band_min: float = float(band["min"])
+	var band_max: float = float(band["max"])
+	b.state().stage_pos.x = band_min - 0.05
+	b.advance_to(4900)
 	b.begin_drag()
-	b.drag(Vector2(320.0, 0.0), 1)
+	b.drag(Vector2(20.0, 0.0), 1)
 	t.check(
-		b.state().stage_pos.x > StageDef.LEVEL1_TURN_MAX,
-		"松开前还在目标带右侧：x=%.4f" % b.state().stage_pos.x
+		b.state().stage_pos.x < band_min,
+		"松开前还在目标带左侧之外：x=%.4f" % b.state().stage_pos.x
 	)
-	b.controller.drag_to(Vector2(-360.0, 0.0))
+	b.controller.drag_to(Vector2(160.0, 0.0))
 	b.controller.end_drag()
 	b.advance(1)
-	var outcome: Dictionary = b.performance.get_outcome("l1_c5_move_to_xiaoping")
+	var outcome: Dictionary = b.performance.get_outcome("l1_c2_move_left")
 	t.check_in_range(
-		b.state().stage_pos.x, StageDef.LEVEL1_TURN_MIN, StageDef.LEVEL1_TURN_MAX, "松开当帧位置已进入目标区"
+		b.state().stage_pos.x, band_min, band_max, "松开当帧位置已进入目标区"
 	)
 	t.check_eq(bool(outcome.get("hit", false)), true, "drag_end 不能抢先关闭拖动判定")
 	t.finish("末段位移在松开当帧仍参与到位判定")

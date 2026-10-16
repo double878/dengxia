@@ -88,9 +88,9 @@ func _test_01_normal_run_no_remedy(t: ATestBase) -> void:
 ## 正常演出：关键动作都在容差内做到时，**不产生任何补救窗口**，因此也不会冻结。
 ## 这是唯一一条验证「做对了就没有补救」的正向测试；空场跑完的 01 验证的是相反情况。
 ##
-## 走完整条「游湖借伞」流程：蹲下 → 站起 → **向右**走（走向桥头的许仙）→ 抬左手到打伞位（90°）
-## → 走进交接窗口接伞 → 持伞**向左**走到小青身旁 → 放手收势。
-## 🔴 2026-10-16 定案（许仙回桥头）后方向与 10-15 那版一致：先向右、再向左。
+## 走完整条「游湖借伞」流程：蹲下 → 站起 → **向右**走（走向桥上的许仙）→ 抬手到打伞位（90°）
+## → 走进交接窗口接伞。🔴 2026-10-16 第四轮定案：接到伞即收关（她已站在许仙旁），
+## 「持伞走回小青身旁」环节已退役。
 ## 每一步都按落点排好，因此这条测试同时是「借伞能不能按时做完」的端到端验证。
 func _test_01b_all_hits_no_remedy(t: ATestBase) -> void:
 	t.begin("01b 正常演出：前半场五条落点都在容差内做到，全程无补救")
@@ -155,28 +155,25 @@ func _test_01b_all_hits_no_remedy(t: ATestBase) -> void:
 	t.finish("前半场五条落点全部命中，没有补救窗口与冻结")
 
 
-## 借伞后半程的端到端走查：接到伞 → 走回小青身旁（本关完成条件）→ 放手收势。
+## 借伞的端到端走查：接到伞即收关（2026-10-16 第四轮定案，「走回小青身旁」已退役）。
 ##
 ## 与 01b 拆开的原因：补救窗口开着时歌曲时间是冻结的，前半场只要有一条错拍，
 ## 后半场的落点时刻就全部对不上。
 ##
-## 这条测试覆盖**七条落点全部命中且零补救窗口**，因此它同时钉住三件容易悄悄退化的事：
-##   ① 长距离移动落点的时间预算（接到伞后走回小青身旁留 6.25 s）——步长按「正常拖速」折算，
-##      走不完就会错过拍点；
-##   ② `l1_c4_take_umbrella` 的 `target_object` 必须等于交接事件上报的 `object_id`（白素贞）。
+## 这条测试覆盖**五条落点全部命中且零补救窗口**，因此它同时钉住两件容易悄悄退化的事：
+##   ① `l1_c4_take_umbrella` 的 `target_object` 必须等于交接事件上报的 `object_id`（白素贞）。
 ##      写错时这条落点永远判不到（判定直接跳过、窗后判死），本测试会立刻失败；
-##   ③ 归位点就是**小青身旁**（x ≤ 0.32 起算），不是舞台最右端——`is_at_home()` 必须置起，
-##      否则 `Act1OperaFlow` 不会收关。
+##   ② 接到伞之后**没有**任何后续落点（归位/还伞/落手都已下线）——若有人把旧落点加回来，
+##      cues 计数与 01 的空场走查会先红，这条再用「接伞后无新补救窗口」兜一层。
 func _test_01c_borrow_then_home_journey(t: ATestBase) -> void:
-	t.begin("01c 借伞后半程：接到伞 → 走回小青身旁 → 放手收势")
+	t.begin("01c 借伞：接到伞即收关（不用返回，站在许仙旁）")
 	var b: DirectorTestBench = _bench()
 	var umb: UmbrellaController = b.director.umbrella
 	t.check(umb != null and umb.is_enabled(), "第一关应启用借伞流程")
 
 	# 前摇必须照做：少做一条落点就会开出一个 8 秒补救窗口，**歌曲时间随之冻结**，
 	# 后面每条落点的时刻全部错位（这条测试第一版就是漏了前摇，五条后半场落点一起判错）。
-	# 这也正是真实玩法顺序：蹲下 → 站起 → 向右走（走向许仙）→ 抬手 → 走进窗口接伞 →
-	# 向左走回小青身旁 → 放手收势。
+	# 这也正是真实玩法顺序：蹲下 → 站起 → 向右走（走向许仙）→ 抬手 → 走进窗口接伞即收关。
 	b.advance_to(1200)
 	b.begin_drag()
 	b.crouch_here()
@@ -199,19 +196,10 @@ func _test_01c_borrow_then_home_journey(t: ATestBase) -> void:
 	b.drag_to_x(0.42, 18.0)
 	b.end_drag()
 	t.check_eq(umb.holder_id_of(), UmbrellaControllerScript.BAISUZHEN_ID, "手到打伞位后应已接过伞")
-	t.check(not umb.is_at_home(), "刚接过伞时她还在交接窗口里，不该已判为归位")
 
-	# **向左**走回**小青身旁**（落点 16250，目标带 x ∈ [0.28, 0.32]）。
-	# `drag_to_x(target_x, step_px)` 的第二个参数是**每步位移量（像素）**：从约 0.42 走到 0.30
-	# 是 230 px、每步 10 px（23 步 ≈ 230 ms），因此从 16000 起走，跨进目标带约在 16200。
+	# 接到伞后她**留在许仙旁**（第四轮定案：不用返回）——再推进一段歌曲时间，
+	# 确认不会冒出任何新的落点判定或补救窗口。
 	b.advance_to(16000)
-	b.begin_drag()
-	b.drag_to_x(0.30, 10.0)
-	b.end_drag()
-	t.check(umb.is_at_home(), "走回小青身旁后应判为归位（本关的完成条件）")
-
-	# 收势落手 cue（l1_c7_hand_lower）已于 2026-10-16 用户定案下线（「最后不用放下手」），
-	# 走回小青身旁即收关——这里不再做落手动作，也不再到 30000 ms。
 
 	var hits: Array[String] = []
 	for cue_id in [
@@ -219,8 +207,7 @@ func _test_01c_borrow_then_home_journey(t: ATestBase) -> void:
 		"l1_c1_stand",
 		"l1_c2_move_left",
 		"l1_c3_hand_raise",
-		"l1_c4_take_umbrella",
-		"l1_c5_move_to_xiaoping"
+		"l1_c4_take_umbrella"
 	]:
 		var outcome: Dictionary = b.director.performance.get_outcome(cue_id)
 		if bool(outcome.get("hit", false)):
@@ -233,9 +220,9 @@ func _test_01c_borrow_then_home_journey(t: ATestBase) -> void:
 					% [cue_id, str(outcome.get("offset_ms", "无判定")), b.state().stage_pos.x]
 				)
 			)
-	t.check_eq(hits.size(), 6, "六条关键动作应全部命中（实际命中 %d 条）" % hits.size())
+	t.check_eq(hits.size(), 5, "五条关键动作应全部命中（实际命中 %d 条）" % hits.size())
 	t.check_eq(b.events_of("remedy_open").size(), 0, "整条流程做对时不应开出任何补救窗口")
-	t.finish("接到伞、走回小青身旁全部命中，全程零补救（收势落手 cue 已下线）")
+	t.finish("五条落点全部命中即接到伞收关，全程零补救（归位/还伞/收势均已下线）")
 
 
 func _test_02_miss_opens_window_and_freezes(t: ATestBase) -> void:

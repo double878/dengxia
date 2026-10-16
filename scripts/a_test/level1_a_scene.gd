@@ -509,14 +509,12 @@ func _refresh_ui() -> void:
 	else:
 		_cue_label.text = _active_cue_text()
 		if _harness.opera_flow != null:
-			# 阶段 → 画面提示（2026-10-16 流程简化：唱完 → 借伞 → 回到小青身旁 → 结束）。
+			# 阶段 → 画面提示（2026-10-16 第四轮流程：唱完 → 借伞 → 接到伞即收场对话）。
 			match _harness.opera_flow.phase:
 				"opening", "closing":
 					_cue_label.text = ""
 				"borrow", "wait_arrival":
 					_cue_label.text = "唱完了　·　走到许仙身旁，按 D 抬起靠他那侧的手臂接伞"
-				"return_home":
-					_cue_label.text = "接到伞了　·　走回小青身旁"
 	if _dialogue_label != null and _harness.opera_audio != null:
 		var line: Dictionary = _harness.opera_audio.current_line()
 		_dialogue_label.text = (
@@ -604,7 +602,7 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_MOVE_LEFT:
 			return "向左拖动胸签，走向许仙"
 		CueScript.ACTION_MOVE_RIGHT:
-			return "向右拖动胸签，走回小青身旁"
+			return "向右拖动胸签"
 		CueScript.ACTION_REACH:
 			return "把影人带回幕布中央"
 		CueScript.ACTION_HOOK:

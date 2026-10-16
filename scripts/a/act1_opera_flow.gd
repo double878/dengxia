@@ -2,8 +2,11 @@ extends RefCounted
 class_name Act1OperaFlow
 ## 只读唯一双时钟和真实道具交接；不播放声音、不代演。
 ##
-## 🔴 2026-10-16 用户定案：本关流程 = 「唱段听完 → 提示借伞 → 接到伞 → 走回小青身旁 → 结束」。
-##   还伞与「游湖对白」两段随之退役，锚点表也一并瘦身（见 `setup()`）。
+## 🔴 2026-10-16 用户定案（第四轮）：本关流程 = 「唱段听完 → 提示借伞 → 接到伞 → 收场（对话）」。
+##   接伞那一刻她本来就站在**许仙旁**（接伞判据要求她处在交接窗口内），
+##   因此「走回小青身旁」环节整个退役——**接到伞即收关**，`return_home` 阶段删除；
+##   收场段（closing）之后将接入借伞后的对话（内容待用户提供）。
+##   还伞与「游湖对白」两段更早已退役，锚点表也一并瘦身（见 `setup()`）。
 
 const WAIT_LIMIT_MS := 8000
 var config: Dictionary = {}
@@ -21,7 +24,7 @@ var _events: Array[Dictionary] = []
 ##   opening_end_ms  唱段（含全部字幕）结束 → 从这里起**提示玩家借伞**
 ##   arrival_ms      她本该走进交接窗口的时刻；到点还没进去就冻住歌曲时钟等她（最多 WAIT_LIMIT_MS）
 ##   take_ms         她本该接到伞的时刻（舞台段落表的「接伞」段起点）
-##   closing_ms      收势/收场点；她一旦走回小青身旁就直接跳到这里
+##   closing_ms      收场点；她一旦接到伞就直接跳到这里（对话将接在收场段）
 ##   duration_ms     整轨长度（主轨 WAV 必须正好这么长，见 Act1OperaAudio.setup）
 func setup(value: Dictionary, p_clock: MusicClock, p_umbrella: UmbrellaController) -> bool:
 	var previous := -1
@@ -58,7 +61,8 @@ func start() -> void:
 ## 每帧推进。三条出路，按优先级：
 ##   ① 歌曲时间到了 closing_ms（或收场）→ closing；
 ##   ② 唱段未结束 → opening（玩家不操作）；
-##   ③ 已接伞且她走回小青身旁 → closing（**操作完成即结束**）。
+##   ③ 已接伞 → closing（**接到伞即收关**：接伞判据本就要求她站在许仙旁的交接窗口里，
+##      旧的「走回小青身旁」环节已退役——见头注）。
 func before_update() -> void:
 	if clock.is_paused():
 		return
@@ -87,13 +91,7 @@ func before_update() -> void:
 		if now >= int(config.arrival_ms) and not umbrella.in_join_window():
 			_begin_wait("wait_arrival")
 		return
-	# —— 已接到伞：等她走回小青身旁。到了即收关（用户 2026-10-16：「操作完成即结束」）——
-	umbrella.take_allowed = false
-	if umbrella.is_at_home():
-		_set_phase("closing", "home")
-		clock.advance_to_ms(int(config.closing_ms))
-		return
-	_set_phase("return_home", "timeline")
+	# —— 已接到伞：下一帧歌曲时间必然 ≥ closing_ms（接伞瞬间已前跳），走上面的 closing 分支。 ——
 
 
 func after_update(events: Array) -> void:
@@ -107,7 +105,10 @@ func after_update(events: Array) -> void:
 				taken = true
 				umbrella.take_allowed = false
 				_emit("opera_take_close", {"asset_id": "take_close", "phase_id": "borrow"})
-				_end_wait("taken", "return_home")
+				# 接到伞即收关（用户 2026-10-16：「借到伞后不用返回，站在许仙旁对话」）：
+				# 她此刻就在交接窗口里 = 许仙身旁，直接把歌曲时间前跳到收场点。
+				_end_wait("taken", "closing")
+				clock.advance_to_ms(int(config.closing_ms))
 
 
 func is_waiting() -> bool:
