@@ -33,10 +33,27 @@ func _run() -> void:
 	harness.opera_audio.stop()
 	harness.clock.set_player(null)
 	var record: CPerformanceRecord = harness.capture.record
-	check(record.snapshots[0].time_ms == 0, "首帧不在 t=0")
-	check(record.snapshots[0].puppets[0].stage_pos.y < 0.45, "首帧丢失桥上站位")
-	var bai: PuppetState = harness.runtime.puppet_controller.get_puppet(0)
 	var controller: PuppetController = harness.runtime.puppet_controller
+	check(record.snapshots[0].time_ms == 0, "首帧不在 t=0")
+	# 首帧的脚点高度必须来自**桥面步态路径**（第一关的脚点由 `StageWalkPath` 决定，
+	# 不是关卡的静态落地线，也不是默认 0）。
+	# 🔴 旧写法是写死的 `y < 0.45`——那是「白素贞开局站在桥上（x=0.80）」时代的判据
+	#    （引入它的提交里她确实在 0.80，桥面给出 y≈0.2）。2026-10-16 定案把两位娘子挪到
+	#    柳树下（0.32 / 0.26，都在桥左侧的空地上）之后，路径给出的是平地 0.5，写死阈值必然为假。
+	#    这里改判**机制**：录下来的脚点高度必须等于路径在同一个 x 上给出的高度。
+	var walk: RefCounted = controller.walk_path
+	check(walk != null, "第一关没有安装桥面步态路径")
+	if walk != null:
+		var first: CSnapshot = record.snapshots[0]
+		var path_y: float = float(walk.height_at(first.puppets[0].stage_pos.x))
+		check(
+			absf(first.puppets[0].stage_pos.y - path_y) < 0.001,
+			(
+				"首帧脚点高度不是桥面步态路径算出的（实际 y=%.6f，路径给出 %.6f）"
+				% [first.puppets[0].stage_pos.y, path_y]
+			)
+		)
+	var bai: PuppetState = controller.get_puppet(0)
 	controller.begin_drag(0, Vector2(bai.stage_pos.x * 1920, bai.stage_pos.y * 1080 - 45))
 	controller.drag_to(Vector2(-18, 0))
 	harness.advance_steps(1)

@@ -85,14 +85,14 @@ func run_all() -> Dictionary:
 	_test_12_same_direction_move_hits(t)
 	_test_13_early_action_can_be_retried_on_beat(t)
 	_test_14_release_applies_final_reach(t)
-	_test_15_level1_uses_90_degree_umbrella_pose(t)
+	_test_15_level1_contact_pose_and_window(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}
 
 
 func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.begin("01 第一关关键动作表覆盖 PRD 要求")
 	var def: StageDef = StageDefScript.make_level1()
-	t.check_eq(def.cues.size(), 8, "应有 8 条关键动作")
+	t.check_eq(def.cues.size(), 7, "应有 7 条关键动作（取消还伞后：蹲/起/移/抬/接/归位/落手）")
 	var problems: Array[String] = def.validate()
 	t.check_eq(problems.size(), 0, "数据应通过校验：%s" % str(problems))
 
@@ -105,15 +105,17 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	)
 	t.check(
 		actions.has(CueScript.ACTION_MOVE_LEFT) and actions.has(CueScript.ACTION_MOVE_RIGHT),
-		"应含向左移动与向右移动（走向许仙 → 持伞走到小青身旁 → 转身走回）"
+		"应含向左移动与向右移动（走向许仙 → 持伞走回小青身旁）"
 	)
 	t.check(actions.has(CueScript.ACTION_HAND_RAISE), "应含抬手")
-	# 借伞还伞流程（用户 2026-10-04 修订）：两次交接各占一条落点，
-	# 加上「抬手到打伞位」「走到小青身旁」，就是这一折的全部关键动作。
-	# ⚠️ 两种移动动作仍都要有，只是**配在哪条 cue 上**随站位镜像（2026-10-15）对调了：
-	# 第 8 拍改为向右走（走向桥头的许仙）、第 26 拍改为向左走（走回小青身旁）。
+	# 2026-10-16 流程定案（用户：「借伞 → 回到小青身旁 → 结束」）：本折只有**一次**交接（接伞），
+	# 还伞已取消；两条移动落点分别是「走向许仙」（第 8 拍，**向右**，他在桥头）
+	# 与「持伞回到小青身旁」（第 26 拍，**向左**，同时就是本关的完成条件）。
 	t.check(actions.has(CueScript.ACTION_UMBRELLA_TAKE), "应含接伞")
-	t.check(actions.has(CueScript.ACTION_UMBRELLA_RETURN), "应含还伞")
+	t.check(
+		not actions.has(CueScript.ACTION_UMBRELLA_RETURN),
+		"不应再有还伞落点（流程简化后落到小青身旁即收关）"
+	)
 
 	# 重音每 4 拍一次；至少一次关键动作落在重音上
 	var accent_hits: int = 0
@@ -136,40 +138,46 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	t.check(stand_max <= 0.1, "站起到位范围应接近完全站立（stance≈0），实际 max=%.4f" % stand_max)
 	t.check(crouch_min >= 0.8, "蹲下到位范围应接近完全蹲下（stance≈1），实际 min=%.4f" % crouch_min)
 
-	# 「走到小青身旁」的目标带必须与交接窗口完全不重叠：否则这一趟会先经过交接窗口，
-	# 在还没到过折返点的时候就被还伞判定抢走伞，流程顺序颠倒。
-	# 🔴 2026-10-15 折返点镜像后折返点在**台左**（小青 0.26），判据整体翻面：
-	# 「带的 min 在窗口右侧」→「带的 max 在窗口左侧」。
+	# 「回到小青身旁」的目标带必须**完全落在交接窗口之外**：落进窗口就等于
+	# 「刚接到伞就已归位」，玩家一步都不用走，这条落点形同虚设。
+	# 🔴 2026-10-16 定案（许仙回桥头、两位娘子在台左）：归位是**向左**走，因此带在窗口**左侧**。
 	var turn_band: Dictionary = _find(def, "l1_c5_move_to_xiaoping")["target_range"]
 	var take_band: Dictionary = _find(def, "l1_c4_take_umbrella")["target_range"]
 	t.check(
 		float(turn_band["max"]) < float(take_band["min"]),
-		"折返点目标带（≤%.2f）应完全在交接窗口（≥%.2f）左侧" % [float(turn_band["max"]), float(take_band["min"])]
+		(
+			"归位目标带（≤%.2f）应完全在交接窗口（≥%.2f）左侧"
+			% [float(turn_band["max"]), float(take_band["min"])]
+		)
 	)
-	# **上界**必须与控制器的「已到过折返点」阈值**完全一致**：若落点带的上界更高，
-	# 玩家停在两者之间时会出现最坏的错配——拍点判命中、但控制器没记下「到过折返点」，
-	# 走回去时还伞永远不触发。（这条曾经真的踩过：落点带写 0.94、控制器要求 0.95。）
+	# **上界**必须与控制器的 `TURN_POINT_X` **完全一致**：若落点带的上界更低，
+	# 玩家停在两者之间时会出现最坏的错配——拍点判命中、但控制器没判「已归位」，
+	# 这一趟白走、关卡不收尾。（这条曾经真的踩过：落点带写 0.94、控制器要求 0.95。）
 	t.check_approx(
 		float(turn_band["max"]),
 		UmbrellaControllerScript.TURN_POINT_X,
 		1e-9,
-		"折返点目标带上界应等于控制器的 TURN_POINT_X"
+		"归位目标带上界应等于控制器的 TURN_POINT_X"
 	)
-	# 下界要停在小青（0.26 不动）**右侧**，否则两具影身画面上会叠在一起
+	# 带要**紧邻小青**（≤ 0.05 个幕宽），否则「回到小青身旁」这个说法在数据上就不成立。
+	# ⚠️ 下界（= 小青 + 0.02）刻意落在小青**右侧**一点：再往左两具影身会明显重叠。
 	t.check(
-		float(turn_band["min"]) >= StageDef.LEVEL1_XIAOPING_X + 0.02,
-		"折返点目标带下界（%.2f）应停在小青（%.2f）右侧" % [float(turn_band["min"]), StageDef.LEVEL1_XIAOPING_X]
+		float(turn_band["min"]) - StageDef.LEVEL1_XIAOPING_X <= 0.05,
+		"归位目标带下界（%.2f）应紧邻小青（%.2f）" % [float(turn_band["min"]), StageDef.LEVEL1_XIAOPING_X]
 	)
-	# 两次交接共用同一个窗口：还伞遵循与接伞相同的判据
+	# 「走向许仙」的落点带必须与 `join_window_x()` **逐位相等**：它是派生式，
+	# 两边符号抄错的后果是「拍点说走到了、控制器却不换手」，而两边单看都「像是对的」。
+	var approach_band: Dictionary = _find(def, "l1_c2_move_left")["target_range"]
+	var join_window: Vector2 = UmbrellaControllerScript.join_window_x(StageDef.LEVEL1_XUXIAN_X)
 	t.check_approx(
-		float(_find(def, "l1_c6_return_umbrella")["target_range"]["min"]),
-		float(take_band["min"]),
-		1e-9,
-		"还伞目标带应与接伞同一段窗口"
+		float(approach_band["min"]), join_window.x, 1e-6, "走向许仙的落点带下界应等于交接窗口下界"
+	)
+	t.check_approx(
+		float(approach_band["max"]), join_window.y, 1e-6, "走向许仙的落点带上界应等于交接窗口上界"
 	)
 
-	# —— 开局站位与朝向（用户 2026-10-15 定案：白素贞与小青并肩立在**柳树右侧**，
-	#    小青贴树 0.26、白素贞靠场中 0.32）——
+	# —— 开局站位与朝向（2026-10-16 定案：许仙在**桥头** 0.5285，两位娘子在柳树一带——
+	#    小青 0.26、白素贞 0.32（她站在小青靠许仙的那一侧））——
 	# 站位一动就会悄悄踩到四件事，因此全部在这里钉住：
 	var start: Array = def.initial["positions"][UmbrellaControllerScript.BAISUZHEN_ID]
 	var start_x: float = float(start[0])
@@ -182,30 +190,70 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 			% [start_x, float(take_band["min"]), float(take_band["max"])]
 		)
 	)
-	# ② 要站在小青**右侧**，且拉开到两具影身不叠（各宽约 0.026 个幕宽）。
-	#    ⚠️ 方向 2026-10-15 翻面：用户「里外互换」——小青贴树（左）、白素贞靠场中（右）。
-	#    旧断言写的是 `start_x < 小青`（那时小青在外侧）；互换后必须整体反号，
-	#    否则这条会以「白素贞应站在小青左侧」的旧口径误报，而**画面是对的**。
+	# ② 要站在小青**右侧**（用户 2026-10-16：「白素贞站小青靠近许仙那侧」——许仙在台右的桥头），
+	#    且拉开到两具影身不叠（各宽约 0.026 个幕宽）。
+	#    ⚠️ 方向随站位整体翻面：本轮许仙回到桥头、两位娘子回到台左，
+	#    白素贞（0.32）于是在小青（0.26）**右侧**。旧断言写的是 `start_x < 小青`——
+	#    照搬会以「白素贞应站在小青左侧」的旧口径误报，而**画面是对的**。
 	t.check(
 		start_x > StageDef.LEVEL1_XIAOPING_X,
-		"白素贞应站在小青右侧（%.2f > %.2f）" % [start_x, StageDef.LEVEL1_XIAOPING_X]
+		"白素贞应站在小青靠许仙的那一侧（%.2f > %.2f）" % [start_x, StageDef.LEVEL1_XIAOPING_X]
 	)
 	t.check(
 		start_x - StageDef.LEVEL1_XIAOPING_X >= 0.05,
 		"两人间距应 ≥ 0.05 个幕宽（影身各宽约 0.026），实际 %.2f" % (start_x - StageDef.LEVEL1_XIAOPING_X)
 	)
-	# ③ 小青这一折只作陪：双手放下，且**面向**白素贞。
-	#    facing 的约定是「-1 朝左、+1 朝右」；小青的参考原稿脸朝左，默认 +1 会把她镜像成朝右。
-	#    互换后白素贞在小青**右侧** → 小青该朝右，即**默认 +1**（数据里不再出现）→ 必须按有效值读。
+	# ③ 小青这一折仍只作陪，但按用户 2026-10-16 的参考图摆**开场亮相**：
+	#    下标 0（左手）沿面朝方向前展近水平；下标 1（右手）高举过头；同时**朝向许仙**。
+	#    facing 的约定是「-1 朝左、+1 朝右」；许仙在小青**右侧** → 小青该朝右，即 +1。
+	#    🔴 +1 是**默认值**，所以它靠「不在表里」表达——本断言读的是**有效值**。
 	var xiaoqing_hands: Array = def.initial["hand_angles"][2]
-	t.check_approx(float(xiaoqing_hands[0]), 0.0, 1e-9, "小青开局左手应自然垂下")
-	t.check_approx(float(xiaoqing_hands[1]), 0.0, 1e-9, "小青开局右手应自然垂下")
-	#    🔴 这里原本是 `def.initial["facing"][2]` 硬取下标；默认值不入表后会直接抛键错，
-	#    故改为 `.get(2, 1.0)`——断言的仍是**有效朝向**。
+	t.check_approx(
+		float(xiaoqing_hands[0]), StageDef.LEVEL1_XIAOPING_HAND_OPEN_RAD, 1e-9, "小青开局左手应前展近水平"
+	)
+	t.check_approx(
+		float(xiaoqing_hands[1]), StageDef.LEVEL1_XIAOPING_HAND_RAISED_RAD, 1e-9, "小青开局右手应高举过头"
+	)
+	#    亮相姿势必须真的「高」：高举的那只手要落在「举过头顶」档内，否则读不出亮相。
+	t.check(
+		float(xiaoqing_hands[1]) >= StageDef.HAND_OVERHEAD_MIN_RAD,
+		"小青亮相的举手应落在「举过头顶」档（≥ %.2f rad）" % StageDef.HAND_OVERHEAD_MIN_RAD
+	)
+	#    前展的那只手要**低于**高举的手，且仍在「非垂下」区（否则姿势退化成站桩）。
+	t.check(
+		float(xiaoqing_hands[0]) > StageDef.HAND_LOWER_MAX_RAD
+		and float(xiaoqing_hands[0]) < StageDef.HAND_OVERHEAD_MIN_RAD,
+		"小青前展的手应落在「垂下与举顶之间」"
+	)
+	#    🔴 高举的 160° **故意超过本折上限 90°**：那条上限是玩家手感装置，只约束受控影人。
+	#    本断言把这份「故意」钉住——若日后有人把它当成数据错误而「修」回 90° 以内，
+	#    这里会立刻红。上半界仍须守住 PuppetState 的硬边界（180°）。
+	t.check(
+		float(xiaoqing_hands[1]) > def.hand_angle_max_rad,
+		"小青的亮相手角应刻意越过本折手感上限（%.2f）" % def.hand_angle_max_rad
+	)
+	t.check(
+		float(xiaoqing_hands[0]) <= PI + 1e-9 and float(xiaoqing_hands[1]) <= PI + 1e-9,
+		"小青的开局手角仍须落在 PuppetState 硬边界（180°）内"
+	)
+	#    受控影人（白素贞）的开局手角则必须**留在**本折上限内——手感装置不能被她绕过。
+	var baisuzhen_hands: Array = def.initial["hand_angles"][UmbrellaControllerScript.BAISUZHEN_ID]
+	t.check(
+		float(baisuzhen_hands[0]) <= def.hand_angle_max_rad + 1e-9
+		and float(baisuzhen_hands[1]) <= def.hand_angle_max_rad + 1e-9,
+		"受控影人的开局手角不得超过本折上限"
+	)
+	# ④ 小青**朝向许仙**（用户 2026-10-16 原话）：许仙在台右的桥头，故 facing = **+1**（朝右）。
+	#    🔴 **+1 是默认值**，本表按约定只写偏离默认的那些，所以她**不在表里**——
+	#    断言因此必须走 `.get(2, 1.0)` 读**有效值**（硬取下标会直接抛键错）。
 	var xiaoqing_facing: float = float(def.initial.get("facing", {}).get(2, 1.0))
-	t.check_approx(xiaoqing_facing, 1.0, 1e-9, "小青开局应面向白素贞（她在其右侧，故 facing = +1 即朝右）")
-	# ④ 白素贞**读出来**必须为 -1（朝左）——她左边就是小青，两人由此相对而立。
-	#    这里断言的是**有效值**，因此无论它由默认值给出、还是日后被显式写进数据都成立。
+	t.check_approx(xiaoqing_facing, 1.0, 1e-9, "小青开局应朝向许仙（他在其右侧，故 facing = +1 即朝右）")
+	t.check(
+		not def.initial.get("facing", {}).has(2),
+		"小青的 +1 应由「不在表里」表达（表里只写偏离默认的值）"
+	)
+	# ⑤ 白素贞**读出来**必须为 -1（朝左）——她左边就是小青，两人由此相对而立；
+	#    这里断言的是**有效值**，无论它由默认值给出、还是被显式写进数据都成立。
 	var baisuzhen_facing: float = float(
 		def.initial.get("facing", {}).get(UmbrellaControllerScript.BAISUZHEN_ID, 1.0)
 	)
@@ -218,7 +266,6 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 	# 因此这里把「拍间间隔」与「线索提前量」两条都钉住：任何一条被改小都会被拦下。
 	for pair in [
 		["l1_c4_take_umbrella", "l1_c5_move_to_xiaoping"],
-		["l1_c5_move_to_xiaoping", "l1_c6_return_umbrella"]
 	]:
 		var gap: int = (
 			int(_find(def, pair[1])["beat_time_ms"]) - int(_find(def, pair[0])["beat_time_ms"])
@@ -251,22 +298,18 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 			CueScript.DEFAULT_HINT_LEAD_MS,
 			"「%s」是原地动作，线索提前量应保持默认 1 s" % cue_id
 		)
-	# 交接类落点（接伞 / 还伞）的 `target_object` 必须与**交接事件上报的 `object_id`**一致：
-	# 事件上报的是「接手的那个人」（接伞记白素贞、还伞记许仙，见 `UmbrellaController._emit`），
-	# 而判定里 `_register_action` 会拿 `target_object != object_id` 直接跳过这条 cue。
-	# 还伞这条曾被写成 0（白素贞），于是**永远判不到**：玩家把伞还回去也拿不到命中，
-	# 窗一过就被判「完全没做」并开出补救窗口——实测踩到过，且当时被误归因成测试台时序问题。
+	# 接伞落点的 `target_object` 必须与**交接事件上报的 `object_id`**一致：事件上报的是
+	# 「接手的那个人」（接伞记白素贞，见 `UmbrellaController._emit`），而判定里
+	# `_register_action` 会拿 `target_object != object_id` **直接跳过**这条 cue——
+	# 编号写错时玩家真的换了手也拿不到命中，窗一过就被判「完全没做」并开出补救窗口。
+	# （这条曾经真的踩过：还伞落点写成了 0 而事件上报 1，当时被误归因成测试台时序问题，
+	#  调了八轮才发现根因在数据。还伞已随流程简化下线，但同一条纪律对剩下的交接落点照旧。）
 	t.check_eq(
 		int(_find(def, "l1_c4_take_umbrella")["target_object"]),
 		UmbrellaControllerScript.BAISUZHEN_ID,
 		"接伞落点的 target_object 应为接手的白素贞"
 	)
-	t.check_eq(
-		int(_find(def, "l1_c6_return_umbrella")["target_object"]),
-		UmbrellaControllerScript.XUXIAN_ID,
-		"还伞落点的 target_object 应为接手的许仙"
-	)
-	t.finish("8 条关键动作覆盖蹲下/站起/左右移动/抬手/接伞/还伞，含重音落点，全部在时长内")
+	t.finish("7 条关键动作覆盖蹲下/站起/左右移动/抬手/接伞/归位/落手，含重音落点，全部在时长内")
 
 
 func _test_02_hints_before_deadline(t: ATestBase) -> void:
@@ -390,9 +433,17 @@ func _test_06_translation_not_scored_per_frame(t: ATestBase) -> void:
 	t.begin("06 平移不逐帧评分：一次持续横向拖动只判定一次")
 	var b: CueTestBench = _bench()
 	var beat_ms: int = int(b.find_cue("l1_c2_move_left")["beat_time_ms"])
+	# 🔴 测试台把三具影人一律摆在 x=0.5（`PuppetController.setup`），而这一拍在真实游戏里是
+	# 「从白素贞的开局站位出发、走向桥头的许仙」。必须先把起点摆回**她真正的站位**，
+	# 否则起点 0.5 本身就压在交接窗口（0.3803~0.5003）的右缘上，一路向右拖只会越走越远、
+	# 永不进带——实测这条就是这样判出「0 次 cue_fire」的。
+	b.state().stage_pos.x = StageDef.LEVEL1_BAISUZHEN_X
 	b.advance_to(maxi(beat_ms - 600, 0))
 	b.begin_drag()
-	b.drag(Vector2(30.0, 0.0), 20)  # 持续向右拖 20 帧
+	# 「走向许仙」是**向右**走（他在桥头 0.5285），因此这里持续向右拖 20 帧穿过目标带。
+	# 🔴 方向随站位整体翻面：本轮许仙回桥头，照抄旧的 `-30` 会一直向左拖、永远不进带，
+	# 于是 cue_fire 一条都不产生（实测就是把这条测试拖红的原因）。
+	b.drag(Vector2(30.0, 0.0), 20)  # 持续向右拖 20 帧：0.32 → 0.63，途中穿过窗口
 	b.end_drag()
 	b.advance(20)  # 松手后继续观察
 
@@ -538,10 +589,10 @@ func _test_09_unchosen_cues_remain_pending(t: ATestBase) -> void:
 	t.begin("09 未做的关键动作保持待判定，不被静默跳过")
 	var b: CueTestBench = _bench()
 	b.advance(1)
-	t.check_eq(b.performance.pending_count(), 8, "开演时 8 条全部待判定")
+	t.check_eq(b.performance.pending_count(), 7, "开演时 7 条全部待判定")
 	b.advance_to(7000)  # 已过前两条落点，但什么都没做
 	t.check(not b.performance.has_outcome("l1_c1_stand"), "没做动作就不应产生判定结果（留给切片 4 的补救处理）")
-	t.check_eq(b.performance.pending_count(), 8, "未做的仍计入待判定")
+	t.check_eq(b.performance.pending_count(), 7, "未做的仍计入待判定")
 	t.check_eq(_filter(b.judge_log, "cue_hit").size(), 0, "不应凭空产生命中")
 	t.check(_has_cue_event(b.judge_log, "cue_hint", "l1_c1_stand"), "线索仍应按时发出（目标在落点前已被告知）")
 	t.finish("未做的关键动作保持待判定，不静默跳过、不凭空判定")
@@ -613,18 +664,32 @@ func _test_11_held_hand_enters_target_range(t: ATestBase) -> void:
 func _test_12_same_direction_move_hits(t: ATestBase) -> void:
 	t.begin("12 已面向右时再次右移到目标范围仍能命中")
 	var b: CueTestBench = _bench()
+	# 起点摆回白素贞真实的开局站位（测试台默认 0.5，见 _test_06 的说明）。
+	# 先向右走一小步，仍停在交接窗口**左侧之外**（0.3533 < 窗口下沿 0.3803），同时保持向右的正面朝向。
+	# 🔴 方向随站位整体翻面：本轮「走向许仙」是**向右**走（他在桥头 0.5285）。
+	b.state().stage_pos.x = StageDef.LEVEL1_BAISUZHEN_X
 	b.begin_drag()
-	b.drag(Vector2(30.0, 0.0), 10)
+	b.drag(Vector2(8.0, 0.0), 8)
 	b.end_drag()
 	b.advance(30)
-	t.check_approx(b.state().facing, 1.0, 0.001, "已完成向右转身")
+	t.check_approx(b.state().facing, 1.0, 0.001, "已完成向右转身（正面朝外）")
+	t.check(
+		b.state().stage_pos.x < StageDef.LEVEL1_APPROACH_MIN,
+		"此时仍应在交接窗口左侧之外：x=%.4f" % b.state().stage_pos.x
+	)
 	b.performance.setup(b.stage_def.cues, b.clock, b.controller.puppets)
 	b.advance_to(4800)
+	# 同向（继续向右）移入目标带：判定应按**位置变化**触发，不依赖新的转身事件。
 	b.begin_drag()
-	b.drag(Vector2(30.0, 0.0), 10)
+	b.drag(Vector2(20.0, 0.0), 10)
 	b.end_drag()
 	var outcome: Dictionary = b.performance.get_outcome("l1_c2_move_left")
-	t.check(b.state().stage_pos.x > StageDef.LEVEL1_APPROACH_MIN, "实际已向右移动到目标区")
+	t.check_in_range(
+		b.state().stage_pos.x,
+		StageDef.LEVEL1_APPROACH_MIN,
+		StageDef.LEVEL1_APPROACH_MAX,
+		"实际已右移到目标区"
+	)
 	t.check_eq(bool(outcome.get("hit", false)), true, "同向继续移动应按位置变化判定，不能依赖新转身事件")
 	t.check_eq(_count_for_cue(b.judge_log, "cue_hit", "l1_c2_move_left"), 1, "同一次拖动只命中一次")
 	t.finish("再次同向移动能命中且不逐帧评分")
@@ -652,18 +717,21 @@ func _test_13_early_action_can_be_retried_on_beat(t: ATestBase) -> void:
 func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.begin("14 松开鼠标当帧的末段位移进入目标区仍判到位")
 	var b: CueTestBench = _bench()
-	t.check(_find(b.stage_def, "l1_c5_move_to_xiaoping").size() > 0, "本折的「走到小青身旁」落点存在（第 26 拍）")
-	# 目标带是 x ∈ [0.28, 0.32]（2026-10-15 折返点镜像后翻到台左），落点 16250、判定窗 16000~16500。
-	# 先把白素贞拖到目标带**右侧**，再在松开当帧用一次位移跨进目标带——
-	# 验证 drag_end 不会抢先关掉到位判定（末段位移必须仍按「进入目标区」计）。
+	t.check(_find(b.stage_def, "l1_c5_move_to_xiaoping").size() > 0, "本折的「回到小青身旁」落点存在（第 26 拍）")
+	# 目标带是 x ∈ [0.28, 0.32]（2026-10-16 流程简化后它就是本关的完成条件），落点 16250、
+	# 判定窗 16000~16500。她开局**恰在带的右端**（0.32），因此要先把白素贞拖到目标带**右侧**，
+	# 再在松开当帧用一次位移跨进目标带——验证 drag_end 不会抢先关掉到位判定
+	# （末段位移必须仍按「进入目标区」计）。
+	# 起点同样摆回她的开局站位（测试台默认 0.5，见 _test_06 的说明）。
+	b.state().stage_pos.x = StageDef.LEVEL1_BAISUZHEN_X
 	b.advance_to(16050)
 	b.begin_drag()
-	b.drag(Vector2(-320.0, 0.0), 1)
+	b.drag(Vector2(320.0, 0.0), 1)
 	t.check(
 		b.state().stage_pos.x > StageDef.LEVEL1_TURN_MAX,
 		"松开前还在目标带右侧：x=%.4f" % b.state().stage_pos.x
 	)
-	b.controller.drag_to(Vector2(-40.0, 0.0))
+	b.controller.drag_to(Vector2(-360.0, 0.0))
 	b.controller.end_drag()
 	b.advance(1)
 	var outcome: Dictionary = b.performance.get_outcome("l1_c5_move_to_xiaoping")
@@ -674,21 +742,44 @@ func _test_14_release_applies_final_reach(t: ATestBase) -> void:
 	t.finish("末段位移在松开当帧仍参与到位判定")
 
 
-## 第一关「打伞位」：许仙举 90°、本关手角上限也是 90°（用户 2026-10-04 定案），
-## 而且「抬手」落点的到位区间必须**完整包住接伞的对齐窗口**。
+## 第一关的姿势与接伞窗口：许仙把伞**举在头顶**（140°）、白素贞只需抬到 **90°（打伞位）**，
+## 而「抬手」落点的到位区间必须**完整包住接伞的对齐窗口**。
 ##
-## 这条不变量是关键：接伞要求「两手手高差 ≤ 容差」，抬手落点又要求「角度在某区间内」，
+## 这条不变量是关键：接伞要求「她的手与打伞位之差 ≤ 容差」，抬手落点又要求「角度在某区间内」，
 ## 两者若错配，玩家就会遇到「拍点算抬手到位、伞却不换手」。这里用数值扫描反推对齐窗口
 ## （而不是把公式再抄一遍），再要求它落在落点区间之内。
-func _test_15_level1_uses_90_degree_umbrella_pose(t: ATestBase) -> void:
-	t.begin("15 第一关打伞位：许仙举 90°，抬手落点包住接伞对齐窗口")
+func _test_15_level1_contact_pose_and_window(t: ATestBase) -> void:
+	t.begin("15 打伞位：许仙举伞在头顶、她抬到 90° 即相接，抬手落点包住对齐窗口")
 	var def: StageDef = StageDefScript.make_level1()
 	t.check_approx(
 		def.hand_angle_max_rad, StageDef.LEVEL1_HAND_MAX_RAD, 1e-9, "第一关的手角上限应是 90°（打伞位）"
 	)
 	t.check_approx(def.hand_angle_max_rad, PI * 0.5, 1e-9, "90° 即 π/2")
+	# 许仙（布景影人）：右手把伞举在头顶、左臂自然垂下（用户 2026-10-16 参考图）。
 	var angles: Array = def.initial["hand_angles"][UmbrellaControllerScript.XUXIAN_ID]
-	t.check_approx(float(angles[1]), StageDef.LEVEL1_HAND_MAX_RAD, 1e-9, "许仙开局右手应举在 90°（水平前伸）持伞")
+	t.check_approx(
+		float(angles[1]),
+		StageDef.LEVEL1_XUXIAN_UMBRELLA_RAISE_RAD,
+		1e-9,
+		"许仙开局右手应把伞举在头顶（%.0f°）" % rad_to_deg(StageDef.LEVEL1_XUXIAN_UMBRELLA_RAISE_RAD)
+	)
+	t.check(
+		float(angles[1]) >= StageDef.HAND_OVERHEAD_MIN_RAD,
+		"举伞的手应落在「举过头顶」档（≥ %.2f rad）" % StageDef.HAND_OVERHEAD_MIN_RAD
+	)
+	t.check_approx(float(angles[0]), 0.0, 1e-9, "许仙开局左臂应自然垂下（参考图里另一臂垂着）")
+	# 🔴 他这一角**故意超过本折手感上限 90°**：那条上限只约束玩家操控的那一具（见 validate() 注）。
+	t.check(
+		float(angles[1]) > def.hand_angle_max_rad,
+		"举伞角应刻意越过本折手感上限（%.2f）" % def.hand_angle_max_rad
+	)
+	# 接伞的参考角必须**就是**打伞位（= 本折上限）：玩家手感与旧版一致的前提。
+	t.check_approx(
+		UmbrellaControllerScript.CONTACT_HAND_ANGLE_RAD,
+		StageDef.LEVEL1_HAND_MAX_RAD,
+		1e-9,
+		"接伞的参考手角应等于打伞位（本折上限），否则玩家要抬的角度会跟着许仙的姿势漂"
+	)
 
 	var cue: Dictionary = _find(def, "l1_c3_hand_raise")
 	t.check(not cue.is_empty(), "应存在抬手落点 l1_c3_hand_raise")

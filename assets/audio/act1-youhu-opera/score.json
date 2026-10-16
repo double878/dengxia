@@ -1,0 +1,129 @@
+{
+  "opening_end_ms": 58600,
+  "arrival_ms": 64000,
+  "take_ms": 66000,
+  "closing_ms": 68000,
+  "duration_ms": 71760,
+  "audio_version": "act1-youhu-opera-v5",
+  "reference": "https://www.bilibili.com/video/BV1uD4y1R7jH",
+  "generation": "粤剧《白蛇传》「游湖」折录屏（用户提供）→ 人声/伴奏分离 → 裁剪拼接 + 交叉淡化 + 线性响度归一",
+  "main_path": "res://assets/audio/act1-youhu-opera/main.wav",
+  "wait_loop_path": "res://assets/audio/act1-youhu-opera/wait_loop.wav",
+  "take_close_path": "res://assets/audio/act1-youhu-opera/take_close.wav",
+  "remedy_path": "res://assets/audio/act1-youhu-opera/remedy.wav",
+  "lines": [
+    {
+      "line_id": "opera-01",
+      "role_id": "xiaoqing",
+      "role_name": "小青",
+      "text": "姐姐　雨下大了",
+      "start_ms": 80,
+      "end_ms": 5540,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-02",
+      "role_id": "xiaoqing",
+      "role_name": "小青",
+      "text": "我们到那边柳树下躲避一时吧",
+      "start_ms": 5800,
+      "end_ms": 8610,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-03",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "柳下避雨怎相宜",
+      "start_ms": 11420,
+      "end_ms": 26790,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-04",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "二位娘子　你们要到哪里去呀",
+      "start_ms": 29390,
+      "end_ms": 36280,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-05",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "我们要回钱塘门去",
+      "start_ms": 36320,
+      "end_ms": 38480,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opera-06",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "哎呀呀　雨下大了",
+      "start_ms": 38510,
+      "end_ms": 39770,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-07",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "二位娘子不用推辞　待我叫船",
+      "start_ms": 40690,
+      "end_ms": 49610,
+      "delivery": "singing"
+    },
+    {
+      "line_id": "opera-08",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "如此　多谢君子",
+      "start_ms": 50130,
+      "end_ms": 58010,
+      "delivery": "singing"
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "main",
+      "path": "res://assets/audio/act1-youhu-opera/main.wav",
+      "sha256": "f4430617952ec3c89214c38e12191dcacc3f5e9217d134fc8abfe5a0c0648efc",
+      "frames": 3444480,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "wait_loop",
+      "path": "res://assets/audio/act1-youhu-opera/wait_loop.wav",
+      "sha256": "97fb429b18f9e538f86798774799dec49c338f7ec8f2b941f634191324edf664",
+      "frames": 104160,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "take_close",
+      "path": "res://assets/audio/act1-youhu-opera/take_close.wav",
+      "sha256": "5744854b80c3ff27ed028b9a8a3c76e55f4c45a1bdb9a88ced10bae22f6653c7",
+      "frames": 76800,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "remedy",
+      "path": "res://assets/audio/act1-youhu-opera/remedy.wav",
+      "sha256": "06ca5de627534f260608be923e1608b3e25828888bc2aedf52a232ed039452fb",
+      "frames": 240000,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    }
+  ],
+  "waiting_guard_ms": 500,
+  "rights_status": "local_prototype_only; external reference permission unverified",
+  "notes": "整轨结构 A[src17.32-53.81]+B[64.83-67.05]+S'[100.20-121.79]+E[inst121.79-134.00]，交叉淡化 0.20/0.20/0.35 s。句界取 10 ms hop 包络实测；开场句按句内停顿(源 22.86-23.12)拆两条。delivery 无法由声学特征机械判别（拖腔稳态占比对纯念白块与唱段无区分力，实测 87.8% vs 94.6%），故沿用素材既有标注：100.38-121.68 整块标为「唱」，其中 102-111 的伴奏电平仅 -77 dB 与之冲突，未采信。"
+}

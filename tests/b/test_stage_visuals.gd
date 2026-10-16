@@ -161,12 +161,29 @@ func _test_prop_attachments(t: ATestBase) -> void:
 	t.begin("实体伞和投影伞分别跟随各自手腕与交接")
 	var views: Array = []
 	var states: Array = []
+	# 🔴 站位**由判据算出，不写死**。旧写法硬写「白素贞 0.236 / 许仙 0.13」，那是加号口径
+	#    （许仙在台左 0.13、交接窗口在他的右侧 0.176~0.296）时代的数；两轮站位翻面之后
+	#    （许仙到桥头 0.5285、两位娘子到柳树下）她想接伞必须站在他**左**边，
+	#    硬写的 0.236 早已落在窗口之外——接伞根本不会发生，本测试的两条断言于是连锁误报。
+	#    （同一条教训 `tests/a/test_umbrella.gd` 已经吃过一次：那里也曾硬写 0.13。）
+	var xuxian_x: float = StageDef.LEVEL1_XUXIAN_X
+	var join: Vector2 = UmbrellaController.join_window_x(xuxian_x)
+	var borrow_x: float = (join.x + join.y) * 0.5
 	for id in range(3):
 		var view: PlaceholderPuppet = _view(1)
 		view.puppet_state.puppet_id = id
 		view.puppet_state.head_id = id
-		view.puppet_state.stage_pos = Vector2(0.236 if id == 0 else 0.13, 0.50)
+		var at_x: float = join.x - 0.05  ## 小青：不参与判定，随便站在窗口外侧
+		if id == UmbrellaController.XUXIAN_ID:
+			at_x = xuxian_x
+		elif id == UmbrellaController.BAISUZHEN_ID:
+			at_x = borrow_x  ## 窗口中心：那里两只手正好碰上（接伞条件之一）
+		view.puppet_state.stage_pos = Vector2(at_x, 0.50)
 		view.puppet_state.hand_angle = Vector2(PI * 0.5, PI * 0.5)
+		if id == UmbrellaController.XUXIAN_ID:
+			# 许仙把伞**托在头顶**（用户 2026-10-16 参考图）。这正是「两人握在伞杆不同高度」、
+			# 因而交接必须走递伞过渡而不是瞬间落位的来源。
+			view.puppet_state.hand_angle.y = StageDef.LEVEL1_XUXIAN_UMBRELLA_RAISE_RAD
 		views.append(view)
 		states.append(view.puppet_state)
 	var controller := UmbrellaController.new()
@@ -182,23 +199,29 @@ func _test_prop_attachments(t: ATestBase) -> void:
 				view.lamp_state.distance = distance
 			var data: Dictionary = prop.geometry()
 			t.check(
-				(data["hand"] as Vector2).is_equal_approx(views[1].hand_screen_position("right")),
+				(data["hand"] as Vector2).is_equal_approx(
+					views[UmbrellaController.XUXIAN_ID].hand_screen_position("right")
+				),
 				"两种灯距下伞柄握点与相应腕点一致"
 			)
 	controller.update(8750, [])
 	t.check_eq(controller.holder_id_of(), 0, "样例确实通过原控制器接伞")
-	states[0].stage_pos.x = UmbrellaController.TURN_POINT_X
-	controller.update(11000, [])
-	states[0].hand_angle.x = 0.0
-	states[0].stage_pos.x = 0.236
-	controller.update(13000, [])
-	t.check(controller.handing_off, "低手还伞样例进入真实交接过渡")
+	# 接伞是一次**真实的递伞过渡**：他的手在头顶（举伞 140°）、她握在 90° 的打伞位，
+	# 两只手高度不同，伞必须从高处那只手过渡过来、不能瞬间落位。
+	# ⚠️ 旧版这一段测的是「低手**还伞**」的过渡——还伞通路已随 2026-10-16 流程简化删除
+	#    （见 `UmbrellaController` 头注），故改在**接伞**那一刻查同一个读数。
+	t.check(controller.handing_off, "接伞那一刻进入真实递伞过渡")
+	t.check_eq(
+		controller.handoff_from_id(), UmbrellaController.XUXIAN_ID, "过渡的起点应是许仙"
+	)
 	for mode in [1, 2]:
 		for view: PlaceholderPuppet in views:
 			view.set("render_mode", mode)
 		var data: Dictionary = prop.geometry()
-		var from: Vector2 = views[0].hand_screen_position("left")
-		var to: Vector2 = views[1].hand_screen_position("right")
+		# 🔴 方向必须与控制器记录的一致（从**许仙右手**到她**左手**）：反过来写只有在
+		#    过渡进度落在 0 或 1 时才碰巧相等，中途就会静默失真。
+		var from: Vector2 = views[UmbrellaController.XUXIAN_ID].hand_screen_position("right")
+		var to: Vector2 = views[UmbrellaController.BAISUZHEN_ID].hand_screen_position("left")
 		t.check(
 			(data["hand"] as Vector2).is_equal_approx(from.lerp(to, controller.handoff_blend())),
 			"交接时实体与投影各自在对应腕点间过渡"

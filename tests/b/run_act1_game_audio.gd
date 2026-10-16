@@ -34,8 +34,8 @@ func _run() -> void:
 			speech_count += 1
 		else:
 			song_count += 1
-	t.check_eq(speech_count, 13, "四句开场加九句还伞全部交付")
-	t.check_eq(song_count, 3, "六句对唱按三组完整乐句保留")
+	t.check_eq(speech_count, 1, "整轨只剩一句念白（「我们要回钱塘门去」）")
+	t.check_eq(song_count, 7, "七句唱词各成一条字幕（开场句按句内停顿拆两条）")
 	var first: Dictionary = config.lines[0]
 	harness.clock.set_free_time_ms(int(first.start_ms) + 100)
 	harness.opera_audio.update()

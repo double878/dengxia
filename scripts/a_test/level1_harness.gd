@@ -55,7 +55,9 @@ func _init(parent: Node, stage_def: StageDef = null, audio_config: Dictionary = 
 		opera_audio = Act1OperaAudio.new()
 		parent.add_child(opera_audio)
 		if not opera_audio.setup(audio_config, clock, opera_flow):
-			push_error("第一幕正式音频建立失败：%s" % opera_audio.problems)
+			# ⚠️ 必须 `str()` 包一层：`"%s" % Array` 会把数组当成参数列表，
+			# 直接抛 "not all arguments converted"，把真正的失败原因（problems 的内容）彻底盖住。
+			push_error("第一幕正式音频建立失败：%s" % str(opera_audio.problems))
 			runtime = null
 			return
 		clock.set_player(opera_audio.get_player(), def.bpm)

@@ -2,7 +2,7 @@ extends Node
 class_name Act1OperaAudio
 ## 表现层消费剧情与唯一 MusicClock，主轨包含自然对白及已通过的唱段。
 
-const MANIFEST_PATH := "res://assets/audio/act1-natural/score.json"
+const MANIFEST_PATH := "res://assets/audio/act1-youhu-opera/score.json"
 var config: Dictionary = {}
 var problems: Array[String] = []
 var clock: MusicClock

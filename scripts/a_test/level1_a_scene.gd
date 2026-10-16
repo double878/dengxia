@@ -492,17 +492,14 @@ func _refresh_ui() -> void:
 	else:
 		_cue_label.text = _active_cue_text()
 		if _harness.opera_flow != null:
+			# 阶段 → 画面提示（2026-10-16 流程简化：唱完 → 借伞 → 回到小青身旁 → 结束）。
 			match _harness.opera_flow.phase:
-				"opening", "return_dialogue":
+				"opening", "closing":
 					_cue_label.text = ""
-				"approach", "wait_arrival":
-					_cue_label.text = "拖动胸签，走到许仙身旁"
-				"borrow_dialogue":
-					_cue_label.text = "唱完后，抬起左手接伞"
-				"wait_take":
-					_cue_label.text = "按 A 抬左手，与许仙的手相接"
-				"tour", "wait_return":
-					_cue_label.text = "持伞走到小青身旁，再回许仙处还伞"
+				"borrow", "wait_arrival":
+					_cue_label.text = "唱完了　·　拖动胸签走到许仙身旁，抬起左手接伞"
+				"return_home":
+					_cue_label.text = "接到伞了　·　走回小青身旁"
 	if _dialogue_label != null and _harness.opera_audio != null:
 		var line: Dictionary = _harness.opera_audio.current_line()
 		_dialogue_label.text = (
