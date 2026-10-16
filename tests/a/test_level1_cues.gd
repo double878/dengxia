@@ -203,38 +203,52 @@ func _test_01_cue_table_covers_level1(t: ATestBase) -> void:
 		start_x - StageDef.LEVEL1_XIAOPING_X >= 0.05,
 		"两人间距应 ≥ 0.05 个幕宽（影身各宽约 0.026），实际 %.2f" % (start_x - StageDef.LEVEL1_XIAOPING_X)
 	)
-	# ③ 小青这一折仍只作陪，但按用户 2026-10-16 的参考图摆**开场亮相**：
-	#    下标 0（左手）沿面朝方向前展近水平；下标 1（右手）高举过头；同时**朝向许仙**。
-	#    facing 的约定是「-1 朝左、+1 朝右」；许仙在小青**右侧** → 小青该朝右，即 +1。
-	#    🔴 +1 是**默认值**，所以它靠「不在表里」表达——本断言读的是**有效值**。
+	# ③ 小青这一折仍只作陪，开局亮相按用户 2026-10-16 16:08 截图定案（标签「elbow100_Rdown」，
+	#    = 姿势试穿探针的 B 变体）：下标 0（左手 = 画面右/白素贞侧，见 stage_def 常量注的
+	#    镜像推导）**高举过头 + 肘弯 100°**；下标 1（右手 = 柳树侧）**自然垂下**。
+	#    同时**朝向许仙**——facing 约定「-1 朝左、+1 朝右」，许仙在小青右侧 → 小青该朝右，
+	#    即 +1。🔴 +1 是**默认值**，所以它靠「不在表里」表达——本断言读的是**有效值**。
 	var xiaoqing_hands: Array = def.initial["hand_angles"][2]
 	t.check_approx(
-		float(xiaoqing_hands[0]), StageDef.LEVEL1_XIAOPING_HAND_OPEN_RAD, 1e-9, "小青开局左手应前展近水平"
+		float(xiaoqing_hands[0]), StageDef.LEVEL1_XIAOPING_HAND_RAISED_RAD, 1e-9, "小青开局左手（白素贞侧）应高举过头"
 	)
 	t.check_approx(
-		float(xiaoqing_hands[1]), StageDef.LEVEL1_XIAOPING_HAND_RAISED_RAD, 1e-9, "小青开局右手应高举过头"
+		float(xiaoqing_hands[1]), StageDef.LEVEL1_XIAOPING_HAND_DOWN_RAD, 1e-9, "小青开局右手（柳树侧）应放下（自然垂下）"
 	)
 	#    亮相姿势必须真的「高」：高举的那只手要落在「举过头顶」档内，否则读不出亮相。
 	t.check(
-		float(xiaoqing_hands[1]) >= StageDef.HAND_OVERHEAD_MIN_RAD,
+		float(xiaoqing_hands[0]) >= StageDef.HAND_OVERHEAD_MIN_RAD,
 		"小青亮相的举手应落在「举过头顶」档（≥ %.2f rad）" % StageDef.HAND_OVERHEAD_MIN_RAD
 	)
-	#    前展的那只手要**低于**高举的手，且仍在「非垂下」区（否则姿势退化成站桩）。
+	#    另一侧要真的**放下**（垂下档），否则「一侧高举一侧垂下」的对比读不出来。
 	t.check(
-		float(xiaoqing_hands[0]) > StageDef.HAND_LOWER_MAX_RAD
-		and float(xiaoqing_hands[0]) < StageDef.HAND_OVERHEAD_MIN_RAD,
-		"小青前展的手应落在「垂下与举顶之间」"
+		float(xiaoqing_hands[1]) <= StageDef.HAND_LOWER_MAX_RAD,
+		"小青放下的手应落在「垂下」档（≤ %.2f rad）" % StageDef.HAND_LOWER_MAX_RAD
 	)
 	#    🔴 高举的 160° **故意超过本折上限 90°**：那条上限是玩家手感装置，只约束受控影人。
 	#    本断言把这份「故意」钉住——若日后有人把它当成数据错误而「修」回 90° 以内，
 	#    这里会立刻红。上半界仍须守住 PuppetState 的硬边界（180°）。
 	t.check(
-		float(xiaoqing_hands[1]) > def.hand_angle_max_rad,
+		float(xiaoqing_hands[0]) > def.hand_angle_max_rad,
 		"小青的亮相手角应刻意越过本折手感上限（%.2f）" % def.hand_angle_max_rad
 	)
 	t.check(
 		float(xiaoqing_hands[0]) <= PI + 1e-9 and float(xiaoqing_hands[1]) <= PI + 1e-9,
 		"小青的开局手角仍须落在 PuppetState 硬边界（180°）内"
+	)
+	#    肘弯（2026-10-16 用户定案「肘弯 100°」）：前臂偏折 80° ⇒ 肘内角 100°，只作用在
+	#    高举的下标 0；符号必须为**正**（袖口折向头顶右上方 = 用户 16:08 截图，
+	#    负号会把袖口送向身后——实拍比对定案）。
+	var xiaoqing_bends: Array = def.initial.get("elbow_bends", {}).get(2, [0.0, 0.0])
+	t.check_approx(
+		float(xiaoqing_bends[0]), StageDef.LEVEL1_XIAOPING_ELBOW_BEND_RAD, 1e-9, "小青高举臂应带正号肘弯（袖口折向头顶右上）"
+	)
+	t.check_approx(
+		float(xiaoqing_bends[1]), 0.0, 1e-9, "小青放下的那条臂不应有肘弯"
+	)
+	t.check(
+		absf(float(xiaoqing_bends[0])) < PI,
+		"肘弯偏折必须落在 ±π 内（肘内角 = 180° − |bend| 不为负）"
 	)
 	#    受控影人（白素贞）的开局手角则必须**留在**本折上限内——手感装置不能被她绕过。
 	var baisuzhen_hands: Array = def.initial["hand_angles"][UmbrellaControllerScript.BAISUZHEN_ID]

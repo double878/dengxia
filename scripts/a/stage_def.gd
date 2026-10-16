@@ -102,30 +102,35 @@ const LEVEL1_XIAOPING_X: float = 0.26
 ##   两人由此相对而立；许仙朝左（-1）面对两位娘子。
 ##   ——「左右关系一互换、朝向必须整体反号」的又一次实例（见 `make_level1()` 的 `facing`）。
 const LEVEL1_BAISUZHEN_X: float = 0.32
-## —— 小青的开局亮相姿势（2026-10-16 用户提供参考图定案：「这是小青的初始动作参考」）——
-## 参考图 = 一具紫衣旦角影人：**一手高举过头（手落在头顶、略偏身后），另一臂朝面朝的方向前展**
-## 近水平。本关的姿势通道只有「手角」两维（站位/朝向已由上面两条常量钉死），故开场姿势落在这里。
+## —— 小青的开局亮相姿势（2026-10-16 最终定案 = 用户 16:08 截图，标签「elbow100_Rdown」）——
+## 用户连续多轮收敛：「不要镜像」→「右手放下来」→「左手肘弯 100°」→「靠柳树那侧高举」
+## → **16:08 截图定案**：高举臂画在**画面右（白素贞侧）**、斜向右上 ~45°、肘内角 100°、
+## 袖口收在头顶右上方；另一臂（画面左 = 柳树侧）自然垂下。
+## 该截图与姿势试穿探针的 **B 变体**（下标 0 高举 + 肘弯、下标 1 放下）实拍一致，
+## 故数据取 B 的参数；此前「柳树侧高举」的读法**作废**。
 ##
-## 🔴 **哪只手指向哪边**（照 `PlaceholderPuppet.arm_direction()` 实测，不是猜的）：
-##   `screen_angle = π/2 − θ`（右手）/ `π/2 + θ`（左手）⇒ **未翻面**时 θ=90° 即
-##   「左手指向画面左、右手指向画面右」；翻面（mirror = −1）时左右整体互换。
-##   小青 facing = **+1（朝许仙）**，而她素材的 `reference_facing` 是 −1（原稿面朝左）
-##   ⇒ mirror = −1 ⇒ **整具影人连双臂一起翻面** ⇒ 画面结果**就是用户那张参考图**：
-##   面朝右、下标 0 的左手沿面朝方向前展，下标 1 的右手高举到头顶左上方（身后）。
+## 🔴 **下标↔画面方位**（`PlaceholderPuppet.arm_direction()` 口径 + 正式入口实拍核对）：
+##   小青 facing = +1、素材 `reference_facing` = −1 ⇒ mirror = −1 ⇒ 整具影人连双臂一起翻面：
+##   **下标 1（右手）画在画面左 = 柳树侧**，**下标 0（左手）画在画面右 = 白素贞侧**。
 ##   ⚠️ 这两个下标**不随朝向改**：朝向翻的是整具影人（含双臂），与「左手/右手」无关。
 ##
-## ⚠️ 若把两个值对调，画面会变成「右手高举、左臂朝身后的桥那边伸」——与参考图的方向关系相反。
-##
 ## 角度口径见 `UmbrellaController.hand_height()`：0 = 自然垂下、π/2 = 水平前伸、π = 举过头顶。
-##   高举 160° 落在「举过头顶」档（`HAND_OVERHEAD_MIN_RAD` = 135°）内，读作亮相而非直挺挺的 180°；
-##   前展 85° 比水平略低，对应参考图上前伸那只手落在肩下一点的位置。
+##   高举 160° 落在「举过头顶」档（`HAND_OVERHEAD_MIN_RAD` = 135°）内，读作亮相而非直挺挺的 180°。
+##   另一侧 10° ≈ 自然垂下（略前，避免与躯干重叠）。
 ##
+## 肘弯通道（2026-10-16 加）：`PlaceholderPuppet.hand_bend` 给**前臂再转的屏幕角**，
+##   肘内角 = 180° − |bend|。用户参考图高举臂实测肘内角 ≈ **100°** ⇒ bend = ±80°；
+##   符号经双方向实拍比对定案：下标 0 取**正号** = 前臂折向头顶右上方（用户 16:08 截图），
+##   负号会把袖口送向身后（不对）。只作用在下标 0（`initial["elbow_bends"]`）。
 ## ⚠️ 高举的 160° **超过本折的 `hand_angle_max_rad`（90°，打伞位）**，是有意的：那条上限是
 ##   「玩家把手抬到 90° 能停住」的**手感装置**，只约束玩家操控的那一具（见 `validate()` 注）；
 ##   小青整关静止、不参与接伞（`UmbrellaController._hands_meet()` 只读白素贞与许仙），
 ##   她的开局姿势因此可以越过它，但仍受 `PuppetState.HAND_ANGLE_MAX`（180°）硬边界约束。
-const LEVEL1_XIAOPING_HAND_OPEN_RAD: float = PI * 85.0 / 180.0  ## 前展近水平（左手，下标 0）
-const LEVEL1_XIAOPING_HAND_RAISED_RAD: float = PI * 160.0 / 180.0  ## 高举过头（右手，下标 1）
+const LEVEL1_XIAOPING_HAND_DOWN_RAD: float = PI * 10.0 / 180.0  ## 自然垂下略前（右手=柳树侧，下标 1）
+const LEVEL1_XIAOPING_HAND_RAISED_RAD: float = PI * 160.0 / 180.0  ## 高举过头（左手=白素贞侧，下标 0）
+## 高举臂的前臂偏折量：肘内角 = 180° − 本值 = **100°**（用户定案）。
+## 落数据时按下标 0 取**正号**（见上注：正号 = 袖口折向头顶右上方）。
+const LEVEL1_XIAOPING_ELBOW_BEND_RAD: float = PI * 80.0 / 180.0
 ## 「回到小青身旁」落点的目标带（2026-10-16 起它就是**本关的完成条件**）。
 ## **上界直接取控制器的 `TURN_POINT_X`**，不另写一个数：控制器置起「已归位」的条件就是
 ## `x ≤ TURN_POINT_X`。落点带若写得比它**低**，会出现最坏的一种错配：
@@ -220,6 +225,8 @@ var summary: String = ""  ## 戏单简介
 ##   "hung": {int: int}                影人编号 -> 挂钩槽位
 ##   "positions": {int: [float, float]} 接地点归一化 x/y
 ##   "hand_angles": {int: [float, float]} 左右手角（弧度，不得超过 hand_angle_max_rad）
+##   "elbow_bends": {int: [float, float]} 左右前臂偏折（弧度；肘内角 = 180° − |bend|，
+##                     0 = 共线直臂。显示端套在 `PlaceholderPuppet.hand_bend` 上，不进状态）
 ##   "facing": {int: float}            初始朝向；-1 朝左、+1 朝右，**缺省即 +1**
 ##   "distance" / "exposure" / "oil": float  灯的初值
 var initial: Dictionary = {}
@@ -273,8 +280,9 @@ static func make_level1() -> StageDef:
 	# 小青与白素贞 LEVEL1_GROUND_Y_LADIES = 0.597222（**645px，累计再下移 10px**，用户同日定案）。
 	# 手角：白素贞双手放下（她要自己抬左手才会接伞）；许仙**右手高举托伞（140°）、左臂垂下**
 	# （用户 2026-10-16 参考图：「许仙拿伞动作参考」——手落在头顶高度、另一臂自然垂着）；
-	# 小青按用户同日的参考图摆**开场亮相**（沿面朝方向的左手前展、右手高举过头），
-	# 她这一折仍只作陪——姿势是装饰性的，不参与任何判定（见上面的三条常量注）。
+		# 小青按用户 2026-10-16 16:08 截图摆**开场亮相**（白素贞侧那条臂斜向右上高举、
+		# 肘弯 100°、袖口收在头顶右上方；柳树侧垂下——见上面三条常量注与 `elbow_bends`），
+		# 她这一折仍只作陪——姿势是装饰性的，不参与任何判定。
 	def.initial = {
 		"controlled": 0,
 		"on_stage": [0, 1, 2],
@@ -289,8 +297,12 @@ static func make_level1() -> StageDef:
 		{
 			0: [0.0, 0.0],
 			1: [0.0, LEVEL1_XUXIAN_UMBRELLA_RAISE_RAD],
-			2: [LEVEL1_XIAOPING_HAND_OPEN_RAD, LEVEL1_XIAOPING_HAND_RAISED_RAD]
+			2: [LEVEL1_XIAOPING_HAND_RAISED_RAD, LEVEL1_XIAOPING_HAND_DOWN_RAD]
 		},
+		# 肘弯（前臂偏折，弧度；肘内角 = 180° − |bend|）。只给小青高举的那条臂（下标 0，
+		# 白素贞侧）：**正号** = 前臂折向头顶右上方（2026-10-16 用户 16:08 截图定案）。
+		# 由显示端套在 `PlaceholderPuppet.hand_bend` 上（`level1_a_scene` 与 B 侧回放各套一次）。
+		"elbow_bends": {2: [LEVEL1_XIAOPING_ELBOW_BEND_RAD, 0.0]},
 		# 开演朝向（facing：-1 朝左、+1 朝右；**缺省即 +1**，只写偏离默认的那一个）。
 		# 参考朝向见 assets/puppets/puppet_assets.json 的 `reference_facing`（许仙 +1、白素贞 -1、
 		# 小青 -1）；镜像系数 = facing / reference_facing，因此 **facing 就是画面上的朝向**。
@@ -999,6 +1011,18 @@ func validate() -> Array[String]:
 							"本折上限" if is_controlled_puppet else "硬边界",
 							str(ceiling)
 						]
+					)
+				)
+	# 肘弯是显示端姿势数据：|bend| = π 时前臂折回上臂反方向（肘内角 0°），再大就翻转了。
+	for puppet_id in initial.get("elbow_bends", {}).keys():
+		var bends: Array = initial["elbow_bends"][puppet_id]
+		for bend_index in bends.size():
+			var bend: float = float(bends[bend_index])
+			if absf(bend) > PI + 1e-9:
+				problems.append(
+					(
+						"stage %d 开演布景：影人 %d 的肘弯偏折 %s 超过硬边界 ±%s"
+						% [id, int(puppet_id), str(bend), str(PI)]
 					)
 				)
 	return problems

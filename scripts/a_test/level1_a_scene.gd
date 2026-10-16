@@ -152,6 +152,7 @@ func _ready() -> void:
 	_stage_surface.z_index = -1
 	add_child(_stage_surface)
 	_stage_surface.configure(CLOTH)
+	_apply_elbow_bends()
 	_stage_binding = StageBindingScript.new()
 	_stage_binding.name = "CStageBinding"
 	_stage_binding.stage_id = _stage_def.id
@@ -236,6 +237,22 @@ func _configure_initial_stage() -> void:
 	_on_stage = on_stage if not on_stage.is_empty() else [0, 1, 2]
 	if _stage_def.id == 1:
 		controller.set_walk_path(WalkPathScript.new())
+
+
+## 把开演肘弯（`initial["elbow_bends"]`）套到两套视图上：前视图 + 幕面透射投影视图。
+## 🔴 不能放进 `_configure_initial_stage()`：那里跑在 `_stage_surface` 创建**之前**，
+## 而肘弯是**视图字段**（`PlaceholderPuppet.hand_bend`，不进状态、不进录制契约）；
+## B 侧回放（performance_replay）从同一份 `initial` 另行套用。
+func _apply_elbow_bends() -> void:
+	var elbow_bends: Dictionary = _stage_def.initial.get("elbow_bends", {})
+	for puppet_id: int in elbow_bends.keys():
+		if puppet_id < 0 or puppet_id >= _puppet_views.size():
+			continue
+		var bends: Array = elbow_bends[puppet_id]
+		var bend := Vector2(float(bends[0]), float(bends[1]))
+		_puppet_views[puppet_id].hand_bend = bend
+		if puppet_id < _stage_surface.projection_views.size():
+			_stage_surface.projection_views[puppet_id].hand_bend = bend
 
 
 func _process(delta: float) -> void:
