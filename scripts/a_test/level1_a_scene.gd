@@ -514,7 +514,7 @@ func _refresh_ui() -> void:
 				"opening", "closing":
 					_cue_label.text = ""
 				"borrow", "wait_arrival":
-					_cue_label.text = "唱完了　·　拖动胸签走到许仙身旁，抬起左手接伞"
+					_cue_label.text = "唱完了　·　走到许仙身旁，按 D 抬起靠他那侧的手臂接伞"
 				"return_home":
 					_cue_label.text = "接到伞了　·　走回小青身旁"
 	if _dialogue_label != null and _harness.opera_audio != null:
@@ -618,7 +618,7 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_LAMP_EXPOSURE:
 			return "按 Q / E 调整影子的显露"
 		CueScript.ACTION_UMBRELLA_TAKE:
-			return "走到许仙面前，按 A 抬左手到 90°，两只手碰到就接伞"
+			return "走到许仙面前，按 D 抬起靠他那侧的手臂（A 是靠小青那侧），抬过打伞位就接伞"
 		CueScript.ACTION_UMBRELLA_RETURN:
 			return "向左走回许仙身旁，把伞还回他的右手"
 	return "跟着鼓点继续演出"
