@@ -35,22 +35,24 @@ func _run() -> void:
 	var record: CPerformanceRecord = harness.capture.record
 	var controller: PuppetController = harness.runtime.puppet_controller
 	check(record.snapshots[0].time_ms == 0, "首帧不在 t=0")
-	# 首帧的脚点高度必须来自**桥面步态路径**（第一关的脚点由 `StageWalkPath` 决定，
-	# 不是关卡的静态落地线，也不是默认 0）。
-	# 🔴 旧写法是写死的 `y < 0.45`——那是「白素贞开局站在桥上（x=0.80）」时代的判据
-	#    （引入它的提交里她确实在 0.80，桥面给出 y≈0.2）。2026-10-16 定案把两位娘子挪到
-	#    柳树下（0.32 / 0.26，都在桥左侧的空地上）之后，路径给出的是平地 0.5，写死阈值必然为假。
-	#    这里改判**机制**：录下来的脚点高度必须等于路径在同一个 x 上给出的高度。
+	# 首帧的脚点高度必须来自**桥面步态路径**：桥跨以内随桥面、桥跨以外回**各自的落地线**
+	# （落地线取自 `StageDef.initial.positions`，由 `set_walk_path()` 在接管路径前逐人记下，
+	# 读数走 `PuppetController.ground_y()`，测试不另写一份数字）。
+	# 🔴 旧写法是写死的 `y < 0.45`——那是「白素贞开局站在桥上（x=0.80）」时代的判据；
+	#    2026-10-16 定案把两位娘子挪到柳树下（0.32 / 0.26，都在桥左侧的空地上），
+	#    用户又报过「站位太高」，判据于是改成与数据同源的**机制比对**：
+	#    录下来的脚点 == 路径在同一个 x、用她自己的落地线算出的高度。
 	var walk: RefCounted = controller.walk_path
 	check(walk != null, "第一关没有安装桥面步态路径")
 	if walk != null:
 		var first: CSnapshot = record.snapshots[0]
-		var path_y: float = float(walk.height_at(first.puppets[0].stage_pos.x))
+		var ground: float = controller.ground_y(0)
+		var path_y: float = float(walk.height_at(first.puppets[0].stage_pos.x, ground))
 		check(
 			absf(first.puppets[0].stage_pos.y - path_y) < 0.001,
 			(
-				"首帧脚点高度不是桥面步态路径算出的（实际 y=%.6f，路径给出 %.6f）"
-				% [first.puppets[0].stage_pos.y, path_y]
+				"首帧脚点不是路径按落地线算出的（实际 y=%.6f，路径给出 %.6f，落地线 %.6f）"
+				% [first.puppets[0].stage_pos.y, path_y, ground]
 			)
 		)
 	var bai: PuppetState = controller.get_puppet(0)

@@ -32,15 +32,31 @@ func _init() -> void:
 	push_error("第一幕桥面路径找不到 arch_bridge 布景")
 
 
-func height_at(stage_x: float) -> float:
+## 该 x 是否落在**桥跨之内**（贴图坐标 px ∈ (0, 1842)）。
+## px = 0 正是**桥头**（0.52853，与许仙开局站位重合）⇒ 桥头算「桥外」。
+## 之所以要把这件事公开：桥跨以外没有桥面可言，脚点该落回**各自的落地线**，
+## 而那条约线由调用方按影人给（见 `PuppetController.ground_y`）。
+func is_on_deck(stage_x: float) -> bool:
 	if _scale <= 0.0:
-		return 0.5
+		return false
 	var px: float = (stage_x * 1920.0 - _origin.x) / _scale
-	if px <= 0.0 or px >= 1842.0:
-		return 0.5
+	return px > 0.0 and px < 1842.0
+
+
+## 脚点高度（归一化 0–1）。`ground_y` 是**桥跨之外**的落地线。
+##
+## 🔴 2026-10-16 用户报「人物站位太高」后改口径：桥外不再一律返回 0.5，
+##   改回**调用方给的落地线**（第一关 = 许仙 0.587963 / 两位娘子 0.597222）。
+##   0.5 只是没给落地线时的兜底（例如没装布景、单测直接 new 出路径）。
+##   旧口径让三具影人开局脚点全被抬到 540px，关卡数据的 635/645px 从未生效——
+##   三具影人（0.26 / 0.32 / 0.5285）都在桥跨外或恰在左缘，正好全部命中旧分支。
+func height_at(stage_x: float, ground_y: float = 0.5) -> float:
+	if not is_on_deck(stage_x):
+		return ground_y
+	var px: float = (stage_x * 1920.0 - _origin.x) / _scale
 	for i in range(DECK.size() - 1):
 		var a: Vector2 = DECK[i]
 		var b: Vector2 = DECK[i + 1]
 		if px <= b.x:
 			return (_origin.y + lerpf(a.y, b.y, (px - a.x) / (b.x - a.x)) * _scale) / 1080.0
-	return 0.5
+	return ground_y
