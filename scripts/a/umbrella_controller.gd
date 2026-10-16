@@ -33,6 +33,7 @@ class_name UmbrellaController
 ## 才换手（画面上两具影身叠成一团），而两只手真正相遇的位置在那条判据之外。
 
 const PuppetStateScript := preload("res://scripts/a/puppet_state.gd")
+const UpperPose := preload("res://scripts/a/upper_body_pose.gd")
 
 ## 交接事件类型。object_id 为**接手的那个人**：接伞记白素贞、还伞记许仙。
 const KIND_TAKE: String = "umbrella_take"
@@ -234,6 +235,18 @@ static func hand_height(hand_angle: float, stance: float) -> float:
 	return HAND_ANCHOR_Y - drop - STANCE_DROP * clampf(stance, 0.0, 1.0)
 
 
+## 把真实腕高换到已有判定的相对坐标；站立直臂读数保持兼容。
+static func pose_hand_height(state: PuppetState, hand: String) -> float:
+	return (
+		HAND_ANCHOR_Y
+		+ (
+			(UpperPose.hand_height(state, hand) - UpperPose.SHOULDER_RATIO)
+			* ARM_LENGTH
+			/ (UpperPose.UPPER_ARM_RATIO + UpperPose.LOWER_ARM_RATIO)
+		)
+	)
+
+
 ## 某个影人某只手的相对位置（A 内部口径：判定「两只手是否齐平」与递伞过渡用它）。
 ##
 ## ⚠️ 它**不是**显示端的坐标系。手高按 A 自己的肩高/臂长口径算，与影人显示端画出来的
@@ -244,8 +257,7 @@ func hand_position(puppet_id: int, hand: String) -> Vector2:
 	var state: PuppetState = _puppet(puppet_id)
 	if state == null:
 		return Vector2(0.5, HAND_ANCHOR_Y)
-	var angle: float = state.hand_angle.x if hand == "left" else state.hand_angle.y
-	return Vector2(state.stage_pos.x, hand_height(angle, state.stance))
+	return Vector2(state.stage_pos.x, pose_hand_height(state, hand))
 
 
 ## 伞此刻挂在哪只手上（A 内部口径，同 `hand_position`）。
@@ -425,8 +437,8 @@ func _hands_meet() -> bool:
 	var xuxian: PuppetState = _puppet(XUXIAN_ID)
 	if baisuzhen == null or xuxian == null:
 		return false
-	var left: float = hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
-	var right: float = hand_height(xuxian.hand_angle.y, xuxian.stance)
+	var left: float = pose_hand_height(baisuzhen, BAISUZHEN_HAND)
+	var right: float = pose_hand_height(xuxian, XUXIAN_HAND)
 	return absf(left - right) <= HAND_HEIGHT_TOLERANCE
 
 
@@ -440,10 +452,7 @@ func alignment() -> Dictionary:
 	var dy: float = 0.0
 	if baisuzhen != null and xuxian != null:
 		dy = absf(
-			(
-				hand_height(baisuzhen.hand_angle.x, baisuzhen.stance)
-				- hand_height(xuxian.hand_angle.y, xuxian.stance)
-			)
+			pose_hand_height(baisuzhen, BAISUZHEN_HAND) - pose_hand_height(xuxian, XUXIAN_HAND)
 		)
 	return {
 		"dx": absf(_puppet_x(BAISUZHEN_ID) - _puppet_x(XUXIAN_ID)),

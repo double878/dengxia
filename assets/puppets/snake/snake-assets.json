@@ -1,0 +1,103 @@
+{
+  "source": "snake-reference.jpg",
+  "sha256": "03c849985140842647d6e82cb810d4afb76a4bd8282ff081e0e01960e3588c90",
+  "method": "painted head contour; sampled white scale texture; reconstructed articulated neck, coils and tapered tail",
+  "reference_canvas": [
+    922,
+    2048
+  ],
+  "head_contour": [
+    [
+      523,
+      490
+    ],
+    [
+      539,
+      468
+    ],
+    [
+      539,
+      448
+    ],
+    [
+      565,
+      432
+    ],
+    [
+      588,
+      420
+    ],
+    [
+      617,
+      410
+    ],
+    [
+      652,
+      405
+    ],
+    [
+      683,
+      409
+    ],
+    [
+      703,
+      427
+    ],
+    [
+      690,
+      451
+    ],
+    [
+      683,
+      487
+    ],
+    [
+      666,
+      525
+    ],
+    [
+      644,
+      548
+    ],
+    [
+      622,
+      565
+    ],
+    [
+      592,
+      593
+    ],
+    [
+      560,
+      597
+    ],
+    [
+      540,
+      586
+    ],
+    [
+      523,
+      573
+    ],
+    [
+      519,
+      549
+    ],
+    [
+      530,
+      527
+    ]
+  ],
+  "runtime_parts": [
+    "head.png",
+    "neck.png",
+    "coils.png"
+  ],
+  "background_removed": [
+    "phone UI",
+    "brown support",
+    "flowers",
+    "branches",
+    "red seal"
+  ]
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "character": "bailu",
+    "size": [
+      2048,
+      2048
+    ],
+    "parts": 13,
+    "tile_edges": "clear",
+    "source_sha256": "7141d2f06a96f90909955e4b22efbf78399d2bbbe07e793a9e057dc13a7a0d94"
+  },
+  {
+    "character": "baihe",
+    "size": [
+      2048,
+      2048
+    ],
+    "parts": 13,
+    "tile_edges": "clear",
+    "source_sha256": "360ce499829bfd21e96d514bbac99d818b35f0e526d0400a014b141b1a944d3f"
+  },
+  {
+    "character": "xianweng",
+    "size": [
+      2048,
+      2048
+    ],
+    "parts": 13,
+    "tile_edges": "clear",
+    "source_sha256": "b2709ee3e10806eebd856a891478e27a9c1bfe122ec35745321f9d007e58a5f8"
+  }
+]

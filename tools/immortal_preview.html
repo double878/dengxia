@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>昆仑三仙 · 影人形象验收</title>
+<style>
+:root{color-scheme:light;--paper:#eee8da;--ink:#302e25;--muted:#797363;--line:#c9bfa9;--accent:#80603c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px "Microsoft YaHei","PingFang SC",sans-serif}
+header{max-width:1500px;margin:auto;padding:26px 34px 19px;display:flex;align-items:end;justify-content:space-between;gap:24px}
+.eyebrow{font-size:11px;letter-spacing:3px;color:var(--muted);margin:0 0 10px}
+h1{font:32px "STSong","SimSun",serif;letter-spacing:4px;margin:0;font-weight:400}
+.intro{max-width:470px;font-size:12px;color:var(--muted);line-height:1.8;margin:0}
+main{max-width:1500px;margin:0 auto;padding:0 34px 22px;display:grid;grid-template-columns:minmax(0,1fr) 245px;gap:22px}
+.workbench{min-width:0;border:1px solid var(--line)}
+.toolbar{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line);background:#e5ddcb}
+.tabs,.tools{display:flex;align-items:center;gap:5px}
+button{font:inherit;color:inherit;cursor:pointer;background:transparent;border:1px solid transparent;padding:7px 12px;border-radius:2px;transition:background .15s}
+button:hover{background:#d3c6ac}
+button.active{background:#3e4436;color:#f1e8d3}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.tools button{border-color:#c0b499;font-size:12px}
+.stage{display:flex;position:relative;justify-content:center;align-items:center;gap:1.5%;height:min(70vh,710px);min-height:500px;padding:27px 22px 13px;overflow:hidden;background:#e4dcc6;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,#705a3210 4px,transparent 5px)}
+.stage:after{content:"";position:absolute;pointer-events:none;left:0;right:0;bottom:17px;height:1px;background:#9c885f55}
+.stage.dark{background-color:#29302a;background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,#f0d6a006 4px,transparent 5px)}
+.actor{min-width:0;flex:1;max-width:350px;display:flex;flex-direction:column;height:100%;position:relative}
+.actor-label{position:absolute;z-index:1;left:50%;top:0;transform:translateX(-50%);white-space:nowrap;text-align:center;font-size:11px;letter-spacing:2px;color:#776b50}
+.actor-label span{margin-right:9px;color:#a3977b;font:10px Georgia,serif}
+.actor-label strong{font-weight:400}
+.dark .actor-label{color:#d0c2a3}
+.flip{width:100%;height:100%;transform-origin:50% 50%}
+.actor svg{display:block;width:100%;height:100%;overflow:visible}
+.actor.chosen .actor-label strong{border-bottom:1px solid var(--accent);padding-bottom:4px}
+.stage.single .actor:not(.chosen){display:none}
+.stage.single .actor.chosen{max-width:650px}
+.caption{display:flex;justify-content:space-between;padding:11px 16px;background:#e5ddcb;font-size:11px;line-height:1.6;color:var(--muted)}
+aside{padding:4px 0}
+aside h2{font:19px "STSong","SimSun",serif;letter-spacing:2px;margin:6px 0 8px}
+aside .help{font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 22px}
+.control{margin:0 0 18px}
+.control label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px}
+output{font:11px Georgia,serif;color:var(--muted)}
+input[type=range]{display:block;width:100%;accent-color:var(--accent);height:5px;cursor:pointer}
+.divider{border-top:1px solid var(--line);margin:23px 0 18px}
+.reset{width:100%;border:1px solid var(--line);padding:10px;background:#e5ddcb}
+.keynotes{font-size:11px;line-height:1.8;color:var(--muted)}
+.keynotes strong{color:var(--ink);font-weight:500}
+footer{max-width:1500px;margin:0 auto;padding:0 34px 20px;color:var(--muted);font-size:11px;line-height:1.8}
+@media(max-width:950px){header{padding:22px 20px 17px;display:block}.intro{margin-top:14px}main{padding:0 20px 15px;grid-template-columns:1fr}.stage{height:610px;min-height:0;padding:24px 8px 8px}aside{display:grid;grid-template-columns:1fr 1fr;gap:0 25px}aside h2,aside .help,.divider,.reset,.keynotes{grid-column:1/-1}.control{min-width:0}.actor-label{font-size:10px;letter-spacing:0}footer{padding:0 20px 20px}}
+@media(max-width:540px){h1{font-size:25px;letter-spacing:2px}.stage{height:445px;padding-top:25px}.toolbar{padding:7px}.tabs,.tools{gap:1px}button{padding:7px 9px;font-size:12px}.actor-label span{display:none}.caption{gap:14px;font-size:10px}}
+</style>
+</head>
+<body>
+<header>
+<div><p class="eyebrow">灯下 / 盗仙草 / 形象验收</p><h1>昆仑三仙</h1></div>
+<p class="intro">鹿角冠、鹤形冠与高额长须，保留参考影人的侧面轮廓与袍服配色。选择人物，再试一段身段。</p>
+</header>
+<main>
+<section class="workbench" aria-label="三位影人预览">
+<div class="toolbar">
+<div class="tabs" role="group" aria-label="选择人物">
+<button class="active" data-select="all">三人同台</button><button data-select="bailu">白鹿</button><button data-select="baihe">白鹤</button><button data-select="xianweng">仙翁</button>
+</div>
+<div class="tools">
+<button id="flip" aria-pressed="false">翻面</button><button id="pieces" aria-pressed="false">拆件</button><button id="background" aria-pressed="false">换幕色</button><button id="play" aria-pressed="false">观看身段</button>
+</div></div>
+<div class="stage" id="stage">{{FIGURES}}</div>
+<div class="caption"><span id="status" aria-live="polite">三人同台 · 参考姿态</span><span>左：鹿童　中：鹤童　右：仙翁</span></div>
+</section>
+<aside aria-label="身段控制">
+<h2>试一试身段</h2><p class="help">松手后保持姿态。翻面和拆件只作用于当前所选人物。</p>
+<div class="control"><label for="left_arm">后臂抬起 <output id="left_arm-value">0°</output></label><input id="left_arm" data-pose="left_arm" type="range" min="0" max="140" value="0"></div>
+<div class="control"><label for="left_elbow">后肘弯曲 <output id="left_elbow-value">0°</output></label><input id="left_elbow" data-pose="left_elbow" type="range" min="0" max="100" value="0"></div>
+<div class="control"><label for="right_arm">前臂抬起 <output id="right_arm-value">0°</output></label><input id="right_arm" data-pose="right_arm" type="range" min="0" max="140" value="0"></div>
+<div class="control"><label for="right_elbow">前肘弯曲 <output id="right_elbow-value">0°</output></label><input id="right_elbow" data-pose="right_elbow" type="range" min="0" max="100" value="0"></div>
+<div class="control"><label for="head">点头 <output id="head-value">0°</output></label><input id="head" data-pose="head" type="range" min="-20" max="20" value="0"></div>
+<div class="control"><label for="waist">前倾 <output id="waist-value">0°</output></label><input id="waist" data-pose="waist" type="range" min="0" max="32" value="0"></div>
+<div class="control"><label for="crouch">蹲姿 <output id="crouch-value">0°</output></label><input id="crouch" data-pose="crouch" type="range" min="0" max="22" value="0"></div>
+<div class="divider"></div><button class="reset" id="reset">恢复参考姿态</button>
+<p class="keynotes"><strong>造型重点</strong><br>白鹿：鹿角冠 · 赭红脸 · 深绿袍<br>白鹤：鹤形冠 · 白脸黑线 · 深青袍<br>仙翁：高额 · 白须 · 黄袍 · 拄杖</p>
+</aside>
+</main>
+<footer>本页为独立素材验收预览。低清参考无法辨认的纹样与关节连接处已补绘；反面采用同一形象的整体镜像。</footer>
+<script>
+"use strict";
+(function(){
+  var names={bailu:"白鹿",baihe:"白鹤",xianweng:"仙翁",all:"三人同台"};
+  var poseKeys=["left_arm","left_elbow","right_arm","right_elbow","head","waist","crouch"];
+  var models={};
+  var selected="all", playing=false, startedAt=0, frame=0;
+  function empty(){var v={flip:false,explode:false};poseKeys.forEach(function(k){v[k]=0});return v}
+  Object.keys(names).filter(function(k){return k!=="all"}).forEach(function(k){models[k]=empty()});
+  function targets(){return selected==="all"?Object.keys(models):[selected]}
+  function rotate(key,joint,angle,dy){
+    var el=document.getElementById(key+"-"+joint), p=el.dataset.pivot.split(",");
+    el.setAttribute("transform","translate(0 "+(dy||0)+") rotate("+angle+" "+p[0]+" "+p[1]+")");
+  }
+  function render(key){
+    var p=models[key],actor=document.querySelector('[data-character="'+key+'"]');
+    actor.querySelector(".flip").style.transform=p.flip?"scaleX(-1)":"scaleX(1)";
+    actor.classList.toggle("chosen",selected===key);
+    rotate(key,"left_arm",-p.left_arm);
+    rotate(key,"right_arm",-p.right_arm);
+    rotate(key,"left_elbow",-p.left_elbow);
+    rotate(key,"right_elbow",-p.right_elbow);
+    rotate(key,"head",p.head);
+    var dy=320*(1-Math.cos(p.crouch*Math.PI/180));
+    rotate(key,"waist",p.waist,dy);
+    rotate(key,"left_hip",p.crouch,dy);rotate(key,"right_hip",-p.crouch,dy);
+    rotate(key,"left_knee",-2*p.crouch);rotate(key,"right_knee",2*p.crouch);
+    actor.querySelectorAll("[data-piece]").forEach(function(el,i){
+      if(!p.explode){el.removeAttribute("transform");return}
+      var label=el.dataset.piece,x=0,y=0;
+      if(label==="head"){y=-25}
+      else if(label==="staff"){x=37}
+      else if(label==="ribbons"){x=-32}
+      else if(label.indexOf("left_")===0){x=-27;y=label.indexOf("calf")>=0?24:0}
+      else if(label.indexOf("right_")===0){x=27;y=label.indexOf("calf")>=0?24:0}
+      el.setAttribute("transform","translate("+x+" "+y+")");
+    });
+    // Keep long sleeves, crown streamers and the moving staff in the art frame.
+    // This fits the inspection view only; it changes no joint or body geometry.
+    var box=document.getElementById(key+"-figure").getBBox();
+    var x0=Math.min(0,box.x-18),y0=Math.min(0,box.y-18);
+    var x1=Math.max(560,box.x+box.width+18),y1=Math.max(1010,box.y+box.height+18);
+    actor.querySelector("svg").setAttribute("viewBox",[x0,y0,x1-x0,y1-y0].join(" "));
+  }
+  function syncControls(){
+    var p=models[targets()[0]];
+    poseKeys.forEach(function(k){document.getElementById(k).value=p[k];document.getElementById(k+"-value").value=Math.round(p[k])+"°"});
+    ["flip","pieces"].forEach(function(id){var active=p[id==="flip"?"flip":"explode"];document.getElementById(id).classList.toggle("active",active);document.getElementById(id).setAttribute("aria-pressed",String(active))});
+    document.getElementById("status").textContent=names[selected]+" · "+(playing?"身段演示":p.explode?"拆件查看":"姿态预览");
+  }
+  function renderAll(){document.getElementById("stage").classList.toggle("single",selected!=="all");Object.keys(models).forEach(render);syncControls()}
+  function stop(){playing=false;cancelAnimationFrame(frame);var b=document.getElementById("play");b.textContent="观看身段";b.setAttribute("aria-pressed","false");b.classList.remove("active")}
+  document.querySelectorAll("[data-select]").forEach(function(button){
+    button.addEventListener("click",function(){stop();selected=button.dataset.select;document.querySelectorAll("[data-select]").forEach(function(b){b.classList.toggle("active",b===button)});renderAll()});
+  });
+  document.querySelectorAll("[data-pose]").forEach(function(input){
+    input.addEventListener("input",function(){stop();targets().forEach(function(k){models[k][input.dataset.pose]=Number(input.value)});renderAll()});
+  });
+  document.getElementById("flip").addEventListener("click",function(){targets().forEach(function(k){models[k].flip=!models[k].flip});renderAll()});
+  document.getElementById("pieces").addEventListener("click",function(){targets().forEach(function(k){models[k].explode=!models[k].explode});renderAll()});
+  document.getElementById("background").addEventListener("click",function(){var active=document.getElementById("stage").classList.toggle("dark");this.classList.toggle("active",active);this.setAttribute("aria-pressed",String(active))});
+  document.getElementById("reset").addEventListener("click",function(){stop();targets().forEach(function(k){models[k]=empty()});renderAll()});
+  document.getElementById("play").addEventListener("click",function(){
+    if(playing){stop();syncControls();return}
+    playing=true;startedAt=performance.now();this.textContent="暂停身段";this.classList.add("active");this.setAttribute("aria-pressed","true");
+    function tick(now){
+      var t=(now-startedAt)/1000;
+      targets().forEach(function(k,i){var p=models[k],phase=t+i*.4;p.left_arm=24*(1-Math.cos(phase));p.right_arm=22*(1-Math.cos(phase*.8));p.left_elbow=10*(1+Math.sin(phase*.9));p.right_elbow=10*(1+Math.cos(phase));p.head=5*Math.sin(phase*.7);p.waist=3*(1+Math.sin(phase*.7));p.crouch=4*(1+Math.sin(phase*.6))});
+      renderAll();frame=requestAnimationFrame(tick);
+    }
+    frame=requestAnimationFrame(tick);
+  });
+  renderAll();
+})();
+</script>
+</body>
+</html>

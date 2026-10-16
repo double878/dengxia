@@ -75,7 +75,7 @@ func _step(delta: float) -> void:
 		game._level.queue_redraw()
 		if harness.runtime.is_over():
 			_key(KEY_A, false)
-			_key(KEY_S, false)
+			_lower_hands(false)
 			record = harness.capture.record
 			game._level._process(0)
 			check(game._flow.get_flow_state() == &"choice", "接还伞后没有选择页")
@@ -158,9 +158,9 @@ func _automate(delta: float) -> void:
 				return_wait_start = real
 			if real - return_wait_start > 700:
 				goal = handoff_x
-				_key(KEY_S, true)
+				_lower_hands(true)
 	elif opera.returned:
-		_key(KEY_S, true)
+		_lower_hands(true)
 	var controller: PuppetController = harness.runtime.puppet_controller
 	if absf(goal - bai.stage_pos.x) > 0.0001:
 		if not controller.is_dragging():
@@ -169,6 +169,12 @@ func _automate(delta: float) -> void:
 		controller.drag_to(Vector2((target - bai.stage_pos.x) * 1920, 0))
 	elif controller.is_dragging():
 		controller.end_drag()
+
+
+func _lower_hands(pressed: bool) -> void:
+	_key(KEY_SHIFT, pressed)
+	_key(KEY_A, pressed)
+	_key(KEY_D, pressed)
 
 
 func _key(code: Key, pressed: bool) -> void:

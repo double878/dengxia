@@ -120,6 +120,20 @@ func update(
 	_resolve_windows(song_time_ms, real_time_ms, performance, stage_end)
 
 
+## 剧情动作由宿主按实际状态确认；复用相同窗口与记录，不制造节拍评分。
+## completed 只能传已经真实完成的 cue_id，空列表只检查超时。
+func update_actions(
+	song_time_ms: int, real_time_ms: int, completed: Array[String], stage_end: bool = false
+) -> void:
+	for cue_id: String in windows.keys():
+		if completed.has(cue_id):
+			_close(cue_id, CLOSE_SUCCESS, song_time_ms, real_time_ms)
+		elif stage_end:
+			_close(cue_id, CLOSE_STAGE_END, song_time_ms, real_time_ms)
+		elif real_time_ms >= int(windows[cue_id]["deadline_ms"]):
+			_close(cue_id, CLOSE_TIMEOUT, song_time_ms, real_time_ms)
+
+
 func is_open(cue_id: String) -> bool:
 	return windows.has(cue_id)
 

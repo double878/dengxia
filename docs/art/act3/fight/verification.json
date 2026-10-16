@@ -1,0 +1,29 @@
+{
+	"audio_driver": "WASAPI",
+	"checks": 29,
+	"failures": 0,
+	"levels": {
+		"before_splice": 0.362102121114731,
+		"crane_duel": 0.511886954307556,
+		"crane_entrance": 0.500442504882813,
+		"deer_to_crane": 0.514664173126221,
+		"empty_stage": 0.148045286536217,
+		"no_fall_lyric": 0.551652550697327,
+		"pause_drain": 0.326059758663177,
+		"paused": 0.0,
+		"replay_crane": 0.43168431520462,
+		"resumed": 0.319528788328171,
+		"source_end": 0.465193629264832,
+		"splice_and_draw": 0.477797776460648
+	},
+	"scope": "Real-time playback from 98.8s through supplied material end; opening covered separately.",
+	"screenshots": [
+		"01-playbill",
+		"02-sheathed",
+		"03-deer-duel",
+		"04-crane-entrance",
+		"05-crane-duel",
+		"06-no-fall",
+		"07-replay"
+	]
+}

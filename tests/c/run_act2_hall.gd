@@ -99,10 +99,8 @@ func test_hall_scene() -> void:
 	check(order.get("table", -1) < order.get("wine_pot", -1), "酒具没有画在桌子之上")
 	check(scenery.clip_rect == CLOTH, "厅堂布景没有裁入幕布")
 	check(scenery.z_index > hall.get("_surface").z_index, "布景被幕布遮住")
-	check(
-		hall.get_node_or_null("Fahai") == null and hall.get_node_or_null("Xuxian") == null,
-		"第二幕本轮不应放影人"
-	)
+	check(hall.get_node_or_null("Fahai") == null, "厅堂不应残留第一场法海")
+	check(hall.get_node_or_null("Xuxian") != null, "厅堂应接入第二场许仙")
 	hall.queue_free()
 	await process_frame
 
@@ -115,8 +113,7 @@ func test_game_flow_entry() -> void:
 	await process_frame
 	var level: Node = game.get("_level")
 	check(
-		level != null and level.scene_file_path == "res://scenes/act2/hall.tscn",
-		"22 号没有加载第二幕厅堂场景"
+		level != null and level.scene_file_path == "res://scenes/act2/hall.tscn", "22 号没有加载第二幕厅堂场景"
 	)
 	check(game.get_child_count() == 1, "22 号加载了多个场景")
 	game.queue_free()
@@ -150,10 +147,7 @@ func test_auto_advance() -> void:
 	await process_frame
 	check(game.get("_stage_id") == HALL_STAGE_ID, "第一场收场后没有换到第二幕")
 	var level: Node = game.get("_level")
-	check(
-		level != null and level.scene_file_path == "res://scenes/act2/hall.tscn",
-		"换景后的场景不是第二幕厅堂"
-	)
+	check(level != null and level.scene_file_path == "res://scenes/act2/hall.tscn", "换景后的场景不是第二幕厅堂")
 	check(not is_instance_valid(opening), "换景后第一场宿主没有释放")
 	check(game.get_child_count() == 1, "换景加载了多个场景")
 	game.queue_free()

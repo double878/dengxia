@@ -1,0 +1,15 @@
+{
+	"checks": 47,
+	"failures": 0,
+	"original_audio_playback_verified": false,
+	"screenshots": [
+		"playbill",
+		"waiting",
+		"challenge",
+		"plead",
+		"lunge",
+		"replay-jump",
+		"replay",
+		"intermission"
+	]
+}
