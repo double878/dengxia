@@ -3,10 +3,10 @@
   "arrival_ms": 64000,
   "take_ms": 66000,
   "closing_ms": 68000,
-  "duration_ms": 92723,
-  "audio_version": "act1-youhu-opera-v6",
+  "duration_ms": 91100,
+  "audio_version": "act1-youhu-opera-v7",
   "reference": "https://www.bilibili.com/video/BV1uD4y1R7jH",
-  "generation": "粤剧《白蛇传》「游湖」折录屏（用户提供）→ 人声/伴奏分离 → 裁剪拼接 + 交叉淡化 + 线性响度归一；v6 收场追加「借伞对话」：用户提供京剧《白蛇传·游湖借伞》录屏（戏曲陈天宇，21.17s）经响度对齐（+24.48 dB，RMS 对齐）后 0.20s 等功率交叉淡化接于 v5 尾部，起唱句源截断处 0.9s 余弦淡出",
+  "generation": "粤剧《白蛇传》「游湖」折录屏（用户提供）→ 人声/伴奏分离 → 裁剪拼接 + 交叉淡化 + 线性响度归一；v6 收场追加「借伞对话」：用户提供京剧《白蛇传·游湖借伞》录屏（戏曲陈天宇，21.17s）经响度对齐（+24.48 dB，RMS 对齐）后 0.20s 等功率交叉淡化接于 v5 尾部，起唱句源截断处 0.9s 余弦淡出；v7 重建收场：交叉淡化 0.20→0.60 s（等功率）使两段衔接自然，源片段裁到 20.30 s 去掉末尾「西」音，新增 dialogue_ms 锚点由接伞触发",
   "main_path": "res://assets/audio/act1-youhu-opera/main.wav",
   "wait_loop_path": "res://assets/audio/act1-youhu-opera/wait_loop.wav",
   "take_close_path": "res://assets/audio/act1-youhu-opera/take_close.wav",
@@ -89,8 +89,8 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "雨伞小姐拿去",
-      "start_ms": 71660,
-      "end_ms": 73760,
+      "start_ms": 70900,
+      "end_ms": 73000,
       "delivery": "speech"
     },
     {
@@ -98,8 +98,8 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "待我改日去取",
-      "start_ms": 73960,
-      "end_ms": 78560,
+      "start_ms": 73200,
+      "end_ms": 77800,
       "delivery": "speech"
     },
     {
@@ -107,8 +107,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "如此　多谢君子",
-      "start_ms": 78860,
-      "end_ms": 89760,
+      "start_ms": 78100,
+      "end_ms": 89000,
       "delivery": "speech"
     },
     {
@@ -116,8 +116,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "谢君子恩义广",
-      "start_ms": 91360,
-      "end_ms": 92723,
+      "start_ms": 90600,
+      "end_ms": 91100,
       "delivery": "singing"
     }
   ],
@@ -125,8 +125,8 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act1-youhu-opera/main.wav",
-      "sha256": "bd8d140520b675824ad6feb4c99015d385327f64b0984a6993aec8a5a1ea0435",
-      "frames": 4450688,
+      "sha256": "4cd655647ef67c8ff190fdd8c2ad4ca0bd838c6b3c99dfe96c23ea37c061b11c",
+      "frames": 4372800,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -161,5 +161,6 @@
   ],
   "waiting_guard_ms": 500,
   "rights_status": "local_prototype_only; external reference permission unverified",
-  "notes": "整轨结构 A[src17.32-53.81]+B[64.83-67.05]+S'[100.20-121.79]+E[inst121.79-134.00]，交叉淡化 0.20/0.20/0.35 s。句界取 10 ms hop 包络实测；开场句按句内停顿(源 22.86-23.12)拆两条。delivery 无法由声学特征机械判别（拖腔稳态占比对纯念白块与唱段无区分力，实测 87.8% vs 94.6%），故沿用素材既有标注：100.38-121.68 整块标为「唱」，其中 102-111 的伴奏电平仅 -77 dB 与之冲突，未采信。 v6：收场对白句界取录屏字幕帧实测（2.2/7.0/18.2/19.8 s，打击乐干扰下包络无判别力，以画面字幕为地面真相）；片段整体电平极低（峰值 -34.6 dBFS），增益后峰值 -10.1 dBFS 无削波。"
+  "notes": "整轨结构 A[src17.32-53.81]+B[64.83-67.05]+S'[100.20-121.79]+E[inst121.79-134.00]，交叉淡化 0.20/0.20/0.35 s。句界取 10 ms hop 包络实测；开场句按句内停顿(源 22.86-23.12)拆两条。delivery 无法由声学特征机械判别（拖腔稳态占比对纯念白块与唱段无区分力，实测 87.8% vs 94.6%），故沿用素材既有标注：100.38-121.68 整块标为「唱」，其中 102-111 的伴奏电平仅 -77 dB 与之冲突，未采信。 v6：收场对白句界取录屏字幕帧实测（2.2/7.0/18.2/19.8 s，打击乐干扰下包络无判别力，以画面字幕为地面真相）；片段整体电平极低（峰值 -34.6 dBFS），增益后峰值 -10.1 dBFS 无削波。 v7：末尾「西」音经频谱定位在源片段 20.34-20.54 s（4-10 kHz 能量突增约 5 倍，金属镲/小锣），故裁至 20.30 s + 0.25 s 余弦淡出；衔接改为 0.60 s 等功率交叉淡化；新增 dialogue_ms=71160，接伞即跳到此处（不再先播 3.2 s 收势器乐）。",
+  "dialogue_ms": 70800
 }

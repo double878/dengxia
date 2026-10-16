@@ -8,7 +8,11 @@ extends RefCounted
 ##
 ## 锚点表（与 `Act1OperaFlow.setup` 的校验、`Act1OperaStage.make_stage` 的段界一一对应，必须严格递增）：
 ##   opening_end_ms 唱段结束、开始提示借伞 ｜ arrival_ms 期望她已进交接窗口 ｜ take_ms 期望已接到伞
-##   closing_ms 收势点 ｜ duration_ms 整轨长度
+##   closing_ms 收势点 ｜ dialogue_ms 第二段语音（借伞对话）起点 ｜ duration_ms 整轨长度
+##
+## 🔴 2026-10-16 第六轮：对话的触发时机 = **白素贞拿到雨伞的那一刻**，
+##   因此接到伞直接前跳 `dialogue_ms`（不再先播 closing_ms → dialogue_ms 之间的收势器乐）；
+##   没接到伞而沿时间轴走到 dialogue_ms 时，直接收到整轨结尾，**不会**播出借伞对话。
 
 const TestBase := preload("res://tests/a/a_test_base.gd")
 const FLOW_PATH := "res://scripts/a/act1_opera_flow.gd"
@@ -18,6 +22,7 @@ const CONFIG := {
 	"arrival_ms": 5000,
 	"take_ms": 6000,
 	"closing_ms": 10000,
+	"dialogue_ms": 11000,
 	"duration_ms": 12000
 }
 
@@ -65,7 +70,8 @@ func run_all() -> Dictionary:
 	)
 	# 🔴 第四轮定案：接到伞即收关（她此刻就在许仙旁的交接窗口里，不用再走回小青身旁）。
 	t.check_eq(flow.phase, "closing", "接到伞即收关（不用返回，站在许仙旁对话）")
-	t.check_eq(clock.get_song_time_ms(), int(CONFIG["closing_ms"]), "歌曲时间前向跳到收场点")
+	# 🔴 第六轮：前跳到**对话起点**而不是收势点——对话由「拿到伞」这一刻触发。
+	t.check_eq(clock.get_song_time_ms(), int(CONFIG["dialogue_ms"]), "歌曲时间前向跳到借伞对话起点")
 
 	# —— 收关之后不再有交接：伞留在白素贞手上，不会自己回到许仙 ——
 	puppets[UmbrellaController.BAISUZHEN_ID].stage_pos.x = at_join
@@ -79,9 +85,42 @@ func run_all() -> Dictionary:
 		if event.kind == "opera_take_close":
 			take_count += 1
 	t.check_eq(take_count, 1, "独立接伞收锣仅一次")
-	t.finish("唱完才提示借伞，接到伞即收关（站在许仙旁，对话待接入）")
+	t.finish("唱完才提示借伞，接到伞即收关（站在许仙旁对话）")
 	_test_timeout(t)
+	_test_dialogue_requires_take(t)
 	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed}
+
+
+## 对话的触发时机就是「拿到伞」。没接到伞时，歌曲时间即便走到 dialogue_ms
+## 也**不能**播出借伞对话——直接收到整轨结尾。
+func _test_dialogue_requires_take(t: ATestBase) -> void:
+	t.begin("借伞对话只在接到伞之后出现")
+	var clock := MusicClock.new()
+	clock.start()
+	var def: StageDef = StageDef.make_level1()
+	var slots: Dictionary = def.initial["positions"]
+	var puppets: Array = [PuppetState.new(), PuppetState.new(), PuppetState.new()]
+	for i in puppets.size():
+		puppets[i].puppet_id = i
+		var slot: Array = slots[i]
+		puppets[i].stage_pos = Vector2(float(slot[0]), float(slot[1]))
+	var umbrella := UmbrellaController.new()
+	umbrella.setup(def, puppets)
+	var flow: RefCounted = load(FLOW_PATH).new()
+	flow.setup(CONFIG, clock, umbrella)
+	flow.start()
+	# 她始终站在开局位置（0.32），不在交接窗口内 ⇒ 不可能接到伞
+	clock.set_free_time_ms(10500)
+	_step(flow, umbrella, clock)
+	t.check_eq(flow.phase, "closing", "走到收势点即收场")
+	t.check_eq(clock.get_song_time_ms(), 10500, "还在收势段，尚未到对话起点")
+	clock.set_free_time_ms(int(CONFIG["dialogue_ms"]))
+	_step(flow, umbrella, clock)
+	t.check_eq(
+		clock.get_song_time_ms(), int(CONFIG["duration_ms"]), "没接到伞就不播借伞对话：直接收到整轨结尾"
+	)
+	t.check_eq(umbrella.holder_id_of(), UmbrellaController.XUXIAN_ID, "伞仍在许仙手上")
+	t.finish("对话触发时机 = 拿到伞的那一刻")
 
 
 ## 唱段结束后她迟迟走不到许仙身旁：冻住歌曲时钟等她，最多 8 秒真实时间；

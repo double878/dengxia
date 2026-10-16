@@ -24,7 +24,10 @@ var _events: Array[Dictionary] = []
 ##   opening_end_ms  唱段（含全部字幕）结束 → 从这里起**提示玩家借伞**
 ##   arrival_ms      她本该走进交接窗口的时刻；到点还没进去就冻住歌曲时钟等她（最多 WAIT_LIMIT_MS）
 ##   take_ms         她本该接到伞的时刻（舞台段落表的「接伞」段起点）
-##   closing_ms      收场点；她一旦接到伞就直接跳到这里（对话将接在收场段）
+##   closing_ms      收场点（器乐收势段起点）
+##   dialogue_ms     第二段语音（借伞对话）起点 —— 🔴 **只有接到伞才跳到这里**
+##                   （2026-10-16 第六轮用户定案：对话由「白素贞拿到雨伞」触发，
+##                     不再先播 closing_ms→dialogue_ms 之间的收势器乐）
 ##   duration_ms     整轨长度（主轨 WAV 必须正好这么长，见 Act1OperaAudio.setup）
 func setup(value: Dictionary, p_clock: MusicClock, p_umbrella: UmbrellaController) -> bool:
 	var previous := -1
@@ -33,6 +36,7 @@ func setup(value: Dictionary, p_clock: MusicClock, p_umbrella: UmbrellaControlle
 		"arrival_ms",
 		"take_ms",
 		"closing_ms",
+		"dialogue_ms",
 		"duration_ms"
 	]:
 		var point := int(value.get(key, -1))
@@ -74,6 +78,12 @@ func before_update() -> void:
 			_end_wait("arrived", "borrow")
 		return
 	var now := clock.get_song_time_ms()
+	# 🔴 借伞对话只在「接到伞」之后出现。没接到伞却沿时间轴走到对话起点
+	#   （例如超时后从 closing_ms 自然推进过来），就直接收到整轨结尾，不播对话。
+	if not taken and now >= int(config.dialogue_ms):
+		clock.advance_to_ms(int(config.duration_ms))
+		_set_phase("closing", "dialogue_skipped")
+		return
 	if now >= int(config.closing_ms):
 		_set_phase("closing", "timeline")
 		return
@@ -106,9 +116,10 @@ func after_update(events: Array) -> void:
 				umbrella.take_allowed = false
 				_emit("opera_take_close", {"asset_id": "take_close", "phase_id": "borrow"})
 				# 接到伞即收关（用户 2026-10-16：「借到伞后不用返回，站在许仙旁对话」）：
-				# 她此刻就在交接窗口里 = 许仙身旁，直接把歌曲时间前跳到收场点。
+				# 她此刻就在交接窗口里 = 许仙身旁。🔴 第六轮：直接前跳到**对话起点**
+				# （而不是收场点）——对话的触发时机就是她拿到伞的这一刻。
 				_end_wait("taken", "closing")
-				clock.advance_to_ms(int(config.closing_ms))
+				clock.advance_to_ms(int(config.dialogue_ms))
 
 
 func is_waiting() -> bool:
