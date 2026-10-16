@@ -45,7 +45,7 @@
       "role_name": "许仙",
       "text": "二位娘子　你们要到哪里去呀",
       "start_ms": 29390,
-      "end_ms": 36280,
+      "end_ms": 35600,
       "delivery": "singing"
     },
     {
@@ -80,7 +80,7 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "如此　多谢君子",
-      "start_ms": 50130,
+      "start_ms": 50510,
       "end_ms": 58010,
       "delivery": "singing"
     }
