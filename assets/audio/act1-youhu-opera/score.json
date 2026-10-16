@@ -3,10 +3,10 @@
   "arrival_ms": 64000,
   "take_ms": 66000,
   "closing_ms": 68000,
-  "duration_ms": 71760,
-  "audio_version": "act1-youhu-opera-v5",
+  "duration_ms": 92723,
+  "audio_version": "act1-youhu-opera-v6",
   "reference": "https://www.bilibili.com/video/BV1uD4y1R7jH",
-  "generation": "粤剧《白蛇传》「游湖」折录屏（用户提供）→ 人声/伴奏分离 → 裁剪拼接 + 交叉淡化 + 线性响度归一",
+  "generation": "粤剧《白蛇传》「游湖」折录屏（用户提供）→ 人声/伴奏分离 → 裁剪拼接 + 交叉淡化 + 线性响度归一；v6 收场追加「借伞对话」：用户提供京剧《白蛇传·游湖借伞》录屏（戏曲陈天宇，21.17s）经响度对齐（+24.48 dB，RMS 对齐）后 0.20s 等功率交叉淡化接于 v5 尾部，起唱句源截断处 0.9s 余弦淡出",
   "main_path": "res://assets/audio/act1-youhu-opera/main.wav",
   "wait_loop_path": "res://assets/audio/act1-youhu-opera/wait_loop.wav",
   "take_close_path": "res://assets/audio/act1-youhu-opera/take_close.wav",
@@ -83,14 +83,50 @@
       "start_ms": 50510,
       "end_ms": 58010,
       "delivery": "singing"
+    },
+    {
+      "line_id": "opera-09",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "雨伞小姐拿去",
+      "start_ms": 71660,
+      "end_ms": 73760,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opera-10",
+      "role_id": "xuxian",
+      "role_name": "许仙",
+      "text": "待我改日去取",
+      "start_ms": 73960,
+      "end_ms": 78560,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opera-11",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "如此　多谢君子",
+      "start_ms": 78860,
+      "end_ms": 89760,
+      "delivery": "speech"
+    },
+    {
+      "line_id": "opera-12",
+      "role_id": "baisuzhen",
+      "role_name": "白素贞",
+      "text": "谢君子恩义广",
+      "start_ms": 91360,
+      "end_ms": 92723,
+      "delivery": "singing"
     }
   ],
   "assets": [
     {
       "asset_id": "main",
       "path": "res://assets/audio/act1-youhu-opera/main.wav",
-      "sha256": "f4430617952ec3c89214c38e12191dcacc3f5e9217d134fc8abfe5a0c0648efc",
-      "frames": 3444480,
+      "sha256": "bd8d140520b675824ad6feb4c99015d385327f64b0984a6993aec8a5a1ea0435",
+      "frames": 4450688,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -125,5 +161,5 @@
   ],
   "waiting_guard_ms": 500,
   "rights_status": "local_prototype_only; external reference permission unverified",
-  "notes": "整轨结构 A[src17.32-53.81]+B[64.83-67.05]+S'[100.20-121.79]+E[inst121.79-134.00]，交叉淡化 0.20/0.20/0.35 s。句界取 10 ms hop 包络实测；开场句按句内停顿(源 22.86-23.12)拆两条。delivery 无法由声学特征机械判别（拖腔稳态占比对纯念白块与唱段无区分力，实测 87.8% vs 94.6%），故沿用素材既有标注：100.38-121.68 整块标为「唱」，其中 102-111 的伴奏电平仅 -77 dB 与之冲突，未采信。"
+  "notes": "整轨结构 A[src17.32-53.81]+B[64.83-67.05]+S'[100.20-121.79]+E[inst121.79-134.00]，交叉淡化 0.20/0.20/0.35 s。句界取 10 ms hop 包络实测；开场句按句内停顿(源 22.86-23.12)拆两条。delivery 无法由声学特征机械判别（拖腔稳态占比对纯念白块与唱段无区分力，实测 87.8% vs 94.6%），故沿用素材既有标注：100.38-121.68 整块标为「唱」，其中 102-111 的伴奏电平仅 -77 dB 与之冲突，未采信。 v6：收场对白句界取录屏字幕帧实测（2.2/7.0/18.2/19.8 s，打击乐干扰下包络无判别力，以画面字幕为地面真相）；片段整体电平极低（峰值 -34.6 dBFS），增益后峰值 -10.1 dBFS 无削波。"
 }

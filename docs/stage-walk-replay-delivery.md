@@ -64,6 +64,7 @@ godot.exe --headless --path . --export-release "Windows Desktop" "builds/dengxia
 - **判据**：交接窗口不再由「两人都抬 90°」标定的 `HAND_REACH_X` 推出，改由两人姿势的水平投影求和（0.039 + 0.04922 = 0.0882）⇒ **0.3803~0.5003**（原 0.3625~0.4825）。许仙把伞托在头顶 140°、白素贞左手到打伞位 90°。
 - **完成条件**：接到伞后**向左**走回小青身旁（`umbrella.is_at_home()`，`x ≤ TURN_POINT_X = 0.32`）即收尾，不再走回许仙处。`run_game_replay_success` 的真实耗时由 118833 ms 降到 **63683 ms**（跳掉约 8.3 s 的收势等待）。
 - **音源**：正式第一幕改用 `assets/audio/act1-youhu-opera/`（v5 戏腔整轨 71760 ms，8 条字幕 = 7 唱 + 1 念）。⚠️ 该清单仍标 `local_prototype_only; external reference permission unverified`——**对外发布前必须替换第三方 B 站源**。
+  - 📌 **2026-10-16 晚更新（v6）**：收场追加「借伞对话」（用户提供的京剧录屏，响度对齐 + 0.20 s 交叉淡化接尾），整轨 **92723 ms**、12 条字幕 = 8 唱 + 4 念；接伞即收关后先播 3.8 s 收势器乐再进对话。上文 63~65 行的「0.5285 桥头」「走回小青身旁」口径已分别被「0.58 桥上」「接到伞即收关」取代（见 TECH_DESIGN.md 10-16 补充）。
 - **本次复跑的检查数**：A 范围 **1284** 通过 / 0 失败、C 范围 **459** / 0、布景 **485** / 0、`run_game_replay` **38** / 0、`run_game_replay_success` **12** / 0、`run_tutorial_replay -- stage=2` **11** / 0；B 侧 `run_stage_walk` **24** / 0、`run_stage_visuals` **380** / 0、`run_replay_audio` **10** / 0、`run_performance_audio` **53** / 0、`run_act1_game_audio` **27** / 0。资源导入、无头启动（150 帧）、Windows release 导出均 exit 0（导出的既有无头退出提示仍在，非本轮引入）。
 - ⚠️ **待裁决**：桥面步态路径会把关卡落地线覆盖为平地基线，详见 [A → B 交接文档](handoff/A-to-B-level1.md) 与 [TECH_DESIGN.md](../TECH_DESIGN.md) 的 2026-10-16 补充。
 
