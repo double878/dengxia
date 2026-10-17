@@ -1,9 +1,10 @@
 extends Node
-## 用户视频的出场音乐与落地重音。只读真实阶段，不推进剧情。
+## 用户视频的出场音乐与许仙惊叫。只读真实阶段，不推进剧情。
 
 const ENTRY := "res://assets/audio/act2-hall/fahai-entry.wav"
-const HIT := "res://assets/audio/act2-hall/xu-fall-hit.wav"
+const HIT := "res://assets/audio/act2-hall/xu-fright.wav"
 var entry: AudioStreamPlayer
+# 沿用录放的 hit 单次声音槽，内容现为许仙惊叫，不再播放落地重音。
 var hit: AudioStreamPlayer
 var hit_count: int = 0
 var _paused: bool = false
@@ -56,7 +57,13 @@ func update_entrance(phase: String, present: bool, song_ms: int = 0, crossfade_m
 		entry.volume_db = 0.0
 		if not entry.playing:
 			entry.play()
-	elif phase == "dialogue" and present and entry.playing and crossfade_ms > 0 and song_ms < crossfade_ms:
+	elif (
+		phase == "dialogue"
+		and present
+		and entry.playing
+		and crossfade_ms > 0
+		and song_ms < crossfade_ms
+	):
 		entry.volume_db = linear_to_db(maxf(1.0 - float(song_ms) / crossfade_ms, 0.0001))
 	else:
 		entry.stop()
@@ -73,8 +80,8 @@ func can_start_main() -> bool:
 	return position <= 0.03 or position >= entry.stream.get_length() - 0.06
 
 
-func update_fall(progress: float) -> void:
-	if hit == null or _paused or hit_count > 0 or progress < 0.95:
+func play_fright() -> void:
+	if hit == null or _paused or hit_count > 0:
 		return
 	hit_count += 1
 	hit.play()

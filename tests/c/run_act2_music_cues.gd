@@ -68,16 +68,15 @@ func _run() -> void:
 		music.update_entrance("wait_greeting", true)
 		music.update_entrance("wait_arrival", false)
 		check(not music.entry.playing, "音乐结束后出退场不得重播")
-		music.update_fall(.8)
-		check(not music.hit.playing, "没有真实落地就不响重音")
-		music.update_fall(.96)
-		check(music.hit.playing, "倒地到落点才响视频中的重音")
-		check(music.hit_count == 1, "落点只触发一次")
+		check(not music.hit.playing, "见蛇前不得提前喊叫")
+		music.play_fright()
+		check(music.hit.playing and music.HIT.ends_with("xu-fright.wav"), "播放许仙惊叫，取消落地重音")
+		check(music.hit_count == 1, "惊叫只触发一次")
 		music.set_paused(true)
-		check(music.hit.stream_paused, "暂停冻结落地重音")
+		check(music.hit.stream_paused, "暂停冻结惊叫")
 		music.set_paused(false)
-		music.update_fall(1.0)
-		check(music.hit_count == 1, "倒地后不重复重音")
+		music.play_fright()
+		check(music.hit_count == 1, "倒地后不重复惊叫")
 	opening.queue_free()
 	await process_frame
 	var hall_music := preload("res://scripts/act2/act2_music_cues.gd").new()
@@ -85,7 +84,13 @@ func _run() -> void:
 	check(hall_music.setup(), "厅堂默认音乐初始化")
 	check(not hall_music.entry.playing, "厅堂默认模式不应自动播放")
 	hall_music.update_entrance("wait_arrival", true)
-	check(hall_music.entry.playing and hall_music.entry.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD, "厅堂默认循环行为改变")
+	check(
+		(
+			hall_music.entry.playing
+			and hall_music.entry.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD
+		),
+		"厅堂默认循环行为改变"
+	)
 	hall_music.queue_free()
 	await process_frame
 	var replay_audio := preload("res://scripts/b/act2_replay_audio.gd").new()
@@ -94,10 +99,23 @@ func _run() -> void:
 	var recorded := {"entry": {"playing": true, "paused": false, "position_ms": 0}}
 	replay_audio.apply_recorded(2, recorded, false)
 	check(replay_audio.players.entry.playing, "回放零点未播放开场音乐")
-	check(replay_audio.players.entry.stream.loop_mode == AudioStreamWAV.LOOP_DISABLED, "回放第一场音乐不得循环")
+	check(
+		replay_audio.players.entry.stream.loop_mode == AudioStreamWAV.LOOP_DISABLED, "回放第一场音乐不得循环"
+	)
 	replay_audio.apply_recorded(22, recorded, false)
-	check(replay_audio.players.entry.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD, "厅堂回放须保留原循环模式")
-	check(replay_audio.players.entry.stream.resource_path != replay_audio._entry_streams[2].resource_path or replay_audio.players.entry.stream != replay_audio._entry_streams[2], "换幕回放仍使用第一场音乐")
+	check(
+		replay_audio.players.entry.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD, "厅堂回放须保留原循环模式"
+	)
+	check(
+		(
+			(
+				replay_audio.players.entry.stream.resource_path
+				!= replay_audio._entry_streams[2].resource_path
+			)
+			or replay_audio.players.entry.stream != replay_audio._entry_streams[2]
+		),
+		"换幕回放仍使用第一场音乐"
+	)
 	replay_audio.queue_free()
 	await process_frame
 	print("ACT2_MUSIC checks=%d failures=%d" % [checks, failures])

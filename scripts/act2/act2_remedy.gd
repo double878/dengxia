@@ -3,7 +3,6 @@ extends RefCounted
 
 const PREPARE_MS: int = 8000
 const STEPS: Dictionary = {
-	"qing_exit": 2,
 	"cup_take": 1,
 	"cup_pass": 0,
 	"drink": 0,
@@ -16,7 +15,6 @@ const STEPS: Dictionary = {
 	"return": 1,
 	"restore_0": 0,
 	"restore_1": 1,
-	"restore_2": 2,
 	"restore_3": 3,
 }
 var system := RemedySystem.new()
@@ -50,8 +48,6 @@ func update(actions: RefCounted, on_stage: Array[int], exposure: float) -> void:
 	if clock.is_paused():
 		return
 	var completed: Array[String] = []
-	if actions.qing_departed:
-		completed.append("qing_exit")
 	if actions.cup_owner >= 0 or actions.drunk:
 		completed.append("cup_take")
 	if actions.cup_owner == 0 or actions.drunk:
@@ -66,15 +62,15 @@ func update(actions: RefCounted, on_stage: Array[int], exposure: float) -> void:
 		completed.append("darken")
 	if actions.white_removed:
 		completed.append("replace")
-	if actions.phase in ["reveal", "return", "startled", "finished"]:
+	if actions.phase in ["reveal", "return", "fright", "startled", "finished"]:
 		completed.append("snake_entry")
 	if (
 		on_stage.has(3)
 		and exposure >= actions.REVEAL_LIMIT
-		and actions.phase in ["return", "startled", "finished"]
+		and actions.phase in ["return", "fright", "startled", "finished"]
 	):
 		completed.append("reveal")
-	if actions.phase in ["startled", "finished"]:
+	if actions.phase in ["fright", "startled", "finished"]:
 		completed.append("return")
 	for id: int in on_stage:
 		completed.append("restore_%d" % id)
@@ -107,10 +103,8 @@ func update(actions: RefCounted, on_stage: Array[int], exposure: float) -> void:
 
 func _step(actions: RefCounted, on_stage: Array[int], exposure: float) -> String:
 	match actions.phase:
-		"dialogue", "duet", "qing_exit", "cup", "drink", "bend", "medicine_exit":
-			for id: int in [0, 1, 2]:
-				if id == 2 and actions.qing_departed:
-					continue
+		"dialogue", "duet", "cup", "drink", "bend", "medicine_exit":
+			for id: int in [0, 1]:
 				if not on_stage.has(id):
 					return "restore_%d" % id
 		"replace":

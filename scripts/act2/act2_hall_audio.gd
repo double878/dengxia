@@ -17,6 +17,15 @@ func setup(clock: MusicClock) -> bool:
 	config = value
 	if str(config.get("audio_version", "")).is_empty():
 		return _fail("第二幕音源没有版本")
+	var fright: AudioStreamWAV = load(str(config.get("fright_path", ""))) as AudioStreamWAV
+	if (
+		fright == null
+		or fright.mix_rate != 48000
+		or not fright.stereo
+		or fright.format != AudioStreamWAV.FORMAT_16_BITS
+		or absf(fright.get_length() * 1000.0 - float(config.get("fright_duration_ms", 0))) > 1.0
+	):
+		return _fail("第二幕惊叫音源与实际时长不一致")
 	var duration: int = int(config.get("duration_ms", -1))
 	if not _rows_valid(config.get("lines"), SPEAKERS, "speech", duration):
 		return _fail("第二幕七句对白的身份、内容或时标非法")

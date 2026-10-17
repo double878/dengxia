@@ -1,5 +1,5 @@
 {
-  "audio_version": "act2-hall-speech-continuous-wine-duet-v1",
+  "audio_version": "act2-hall-direct-duet-fright-v2",
   "scene_id": "wine_transformation",
   "main_path": "res://assets/audio/act2-hall/main.wav",
   "duration_ms": 69517,
@@ -234,6 +234,16 @@
       "channels": 2,
       "subtype": "PCM_16",
       "peak": 0.74151611328125
+    },
+    {
+      "asset_id": "xu-fright",
+      "path": "res://assets/audio/act2-hall/xu-fright.wav",
+      "sha256": "c0db694bcff096220849839db35dcef98097c5d6314c594dd737014bf884c976",
+      "frames": 95295,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16",
+      "peak": 0.8012481331825256
     }
   ],
   "references": {
@@ -755,5 +765,90 @@
       "sha256": "b32dc225a6cfff37f2252b7d3b60cbf536f656de349eba6d5b773aa5f5b780e4",
       "expected": "b32dc225a6cfff37f2252b7d3b60cbf536f656de349eba6d5b773aa5f5b780e4"
     }
-  ]
+  ],
+  "hall_start_ms": 20119,
+  "disabled_intro_line_ids": [
+    "xu-offer",
+    "qing-stop",
+    "xu-send",
+    "bai-allow",
+    "qing-reply"
+  ],
+  "fright_path": "res://assets/audio/act2-hall/xu-fright.wav",
+  "fright_duration_ms": 1985,
+  "fright_production": {
+    "request": {
+      "version": "act2-xuxian-fright-20261017",
+      "lines": [
+        {
+          "line_id": "xu-fright",
+          "role_id": "xuxian",
+          "text": "啊！",
+          "seed": 2026101701
+        }
+      ],
+      "references": {
+        "xuxian": {
+          "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\return-02.wav",
+          "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+          "text": "些小之事，何劳娘子专程回来。"
+        }
+      },
+      "identity_references": {
+        "xuxian": {
+          "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\return-02.wav",
+          "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+          "text": "些小之事，何劳娘子专程回来。"
+        }
+      },
+      "voice_scope": "Reuse shipped act1 voices; new lines not human approved"
+    },
+    "generation": {
+      "line_id": "xu-fright",
+      "role_id": "xuxian",
+      "text": "啊！",
+      "path": "D:\\Cursor_program\\灯下\\builds\\act2-hall-refinement-20261017\\tts\\xu-fright.wav",
+      "sha256": "6a9ee9449cf4f7c2022e04f546fc892fab503f6b1c2f73448ea0451d1ad33b35",
+      "duration_s": 1.9946666666666666,
+      "seed": 2026101701,
+      "seconds": 83.06299999999464,
+      "steps": 32,
+      "converted_path": "D:\\Cursor_program\\灯下\\builds\\act2-hall-refinement-20261017\\converted\\xu-fright.wav",
+      "converted_sha256": "60eca434850c73378ed4201847c0eefa152fbf941f72f1afa0be482d4812bbbb",
+      "reference_path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\return-02.wav",
+      "reference_sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+      "converted_duration_s": 1.9853061224489796,
+      "vc_seconds": 31.92200000002049
+    },
+    "production_script_sha256": "4384e1fb4a9d5c2783cd4e4d567ad5f8f754113a709b7626711e0004a5fe23ff",
+    "input_fingerprint_sha256": "8a4a3dc537359dbde6a325adcf2b6aaa3019caa1f963781571fffe4521050446",
+    "parameters": {
+      "tts_steps": 32,
+      "tts_cfg": 2.0,
+      "vc_steps": 25,
+      "vc_cfg": 0.7,
+      "length_adjust": 1.0,
+      "f0_condition": false,
+      "auto_f0_adjust": false,
+      "semi_tone_shift": 0,
+      "device": "cpu",
+      "threads": 8
+    },
+    "packaging_script_sha256": "81e59aebe66790b628e03559d828aeb48228a07503914cf726be753239cb9f71",
+    "gain_db": 8.36,
+    "loudness_after": {
+      "input_i": "-12.96",
+      "input_tp": "-1.86",
+      "input_lra": "0.00",
+      "input_thresh": "-23.75",
+      "output_i": "-16.04",
+      "output_tp": "-4.90",
+      "output_lra": "0.00",
+      "output_thresh": "-26.83",
+      "normalization_type": "linear",
+      "target_offset": "0.04"
+    },
+    "full_generated_samples_preserved": true,
+    "human_listening_verified": false
+  }
 }

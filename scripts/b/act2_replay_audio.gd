@@ -19,7 +19,7 @@ func setup() -> void:
 		else:
 			path = {
 				"entry": str(opening_config.get("intro_path", "")),
-				"hit": "res://assets/audio/act2-hall/xu-fall-hit.wav",
+				"hit": "res://assets/audio/act2-hall/xu-fright.wav",
 				"slow": "res://assets/audio/act1-natural/remedy.wav"
 			}[key]
 		var wav := load(path) as AudioStreamWAV
@@ -29,9 +29,7 @@ func setup() -> void:
 		var player := AudioStreamPlayer.new()
 		var stream: AudioStreamWAV = wav.duplicate()
 		stream.loop_mode = (
-			AudioStreamWAV.LOOP_FORWARD
-			if key == "slow"
-			else AudioStreamWAV.LOOP_DISABLED
+			AudioStreamWAV.LOOP_FORWARD if key == "slow" else AudioStreamWAV.LOOP_DISABLED
 		)
 		stream.loop_end = int(round(stream.get_length() * stream.mix_rate))
 		player.stream = stream
