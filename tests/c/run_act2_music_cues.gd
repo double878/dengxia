@@ -1,5 +1,5 @@
 extends SceneTree
-## 法海出场保持静音，厅堂真实倒地仍响一次重音。
+## 法海出场起同源器乐，迎接不断，接唱交叉淡化，厅堂落地重音沿用。
 
 var checks: int = 0
 var failures: int = 0
@@ -33,11 +33,11 @@ func _run() -> void:
 	if music != null:
 		check(not music.entry.playing, "法海未上场时不播放音乐")
 		key(opening, KEY_1)
-		check(not music.entry.playing, "法海实际上场也不播放独立背景音乐")
+		check(music.entry.playing, "法海实际上场后立即播放同源器乐")
 		opening._toggle_pause()
-		check(music._paused and not music.entry.playing, "暂停状态正确且不启动出场配乐")
+		check(music._paused and music.entry.stream_paused, "暂停同步冻结出场器乐")
 		opening._toggle_pause()
-		check(not music.entry.stream_paused and not music.entry.playing, "恢复后出场仍静音")
+		check(not music.entry.stream_paused and music.entry.playing, "恢复后原位续播出场器乐")
 		opening.dialogue.player.stop()
 		opening.clock.set_player(null)
 		opening.clock.start()
@@ -45,11 +45,15 @@ func _run() -> void:
 		opening.controller.get_puppet(0).stage_pos.x -= 380.0 / 1920.0
 		opening.controller.get_puppet(0).facing = -1.0
 		opening._process(.1)
-		check(opening.dialogue.phase == "wait_greeting" and not music.entry.playing, "迎接等待保持静音")
+		check(opening.dialogue.phase == "wait_greeting" and music.entry.playing, "迎接等待持续同源器乐")
 		opening._exit(0)
 		opening._enter(0)
 		opening._process(.1)
-		check(not music.entry.playing, "对白中误退再上场不重放音乐")
+		check(music.entry.playing, "迎接等待退场回来仍有器乐")
+		music.update_entrance("dialogue", true, 125, 250)
+		check(music.entry.playing and music.entry.volume_db < -5, "接唱时出场器乐交叉淡出")
+		music.update_entrance("dialogue", true, 300, 250)
+		check(not music.entry.playing, "交叉衔接完成后不叠放出场辅轨")
 		music.update_fall(.8)
 		check(not music.hit.playing, "没有真实落地就不响重音")
 		music.update_fall(.96)

@@ -69,6 +69,10 @@ func _run() -> void:
 	check(guard < 1200, "第一场首句结束无法进入迎接等待")
 	Helper.key(opening, KEY_2)
 	Helper.key(opening, KEY_SPACE)
+	if not live:
+		# 快速录制使用自由时钟，不能等待真实声卡走完器乐循环。
+		# 出场帧已保留真实 entry 状态；交接边界另由 Windows 实播覆盖。
+		opening.music_cues.entry.stop()
 	var greeting_x: float = opening.controller.get_puppet(0).stage_pos.x * 1920.0 - 300.0
 	var xu_x: float = opening.controller.get_puppet(1).stage_pos.x * 1920.0
 	Helper.drag(opening, opening.HAND_ANCHOR, Vector2(greeting_x - xu_x, 0))
@@ -342,7 +346,7 @@ func audio_probe(replay: Node, player: CReplayPlayer) -> void:
 		await create_timer(.6).timeout
 		var peak: float = buffer_peak(capture)
 		report.peaks[key] = peak
-		check(peak < .001 if key in ["entry", "cup"] else peak > .001, "实际回放混音/等待静音 " + key)
+		check(peak < .001 if key == "cup" else peak > .001, "实际回放混音/等待静音 " + key)
 		if key == "speech":
 			check(not replay.get("_act2_audio").players.entry.playing, "回放法海开口必须停止视频音乐")
 		if key == "duet":

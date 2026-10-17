@@ -53,8 +53,8 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 			or ids.has(id)
 			or str(row.get("text", "")).is_empty()
 			or str(row.get("role_name", "")).is_empty()
-			or str(row.get("delivery", "")) not in ["original", "voice_converted"]
-			or (str(row.get("role_id", "")) == "fahai" and str(row.get("delivery", "")) != "original")
+			or str(row.get("delivery", "")) not in ["original", "voice_converted", "singing"]
+			or (str(row.get("role_id", "")) == "fahai" and str(row.get("delivery", "")) not in ["original", "singing"])
 			or str(row.get("role_id", "")) not in ["fahai", "xuxian"]
 			or begin < previous
 			or end <= begin
@@ -92,7 +92,7 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 	return true
 
 
-func update(on_stage: Array[int], entrance_clear: bool) -> void:
+func update(on_stage: Array[int], entrance_clear: bool, music_ready: bool = true) -> void:
 	if phase in ["error", "finished"] or clock.is_paused():
 		return
 	_fahai_present = on_stage.has(0)
@@ -110,7 +110,7 @@ func update(on_stage: Array[int], entrance_clear: bool) -> void:
 	var now := clock.get_song_time_ms()
 	if phase == "wait_greeting":
 		_update_greeting_target()
-		if _has_greeted():
+		if _has_greeted() and music_ready:
 			phase = "dialogue"
 			clock.set_song_frozen(false)
 		return

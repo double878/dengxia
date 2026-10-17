@@ -1,5 +1,5 @@
 extends "res://tests/c/run_act2_opening.gd"
-## 原片从许仙开口；入场等待不漏播，接头、尾音、暂停和误退场均沿唯一时钟。
+## 出场器乐不断，真实迎接后接唱；法海原唱、字头、暂停和误退场沿唯一时钟。
 
 var completed_signals: int = 0
 
@@ -62,17 +62,22 @@ func _run() -> void:
 	check(dialogue.phase == "dialogue" and not clock.is_song_frozen(), "真实迎接后原声未开始")
 	check(controller.get_puppet(0).stage_pos == fahai_position, "迎接自动移动法海")
 	check(dialogue.config.lines[0].role_id == "fahai", "新原片首句身份应为法海")
-	check(not opening.music_cues.entry.playing, "法海出场不得另加背景音乐")
+	check(opening.music_cues.entry.playing, "接唱开始时须与出场器乐交叉衔接")
 	var converted_lines: int = 0
+	var original_fahai_lines: int = 0
 	for row: Dictionary in dialogue.config.lines:
 		if row.role_id == "xuxian":
 			converted_lines += 1
-			check(row.delivery == "voice_converted", "许仙没有使用第一关音色：" + row.line_id)
+			check(row.delivery == "singing", "许仙须整句使用第一关唱声音色：" + row.line_id)
+		elif row.delivery == "original":
+			original_fahai_lines += 1
 		clock.set_free_time_ms(int(row.start_ms))
 		opening._process(.02)
 		check(dialogue.get_line().get("line_id") == row.line_id, "原片字幕未按时切换：" + row.line_id)
 		check(dialogue.phase == "dialogue", "旧六句应允逻辑截断新原声：" + row.line_id)
 	check(converted_lines == 2, "新视频应保留许仙两次完整回应")
+	check(original_fahai_lines == 7, "法海开头和后段六句均须保留原唱")
+	check(not opening.music_cues.entry.playing, "接唱后出场辅轨须停止，避免叠声")
 	var splice: int = int(dialogue.config.splice_ms)
 	clock.set_free_time_ms(splice - 100)
 	opening._process(.02)

@@ -110,7 +110,7 @@ func _ready() -> void:
 	dialogue.finished.connect(_finish_first_scene)
 	dialogue.setup(clock, controller)
 	add_child(music_cues)
-	music_cues.setup()
+	music_cues.setup(str(dialogue.config.get("entrance_loop_path", MusicCues.ENTRY)))
 	_refresh_views()
 	_puppet_input.set_views(_views)
 	if capture != null:
@@ -133,7 +133,13 @@ func _process(delta: float) -> void:
 		var events: Array = controller.take_events()
 		events.append_array(lamp_controller.take_events())
 		_sync_entrances()
-		dialogue.update(on_stage, _entrance_complete[0])
+		dialogue.update(on_stage, _entrance_complete[0], music_cues.can_start_main())
+		music_cues.update_entrance(
+			dialogue.phase,
+			on_stage.has(0) and (dialogue.phase != "dialogue" or not clock.is_song_frozen()),
+			clock.get_song_time_ms(),
+			int(dialogue.config.get("entrance_crossfade_ms", 0))
+		)
 		if capture != null:
 			capture.capture(self, events)
 	if steps == 8:
@@ -252,6 +258,7 @@ func _enter(id: int) -> void:
 		return
 	on_stage.append(id)
 	on_stage.sort()
+	music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	_refresh_views()
 
 
@@ -274,6 +281,7 @@ func _exit(id: int) -> void:
 	if controller.controlled_id == id:
 		_release_control()
 	on_stage.erase(id)
+	music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	_refresh_views()
 
 

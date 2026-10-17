@@ -6,6 +6,9 @@ var scene_id: int = 0
 
 
 func setup() -> void:
+	var opening_config: Dictionary = JSON.parse_string(
+		FileAccess.get_file_as_string("res://assets/audio/act2-opening/score.json")
+	)
 	for key: String in ["opening", "hall", "entry", "hit", "slow"]:
 		var path: String
 		if key in ["opening", "hall"]:
@@ -14,7 +17,7 @@ func setup() -> void:
 			path = str(config.main_path)
 		else:
 			path = {
-				"entry": "res://assets/audio/act2-hall/fahai-entry.wav",
+				"entry": str(opening_config.get("entrance_loop_path", "res://assets/audio/act2-hall/fahai-entry.wav")),
 				"hit": "res://assets/audio/act2-hall/xu-fall-hit.wav",
 				"slow": "res://assets/audio/act1-natural/remedy.wav"
 			}[key]

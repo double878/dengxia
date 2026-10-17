@@ -82,7 +82,7 @@ func _run() -> void:
 	InputHelper.key(opening, KEY_1)
 	label = "fahai_entry"
 	await pump(1.3)
-	check(not opening.music_cues.entry.playing and levels[label].peak < .001, "法海出场不另加背景音乐")
+	check(opening.music_cues.entry.playing and levels[label].peak > .001, "法海出场起同源器乐")
 	await shot("fahai-entry")
 	InputHelper.key(opening, KEY_ESCAPE)
 	check(await silence() < .001, "出场音乐暂停后实际静音")
@@ -92,16 +92,20 @@ func _run() -> void:
 	InputHelper.drag(opening, opening.HAND_ANCHOR, Vector2(-400, 0))
 	await pump(.2)
 	check(
-		opening.dialogue.phase == "wait_greeting" and not opening.music_cues.entry.playing,
-		"走出柳树停止出场配乐，等待许仙迎接"
+		opening.dialogue.phase == "wait_greeting" and opening.music_cues.entry.playing,
+		"走出柳树保持器乐，等待许仙迎接"
 	)
-	check(await silence() < .001, "许仙未迎接时不提前播放原声")
+	check(await silence() > .001 and opening.dialogue.player.stream_paused, "迎接前持续器乐但不提前唱词")
 	InputHelper.key(opening, KEY_2)
 	InputHelper.key(opening, KEY_SPACE)
 	var greeting_x: float = opening.controller.get_puppet(0).stage_pos.x * 1920 - 300
 	var xu_x: float = opening.controller.get_puppet(1).stage_pos.x * 1920
 	InputHelper.drag(opening, opening.HAND_ANCHOR, Vector2(greeting_x - xu_x, 0))
 	label = "opening_original"
+	var singing_deadline: int = Time.get_ticks_msec() + 6000
+	while opening.dialogue.phase == "wait_greeting" and Time.get_ticks_msec() < singing_deadline:
+		await pump(.03)
+	check(opening.dialogue.phase == "dialogue", "实际迎接后须在同源器乐边界接唱")
 	await pump(1.8)
 	check(levels[label].peak > .001, "许仙实际迎接后原片首句有真实声音")
 	opening.queue_free()
