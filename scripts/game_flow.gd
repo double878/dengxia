@@ -1,5 +1,5 @@
 extends Node
-## 正式入口：幕后演出 → 观众选择 → 幕前回放 / 本幕收场。
+## 正式入口：首页 → 片头 → 三关演出与真实回放 → 片尾 → 首页。
 
 const PERFORMANCE_SCENE := preload("res://scenes/a_test/level1_a.tscn")
 const ACT2_SCENE := preload("res://scenes/act2/opening.tscn")
@@ -7,6 +7,11 @@ const HALL_SCENE := preload("res://scenes/act2/hall.tscn")
 const ACT3_SCENE := preload("res://scenes/act3/opening.tscn")
 const Act2Capture := preload("res://scripts/c/c_act2_capture.gd")
 const ReplayView := preload("res://scripts/b/performance_replay.gd")
+const MediaScreen := preload("res://scripts/ui/media_screen.gd")
+const TITLE_IMAGE := preload("res://assets/cinematics/title.png")
+const INTRO_VIDEO := preload("res://assets/cinematics/intro.ogv")
+const OUTRO_VIDEO := preload("res://assets/cinematics/outro.ogv")
+const OUTRO_LAST_IMAGE := preload("res://assets/cinematics/outro-last.png")
 ## 关卡/幕编号。第二关分两场，各占一个编号：第一场「法海劝酒」= 2，
 ## 第二场「端阳饮酒」= 22（与 `CSceneryDef.LEVEL2_ACT2_STAGE_ID` 同值）。
 const ACT2_STAGE_ID: int = 2
@@ -33,7 +38,55 @@ func _ready() -> void:
 		_stage_id = 3
 	elif initial_stage in [2, 3]:
 		_stage_id = initial_stage
+	elif _stage_id == 1:
+		_show_home()
+		return
 	_start_performance()
+
+
+func _show_home() -> void:
+	_clear_page()
+	if _flow != null:
+		_flow.leave_stage()
+		_flow = null
+	_stage_id = 1
+	_title = ""
+	_advancing = false
+	var home := MediaScreen.new()
+	home.name = "HomeScreen"
+	home.image = TITLE_IMAGE
+	home.finished.connect(_play_intro, CONNECT_DEFERRED)
+	_page = home
+	add_child(home)
+
+
+func _play_intro() -> void:
+	_clear_page()
+	var intro := MediaScreen.new()
+	intro.name = "IntroVideo"
+	intro.stream = INTRO_VIDEO
+	intro.finished.connect(_intro_finished, CONNECT_DEFERRED)
+	_page = intro
+	add_child(intro)
+
+
+func _intro_finished() -> void:
+	_clear_page()
+	_start_performance()
+
+
+func _play_outro() -> void:
+	_clear_page()
+	if _flow != null:
+		_flow.leave_stage()
+		_flow = null
+	var outro := MediaScreen.new()
+	outro.name = "OutroVideo"
+	outro.stream = OUTRO_VIDEO
+	outro.end_image = OUTRO_LAST_IMAGE
+	outro.finished.connect(_show_home, CONNECT_DEFERRED)
+	_page = outro
+	add_child(outro)
 
 
 func _start_performance() -> void:
@@ -124,6 +177,9 @@ func _performance_finished(record: CPerformanceRecord, stage_id: int, title: Str
 
 
 func _show_page(choice: bool) -> void:
+	if not choice and _stage_id == 3:
+		_play_outro()
+		return
 	_clear_page()
 	_result_ready = false
 	_page = Control.new()

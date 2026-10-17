@@ -35,6 +35,7 @@ func _run() -> void:
 func test_skip_act1(paused: bool) -> void:
 	var game: Node = GAME_SCENE.instantiate()
 	root.add_child(game)
+	game._intro_finished()
 	await process_frame
 	var old_level: Node = game.get("_level")
 	old_level.set_process(false)
@@ -124,6 +125,7 @@ func test_skip_act2(stage_id: int, paused: bool) -> void:
 func test_transition(route: String) -> void:
 	var game: Node = GAME_SCENE.instantiate()
 	root.add_child(game)
+	game._intro_finished()
 	var old_level: Node = game.get("_level")
 	old_level.set_process(false)
 	old_level.get("_harness").shutdown()

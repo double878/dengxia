@@ -182,7 +182,7 @@ func _run() -> void:
 			await shot("09-replay-" + label)
 			break
 	game._skip_replay()
-	await shot("10-result")
+	await shot("10-outro")
 	game.queue_free()
 	await process_frame
 	AudioServer.remove_bus_effect(0, 0)

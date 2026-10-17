@@ -197,7 +197,7 @@ func _run() -> void:
 	replay._act3_view.sync({"on_stage": [], "audio": {}}, true)
 	check(not replay._act3_view.finale_view.visible, "缺少仙翁字段的旧记录正常隐藏第四人")
 	game._skip_replay()
-	check(game._flow.get_flow_state() == &"result", "观看后进入第三关收场")
+	check(game._flow == null and game._page.name == "OutroVideo", "观看后释放记录并播放片尾")
 	game.queue_free()
 	await process_frame
 	check_early_departure()

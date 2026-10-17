@@ -18,6 +18,7 @@ func check(value: bool, label: String) -> void:
 func _run() -> void:
 	var game: Node = load("res://scenes/game_flow.tscn").instantiate()
 	root.add_child(game)
+	game._intro_finished()  # 跳过已独立验证的首页与片头。
 	var level: Node = game._level
 	level.set_process(false)
 	var harness: Level1Harness = level._harness
