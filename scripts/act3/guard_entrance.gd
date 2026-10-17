@@ -6,6 +6,8 @@ const GROUND_Y: float = 642.0
 const FLIGHT_S: float = .72
 const LAND_S: float = .22
 const JUMP_HEIGHT: float = 100.0
+const RIGHT_EDGE: float = 1804.8  # 画布的 .94，给最右侧玩家留出落脚空间。
+const SAFE_GAP: float = 160.0
 
 var triggered: bool = false
 var active: bool = false
@@ -67,18 +69,19 @@ func update(
 		active = true
 		behind_mountain = true
 		_start_x = CSceneryDef.LEVEL3_MOUNTAIN_X * CANVAS.x - 25.0
-		# 落在山左缘之外；玩家贴近山脚时越过她落在空地，避免两具身体叠在一起。
+		# 留在白素贞右边；贴近山脚时缩短跳距，不越过玩家。
 		var white_x: float = white.stage_pos.x * CANVAS.x
-		_land_x = _edge_x - 110.0
-		if absf(_land_x - white_x) < 140.0:
-			_land_x = white_x - 220.0
-		_start_x = maxf(_start_x, _land_x + 160.0)
-		guard.facing = -1.0 if white_x < _land_x else 1.0
+		_land_x = clampf(maxf(_edge_x - 110.0, white_x + SAFE_GAP), white_x, RIGHT_EDGE)
+		_start_x = minf(maxf(_start_x, _land_x + 40.0), RIGHT_EDGE)
+		guard.facing = -1.0
 		guard.turn_progress = 1.0
 		on_stage.append(1)
 		on_stage.sort()
 	if not active:
 		return
+	# 起跳后玩家继续右移时，只收短鹿童的路径，不写玩家位置。
+	var right_min: float = minf(white.stage_pos.x * CANVAS.x + SAFE_GAP, RIGHT_EDGE)
+	_land_x = maxf(_land_x, right_min)
 	_elapsed += maxf(delta, 0.0)
 	var x: float = _start_x
 	var y: float = GROUND_Y
@@ -94,7 +97,7 @@ func update(
 		behind_mountain = false
 		if t >= 1.0:
 			active = false
-	guard.stage_pos = Vector2(x, y) / CANVAS
+	guard.stage_pos = Vector2(maxf(x, right_min), y) / CANVAS
 	guard.hand_angle = Vector2(.9, 1.05)
 	guard.elbow_angle = Vector2(.55, 1.15)
 	guard.torso_lean = 0.0

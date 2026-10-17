@@ -76,6 +76,7 @@ func _run() -> void:
 			break
 	check(jump_song_ms >= cue_ms and jump_song_ms <= cue_ms + 70, "实际起跳与末尾重音对齐")
 	await shot("jump")
+	check(host.controller.get_puppet(1).stage_pos.x > host.controller.get_puppet(0).stage_pos.x, "实际腾空保持白素贞右侧")
 	Helper.key(host, KEY_ESCAPE)
 	var position: Vector2 = host.controller.get_puppet(1).stage_pos
 	var song: int = host.clock.get_song_time_ms()
@@ -99,8 +100,8 @@ func _run() -> void:
 		"继续后完整落地"
 	)
 	check(
-		host.controller.get_puppet(1).stage_pos.x * 1920 < host.guard_entrance._edge_x - 100,
-		"实际落点在山缘外保留身体宽度"
+		host.controller.get_puppet(1).stage_pos.x > host.controller.get_puppet(0).stage_pos.x,
+		"实际落地没有越到白素贞左侧"
 	)
 	await shot("landed")
 	var singing_from: int = host.clock.get_song_time_ms()

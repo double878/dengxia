@@ -193,7 +193,7 @@ func _run() -> void:
 		check(flow.get_player().get_state() == &"paused", "回放可暂停")
 		replay.toggle_pause()
 		game._skip_replay()
-		check(flow.get_flow_state() == &"result", "跳过回放进入收场")
+		check(flow.is_released and game.get("_page").name == "OutroVideo", "跳过回放释放记录并进入正式片尾")
 		await shot("intermission")
 		game._restart()
 		check(game.get("_level").actions.phase == "ready", "重排从戏单重新开始")

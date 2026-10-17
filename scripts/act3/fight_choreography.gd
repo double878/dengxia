@@ -7,6 +7,8 @@ const ENTRANCE_S: float = 1.1
 const CRANE_STAND_PX: float = 280.0
 const CRANE_NEAR_PX: float = 200.0
 const CRANE_FAR_PX: float = 340.0
+const DEER_RIGHT_EDGE: float = .94
+const DEER_NEAR_PX: float = 160.0
 var config: Dictionary = {}
 var controller: PuppetController
 var active: bool = false
@@ -85,7 +87,8 @@ func update(delta: float, song_ms: int, on_stage: Array[int]) -> void:
 		var deer: PuppetState = controller.get_puppet(1)
 		_ground(deer)
 		_face(deer, 1.0, delta)
-		_move(deer, .92, 370.0, delta)
+		_move(deer, DEER_RIGHT_EDGE, 370.0, delta)
+		deer.stage_pos.x = maxf(deer.stage_pos.x, _deer_right_min(white))
 		_pose(deer, .25, .6, .3)
 		if song_ms - int(config.retreat_ms) > 1700:
 			on_stage.erase(1)
@@ -94,8 +97,8 @@ func update(delta: float, song_ms: int, on_stage: Array[int]) -> void:
 		active_actor = -1
 		var deer: PuppetState = controller.get_puppet(1)
 		_ground(deer)
-		var away: float = signf(deer.stage_pos.x - white.stage_pos.x)
-		_move(deer, clampf(white.stage_pos.x + away * .23, .09, .87), 140.0, delta)
+		_move(deer, minf(white.stage_pos.x + .23, DEER_RIGHT_EDGE), 140.0, delta)
+		deer.stage_pos.x = maxf(deer.stage_pos.x, _deer_right_min(white))
 		_pose(deer, .7, .5, .35)
 	else:
 		phase = "deer_duel"
@@ -171,11 +174,11 @@ func _stand_x(white: PuppetState, actor: PuppetState) -> float:
 	if actor.puppet_id == 2:
 		# 鹤童沿当前侧搭戏；靠边也不穿过玩家去强制换边。
 		return clampf(white.stage_pos.x + side * CRANE_STAND_PX / WIDTH, .09, .87)
-	if white.stage_pos.x > .73:
-		side = -1.0
-	elif white.stage_pos.x < .27:
-		side = 1.0
-	return clampf(white.stage_pos.x + side * 340.0 / WIDTH, .09, .87)
+	return minf(white.stage_pos.x + 340.0 / WIDTH, DEER_RIGHT_EDGE)
+
+
+func _deer_right_min(white: PuppetState) -> float:
+	return minf(white.stage_pos.x + DEER_NEAR_PX / WIDTH, DEER_RIGHT_EDGE)
 
 
 func _duel(
@@ -205,9 +208,11 @@ func _duel(
 		_attack_target = clampf(
 			_attack_origin + _attack_facing * float(move.reach) * float(pose.travel) / WIDTH,
 			.09,
-			.87
+			DEER_RIGHT_EDGE if actor.puppet_id == 1 else .87
 		)
-		if actor.puppet_id == 2:
+		if actor.puppet_id == 1:
+			_attack_target = maxf(_attack_target, minf(_exchange_x + DEER_NEAR_PX / WIDTH, DEER_RIGHT_EDGE))
+		else:
 			# 只读蓄势时的玩家位置，限制腾挪/冲刺距离，出招后不追踪玩家。
 			var near_x: float = _exchange_x - _attack_facing * CRANE_NEAR_PX / WIDTH
 			var far_x: float = _exchange_x - _attack_facing * CRANE_FAR_PX / WIDTH
@@ -220,6 +225,8 @@ func _duel(
 			or (actor.puppet_id == 2 and int(selected.index) == 1 and t > .38 and t < .56)
 		)
 		_face(actor, -_attack_facing if turning else _attack_facing, delta)
+	if actor.puppet_id == 1:
+		actor.stage_pos.x = maxf(actor.stage_pos.x, _deer_right_min(white))
 	_pose(actor, pose.shoulder, pose.elbow, pose.crouch)
 	actor.hand_angle.x = pose.free_arm
 	actor.elbow_angle.x = .3 + .35 * float(pose.spread)

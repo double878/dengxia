@@ -179,7 +179,8 @@ func _process(delta: float) -> void:
 		controller.tick(FIXED_DELTA)
 		lamp_controller.update(FIXED_DELTA)
 		for state: PuppetState in controller.puppets:
-			state.stage_pos.x = clampf(state.stage_pos.x, .08, .88)
+			var right_edge: float = .94 if state.puppet_id == 1 and guard_entrance.triggered else .88
+			state.stage_pos.x = clampf(state.stage_pos.x, .08, right_edge)
 		guard_entrance.update(
 			FIXED_DELTA,
 			controller,
