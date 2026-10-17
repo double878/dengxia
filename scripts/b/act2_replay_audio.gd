@@ -3,6 +3,7 @@ extends Node
 var players: Dictionary = {}
 var _active: Dictionary = {}
 var scene_id: int = 0
+var _entry_streams: Dictionary = {}
 
 
 func setup() -> void:
@@ -17,7 +18,7 @@ func setup() -> void:
 			path = str(config.main_path)
 		else:
 			path = {
-				"entry": str(opening_config.get("entrance_loop_path", "res://assets/audio/act2-hall/fahai-entry.wav")),
+				"entry": str(opening_config.get("intro_path", "")),
 				"hit": "res://assets/audio/act2-hall/xu-fall-hit.wav",
 				"slow": "res://assets/audio/act1-natural/remedy.wav"
 			}[key]
@@ -29,7 +30,7 @@ func setup() -> void:
 		var stream: AudioStreamWAV = wav.duplicate()
 		stream.loop_mode = (
 			AudioStreamWAV.LOOP_FORWARD
-			if key in ["entry", "slow"]
+			if key == "slow"
 			else AudioStreamWAV.LOOP_DISABLED
 		)
 		stream.loop_end = int(round(stream.get_length() * stream.mix_rate))
@@ -37,12 +38,22 @@ func setup() -> void:
 		add_child(player)
 		players[key] = player
 		_active[key] = false
+		if key == "entry":
+			_entry_streams[2] = stream
+	var hall_entry := load("res://assets/audio/act2-hall/fahai-entry.wav") as AudioStreamWAV
+	if hall_entry != null:
+		var hall_loop: AudioStreamWAV = hall_entry.duplicate()
+		hall_loop.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		hall_loop.loop_end = int(round(hall_loop.get_length() * hall_loop.mix_rate))
+		_entry_streams[22] = hall_loop
 
 
 func apply_recorded(scene: int, view: Dictionary, paused: bool) -> void:
 	if scene != scene_id:
 		stop()
 		scene_id = scene
+		if players.has("entry") and _entry_streams.has(scene):
+			players.entry.stream = _entry_streams[scene]
 	for key: String in players:
 		var source: String = "main" if key == ("opening" if scene == 2 else "hall") else key
 		var state: Dictionary = (

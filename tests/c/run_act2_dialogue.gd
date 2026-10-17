@@ -1,5 +1,5 @@
 extends "res://tests/c/run_act2_opening.gd"
-## 出场器乐不断，真实迎接后接唱；法海原唱、字头、暂停和误退场沿唯一时钟。
+## 单次开场音乐结束且真实迎接后对白；慢速首句、字幕、暂停和误退场。
 
 var completed_signals: int = 0
 
@@ -9,7 +9,7 @@ func _run() -> void:
 	root.add_child(opening)
 	opening.set_process(false)
 	var dialogue: Node = opening.dialogue
-	check(dialogue.phase != "error", "原声音源初始化失败：" + dialogue.problem)
+	check(dialogue.phase != "error", "对白音源初始化失败：" + dialogue.problem)
 	if dialogue.phase == "error":
 		opening.queue_free()
 		await process_frame
@@ -23,7 +23,7 @@ func _run() -> void:
 	clock.start()
 	clock.set_song_frozen(true)
 	opening._process(.1)
-	check(dialogue.phase == "wait_arrival" and clock.get_song_time_ms() == 0, "空台漏播原声")
+	check(dialogue.phase == "wait_arrival" and clock.get_song_time_ms() == 0, "空台提前消耗对白")
 	opening._enter(0)
 	opening._enter(1)
 	check(opening.on_stage == [0], "法海未走出柳树便允许许仙上场")
@@ -59,26 +59,30 @@ func _run() -> void:
 	check(clock.is_song_frozen(), "法海缺席仍完成迎接")
 	opening._enter(0)
 	opening._process(.02)
-	check(dialogue.phase == "dialogue" and not clock.is_song_frozen(), "真实迎接后原声未开始")
+	check(dialogue.phase == "wait_greeting" and clock.is_song_frozen(), "两人提前就位不得截断开场音乐")
+	opening.music_cues.entry.stop()
+	opening.music_cues.entry.finished.emit()
+	opening._process(.02)
+	check(dialogue.phase == "dialogue" and not clock.is_song_frozen(), "音乐播完且真实迎接后对白未开始")
 	check(controller.get_puppet(0).stage_pos == fahai_position, "迎接自动移动法海")
 	check(dialogue.config.lines[0].role_id == "fahai", "新原片首句身份应为法海")
-	check(opening.music_cues.entry.playing, "接唱开始时须与出场器乐交叉衔接")
+	check(not opening.music_cues.entry.playing, "对白不得与开场音乐重叠")
 	var converted_lines: int = 0
 	var original_fahai_lines: int = 0
 	for row: Dictionary in dialogue.config.lines:
 		if row.role_id == "xuxian":
 			converted_lines += 1
-			check(row.delivery == "singing", "许仙须整句使用第一关唱声音色：" + row.line_id)
-		elif row.delivery == "original":
+			check(row.delivery == "speech", "许仙须使用第一关对白音色：" + row.line_id)
+		elif row.delivery == "speech":
 			original_fahai_lines += 1
 		clock.set_free_time_ms(int(row.start_ms))
 		opening._process(.02)
 		check(dialogue.get_line().get("line_id") == row.line_id, "原片字幕未按时切换：" + row.line_id)
-		check(dialogue.phase == "dialogue", "旧六句应允逻辑截断新原声：" + row.line_id)
-	check(converted_lines == 2, "新视频应保留许仙两次完整回应")
-	check(original_fahai_lines == 7, "法海开头和后段六句均须保留原唱")
+		check(dialogue.phase == "dialogue", "对白意外截断：" + row.line_id)
+	check(converted_lines == 3, "许仙应有三次完整回应")
+	check(original_fahai_lines == 3, "法海应有三句慢速自然对白")
 	check(not opening.music_cues.entry.playing, "接唱后出场辅轨须停止，避免叠声")
-	var splice: int = int(dialogue.config.splice_ms)
+	var splice: int = int(dialogue.config.lines[2].start_ms)
 	clock.set_free_time_ms(splice - 100)
 	opening._process(.02)
 	opening._toggle_pause()
@@ -90,7 +94,7 @@ func _run() -> void:
 	opening._toggle_pause()
 	clock.set_free_time_ms(splice + 1000)
 	opening._process(.02)
-	check(dialogue.get_line().get("text") == "可记得保和堂里点化你", "第二段未按接头时标接续")
+	check(dialogue.get_line().get("line_id") == "dialogue-03", "第二轮对白未按波形时标接续")
 	opening._exit(1)
 	opening._process(.02)
 	var missing_song: int = clock.get_song_time_ms()

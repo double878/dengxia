@@ -79,14 +79,14 @@ func _run() -> void:
 	AudioServer.add_bus_effect(0, capture)
 	opening = load("res://scenes/act2/opening.tscn").instantiate()
 	root.add_child(opening)
-	InputHelper.key(opening, KEY_1)
 	label = "fahai_entry"
 	await pump(1.3)
-	check(opening.music_cues.entry.playing and levels[label].peak > .001, "法海出场起同源器乐")
+	check(opening.on_stage.is_empty() and opening.music_cues.entry.playing and levels[label].peak > .001, "第二关空台开场立即播放视频音乐")
 	await shot("fahai-entry")
 	InputHelper.key(opening, KEY_ESCAPE)
 	check(await silence() < .001, "出场音乐暂停后实际静音")
 	InputHelper.key(opening, KEY_ESCAPE)
+	InputHelper.key(opening, KEY_1)
 	InputHelper.key(opening, KEY_SPACE)
 	# 法海起初在树遮罩后；从幕布下方的真实操作签抓取。
 	InputHelper.drag(opening, opening.HAND_ANCHOR, Vector2(-400, 0))
@@ -102,10 +102,10 @@ func _run() -> void:
 	var xu_x: float = opening.controller.get_puppet(1).stage_pos.x * 1920
 	InputHelper.drag(opening, opening.HAND_ANCHOR, Vector2(greeting_x - xu_x, 0))
 	label = "opening_original"
-	var singing_deadline: int = Time.get_ticks_msec() + 6000
+	var singing_deadline: int = Time.get_ticks_msec() + 10000
 	while opening.dialogue.phase == "wait_greeting" and Time.get_ticks_msec() < singing_deadline:
 		await pump(.03)
-	check(opening.dialogue.phase == "dialogue", "实际迎接后须在同源器乐边界接唱")
+	check(opening.dialogue.phase == "dialogue" and not opening.music_cues.entry.playing, "音乐完整结束且迎接后开始对白")
 	await pump(1.8)
 	check(levels[label].peak > .001, "许仙实际迎接后原片首句有真实声音")
 	opening.queue_free()

@@ -110,7 +110,8 @@ func _ready() -> void:
 	dialogue.finished.connect(_finish_first_scene)
 	dialogue.setup(clock, controller)
 	add_child(music_cues)
-	music_cues.setup(str(dialogue.config.get("entrance_loop_path", MusicCues.ENTRY)))
+	if not music_cues.setup(str(dialogue.config.get("intro_path", "")), true):
+		dialogue._fail("第二关开场音乐加载失败")
 	_refresh_views()
 	_puppet_input.set_views(_views)
 	if capture != null:

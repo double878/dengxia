@@ -7,12 +7,24 @@ var entry: AudioStreamPlayer
 var hit: AudioStreamPlayer
 var hit_count: int = 0
 var _paused: bool = false
+var _play_once_on_start: bool = false
+var _entry_finished: bool = false
 
 
-func setup(entry_path: String = ENTRY) -> bool:
-	entry = _player(entry_path, true)
+func setup(entry_path: String = ENTRY, play_once_on_start: bool = false) -> bool:
+	_play_once_on_start = play_once_on_start
+	entry = _player(entry_path, not play_once_on_start)
 	hit = _player(HIT, false)
-	return entry != null and hit != null
+	if entry == null or hit == null:
+		return false
+	if _play_once_on_start:
+		entry.finished.connect(_on_entry_finished)
+		entry.play()
+	return true
+
+
+func _on_entry_finished() -> void:
+	_entry_finished = true
 
 
 func _player(path: String, loop: bool) -> AudioStreamPlayer:
@@ -37,6 +49,9 @@ func _player(path: String, loop: bool) -> AudioStreamPlayer:
 func update_entrance(phase: String, present: bool, song_ms: int = 0, crossfade_ms: int = 0) -> void:
 	if entry == null or _paused:
 		return
+	# 开场单次音乐从 setup 播放到 finished，不受出场、迎接或缺场影响。
+	if _play_once_on_start:
+		return
 	if phase in ["wait_arrival", "wait_greeting"] and present:
 		entry.volume_db = 0.0
 		if not entry.playing:
@@ -49,6 +64,8 @@ func update_entrance(phase: String, present: bool, song_ms: int = 0, crossfade_m
 
 
 func can_start_main() -> bool:
+	if _play_once_on_start:
+		return _entry_finished
 	if entry == null or not entry.playing:
 		return true
 	var position := entry.get_playback_position()

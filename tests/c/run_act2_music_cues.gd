@@ -1,5 +1,5 @@
 extends SceneTree
-## 法海出场起同源器乐，迎接不断，接唱交叉淡化，厅堂落地重音沿用。
+## 空台立即播放完整单次音乐；不因出退场重播；厅堂默认模式和重音沿用。
 
 var checks: int = 0
 var failures: int = 0
@@ -30,10 +30,17 @@ func _run() -> void:
 	await process_frame
 	var music: Node = opening.get("music_cues")
 	check(music != null, "第二关声音状态须保留供回放记录")
+	if music == null or music.entry == null:
+		opening.queue_free()
+		await process_frame
+		quit(1)
+		return
 	if music != null:
-		check(not music.entry.playing, "法海未上场时不播放音乐")
+		check(music.entry.playing, "第二关空台就须立即播放音乐")
+		check(music.entry.stream.loop_mode == AudioStreamWAV.LOOP_DISABLED, "开场音乐不得循环")
+		check(not music.can_start_main(), "音乐刚起便允许对白")
 		key(opening, KEY_1)
-		check(music.entry.playing, "法海实际上场后立即播放同源器乐")
+		check(music.entry.playing and not music.can_start_main(), "上场不得提前放行对白")
 		opening._toggle_pause()
 		check(music._paused and music.entry.stream_paused, "暂停同步冻结出场器乐")
 		opening._toggle_pause()
@@ -50,10 +57,17 @@ func _run() -> void:
 		opening._enter(0)
 		opening._process(.1)
 		check(music.entry.playing, "迎接等待退场回来仍有器乐")
-		music.update_entrance("dialogue", true, 125, 250)
-		check(music.entry.playing and music.entry.volume_db < -5, "接唱时出场器乐交叉淡出")
-		music.update_entrance("dialogue", true, 300, 250)
-		check(not music.entry.playing, "交叉衔接完成后不叠放出场辅轨")
+		music.update_entrance("wait_arrival", false)
+		check(music.entry.playing, "缺场不得截断开场音乐")
+		music.entry.seek(music.entry.stream.get_length() - .02)
+		check(not music.can_start_main(), "尾音尚未播完就允许对白")
+		music.entry.stop()
+		check(not music.can_start_main(), "手动停止不得冒充音乐完整结束")
+		music.entry.finished.emit()
+		check(music.can_start_main(), "音乐完整结束后未放行对白")
+		music.update_entrance("wait_greeting", true)
+		music.update_entrance("wait_arrival", false)
+		check(not music.entry.playing, "音乐结束后出退场不得重播")
 		music.update_fall(.8)
 		check(not music.hit.playing, "没有真实落地就不响重音")
 		music.update_fall(.96)
@@ -65,6 +79,26 @@ func _run() -> void:
 		music.update_fall(1.0)
 		check(music.hit_count == 1, "倒地后不重复重音")
 	opening.queue_free()
+	await process_frame
+	var hall_music := preload("res://scripts/act2/act2_music_cues.gd").new()
+	root.add_child(hall_music)
+	check(hall_music.setup(), "厅堂默认音乐初始化")
+	check(not hall_music.entry.playing, "厅堂默认模式不应自动播放")
+	hall_music.update_entrance("wait_arrival", true)
+	check(hall_music.entry.playing and hall_music.entry.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD, "厅堂默认循环行为改变")
+	hall_music.queue_free()
+	await process_frame
+	var replay_audio := preload("res://scripts/b/act2_replay_audio.gd").new()
+	root.add_child(replay_audio)
+	replay_audio.setup()
+	var recorded := {"entry": {"playing": true, "paused": false, "position_ms": 0}}
+	replay_audio.apply_recorded(2, recorded, false)
+	check(replay_audio.players.entry.playing, "回放零点未播放开场音乐")
+	check(replay_audio.players.entry.stream.loop_mode == AudioStreamWAV.LOOP_DISABLED, "回放第一场音乐不得循环")
+	replay_audio.apply_recorded(22, recorded, false)
+	check(replay_audio.players.entry.stream.loop_mode == AudioStreamWAV.LOOP_FORWARD, "厅堂回放须保留原循环模式")
+	check(replay_audio.players.entry.stream.resource_path != replay_audio._entry_streams[2].resource_path or replay_audio.players.entry.stream != replay_audio._entry_streams[2], "换幕回放仍使用第一场音乐")
+	replay_audio.queue_free()
 	await process_frame
 	print("ACT2_MUSIC checks=%d failures=%d" % [checks, failures])
 	quit(1 if failures else 0)

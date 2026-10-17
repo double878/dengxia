@@ -51,6 +51,7 @@ func _run() -> void:
 		opening.clock.set_player(null)
 	record = opening.capture.record
 	check(record.snapshots[0].time_ms == 0, "第二关首帧不在零点")
+	check(record.snapshots[0].performance.audio.entry.playing, "零点快照须包含空台开场音乐")
 	Helper.key(opening, KEY_1)
 	Helper.key(opening, KEY_SPACE)
 	opening._process(1.0 / 60.0)
@@ -70,9 +71,9 @@ func _run() -> void:
 	Helper.key(opening, KEY_2)
 	Helper.key(opening, KEY_SPACE)
 	if not live:
-		# 快速录制使用自由时钟，不能等待真实声卡走完器乐循环。
-		# 出场帧已保留真实 entry 状态；交接边界另由 Windows 实播覆盖。
+		# 快速录制用自由时钟；真实完整开场音乐另由 Windows 实播覆盖。
 		opening.music_cues.entry.stop()
+		opening.music_cues.entry.finished.emit()
 	var greeting_x: float = opening.controller.get_puppet(0).stage_pos.x * 1920.0 - 300.0
 	var xu_x: float = opening.controller.get_puppet(1).stage_pos.x * 1920.0
 	Helper.drag(opening, opening.HAND_ANCHOR, Vector2(greeting_x - xu_x, 0))
@@ -343,7 +344,8 @@ func audio_probe(replay: Node, player: CReplayPlayer) -> void:
 		capture.clear_buffer()
 		replay.apply_frame(player.sample(int(sound_frames[key])))
 		# 重音与补救第一拍很短，采集起音，不能先丢掉前250毫秒。
-		await create_timer(.6).timeout
+		# 视频开头原有约600ms静音，entry采到首个重音；其他短音效仍采集起音。
+		await create_timer(1.1 if key == "entry" else .6).timeout
 		var peak: float = buffer_peak(capture)
 		report.peaks[key] = peak
 		check(peak < .001 if key == "cup" else peak > .001, "实际回放混音/等待静音 " + key)

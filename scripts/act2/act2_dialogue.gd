@@ -1,5 +1,5 @@
 extends Node
-## 第一场原声、真实迎接许可与暗场，只读取宿主唯一 MusicClock。
+## 第一场自然对白、真实迎接许可与暗场，只读取宿主唯一 MusicClock。
 
 signal finished
 
@@ -38,7 +38,7 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 		return _fail("第二关第一幕暗场时标非法")
 	var lines: Variant = config.get("lines")
 	if not (lines is Array) or lines.is_empty():
-		return _fail("第二关第一场缺少原声字幕")
+		return _fail("第二关第一场缺少对白字幕")
 	var previous := 0
 	var ids := {}
 	for i in range(lines.size()):
@@ -53,8 +53,7 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 			or ids.has(id)
 			or str(row.get("text", "")).is_empty()
 			or str(row.get("role_name", "")).is_empty()
-			or str(row.get("delivery", "")) not in ["original", "voice_converted", "singing"]
-			or (str(row.get("role_id", "")) == "fahai" and str(row.get("delivery", "")) not in ["original", "singing"])
+			or str(row.get("delivery", "")) != "speech"
 			or str(row.get("role_id", "")) not in ["fahai", "xuxian"]
 			or begin < previous
 			or end <= begin
@@ -65,7 +64,7 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 		previous = end
 	var greeting_gate := int(config.get("greeting_gate_ms", -1))
 	if greeting_gate != 0:
-		return _fail("第二关原声须从实际迎接后完整播放，不得提前消耗首句")
+		return _fail("第二关对白须从实际迎接后完整播放，不得提前消耗首句")
 	var path := str(config.get("main_path", ""))
 	if not ResourceLoader.exists(path):
 		return _fail("缺少第二关第一幕主轨：" + path)
@@ -115,7 +114,7 @@ func update(on_stage: Array[int], entrance_clear: bool, music_ready: bool = true
 			clock.set_song_frozen(false)
 		return
 	clock.set_song_frozen(false)
-	# 两段原声连续走同一主轨；不插入旧版六句对白的沉默和应允。
+	# 开场音乐完整结束并实际迎接后，六句对白连续走同一主轨。
 	if now >= int(config.dark_start_ms):
 		phase = "closing"
 	if now >= int(config.duration_ms):
