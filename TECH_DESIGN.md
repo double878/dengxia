@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-17 试玩细修：第一关场景删除头架绘制、标签及鼠标/数字键换头入口，保留共用控制器和旧记录兼容。对白离线重制 `return-01/03/09`，从原 PCM 精确定位替换位置并按实际帧数重排时标；其他唱白保留。厅堂主轨在原对唱起点前插入 240,000 帧器乐，`hall_start_ms=20119`、`duet_start_ms=25119`，后续时标整体加 5000 ms，仍用原 MusicClock，前奏不显示歌词；惊叫使用单次 hit 槽、实际 WAV 时长和原暂停/倒地/回放流程。末声目标为惊恐的第四声 à，不通过后期变调制造。鹿童 `guard_entrance` 与 `fight_choreography` 共用右边界 0.94、右侧间距 160 px，出山与招式期间按玩家位置限制鹿童下界，玩家位置不被改写；鹤童沿用旧逻辑。验收证据及声音检查范围见 [试玩细修交付](docs/playtest-polish-delivery.md)。
+
 > 2026-10-17 演前简介：`scripts/ui/stage_briefing.gd` 集中三关文案及既有第三关版式，对外提供 `stage_id`、单次 `start_requested` 与可更新的 `audio_note`。`GameFlow._show_briefing()` 在关号 1/2 创建简介，延后处理开演信号后才实例化宿主、时钟与录制；片头结束、第一关收场/跳过及重新演出均走该入口。关号 22 的厅堂换景沿用整关记录，不重复简介。第三关宿主复用组件并连接既有 `start_scene()`，保留零时钟候场、真实音源提示和原录放流程。指定第二关调试入口同样先简介；第三关排练入口沿用一张内部简介。此补充优先于下文媒体入口的直达描述，不修改记录格式或玩法判定。验证见 [简介交付](docs/stage-briefings-delivery.md)。
 
 > 2026-10-17 媒体入口：`GameFlow` 默认显示 `MediaScreen` 首页，用户确认后依次播放片头、实例化第一关；指定 `_stage_id`、`initial_stage` 或 `--act3-rehearsal` 的既有调试入口保持直达。`scripts/ui/media_screen.gd` 只负责图片、`VideoStreamPlayer`、空格暂停与 Esc 跳过，独立于演出与记录时钟。素材在 `assets/cinematics/`，视频离线转为 Godot 内置 Theora/Vorbis OGV，1280×720、30fps、保留完整原声，无运行时 FFmpeg 或插件。第三关 `_show_page(false)` 统一释放回放记录并播放片尾；结束显示从源片提取的最后一帧，下一次左/右/中键点击回首页，不显示旧最终收场页。首页/播放页的完成信号延后换页，忽略重复按键、松开及滚轮，防止同一输入穿透。两段视频和静帧由预加载引用随 `all_resources` 导出；既有演出、回放与第一、二关收场不变。验证见 [媒体交付](docs/cinematics-delivery.md)。
