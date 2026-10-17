@@ -30,7 +30,12 @@ func _run() -> void:
 	var real_before := clock.get_real_time_ms()
 	clock.advance_to_ms(20119)
 	await create_timer(.1).timeout
-	print("CLOCK_SEEK frozen logic=%d actual=%d" % [clock.get_song_time_ms(), roundi(player.get_playback_position() * 1000)])
+	print(
+		(
+			"CLOCK_SEEK frozen logic=%d actual=%d"
+			% [clock.get_song_time_ms(), roundi(player.get_playback_position() * 1000)]
+		)
+	)
 	check(absf(player.get_playback_position() - 20.119) < .08, "冻结跳段必须定位到对唱真实起点")
 	check(player.stream_paused, "跳段保留动作等待冻结")
 	check(clock.get_real_time_ms() == real_before, "跳段不重置真实时间")
@@ -38,7 +43,9 @@ func _run() -> void:
 	for _i in range(12):
 		await create_timer(.02).timeout
 		clock.update(.02)
-	check(absf(player.get_playback_position() * 1000 - clock.get_song_time_ms()) < 80, "解冻后逻辑与播放游标一致")
+	check(
+		absf(player.get_playback_position() * 1000 - clock.get_song_time_ms()) < 80, "解冻后逻辑与播放游标一致"
+	)
 	clock.pause()
 	clock.advance_to_ms(61869)
 	await create_timer(.1).timeout
@@ -48,8 +55,15 @@ func _run() -> void:
 	for _i in range(12):
 		await create_timer(.02).timeout
 		clock.update(.02)
-	print("CLOCK_SEEK resumed logic=%d actual=%d" % [clock.get_song_time_ms(), roundi(player.get_playback_position() * 1000)])
-	check(absf(player.get_playback_position() * 1000 - clock.get_song_time_ms()) < 80, "恢复菜单暂停不丢对白开头")
+	print(
+		(
+			"CLOCK_SEEK resumed logic=%d actual=%d"
+			% [clock.get_song_time_ms(), roundi(player.get_playback_position() * 1000)]
+		)
+	)
+	check(
+		absf(player.get_playback_position() * 1000 - clock.get_song_time_ms()) < 80, "恢复菜单暂停不丢对白开头"
+	)
 	player.stop()
 	player.queue_free()
 	await process_frame

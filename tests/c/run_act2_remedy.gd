@@ -22,7 +22,9 @@ func _run() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await process_frame
-	check(ActionsInput.until_phase(hall, "qing_exit"), "先出现小青离场的自然目标")
+	check(hall.actions.phase == "duet", "厅堂直接开始对唱")
+	ActionsInput.right(hall, 0)
+	ActionsInput.advance(hall, .02)
 	var help: Variant = hall.get("remedy")
 	check(help != null, "正式第二幕应接入第一关补救系统")
 	if help != null:
@@ -45,10 +47,9 @@ func _run() -> void:
 			hall.clock.get_song_time_ms() == song and hall.lamp_controller.lamp.oil == oil,
 			"补救不消耗歌曲时间与灯油"
 		)
-		ActionsInput.take(hall, 2)
-		ActionsInput.drag(hall, hall._views[2].torso_screen_position(), Vector2(-430, 0))
-		ActionsInput.right(hall, 2)
-		check(hall.actions.qing_departed and not help.active(), "玩家真正走边退场后结束补救")
+		ActionsInput.key(hall, KEY_1)
+		ActionsInput.advance(hall, .02)
+		check(hall.on_stage.has(0) and not help.active(), "玩家恢复缺场白素贞后结束补救")
 		check(
 			(
 				help.system.records[0].close_reason == RemedySystem.CLOSE_SUCCESS

@@ -47,35 +47,8 @@ func _run() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await capture("opening")
-	ActionsInput.until_line(hall, 4)
-	if hall.actions.subtitle() != "小青：好吧。":
-		push_error("图形流程未先显示小青应答")
-		quit(1)
-		return
-	await capture("qing-reply")
-	ActionsInput.until_phase(hall, "qing_exit")
-	ActionsInput.advance(hall, 9.0)
-	if not hall.remedy.active() or not hall._remedy_banner.visible:
-		push_error("等待动作未出现正式补救手和提示")
-		quit(1)
-		return
-	await capture_remedy("remedy-qing-exit", "qing_exit")
-	audio_capture.clear_buffer()
-	# 既有慢锣鼓两击相隔 1.25 秒，覆盖完整间隔，不能只取击间静音。
-	await create_timer(1.4).timeout
-	var peak: float = 0.0
-	for sample: Vector2 in audio_capture.get_buffer(audio_capture.get_frames_available()):
-		peak = maxf(peak, maxf(absf(sample.x), absf(sample.y)))
-	if peak < 0.001:
-		push_error("第二幕补救慢锣鼓未输出真实混音样本")
-		quit(1)
-		return
-	print("ACT2_REMEDY_AUDIO peak=%f" % peak)
-	ActionsInput.take(hall, 2)
-	ActionsInput.drag(hall, hall._views[2].torso_screen_position(), Vector2(-430, 0))
-	ActionsInput.right(hall, 2)
 	if hall.actions.phase != "duet":
-		push_error("小青离场后未进入饮前对唱")
+		push_error("厅堂未直接进入饮前对唱")
 		quit(1)
 		return
 	await capture("duet-xu")
@@ -90,6 +63,15 @@ func _run() -> void:
 		return
 	ActionsInput.advance(hall, 9.0)
 	await capture_remedy("remedy-cup-take", "cup_take")
+	audio_capture.clear_buffer()
+	await create_timer(1.4).timeout
+	var peak: float = 0.0
+	for sample: Vector2 in audio_capture.get_buffer(audio_capture.get_frames_available()):
+		peak = maxf(peak, maxf(absf(sample.x), absf(sample.y)))
+	if peak < .001:
+		push_error("第二幕补救慢锣鼓未输出真实混音样本")
+		quit(1)
+		return
 	ActionsInput.take(hall, 1)
 	ActionsInput.drag(
 		hall,
@@ -192,8 +174,8 @@ func _run() -> void:
 	ActionsInput.take(hall, 1)
 	ActionsInput.drag(hall, hall._views[1].torso_screen_position(), Vector2(-690, 0))
 	ActionsInput.advance(hall, 0.2)
-	await capture("startled")
-	ActionsInput.advance(hall, 2.0)
+	await capture("fright")
+	ActionsInput.advance(hall, float(hall.audio.config.fright_duration_ms) / 1000.0 + 2.0)
 	if hall.actions.phase != "finished":
 		push_error("实际返回未完成惊倒")
 		quit(1)

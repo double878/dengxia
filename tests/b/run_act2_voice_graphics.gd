@@ -81,7 +81,14 @@ func _run() -> void:
 	root.add_child(opening)
 	label = "fahai_entry"
 	await pump(1.3)
-	check(opening.on_stage.is_empty() and opening.music_cues.entry.playing and levels[label].peak > .001, "第二关空台开场立即播放视频音乐")
+	check(
+		(
+			opening.on_stage.is_empty()
+			and opening.music_cues.entry.playing
+			and levels[label].peak > .001
+		),
+		"第二关空台开场立即播放视频音乐"
+	)
 	await shot("fahai-entry")
 	InputHelper.key(opening, KEY_ESCAPE)
 	check(await silence() < .001, "出场音乐暂停后实际静音")
@@ -105,7 +112,10 @@ func _run() -> void:
 	var singing_deadline: int = Time.get_ticks_msec() + 10000
 	while opening.dialogue.phase == "wait_greeting" and Time.get_ticks_msec() < singing_deadline:
 		await pump(.03)
-	check(opening.dialogue.phase == "dialogue" and not opening.music_cues.entry.playing, "音乐完整结束且迎接后开始对白")
+	check(
+		opening.dialogue.phase == "dialogue" and not opening.music_cues.entry.playing,
+		"音乐完整结束且迎接后开始对白"
+	)
 	await pump(1.8)
 	check(levels[label].peak > .001, "许仙实际迎接后原片首句有真实声音")
 	opening.queue_free()
@@ -115,17 +125,7 @@ func _run() -> void:
 	hall = load("res://scenes/act2/hall.tscn").instantiate()
 	root.add_child(hall)
 	check(hall.clock.is_audio_driven(), "厅堂唯一时钟来自真实主轨")
-	while hall.actions.line_index < 4 and hall.actions.phase == "dialogue":
-		await pump(.1)
-	await shot("qing-reply")
-	if not await phase(hall, "qing_exit", 8):
-		quit(1)
-		return
-	check(await silence() < .001, "小青未实际退场时主轨静音")
-	InputHelper.take(hall, 2)
-	InputHelper.drag(hall, hall._views[2].torso_screen_position(), Vector2(-430, 0))
-	InputHelper.right(hall, 2)
-	check(hall.actions.phase == "duet", "真实离场后才开始对唱")
+	check(hall.actions.phase == "duet" and hall.on_stage == [0, 1], "厅堂直接双人对唱，没有小青段落")
 	await shot("duet-xu")
 	await pump(2.5)
 	InputHelper.key(hall, KEY_ESCAPE)
@@ -149,6 +149,13 @@ func _run() -> void:
 	if not await phase(hall, "cup"):
 		quit(1)
 		return
+	check(
+		(
+			hall.audio.player.get_playback_position() * 1000
+			>= float(hall.audio.config.duet[-1].end_ms)
+		),
+		"实际播放游标已越过白素贞完整尾腔"
+	)
 	# 动作等待会暂停主轨，playing 此时为 false；音频驱动标志必须保留。
 	check(hall.clock.is_active_flag() and hall.clock.player == hall.audio.player, "暂停与恢复后仍绑定同一主轨时钟")
 	check(await silence() < .001, "完整唱完后等待取杯没有不适对白")
@@ -156,8 +163,9 @@ func _run() -> void:
 	InputHelper.drag(
 		hall,
 		hall._views[1].hand_screen_position("right"),
-		Vector2(1035, 415) - hall._views[1].hand_screen_position("right")
+		Vector2(1075, 410) - hall._views[1].hand_screen_position("right")
 	)
+	check(hall.actions.cup_owner == 1, "偏离杯心约40像素仍可实际取杯")
 	InputHelper.drag(hall, hall._views[1].torso_screen_position(), Vector2(-152, 0))
 	await pump(.2)
 	InputHelper.take(hall, 0)
@@ -171,7 +179,11 @@ func _run() -> void:
 	InputHelper.drag(
 		hall,
 		hall._views[0].hand_screen_position("left"),
-		hall._views[0].mouth_screen_position() - hall._views[0].hand_screen_position("left")
+		(
+			hall._views[0].head_screen_position()
+			+ Vector2(40, -30)
+			- hall._views[0].hand_screen_position("left")
+		)
 	)
 	await pump(.8)
 	check(hall.actions.phase == "bend" and not hall.actions.bent, "实际饮酒后仍等待弯腰")
@@ -184,6 +196,13 @@ func _run() -> void:
 	if not await phase(hall, "medicine_exit", 15):
 		quit(1)
 		return
+	check(
+		(
+			hall.audio.player.get_playback_position() * 1000
+			>= float(hall.audio.config.lines[6].end_ms)
+		),
+		"实际播放游标已越过完整取药台词"
+	)
 	InputHelper.take(hall, 1)
 	InputHelper.drag(hall, hall._views[1].torso_screen_position(), Vector2(740, 0))
 	InputHelper.right(hall, 1)
@@ -196,17 +215,25 @@ func _run() -> void:
 	InputHelper.key(hall, KEY_2)
 	InputHelper.take(hall, 1)
 	InputHelper.drag(hall, hall._views[1].torso_screen_position(), Vector2(-690, 0))
+	if not await phase(hall, "fright", 2):
+		quit(1)
+		return
+	await pump(.25)
+	InputHelper.key(hall, KEY_ESCAPE)
+	check(await silence() < .001 and hall.actions.collapse_progress == 0, "惊叫暂停时声音和倒地时序同时冻结")
+	InputHelper.key(hall, KEY_ESCAPE)
 	if not await phase(hall, "finished", 5):
 		quit(1)
 		return
 	await pump(1.5)
 	await shot("fallen")
 	check(
-		hall.music_cues.hit_count == 1 and levels.get("finished", {}).get("peak", 0.0) > .001,
-		"真实倒地只响一次视频重音"
+		hall.music_cues.hit_count == 1 and levels.get("fright", {}).get("peak", 0.0) > .001,
+		"见蛇时许仙真实喊叫一次，再倒地"
 	)
+	check(await silence() < .001, "落地后没有视频重音")
 	check(hall.audio.player.stream_paused, "惊倒时不恢复已结束的对白主轨")
-	for i in range(7):
+	for i in [5, 6]:
 		check(levels.get("dialogue_%d" % i, {}).get("peak", 0.0) > .001, "普通对白真实混音 %d" % i)
 	for i in range(4):
 		check(levels.get("duet_%d" % i, {}).get("peak", 0.0) > .001, "连续对唱真实混音 %d" % i)
