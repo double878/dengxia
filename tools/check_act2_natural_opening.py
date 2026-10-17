@@ -43,6 +43,18 @@ def main():
     assert len(data) == 8 and score["intro_once"] is True
     assert not score["pitch_shift"] and not score["time_stretch"] and not score["reverb"]
     assert digest((folder / "dialogue-01.wav").read_bytes()) == "7e13574fd107ede34f539cb37c3fceb8ff223fc71be307c0bc2dee6c942f7bbf"
+    if "xuxian_production" in score:
+        assert digest((folder / "dialogue-02.wav").read_bytes()) == "122ad6246b0c039994c1a9b9d75321d56c7bf52c7c1bd5e1cc124df54e7284b1", "Approved Xu sample changed"
+        production = score["xuxian_production"]
+        manifest_path = Path(production["delivery_manifest"])
+        assert digest(manifest_path.read_bytes()) == production["delivery_manifest_sha256"]
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert len(manifest["lines"]) == 3
+        for row in manifest["lines"]:
+            original = Path(row["path"])
+            assert digest(original.read_bytes()) == row["sha256"]
+            assert pcm(original) == data[row["line_id"]], "Xu delivery changed or truncated"
+            assert next(line for line in score["lines"] if line["line_id"] == row["line_id"])["text"] == row["text"]
     assert digest(args.music_video.read_bytes()) == score["music_source"]["video_sha256"]
     with tempfile.TemporaryDirectory(prefix="act2-intro-audit-") as temp:
         independent = Path(temp) / "intro.wav"
@@ -69,6 +81,7 @@ def main():
     report = dict(passed=True, assets=8, strict_decode=True, complete_video_music=True,
         approved_sample_byte_identical=True, complete_dialogue_lines=6, silence_and_subtitles_verified=True,
         intro_frames=len(data["intro"]) // 4, main_frames=len(data["main"]) // 4,
+        approved_xuxian_sample_byte_identical="xuxian_production" in score,
         human_listening_scope=score["human_listening_scope"])
     args.report.parent.mkdir(exist_ok=True, parents=True)
     args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

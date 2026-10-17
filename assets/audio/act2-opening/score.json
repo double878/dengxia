@@ -1,5 +1,5 @@
 {
-  "audio_version": "act2-natural-opening-fa10139bd845",
+  "audio_version": "act2-natural-opening-eb574ae87835",
   "stage_id": 2,
   "scene_id": "fahai_advice",
   "main_path": "res://assets/audio/act2-opening/main.wav",
@@ -7,9 +7,9 @@
   "intro_once": true,
   "intro_duration_ms": 7936,
   "greeting_gate_ms": 0,
-  "duration_ms": 46606,
-  "dark_start_ms": 44606,
-  "dark_start_frame": 2141091,
+  "duration_ms": 56767,
+  "dark_start_ms": 54767,
+  "dark_start_frame": 2628808,
   "lines": [
     {
       "line_id": "dialogue-01",
@@ -29,9 +29,9 @@
       "text": "我娘子心地善良，怎会是妖？",
       "delivery": "speech",
       "start_frame": 516012,
-      "end_frame": 678738,
+      "end_frame": 809691,
       "start_ms": 10750,
-      "end_ms": 14140
+      "end_ms": 16869
     },
     {
       "line_id": "dialogue-03",
@@ -39,10 +39,10 @@
       "role_name": "法海",
       "text": "人妖有别。莫被她的温情，蒙蔽了双眼。",
       "delivery": "speech",
-      "start_frame": 719538,
-      "end_frame": 1041638,
-      "start_ms": 14990,
-      "end_ms": 21701
+      "start_frame": 850491,
+      "end_frame": 1172591,
+      "start_ms": 17719,
+      "end_ms": 24429
     },
     {
       "line_id": "dialogue-04",
@@ -50,10 +50,10 @@
       "role_name": "许仙",
       "text": "大师这样说，可有凭据？",
       "delivery": "speech",
-      "start_frame": 1082438,
-      "end_frame": 1221758,
-      "start_ms": 22551,
-      "end_ms": 25453
+      "start_frame": 1213391,
+      "end_frame": 1478649,
+      "start_ms": 25279,
+      "end_ms": 30805
     },
     {
       "line_id": "dialogue-05",
@@ -61,10 +61,10 @@
       "role_name": "法海",
       "text": "端午将至。你劝她，喝杯雄黄酒。是人是妖。一试，便知。",
       "delivery": "speech",
-      "start_frame": 1262558,
-      "end_frame": 1809354,
-      "start_ms": 26303,
-      "end_ms": 37695
+      "start_frame": 1519449,
+      "end_frame": 2066245,
+      "start_ms": 31655,
+      "end_ms": 43047
     },
     {
       "line_id": "dialogue-06",
@@ -72,19 +72,19 @@
       "role_name": "许仙",
       "text": "这，我便劝她一杯。若是无事，还请大师莫再疑她。",
       "delivery": "speech",
-      "start_frame": 1850154,
-      "end_frame": 2117091,
-      "start_ms": 38545,
-      "end_ms": 44106
+      "start_frame": 2107045,
+      "end_frame": 2604808,
+      "start_ms": 43897,
+      "end_ms": 54267
     }
   ],
   "assets": [
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-opening/main.wav",
-      "sha256": "fa10139bd845d7332c905777e144e72c5b8f974111673d4eda5af3c14b07cae5",
-      "frames": 2237091,
-      "pcm_sha256": "a9834db113b3985ca6ed8167ab678f494c9781cc09a86986242527c055d1de1b"
+      "sha256": "eb574ae8783568c9bdda8fcb6eda3538d7416ac2793fff585af48ad93f0d6731",
+      "frames": 2724808,
+      "pcm_sha256": "ec15317ee69164d717f5e79a460ed5b0fa125e6e9eeed4c11603bbe74eab6c83"
     },
     {
       "asset_id": "intro",
@@ -103,9 +103,9 @@
     {
       "asset_id": "dialogue-02",
       "path": "res://assets/audio/act2-opening/dialogue-02.wav",
-      "sha256": "b1fed1a2c3bffde9c188c33ebb377775ac0bf521644410775ac908edfaa74d05",
-      "frames": 162726,
-      "pcm_sha256": "7b4e48c0cafb7809a6363e7aed8a30379aa3dfcab36651177d897c35d598cb86"
+      "sha256": "122ad6246b0c039994c1a9b9d75321d56c7bf52c7c1bd5e1cc124df54e7284b1",
+      "frames": 293679,
+      "pcm_sha256": "ee976da0f4f188f3b131c67bf9037406ec48ff815026aa35f8357db3a8fc0df4"
     },
     {
       "asset_id": "dialogue-03",
@@ -117,9 +117,9 @@
     {
       "asset_id": "dialogue-04",
       "path": "res://assets/audio/act2-opening/dialogue-04.wav",
-      "sha256": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
-      "frames": 139320,
-      "pcm_sha256": "c975c393ade1d872b3bbaf4985ba66ab07243c10ba8e268635f25cb92caf7932"
+      "sha256": "d88d6b8808bf6ba52d9c909180a9a43578f330832a2f4359830e4b7ddfccbbc4",
+      "frames": 265258,
+      "pcm_sha256": "5e2eee4f42ae3d73130f0e32e58aacd036fd4df3c44cbfb772260785bdcdde74"
     },
     {
       "asset_id": "dialogue-05",
@@ -131,9 +131,9 @@
     {
       "asset_id": "dialogue-06",
       "path": "res://assets/audio/act2-opening/dialogue-06.wav",
-      "sha256": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
-      "frames": 266937,
-      "pcm_sha256": "baa52f9f6274fd91f2e2c8a43a276888035ed653d2f102c27e43aba97b28ff5c"
+      "sha256": "b99d5aaf48fecac9e9b27aec3c31c462224d5431af53a4e80fc76f6337aed15f",
+      "frames": 497763,
+      "pcm_sha256": "2f72cde0ace178323ddfd83cf57baac4c0afdba4e4d0e6b4ac3de5b04f088e77"
     }
   ],
   "production": {
@@ -144,25 +144,100 @@
       "byte_identical": true
     },
     "dialogue-02": {
-      "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\assembly\\act2_opening_xuxian_01-restored.wav",
-      "sha256": "b1fed1a2c3bffde9c188c33ebb377775ac0bf521644410775ac908edfaa74d05",
-      "git_revision": "4999956b9782a83dffd7a10d0c8e33fb9f75a6fc",
+      "source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\content-guidance-revision2\\dialogue-02.wav",
+      "sha256": "122ad6246b0c039994c1a9b9d75321d56c7bf52c7c1bd5e1cc124df54e7284b1",
+      "user_approved": true,
       "byte_identical": true,
-      "complete_converted_frames": true
+      "complete_converted_frames": true,
+      "pauses": [
+        {
+          "after": "xu-sample-01",
+          "start_frame": 152695,
+          "end_frame": 183895,
+          "duration_ms": 650
+        }
+      ]
     },
     "dialogue-04": {
-      "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\assembly\\act2_opening_xuxian_02-restored.wav",
-      "sha256": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
-      "git_revision": "4999956b9782a83dffd7a10d0c8e33fb9f75a6fc",
-      "byte_identical": true,
-      "complete_converted_frames": true
+      "constant_gain_db": 1.8299999999999983,
+      "pauses": [
+        {
+          "start_frame": 124274,
+          "end_frame": 155474
+        }
+      ],
+      "inputs": [
+        {
+          "source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\speech-anchor-revision1\\xu04-a-float.wav",
+          "sha256": "59f63baa8c3b4275dae0bf54f917f33a92e54ed19d19509a63180b4012fa8844",
+          "synthesis_source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\tts\\xu04-a.wav",
+          "synthesis_sha256": "01886325642d3884a6c89f1f6b855f3335847150bbc0f50f2aaf898739d1c5d3",
+          "seed": 2026101780,
+          "native_duration_s": 2.6,
+          "pause_after_ms": 650
+        },
+        {
+          "source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\content-guidance-revision2\\xu04-b-float.wav",
+          "sha256": "32bd0d29b9b8d0d14cc709decce019207c30eb1294ffff99569814941ce9dd28",
+          "synthesis_source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\tts\\xu04-b.wav",
+          "synthesis_sha256": "1c94fc81cebe3d84ab80741e4263f788549e9e71e1fa88bb4e31b6a45d35fbcd",
+          "seed": 2026101781,
+          "native_duration_s": 2.3,
+          "pause_after_ms": 0
+        }
+      ],
+      "complete_converted_frames": true,
+      "user_approved": false,
+      "source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\content-guidance-revision2\\dialogue-04.wav",
+      "sha256": "d88d6b8808bf6ba52d9c909180a9a43578f330832a2f4359830e4b7ddfccbbc4",
+      "byte_identical": true
     },
     "dialogue-06": {
-      "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\assembly\\act2_opening_xuxian_03-restored.wav",
-      "sha256": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
-      "git_revision": "4999956b9782a83dffd7a10d0c8e33fb9f75a6fc",
-      "byte_identical": true,
-      "complete_converted_frames": true
+      "constant_gain_db": 1.0,
+      "pauses": [
+        {
+          "start_frame": 162726,
+          "end_frame": 203526
+        },
+        {
+          "start_frame": 303837,
+          "end_frame": 335037
+        }
+      ],
+      "inputs": [
+        {
+          "source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\content-guidance-revision2\\xu06-a-float.wav",
+          "sha256": "1d095c3e629a55c8fef3fcbf279915ff550fbe0f12eea1b0b5ab6ba57f0b5886",
+          "synthesis_source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\tts\\xu06-a.wav",
+          "synthesis_sha256": "eb33b9aeb222d98d172b889cc03d6dd438ff66e9d7e3f13f9ee4dd5dcb3ee8d0",
+          "seed": 2026101782,
+          "native_duration_s": 3.4,
+          "pause_after_ms": 850
+        },
+        {
+          "source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\content-guidance-revision2\\xu06-b-float.wav",
+          "sha256": "81d70e272c4fd04605f2644e1e4a993695461b4e617338c5e5b146932b7894c4",
+          "synthesis_source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\tts\\xu06-b.wav",
+          "synthesis_sha256": "d40a695732f7cba3334cc7d550b7c0b7e7c932e9045645776d5811ed228f8f08",
+          "seed": 2026101783,
+          "native_duration_s": 2.1,
+          "pause_after_ms": 650
+        },
+        {
+          "source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\speech-anchor-revision1\\xu06-c-float.wav",
+          "sha256": "99cf9734463255c0b95fab1cbbb8827d838a13531e7a6747cbe8ebb0dcae1818",
+          "synthesis_source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\tts\\xu06-c.wav",
+          "synthesis_sha256": "ea7ee4350c3fd24a557d3be8071b32e0bd82237018aa5ecb38e7833a4c4e4d08",
+          "seed": 2026101784,
+          "native_duration_s": 3.4,
+          "pause_after_ms": 0
+        }
+      ],
+      "complete_converted_frames": true,
+      "user_approved": false,
+      "source": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\content-guidance-revision2\\dialogue-06.wav",
+      "sha256": "b99d5aaf48fecac9e9b27aec3c31c462224d5431af53a4e80fc76f6337aed15f",
+      "byte_identical": true
     },
     "dialogue-03": {
       "constant_gain_db": 1.5899999999999999,
@@ -240,21 +315,31 @@
     "rate": 44100
   },
   "xuxian_identity": {
-    "path": "D:\\Cursor_program\\灯下\\builds\\act2-voice-revision\\xuxian-act1-speech-identity.wav",
-    "sha256": "09383362614e342f69058e304fd40dad52d0f45a4839b57014bdfa55bc12e7a4",
-    "source": "Actual shipped act1 Xuxian speech, not singing",
+    "path": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-retroflex-clear-20261017\\许仙对白小样.wav",
+    "sha256": "122ad6246b0c039994c1a9b9d75321d56c7bf52c7c1bd5e1cc124df54e7284b1",
+    "text": "我娘子心地善良，怎会是妖？",
+    "source": "User-approved ordinary Xu speech audition",
+    "user_approved": true,
+    "source_actor_identity": {
+      "path": "D:\\Cursor_program\\灯下\\builds\\act1-jingju-xuxian-pilot\\reference-vocals.wav",
+      "sha256": "7f0dfdf27e99c370523a4f3bbb103dca9a34074d3f614c59e2d72a1a36aef2f2",
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "frames": 441000,
+      "duration_ms": 10000.0,
+      "subtype": "FLOAT",
+      "peak": 0.619126558303833,
+      "full_scale_samples": 0,
+      "decode_verified": true,
+      "source": "Original Xu actor reference used by the accepted Act 1 voice; direct clean recording",
+      "text": "些小之事何足介意|怎敢劳玉趾访寒微",
+      "source_video": "https://tv.cctv.com/2020/07/02/VIDEGhi9Sw6SpdWEg573OBfO200702.shtml",
+      "previously_approved_boundary": "完整，可以作为许仙参考"
+    },
     "source_assets": [
       {
-        "path": "res://assets/audio/act1-natural/return-02.wav",
-        "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a"
-      },
-      {
-        "path": "res://assets/audio/act1-natural/return-06.wav",
-        "sha256": "37ae12ab01c5cc1fe46e1d50ae9cd70aa8c05b4385f2c07ead564407bd1cc978"
-      },
-      {
-        "path": "res://assets/audio/act1-natural/return-08.wav",
-        "sha256": "e5e9263e5b97b3a71551f4dc64adc85e9509d3b4a3b4713f5f62f127271dd17a"
+        "path": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-retroflex-clear-20261017\\许仙对白小样.wav",
+        "sha256": "122ad6246b0c039994c1a9b9d75321d56c7bf52c7c1bd5e1cc124df54e7284b1"
       }
     ]
   },
@@ -524,5 +609,31 @@
     "loader_sha256": "7a10ff4f9b6c2b77e1e195682c8fd682a68a63036d4552b43c0ca864844d801d",
     "script_sha256": "ecef2890d9c49b2e409d3049e6c96e1d033e4c02aa8ccb48e13cdc123fad13bc"
   },
-  "human_listening_scope": "Only dialogue-01 directly heard and approved by user; other lines follow its production recipe"
+  "human_listening_scope": "User approved dialogue-01 and dialogue-02; other lines follow each role's production recipe",
+  "xuxian_production": {
+    "delivery_manifest": "D:\\Cursor_program\\灯下\\builds\\act2-xuxian-approved-20261017\\content-guidance-revision2\\delivery.json",
+    "delivery_manifest_sha256": "395d60bb79e5d1960e6c186f4e26977a5dba6413218b2c520323c26d2227fda9",
+    "request_sha256": "87a3d58b3008f6d24dbe0d55a1998c87943d67b25eddf27bf2bb27ac6b65246a",
+    "parameters": {
+      "steps": 32,
+      "cfg": 2.6,
+      "voice_conversion": true,
+      "pitch_shift": false,
+      "time_stretch": false,
+      "reverb": false,
+      "seed_vc_cfg_overrides": {
+        "xu04-b": 1.2,
+        "xu06-a": 1.2,
+        "xu06-b": 1.2
+      }
+    },
+    "prosody_reference": {
+      "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\deps\\f5_tts\\infer\\examples\\basic\\basic_ref_zh.wav",
+      "sha256": "96724a113240d1f82c6ded1334122f0176b96c9226ccd3c919e625bcfd2a3ede",
+      "text": "对，这就是我，万人敬仰的太乙真人。",
+      "source": "F5 bundled natural male speech; original voice direction, not a TV actor clone"
+    },
+    "native_slower_synthesis": true,
+    "human_listening_scope": "User approved dialogue-02; remaining two lines follow its production recipe"
+  }
 }

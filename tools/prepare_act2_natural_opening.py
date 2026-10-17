@@ -40,6 +40,7 @@ def main():
     parser.add_argument("--batch", type=Path, required=True)
     parser.add_argument("--music-video", type=Path, required=True)
     parser.add_argument("--ffmpeg", type=Path, required=True)
+    parser.add_argument("--xuxian-batch", type=Path, help="Verified replacement Xu dialogue delivery directory")
     args = parser.parse_args()
     project, batch = args.project.resolve(), args.batch.resolve()
     target = project / "assets/audio/act2-opening"
@@ -68,10 +69,30 @@ def main():
         assert sha(row["reference_path"]) == row["reference_sha256"]
     for ref in old_request["identity_references"]["xuxian"]["source_assets"]:
         assert sha(project / ref["path"].removeprefix("res://")) == ref["sha256"]
-    scratch = batch / "assembly"
+    xu_delivery, replacements = None, {}
+    if args.xuxian_batch:
+        xu_delivery = read_json(args.xuxian_batch / "delivery.json")
+        assert len(xu_delivery["lines"]) == 3
+        replacements = {row["line_id"]: row for row in xu_delivery["lines"]}
+        assert set(replacements) == {"dialogue-02", "dialogue-04", "dialogue-06"}
+        for number, old_row in zip([2, 4, 6], xu):
+            row = replacements[f"dialogue-{number:02d}"]
+            assert row["text"] == old_row["text"]
+            assert sha(row["path"]) == row["sha256"]
+            assert len(read_pcm(row["path"])) // 4 == row["frames"]
+            assert row["production"]["complete_converted_frames"]
+        assert replacements["dialogue-02"]["sha256"] == "122ad6246b0c039994c1a9b9d75321d56c7bf52c7c1bd5e1cc124df54e7284b1"
+        assert replacements["dialogue-02"]["production"]["user_approved"] is True
+        for ref in [xu_delivery["identity_reference"], xu_delivery["prosody_reference"]]:
+            assert sha(ref["path"]) == ref["sha256"]
+        assert xu_delivery["native_slower_synthesis"]
+        assert not any(xu_delivery[key] for key in ["pitch_shift", "time_stretch", "reverb"])
+    scratch = (args.xuxian_batch or batch) / "assembly"
     scratch.mkdir(exist_ok=True)
     recovered = {}
     for row in xu:
+        if xu_delivery:
+            continue
         asset = next(a for a in old_score["assets"] if a["asset_id"] == row["line_id"])
         revision = "4999956b9782a83dffd7a10d0c8e33fb9f75a6fc"
         content = subprocess.run(["git", "show", revision + ":" + asset["path"].removeprefix("res://")],
@@ -126,6 +147,12 @@ def main():
         "人妖有别。莫被她的温情，蒙蔽了双眼。", xu[1]["text"],
         "端午将至。你劝她，喝杯雄黄酒。是人是妖。一试，便知。", xu[2]["text"]]
     for number, row in zip([2, 4, 6], xu):
+        if xu_delivery:
+            replacement = replacements[f"dialogue-{number:02d}"]
+            shutil.copyfile(replacement["path"], target / f"dialogue-{number:02d}.wav")
+            production[f"dialogue-{number:02d}"] = dict(replacement["production"],
+                source=replacement["path"], sha256=replacement["sha256"], byte_identical=True)
+            continue
         cached = recovered[row["line_id"]]
         shutil.copyfile(cached["path"], target / f"dialogue-{number:02d}.wav")
         production[f"dialogue-{number:02d}"] = dict(source=str(cached["path"]), sha256=cached["sha256"],
@@ -168,8 +195,17 @@ def main():
         phrase_request=request["lines"], synthesis_inputs=read_json(batch / "tts-inputs.json"),
         conversion_inputs=identities,
         human_listening_scope="Only dialogue-01 directly heard and approved by user; other lines follow its production recipe")
+    if xu_delivery:
+        reference = xu_delivery["identity_reference"]
+        score["xuxian_identity"] = dict(reference, source_assets=[dict(path=reference["path"], sha256=reference["sha256"])])
+        score["xuxian_production"] = dict(delivery_manifest=str((args.xuxian_batch / "delivery.json").resolve()),
+            delivery_manifest_sha256=sha(args.xuxian_batch / "delivery.json"),
+            request_sha256=xu_delivery["request_sha256"], parameters=xu_delivery["parameters"],
+            prosody_reference=xu_delivery["prosody_reference"], native_slower_synthesis=True,
+            human_listening_scope=xu_delivery["human_listening_scope"])
+        score["human_listening_scope"] = "User approved dialogue-01 and dialogue-02; other lines follow each role's production recipe"
     write_json(target / "score.json", score)
-    write_json(batch / "delivery-report.json", score)
+    write_json((args.xuxian_batch or batch) / "delivery-report.json", score)
     print(json.dumps(dict(assets=len(assets), duration_ms=score["duration_ms"], intro_duration_ms=score["intro_duration_ms"])))
 
 
