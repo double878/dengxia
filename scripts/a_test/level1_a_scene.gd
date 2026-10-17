@@ -7,7 +7,7 @@ signal performance_finished(record: CPerformanceRecord, stage_id: int, title: St
 ## 1. 把物理键鼠按 **PRD 第 4.1 节**的输入规则翻译给 Level1Runtime；
 ## 2. 按关卡数据的 `initial` 布置开演布景（在场影人、挂起分布、站位、灯况）；
 ## 3. 按示意图布局画出幕后工作台：上方幕布与影子，下方「你的手边 · 身前矮处」
-##    一条放油灯、手与三根签、两个挂钩、备用头架；
+##    一条放油灯、手与三根签、两个挂钩；
 ## 4. 作为**模拟显示端**每帧只读 PuppetState / LampState / TimedEvent，从不写状态，
 ##    因此它证明「A 先改状态，B/C 再读」这条单向数据流成立。
 ##
@@ -19,7 +19,7 @@ signal performance_finished(record: CPerformanceRecord, stage_id: int, title: St
 ## 键位（只有这些，没有测试专用键）：
 ##   鼠标左键点影人/手边的签 = 接手并拖动胸签；滚轮 = 推拉灯；Q/E = 倾灯
 ##   A/D 抬左手/右手，Shift+A / Shift+D 放下，W 原地短跳，S 压身后撤
-##   1/2/3 = 与备用头架对应位置换头；空格 = 挂起/取回影人；ESC 或右上角按钮 = 暂停
+##   空格 = 挂起/取回影人；ESC 或右上角按钮 = 暂停
 
 const HarnessScript := preload("res://scripts/a_test/level1_harness.gd")
 const ProbeScript := preload("res://scripts/a_test/level1_a_probe.gd")
@@ -49,9 +49,6 @@ const FOOTER := Rect2(0.0, 984.0, 1920.0, 96.0)
 const HAND_ANCHOR := Vector2(960.0, 856.0)
 const HAND_AREA := Rect2(768.0, 712.0, 384.0, 256.0)
 const HOOK_X: Array = [1186.0, 1290.0]
-const RACK_SLOT_X: Array = [1512.0, 1590.0, 1668.0]
-const RACK_Y := 838.0
-const RACK_HIT_RADIUS := 40.0
 ## 点选挂钩上的影人时的命中半径（屏幕像素）
 const PUPPET_HIT_RADIUS := 96.0
 
@@ -370,15 +367,6 @@ func _handle_key(keycode: int) -> void:
 			if not _paused:
 				_toggle_hook()
 			get_viewport().set_input_as_handled()
-		KEY_1:
-			_try_swap_head(0)
-			get_viewport().set_input_as_handled()
-		KEY_2:
-			_try_swap_head(1)
-			get_viewport().set_input_as_handled()
-		KEY_3:
-			_try_swap_head(2)
-			get_viewport().set_input_as_handled()
 		KEY_R:
 			if not _paused and not _harness.runtime.is_over():
 				_harness.puppet_input.release_drag()
@@ -391,13 +379,9 @@ func _notification(what: int) -> void:
 		_harness.puppet_input.release_drag()
 
 
-## 点击优先给「备用头架」和「挂钩上的影人」，都不命中才当作抓胸签。
+## 点击先选挂钩上的影人，未命中才当作抓胸签。
 func _handle_left_press(position: Vector2) -> bool:
 	if _paused or _harness.runtime.is_over():
-		return true
-	var slot: int = _rack_slot_at(position)
-	if slot >= 0:
-		_try_swap_head(slot)
 		return true
 	var puppet_id: int = _hung_puppet_at(position)
 	if puppet_id >= 0:
@@ -421,16 +405,6 @@ func _grab_position(position: Vector2) -> Vector2:
 		controlled.stage_pos.x * CANVAS_SIZE.x,
 		controlled.stage_pos.y * CANVAS_SIZE.y - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5
 	)
-
-
-func _try_swap_head(slot: int) -> void:
-	if _paused or _harness.runtime.is_over():
-		return
-	var controller: PuppetController = _harness.runtime.puppet_controller
-	if controller.controlled_id < 0:
-		return
-	controller.swap_head(slot)
-	_refresh_ui()
 
 
 func _toggle_hook() -> void:
@@ -621,8 +595,6 @@ func _action_text(action: String) -> String:
 			return "按空格挂起当前影人"
 		CueScript.ACTION_TAKE_BACK:
 			return "点选挂起的影人，按空格取回"
-		CueScript.ACTION_HEAD_SWAP:
-			return "按 1 / 2 / 3 与备用头架换头"
 		CueScript.ACTION_LAMP_DISTANCE:
 			return "滚轮推拉灯，让全场影子同步缩放"
 		CueScript.ACTION_LAMP_EXPOSURE:
@@ -641,7 +613,6 @@ func _draw() -> void:
 	_draw_canvas = self
 	_draw_canvas.draw_rect(TOP_BAR, Color("#232a27"))
 	_draw_hooks()
-	_draw_head_rack()
 	_draw_canvas.draw_rect(FOOTER, Color("#222927"))
 	_draw_canvas.draw_line(
 		Vector2(0.0, FOOTER.position.y),
@@ -683,72 +654,6 @@ func _draw_hooks() -> void:
 	for x in HOOK_X:
 		_draw_canvas.draw_line(Vector2(x, TABLE.position.y + 12.0), Vector2(x, 790.0), wood, 9.0)
 		_draw_canvas.draw_arc(Vector2(x + 15.0, 795.0), 17.0, 0.1, PI + 0.35, 18, wood, 7.0)
-
-
-## 备用头架：三个备用头，编号 1/2/3 指架上位置。可用鼠标直接点取。
-func _draw_head_rack() -> void:
-	if _harness == null:
-		return
-	var wood := Color("#b07a41") * _environment()
-	_draw_canvas.draw_line(
-		Vector2(RACK_SLOT_X[0] - 62.0, 764.0), Vector2(RACK_SLOT_X[2] + 62.0, 764.0), wood, 11.0
-	)
-	for i in RACK_SLOT_X.size():
-		var x: float = RACK_SLOT_X[i]
-		_draw_canvas.draw_line(Vector2(x, 764.0), Vector2(x, 804.0), wood, 5.0)
-		var head_id: int = _harness.runtime.puppet_controller.head_on_rack(i)
-		if head_id >= 0:
-			_draw_spare_head(Vector2(x, RACK_Y), head_id)
-		else:
-			_draw_canvas.draw_arc(
-				Vector2(x, RACK_Y), 20.0, 0.0, TAU, 24, Color(0.42, 0.36, 0.28), 3.0
-			)
-		_draw_canvas.draw_string(
-			ThemeDB.fallback_font,
-			Vector2(x - 6.0, RACK_Y + 48.0),
-			str(i + 1),
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1,
-			22,
-			Color(0.85, 0.75, 0.55)
-		)
-
-
-## 备用头的形状按 head_id 变化，与影人头上的头饰同一套映射，
-## 这样「按 1/2/3 换头」在画面上是可核对的。
-func _draw_spare_head(centre: Vector2, head_id: int) -> void:
-	# 初始三颗头换下后仍显示同一美术；头架位置、命中区与交换逻辑不变。
-	if head_id >= 0 and head_id < PuppetViewScript.SKIN_TEXTURES.size():
-		var skin_manifest: Variant = PuppetViewScript.SKIN_MANIFEST.data
-		if skin_manifest is Dictionary:
-			var character: String = ["baisuzhen", "xuxian", "xiaoqing"][head_id]
-			var skin: Dictionary = skin_manifest.get("characters", {}).get(character, {})
-			if not skin.is_empty():
-				var size: float = 21.0 * float(skin["head_size_per_radius"])
-				var mirror: float = 1.0 / float(skin["reference_facing"])
-				_draw_canvas.draw_set_transform(centre, 0.0, Vector2(mirror, 1.0))
-				_draw_canvas.draw_texture_rect_region(
-					PuppetViewScript.SKIN_TEXTURES[head_id],
-					Rect2(Vector2(-size * 0.5, -size * 0.5), Vector2(size, size)),
-					Rect2(0.0, 0.0, 512.0, 512.0),
-					Color(1, 1, 1, 1) * _environment()
-				)
-				_draw_canvas.draw_set_transform(Vector2.ZERO)
-				return
-	var accents: Array = PuppetViewScript.HEAD_ACCENTS
-	var shapes: Array = PuppetViewScript.HEAD_SHAPES
-	var index: int = head_id % accents.size()
-	var accent: Color = accents[index]
-	_draw_canvas.draw_circle(centre, 21.0, Color(0.30, 0.20, 0.12))
-	_draw_canvas.draw_arc(centre, 21.0, 0.0, TAU, 28, Color(0.83, 0.60, 0.28), 2.0)
-	match str(shapes[index]):
-		"bun_high":
-			_draw_canvas.draw_circle(centre + Vector2(0.0, -28.0), 9.0, accent)
-		"bun_twin":
-			_draw_canvas.draw_circle(centre + Vector2(-17.0, -17.0), 7.0, accent)
-			_draw_canvas.draw_circle(centre + Vector2(17.0, -17.0), 7.0, accent)
-		_:
-			_draw_canvas.draw_rect(Rect2(centre.x - 24.0, centre.y - 24.0, 48.0, 10.0), accent)
 
 
 ## 某个影人的显示节点（下标即影人编号，与 `_refresh_ui` 的取法一致）。
@@ -1042,16 +947,6 @@ func _action_motion(action: String, sway: float) -> Vector2:
 ## 一只手。`outlined` 为 true 时只描边（教学手），false 时实色填充（补救手）。
 func _draw_hand_shape(centre: Vector2, outlined: bool, alpha: float) -> void:
 	preload("res://scripts/b/teacher_hand.gd").draw_on(_draw_canvas, centre, outlined, alpha)
-
-
-## 点中备用头架哪个槽位（-1 表示没点中）
-func _rack_slot_at(position: Vector2) -> int:
-	if position.distance_to(Vector2(0.0, RACK_Y)) > 260.0:
-		return -1
-	for i in RACK_SLOT_X.size():
-		if position.distance_to(Vector2(RACK_SLOT_X[i], RACK_Y)) <= RACK_HIT_RADIUS:
-			return i
-	return -1
 
 
 ## 点中哪个挂钩上的影人（-1 表示没点中）
