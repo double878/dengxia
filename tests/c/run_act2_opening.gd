@@ -28,6 +28,8 @@ func _run() -> void:
 	await test_skip_act2(22, false)
 	for route: String in ["decline", "skip", "complete"]:
 		await test_transition(route)
+	# AudioStreamPlayer 销毁后，给混音线程一次回收播放实例的机会再退出。
+	await create_timer(.1).timeout
 	print("ACT2_OPENING checks=%d failures=%d" % [checks, failures])
 	quit(1 if failures else 0)
 
@@ -36,6 +38,7 @@ func test_skip_act1(paused: bool) -> void:
 	var game: Node = GAME_SCENE.instantiate()
 	root.add_child(game)
 	game._intro_finished()
+	game._briefing_finished()  # 本用例从确认演前简介后开始。
 	await process_frame
 	var old_level: Node = game.get("_level")
 	old_level.set_process(false)
@@ -60,7 +63,10 @@ func test_skip_act1(paused: bool) -> void:
 	check(game.get("_stage_id") == 2, "跳过第一关没有直接进入第二关")
 	check(not is_instance_valid(old_level), "跳过后第一关宿主没有释放")
 	check(harness.clock.player == null, "跳过后第一关音频仍绑定时钟")
-	check(game.get("_flow") == null and game.get("_page") == null, "跳过第一关仍显示回放或收场")
+	check(game.get("_flow") == null and game.get("_level") == null, "跳过第一关先等待第二关简介")
+	check(game.get("_page").stage_id == 2, "跳过第一关进入正确简介")
+	game._briefing_finished()
+	await process_frame
 	check(game.get_child_count() == 1, "重复跳过加载了多个第二关")
 	var opening: Node = game.get("_level")
 	check(opening.scene_file_path == "res://scenes/act2/opening.tscn", "跳过误入旧第二关教学场景")
@@ -77,6 +83,7 @@ func test_skip_act2(stage_id: int, paused: bool) -> void:
 	var game: Node = GAME_SCENE.instantiate()
 	game.set("_stage_id", stage_id)
 	root.add_child(game)
+	game._briefing_finished()
 	await process_frame
 	var old_level: Node = game.get("_level")
 	if old_level == null:
@@ -126,6 +133,7 @@ func test_transition(route: String) -> void:
 	var game: Node = GAME_SCENE.instantiate()
 	root.add_child(game)
 	game._intro_finished()
+	game._briefing_finished()  # 本用例从确认演前简介后开始。
 	var old_level: Node = game.get("_level")
 	old_level.set_process(false)
 	old_level.get("_harness").shutdown()
@@ -168,7 +176,10 @@ func test_transition(route: String) -> void:
 	check(flow.is_released, "切关释放旧录像")
 	check(not is_instance_valid(old_level), "第一关宿主没有释放")
 	check(game.get("_stage_id") == 2, route + " 进入第二关")
-	check(game.get("_page") == null and game.get("_replay") == null, "旧页面/回放残留")
+	check(game.get("_level") == null and game.get("_replay") == null, "第二关开演前没有演出或旧回放")
+	check(game.get("_page").stage_id == 2, "收场点击后显示第二关简介")
+	game._briefing_finished()
+	await process_frame
 	var opening: Node = game.get("_level")
 	if opening == null or opening.scene_file_path != "res://scenes/act2/opening.tscn":
 		check(false, "误入旧第二关教学场景")

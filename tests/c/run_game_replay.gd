@@ -20,6 +20,7 @@ func _run() -> void:
 	var game: Node = load("res://scenes/game_flow.tscn").instantiate()
 	root.add_child(game)
 	game._intro_finished()  # 此用例只验证第一关录放，媒体入口由独立回归覆盖。
+	game._briefing_finished()  # 本用例从确认演前简介后开始。
 	var level: Node = game.get("_level")
 	level.set_process(false)
 	var harness: Level1Harness = level.get("_harness")
@@ -156,7 +157,9 @@ func _run() -> void:
 	check(flow.get_flow_state() == &"result", "自然结束没有回收场")
 	game._restart()
 	check(flow.is_released, "再演没有释放旧记录")
-	check(game.get("_level") != null and game.get("_replay") == null, "再演没有回幕后")
+	check(game.get("_level") == null and game.get("_page").stage_id == 1, "再演先回第一关简介")
+	game._briefing_finished()
+	check(game.get("_level") != null and game.get("_replay") == null, "确认后回幕后")
 	game.queue_free()
 	await process_frame
 	print(

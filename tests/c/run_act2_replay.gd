@@ -38,6 +38,7 @@ func _run() -> void:
 	game = GAME.instantiate()
 	game.set("_stage_id", 2)
 	root.add_child(game)
+	game._briefing_finished()  # 两场演出测试从确认简介后开始。
 	var opening: Node = game.get("_level")
 	opening.set_process(live)
 	check(opening.get("capture") != null, "正式第二关第一场没有整关录制")
@@ -291,6 +292,7 @@ func _run() -> void:
 	game = GAME.instantiate()
 	game.set("_stage_id", 22)
 	root.add_child(game)
+	game._briefing_finished()  # 两场演出测试从确认简介后开始。
 	game._performance_finished(record, 2, "端阳惊变")
 	game._choose_replay(false)
 	check(

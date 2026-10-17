@@ -56,6 +56,8 @@ func _run() -> void:
 	await test_hall_scene()
 	await test_game_flow_entry()
 	await test_auto_advance()
+	# AudioStreamPlayer 销毁后，给混音线程一次回收播放实例的机会再退出。
+	await create_timer(.1).timeout
 	print("ACT2_HALL checks=%d failures=%d" % [checks, failures])
 	quit(1 if failures else 0)
 
@@ -110,6 +112,7 @@ func test_game_flow_entry() -> void:
 	var game: Node = GAME_SCENE.instantiate()
 	game.set("_stage_id", HALL_STAGE_ID)
 	root.add_child(game)
+	game._briefing_finished()  # 两场演出测试从确认简介后开始。
 	await process_frame
 	var level: Node = game.get("_level")
 	check(
@@ -125,6 +128,7 @@ func test_auto_advance() -> void:
 	var game: Node = GAME_SCENE.instantiate()
 	game.set("_stage_id", GameFlowScript.ACT2_STAGE_ID)
 	root.add_child(game)
+	game._briefing_finished()  # 两场演出测试从确认简介后开始。
 	await process_frame
 	var opening: Node = game.get("_level")
 	if opening == null or opening.scene_file_path != "res://scenes/act2/opening.tscn":

@@ -8,6 +8,7 @@ const ACT3_SCENE := preload("res://scenes/act3/opening.tscn")
 const Act2Capture := preload("res://scripts/c/c_act2_capture.gd")
 const ReplayView := preload("res://scripts/b/performance_replay.gd")
 const MediaScreen := preload("res://scripts/ui/media_screen.gd")
+const StageBriefing := preload("res://scripts/ui/stage_briefing.gd")
 const TITLE_IMAGE := preload("res://assets/cinematics/title.png")
 const INTRO_VIDEO := preload("res://assets/cinematics/intro.ogv")
 const OUTRO_VIDEO := preload("res://assets/cinematics/outro.ogv")
@@ -41,7 +42,7 @@ func _ready() -> void:
 	elif _stage_id == 1:
 		_show_home()
 		return
-	_start_performance()
+	_show_briefing()
 
 
 func _show_home() -> void:
@@ -71,6 +72,25 @@ func _play_intro() -> void:
 
 
 func _intro_finished() -> void:
+	_clear_page()
+	_show_briefing()
+
+
+func _show_briefing() -> void:
+	if _stage_id not in [1, 2]:
+		_start_performance()
+		return
+	_clear_page()
+	var briefing := StageBriefing.new()
+	briefing.stage_id = _stage_id
+	briefing.start_requested.connect(_briefing_finished, CONNECT_DEFERRED)
+	_page = briefing
+	add_child(briefing)
+
+
+func _briefing_finished() -> void:
+	if not _page is StageBriefing or _level != null:
+		return
 	_clear_page()
 	_start_performance()
 
@@ -289,7 +309,7 @@ func _restart() -> void:
 	if _flow != null:
 		_flow.leave_stage()
 		_flow = null
-	_start_performance()
+	_show_briefing()
 
 
 func _clear_page() -> void:
@@ -335,7 +355,7 @@ func _advance_to_act2() -> void:
 		_flow.leave_stage()
 		_flow = null
 	_stage_id = 2
-	_start_performance()
+	_show_briefing()
 	_advancing = false
 
 

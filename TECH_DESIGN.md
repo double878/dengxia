@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-17 演前简介：`scripts/ui/stage_briefing.gd` 集中三关文案及既有第三关版式，对外提供 `stage_id`、单次 `start_requested` 与可更新的 `audio_note`。`GameFlow._show_briefing()` 在关号 1/2 创建简介，延后处理开演信号后才实例化宿主、时钟与录制；片头结束、第一关收场/跳过及重新演出均走该入口。关号 22 的厅堂换景沿用整关记录，不重复简介。第三关宿主复用组件并连接既有 `start_scene()`，保留零时钟候场、真实音源提示和原录放流程。指定第二关调试入口同样先简介；第三关排练入口沿用一张内部简介。此补充优先于下文媒体入口的直达描述，不修改记录格式或玩法判定。验证见 [简介交付](docs/stage-briefings-delivery.md)。
+
 > 2026-10-17 媒体入口：`GameFlow` 默认显示 `MediaScreen` 首页，用户确认后依次播放片头、实例化第一关；指定 `_stage_id`、`initial_stage` 或 `--act3-rehearsal` 的既有调试入口保持直达。`scripts/ui/media_screen.gd` 只负责图片、`VideoStreamPlayer`、空格暂停与 Esc 跳过，独立于演出与记录时钟。素材在 `assets/cinematics/`，视频离线转为 Godot 内置 Theora/Vorbis OGV，1280×720、30fps、保留完整原声，无运行时 FFmpeg 或插件。第三关 `_show_page(false)` 统一释放回放记录并播放片尾；结束显示从源片提取的最后一帧，下一次左/右/中键点击回首页，不显示旧最终收场页。首页/播放页的完成信号延后换页，忽略重复按键、松开及滚轮，防止同一输入穿透。两段视频和静帧由预加载引用随 `all_resources` 导出；既有演出、回放与第一、二关收场不变。验证见 [媒体交付](docs/cinematics-delivery.md)。
 
 > 2026-10-17 厅堂修订：宿主只显示演员 0/1，Actions 初始化直接前向进入既有 `duet_start_ms`；原前五句留在制作清单与 PCM 中作为来源记录，演出不播放，也不再创建小青任务。取杯判定半径 52 px；饮酒读取真实头中心 64 px 内的持杯手，保持 550 ms。`MusicClock.advance_to_ms()` 用 `player.play(target)` 后恢复原冻结/菜单暂停状态，修复暂停 WAV 的 `seek()` 未实际定位而导致逻辑时间领先、提前停掉尾音的问题。见蛇进入 `fright`，既有单次声音槽 `audio.hit` 改为 `xu-fright.wav`，以清单实测时长 1,985 ms 等待后进入原 `startled` 惊倒；不再触发落地重音。录放沿用同一声音槽和真实阶段，避免引入第二个音频时钟。详见 [厅堂修订交付](docs/act2-hall-refinement-delivery.md)。

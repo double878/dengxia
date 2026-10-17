@@ -119,11 +119,12 @@ func _run() -> void:
 	key(KEY_SPACE)
 	var deadline: int = Time.get_ticks_msec() + 38000
 	var natural_peak: float = 0.0
-	while game._level == null and Time.get_ticks_msec() < deadline:
+	while game._page == intro and Time.get_ticks_msec() < deadline:
 		natural_peak = maxf(natural_peak, await pump(.08))
 	peaks["intro-complete"] = natural_peak
 	check(natural_peak > .001, "片头实际混音有原声")
-	check(game._level != null and game._page == null, "片头完整自然结束后才进入第一关")
+	check(game._level == null and game._page.name == "StageBriefing", "片头自然结束进入第一关简介")
+	game._briefing_finished()
 	if game._level == null:
 		quit(1)
 		return
@@ -158,7 +159,8 @@ func _run() -> void:
 	check(game._page.name == "IntroVideo", "鼠标开启新一轮片头，不连跳到第一关")
 	key(KEY_ESCAPE)
 	await pump(.15)
-	check(game._level != null and game._page == null, "Esc 跳过片头进入第一关")
+	check(game._level == null and game._page.name == "StageBriefing", "Esc 跳过片头进入第一关简介")
+	game._briefing_finished()
 	for route: String in ["skip", "natural"]:
 		record = await finish_third()
 		game._choose_replay(true)
