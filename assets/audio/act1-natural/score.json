@@ -1,5 +1,5 @@
 {
-  "audio_version": "act1-natural-dialogue-v1",
+  "audio_version": "act1-natural-dialogue-playtest-v2",
   "opening_end_ms": 19025,
   "arrival_ms": 24525,
   "singing_start_ms": 25025,
@@ -8,8 +8,8 @@
   "tour_start_ms": 56877,
   "return_gate_ms": 74377,
   "return_start_ms": 74977,
-  "closing_ms": 108061,
-  "duration_ms": 111811,
+  "closing_ms": 107539,
+  "duration_ms": 111288,
   "lines": [
     {
       "line_id": "opening-01",
@@ -78,9 +78,9 @@
       "line_id": "return-01",
       "role_id": "baisuzhen",
       "role_name": "白素贞",
-      "text": "君子，雨住了。这伞，奉还。",
+      "text": "君子，雨住了，这伞奉还。",
       "start_ms": 74977,
-      "end_ms": 78158,
+      "end_ms": 78019,
       "delivery": "speech"
     },
     {
@@ -88,17 +88,17 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "些小之事，何劳娘子专程回来。",
-      "start_ms": 78458,
-      "end_ms": 82081,
+      "start_ms": 78319,
+      "end_ms": 81942,
       "delivery": "speech"
     },
     {
       "line_id": "return-03",
       "role_id": "baisuzhen",
       "role_name": "白素贞",
-      "text": "伞可以托青儿送来，谢意……还是我亲口说的好。",
-      "start_ms": 82381,
-      "end_ms": 87710,
+      "text": "伞可以托青儿送来，谢意还是我亲口说的好。",
+      "start_ms": 82242,
+      "end_ms": 87292,
       "delivery": "speech"
     },
     {
@@ -106,8 +106,8 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "娘子言重了。",
-      "start_ms": 88010,
-      "end_ms": 89995,
+      "start_ms": 87592,
+      "end_ms": 89577,
       "delivery": "speech"
     },
     {
@@ -115,8 +115,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "还未请教，君子高姓？",
-      "start_ms": 90295,
-      "end_ms": 92965,
+      "start_ms": 89877,
+      "end_ms": 92547,
       "delivery": "speech"
     },
     {
@@ -124,8 +124,8 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "小生姓许，名仙。",
-      "start_ms": 93265,
-      "end_ms": 95460,
+      "start_ms": 92847,
+      "end_ms": 95042,
       "delivery": "speech"
     },
     {
@@ -133,8 +133,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "小女子白素贞。许君子，明日若再游湖，可还认得我么？",
-      "start_ms": 95760,
-      "end_ms": 101797,
+      "start_ms": 95342,
+      "end_ms": 101379,
       "delivery": "speech"
     },
     {
@@ -142,17 +142,17 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "白小姐……小生怎会不认得。",
-      "start_ms": 102097,
-      "end_ms": 105371,
+      "start_ms": 101679,
+      "end_ms": 104953,
       "delivery": "speech"
     },
     {
       "line_id": "return-09",
       "role_id": "baisuzhen",
       "role_name": "白素贞",
-      "text": "那就……莫忘了。",
-      "start_ms": 105671,
-      "end_ms": 107761,
+      "text": "那就莫忘了。",
+      "start_ms": 105253,
+      "end_ms": 107238,
       "delivery": "speech"
     }
   ],
@@ -194,28 +194,10 @@
       "subtype": "PCM_16"
     },
     {
-      "asset_id": "return-01",
-      "path": "res://assets/audio/act1-natural/return-01.wav",
-      "sha256": "3aad4974f65a6bb06a35fe341921d7a7ad9824e29f9938546722830c71bb9868",
-      "frames": 152695,
-      "sample_rate_hz": 48000,
-      "channels": 2,
-      "subtype": "PCM_16"
-    },
-    {
       "asset_id": "return-02",
       "path": "res://assets/audio/act1-natural/return-02.wav",
       "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
       "frames": 173872,
-      "sample_rate_hz": 48000,
-      "channels": 2,
-      "subtype": "PCM_16"
-    },
-    {
-      "asset_id": "return-03",
-      "path": "res://assets/audio/act1-natural/return-03.wav",
-      "sha256": "cd1f315f56b3863c7a3af6d1b27dc8c2948c3483ed8f8b494940379f6e16ad0b",
-      "frames": 255792,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -266,24 +248,6 @@
       "subtype": "PCM_16"
     },
     {
-      "asset_id": "return-09",
-      "path": "res://assets/audio/act1-natural/return-09.wav",
-      "sha256": "0509cc5b50911893affd0beda59e4f4e416a391d168f805eddbd5e7148251ff9",
-      "frames": 100311,
-      "sample_rate_hz": 48000,
-      "channels": 2,
-      "subtype": "PCM_16"
-    },
-    {
-      "asset_id": "main",
-      "path": "res://assets/audio/act1-natural/main.wav",
-      "sha256": "584fbc86945707f0bb4c4903d3cc25b0e89d6c65dce8caa515d7fb1873019008",
-      "frames": 5366917,
-      "sample_rate_hz": 48000,
-      "channels": 2,
-      "subtype": "PCM_16"
-    },
-    {
       "asset_id": "wait_loop",
       "path": "res://assets/audio/act1-natural/wait_loop.wav",
       "sha256": "97fb429b18f9e538f86798774799dec49c338f7ec8f2b941f634191324edf664",
@@ -306,6 +270,42 @@
       "path": "res://assets/audio/act1-natural/remedy.wav",
       "sha256": "06ca5de627534f260608be923e1608b3e25828888bc2aedf52a232ed039452fb",
       "frames": 240000,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-01",
+      "path": "res://assets/audio/act1-natural/return-01.wav",
+      "sha256": "a5ff91d2cb7d9ad7f65ba06e4399d52de2d0c21aee01451d839db1cb7bff4469",
+      "frames": 146008,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-03",
+      "path": "res://assets/audio/act1-natural/return-03.wav",
+      "sha256": "2eef9ef60db5e1ff82f1bc87e2d3d9f640cd19d56f87ae317714209e729db50c",
+      "frames": 242417,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "return-09",
+      "path": "res://assets/audio/act1-natural/return-09.wav",
+      "sha256": "6b297bbe9859aec2466324d8cf66e5a641b8f0200135475df16167782d015856",
+      "frames": 95295,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
+    },
+    {
+      "asset_id": "main",
+      "path": "res://assets/audio/act1-natural/main.wav",
+      "sha256": "7394fcc077edc3bec39b4a1de9d286ee4a857f3ac311540787233bfe85a59643",
+      "frames": 5341839,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -473,5 +473,88 @@
   "main_path": "res://assets/audio/act1-natural/main.wav",
   "wait_loop_path": "res://assets/audio/act1-natural/wait_loop.wav",
   "take_close_path": "res://assets/audio/act1-natural/take_close.wav",
-  "remedy_path": "res://assets/audio/act1-natural/remedy.wav"
+  "remedy_path": "res://assets/audio/act1-natural/remedy.wav",
+  "playtest_revision": {
+    "lines": [
+      {
+        "line_id": "return-01",
+        "generation": {
+          "line_id": "return-01",
+          "role_id": "baisuzhen",
+          "text": "君子，雨住了，这伞奉还。",
+          "path": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\tts\\return-01.wav",
+          "sha256": "70b546da393aed509df29c2e7e43f66bb2b99e6f443f0413a3c83230f25c2b26",
+          "duration_s": 3.050666666666667,
+          "seed": 2026101711,
+          "seconds": 66.40599999998813,
+          "steps": 32,
+          "converted_path": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\converted\\return-01.wav",
+          "converted_sha256": "2e5e8cc2309090b04cd025cd0ba4603504fb1d3d1c228cd8df374f3ece9d75e6",
+          "reference_path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\opening-02.wav",
+          "reference_sha256": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
+          "converted_duration_s": 3.0418140589569163,
+          "vc_seconds": 24.889999999984866
+        },
+        "selected_source": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\converted\\return-01.wav",
+        "selected_sha256": "2e5e8cc2309090b04cd025cd0ba4603504fb1d3d1c228cd8df374f3ece9d75e6",
+        "gain": 1.1505886979111435,
+        "full_generated_samples_preserved": true,
+        "vowel_edit": null,
+        "human_listening_verified": false
+      },
+      {
+        "line_id": "return-03",
+        "generation": {
+          "line_id": "return-03",
+          "role_id": "baisuzhen",
+          "text": "伞可以托青儿送来，谢意还是我亲口说的好。",
+          "path": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\tts\\return-03.wav",
+          "sha256": "e2f709444482eae12c6ab8c12a53906838fe868b7d2dcab41bff87b0517e018d",
+          "duration_s": 5.056,
+          "seed": 2026101713,
+          "seconds": 93.32800000000861,
+          "steps": 32,
+          "converted_path": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\converted\\return-03.wav",
+          "converted_sha256": "29af0430695ae53fc0a5de3cf8cfed2300ff186509d6cbc952d675cec863e25e",
+          "reference_path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\opening-02.wav",
+          "reference_sha256": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
+          "converted_duration_s": 5.050340136054421,
+          "vc_seconds": 36.03200000000652
+        },
+        "selected_source": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\converted\\return-03.wav",
+        "selected_sha256": "29af0430695ae53fc0a5de3cf8cfed2300ff186509d6cbc952d675cec863e25e",
+        "gain": 0.9739931226861558,
+        "full_generated_samples_preserved": true,
+        "vowel_edit": null,
+        "human_listening_verified": false
+      },
+      {
+        "line_id": "return-09",
+        "generation": {
+          "line_id": "return-09",
+          "role_id": "baisuzhen",
+          "text": "那就莫忘了。",
+          "path": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\tts\\return-09.wav",
+          "sha256": "ec63f0747d5f6c703726923ca2ef09f9d42f27106d566c53e2ed01fc1ef4e93d",
+          "duration_s": 1.9946666666666666,
+          "seed": 2026101719,
+          "seconds": 60.062000000005355,
+          "steps": 32,
+          "converted_path": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\converted\\return-09.wav",
+          "converted_sha256": "356b1833ae85b9ef1db5f0a9c24b02704fdd9a68cffb22855bc0fa5c29efd8ed",
+          "reference_path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\opening-02.wav",
+          "reference_sha256": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
+          "converted_duration_s": 1.9853061224489796,
+          "vc_seconds": 26.26500000001397
+        },
+        "selected_source": "D:\\Cursor_program\\灯下\\builds\\playtest-polish-20261017\\converted\\return-09.wav",
+        "selected_sha256": "356b1833ae85b9ef1db5f0a9c24b02704fdd9a68cffb22855bc0fa5c29efd8ed",
+        "gain": 1.3261960178250247,
+        "full_generated_samples_preserved": true,
+        "vowel_edit": null,
+        "human_listening_verified": false
+      }
+    ],
+    "all_seven_speech_lines_inspected": true
+  }
 }

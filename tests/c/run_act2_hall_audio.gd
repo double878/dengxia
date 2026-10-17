@@ -26,12 +26,26 @@ func _run() -> void:
 	if audio != null:
 		check(audio.problem.is_empty(), "音源、格式和清单合法")
 		check(hall.clock.player == audio.player, "只有宿主的 MusicClock 绑定主轨")
-		check(hall.actions.phase == "duet" and hall.on_stage == [0, 1], "厅堂双人直接开始对唱")
+		check(hall.actions.phase == "duet" and hall.on_stage == [0, 1], "厅堂双人从前奏开始")
 		check(audio.config.duet.size() == 4, "四组连续劝酒对唱")
 		check(not hall.actions.subtitle().contains("临时"), "正式字幕不保留排练标签")
 		var before_real: int = hall.clock.get_real_time_ms()
 		check(not hall.actions.can_enter(2), "已删除的小青剧情不能重新上场")
-		check(hall.clock.get_song_time_ms() >= int(audio.config.duet_start_ms), "按主轨时标前向进入唱段")
+		check(
+			(
+				hall.clock.get_song_time_ms() >= int(audio.config.hall_start_ms)
+				and hall.clock.get_song_time_ms() < int(audio.config.duet_start_ms)
+			),
+			"按主轨时标进入前奏"
+		)
+		check(
+			(
+				audio.config.duet_start_ms - audio.config.hall_start_ms >= 4000
+				and audio.config.duet_start_ms - audio.config.hall_start_ms <= 6000
+			),
+			"前奏为4至6秒"
+		)
+		check(hall.actions.subtitle().is_empty(), "前奏不提前显示未唱出的歌词")
 		check(hall.clock.get_real_time_ms() >= before_real, "跳段保留真实时间")
 		hall._exit(0)
 		check(audio.player.stream_paused, "误退演员立即冻结唱腔")

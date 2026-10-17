@@ -33,7 +33,11 @@ func pump(seconds: float) -> void:
 			if key == "dialogue":
 				key += "_%d" % hall.actions.line_index
 			elif key == "duet":
-				key += "_%d" % hall.actions.duet_index
+				key = (
+					"prelude"
+					if hall.clock.get_song_time_ms() < int(hall.audio.config.duet_start_ms)
+					else "duet_%d" % hall.actions.duet_index
+				)
 		var row: Dictionary = levels.get(key, {"peak": 0.0, "frames": 0})
 		for sample: Vector2 in capture.get_buffer(capture.get_frames_available()):
 			row.peak = maxf(row.peak, maxf(absf(sample.x), absf(sample.y)))
@@ -77,61 +81,67 @@ func _run() -> void:
 	capture = AudioEffectCapture.new()
 	capture.buffer_length = 2.0
 	AudioServer.add_bus_effect(0, capture)
-	opening = load("res://scenes/act2/opening.tscn").instantiate()
-	root.add_child(opening)
-	label = "fahai_entry"
-	await pump(1.3)
-	check(
-		(
-			opening.on_stage.is_empty()
-			and opening.music_cues.entry.playing
-			and levels[label].peak > .001
-		),
-		"第二关空台开场立即播放视频音乐"
-	)
-	await shot("fahai-entry")
-	InputHelper.key(opening, KEY_ESCAPE)
-	check(await silence() < .001, "出场音乐暂停后实际静音")
-	InputHelper.key(opening, KEY_ESCAPE)
-	InputHelper.key(opening, KEY_1)
-	InputHelper.key(opening, KEY_SPACE)
-	# 法海起初在树遮罩后；从幕布下方的真实操作签抓取。
-	InputHelper.drag(opening, opening.HAND_ANCHOR, Vector2(-400, 0))
-	await pump(.2)
-	check(
-		opening.dialogue.phase == "wait_greeting" and opening.music_cues.entry.playing,
-		"走出柳树保持器乐，等待许仙迎接"
-	)
-	check(await silence() > .001 and opening.dialogue.player.stream_paused, "迎接前持续器乐但不提前唱词")
-	InputHelper.key(opening, KEY_2)
-	InputHelper.key(opening, KEY_SPACE)
-	var greeting_x: float = opening.controller.get_puppet(0).stage_pos.x * 1920 - 300
-	var xu_x: float = opening.controller.get_puppet(1).stage_pos.x * 1920
-	InputHelper.drag(opening, opening.HAND_ANCHOR, Vector2(greeting_x - xu_x, 0))
-	label = "opening_original"
-	var singing_deadline: int = Time.get_ticks_msec() + 10000
-	while opening.dialogue.phase == "wait_greeting" and Time.get_ticks_msec() < singing_deadline:
-		await pump(.03)
-	check(
-		opening.dialogue.phase == "dialogue" and not opening.music_cues.entry.playing,
-		"音乐完整结束且迎接后开始对白"
-	)
-	await pump(1.8)
-	check(levels[label].peak > .001, "许仙实际迎接后原片首句有真实声音")
-	opening.queue_free()
-	await process_frame
-	await create_timer(.2).timeout
-	capture.clear_buffer()
+	if not OS.get_cmdline_user_args().has("--hall-only"):
+		opening = load("res://scenes/act2/opening.tscn").instantiate()
+		root.add_child(opening)
+		label = "fahai_entry"
+		await pump(1.3)
+		check(
+			(
+				opening.on_stage.is_empty()
+				and opening.music_cues.entry.playing
+				and levels[label].peak > .001
+			),
+			"第二关空台开场立即播放视频音乐"
+		)
+		await shot("fahai-entry")
+		InputHelper.key(opening, KEY_ESCAPE)
+		check(await silence() < .001, "出场音乐暂停后实际静音")
+		InputHelper.key(opening, KEY_ESCAPE)
+		InputHelper.key(opening, KEY_1)
+		InputHelper.key(opening, KEY_SPACE)
+		# 法海起初在树遮罩后；从幕布下方的真实操作签抓取。
+		InputHelper.drag(opening, opening.HAND_ANCHOR, Vector2(-400, 0))
+		await pump(.2)
+		check(
+			opening.dialogue.phase == "wait_greeting" and opening.music_cues.entry.playing,
+			"走出柳树保持器乐，等待许仙迎接"
+		)
+		check(await silence() > .001 and opening.dialogue.player.stream_paused, "迎接前持续器乐但不提前唱词")
+		InputHelper.key(opening, KEY_2)
+		InputHelper.key(opening, KEY_SPACE)
+		var greeting_x: float = opening.controller.get_puppet(0).stage_pos.x * 1920 - 300
+		var xu_x: float = opening.controller.get_puppet(1).stage_pos.x * 1920
+		InputHelper.drag(opening, opening.HAND_ANCHOR, Vector2(greeting_x - xu_x, 0))
+		label = "opening_original"
+		var singing_deadline: int = Time.get_ticks_msec() + 10000
+		while (
+			opening.dialogue.phase == "wait_greeting" and Time.get_ticks_msec() < singing_deadline
+		):
+			await pump(.03)
+		check(
+			opening.dialogue.phase == "dialogue" and not opening.music_cues.entry.playing,
+			"音乐完整结束且迎接后开始对白"
+		)
+		await pump(1.8)
+		check(levels[label].peak > .001, "许仙实际迎接后原片首句有真实声音")
+		opening.queue_free()
+		await process_frame
+		await create_timer(.2).timeout
+		capture.clear_buffer()
 	hall = load("res://scenes/act2/hall.tscn").instantiate()
 	root.add_child(hall)
 	check(hall.clock.is_audio_driven(), "厅堂唯一时钟来自真实主轨")
-	check(hall.actions.phase == "duet" and hall.on_stage == [0, 1], "厅堂直接双人对唱，没有小青段落")
-	await shot("duet-xu")
+	check(hall.actions.phase == "duet" and hall.on_stage == [0, 1], "厅堂从双人前奏开始，没有小青段落")
+	check(hall.actions.subtitle().is_empty(), "前奏不提前出现歌词")
+	await shot("prelude")
 	await pump(2.5)
+	check(hall.clock.get_song_time_ms() < int(hall.audio.config.duet_start_ms), "两秒半仍在前奏，尚未对唱")
+	check(levels.get("prelude", {}).get("peak", 0.0) > .001, "前奏实际输出器乐混音")
 	InputHelper.key(hall, KEY_ESCAPE)
 	var frozen_song: int = hall.clock.get_song_time_ms()
 	var frozen_real: int = hall.clock.get_real_time_ms()
-	check(await silence() < .001, "唱腔暂停后真实静音")
+	check(await silence() < .001, "前奏暂停后真实静音")
 	check(
 		(
 			hall.clock.get_song_time_ms() == frozen_song
@@ -218,9 +228,34 @@ func _run() -> void:
 	if not await phase(hall, "fright", 2):
 		quit(1)
 		return
-	await pump(.25)
+	await pump(minf(.25, float(hall.audio.config.fright_duration_ms) / 4000.0))
+	var pause_phase: String = hall.actions.phase
+	var pause_progress: float = hall.actions.collapse_progress
+	var pause_real: int = hall.clock.get_real_time_ms()
 	InputHelper.key(hall, KEY_ESCAPE)
-	check(await silence() < .001 and hall.actions.collapse_progress == 0, "惊叫暂停时声音和倒地时序同时冻结")
+	var paused_peak: float = await silence()
+	print(
+		(
+			"FRIGHT_PAUSE phase=%s progress=%f->%f real=%d->%d peak=%f"
+			% [
+				pause_phase,
+				pause_progress,
+				hall.actions.collapse_progress,
+				pause_real,
+				hall.clock.get_real_time_ms(),
+				paused_peak
+			]
+		)
+	)
+	check(
+		(
+			pause_phase == "fright"
+			and paused_peak < .001
+			and hall.actions.collapse_progress == pause_progress
+			and hall.clock.get_real_time_ms() == pause_real
+		),
+		"惊叫暂停时声音和倒地时序同时冻结"
+	)
 	InputHelper.key(hall, KEY_ESCAPE)
 	if not await phase(hall, "finished", 5):
 		quit(1)

@@ -39,7 +39,7 @@ func setup(value: MusicClock, score: Dictionary) -> void:
 func _set_phase(value: String) -> void:
 	phase = value
 	if value == "duet" and duet_index == 0:
-		clock.advance_to_ms(int(config.duet_start_ms))
+		clock.advance_to_ms(int(config.hall_start_ms))
 	elif value == "dialogue" and line_index == LINE_UNWELL:
 		clock.advance_to_ms(int(config.lines[LINE_UNWELL].start_ms) - 100)
 	_since_real = clock.get_real_time_ms()
@@ -210,6 +210,8 @@ func subtitle() -> String:
 	if phase == "dialogue":
 		return "%s：%s" % [config.lines[line_index].role_name, config.lines[line_index].text]
 	if phase == "duet":
+		if clock.get_song_time_ms() < int(config.duet_start_ms):
+			return ""
 		return "%s：%s" % [config.duet[duet_index].role_name, config.duet[duet_index].text]
 	if phase in ["cup", "drink"]:
 		return "%s：%s" % [config.duet[-1].role_name, config.duet[-1].text]
@@ -227,6 +229,8 @@ func hint() -> String:
 		"dialogue":
 			return "身段自由发挥 · 空格换人 · 拖手、拖头、Alt 拖躯干"
 		"duet":
+			if clock.get_song_time_ms() < int(config.duet_start_ms):
+				return "厅堂前奏 · 身段自由发挥，稍后对唱，唱完再递杯"
 			return "饮前对唱 · 身段自由发挥，唱完再递杯饮酒"
 		"cup":
 			return "接手许仙，拖手到桌上红杯；持杯走近白素贞，双手靠近递酒" if cup_owner < 0 else "许仙已持杯 · 接手两人，让白素贞的手靠近酒杯接过"

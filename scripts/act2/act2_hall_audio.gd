@@ -38,6 +38,8 @@ func setup(clock: MusicClock) -> bool:
 	var duet_end: int = int(config.get("duet_end_ms", -1))
 	var duet_gate: int = int(config.get("duet_gate_ms", -1))
 	var medicine: int = int(config.get("medicine_gate_ms", -1))
+	var hall_start: int = int(config.get("hall_start_ms", -1))
+	var prelude: int = int(config.get("prelude_duration_ms", 0))
 	if (
 		qing < int(config.lines[4].end_ms)
 		or duet_start - qing < 500
@@ -47,6 +49,10 @@ func setup(clock: MusicClock) -> bool:
 		or int(config.lines[5].start_ms) - duet_gate < 500
 		or medicine < int(config.lines[6].end_ms)
 		or duration - medicine < 500
+		or hall_start < qing
+		or duet_start - hall_start != prelude
+		or prelude < 4000
+		or prelude > 6000
 	):
 		return _fail("第二幕动作等待点缺少完整声音或保护静音")
 	var path: String = str(config.get("main_path", ""))

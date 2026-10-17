@@ -1,8 +1,8 @@
 {
-  "audio_version": "act2-hall-direct-duet-fright-v2",
+  "audio_version": "act2-hall-prelude-falling-fright-v4",
   "scene_id": "wine_transformation",
   "main_path": "res://assets/audio/act2-hall/main.wav",
-  "duration_ms": 69517,
+  "duration_ms": 74517,
   "lines": [
     {
       "line_id": "xu-offer",
@@ -69,10 +69,10 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "官人，我身子有些不适。",
-      "start_ms": 61969,
-      "end_ms": 64871,
-      "start_frame": 2974492,
-      "end_frame": 3113812,
+      "start_ms": 66969,
+      "end_ms": 69871,
+      "start_frame": 3214492,
+      "end_frame": 3353812,
       "delivery": "speech",
       "seed": 2026101305
     },
@@ -81,10 +81,10 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "娘子稍候，我去取些药来。",
-      "start_ms": 65221,
-      "end_ms": 68367,
-      "start_frame": 3130612,
-      "end_frame": 3281635,
+      "start_ms": 70221,
+      "end_ms": 73367,
+      "start_frame": 3370612,
+      "end_frame": 3521635,
       "delivery": "speech",
       "seed": 2026101306
     }
@@ -95,10 +95,10 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "端阳佳节共举杯，愿与娘子长相随。",
-      "start_ms": 20119,
-      "end_ms": 31357,
-      "start_frame": 965692,
-      "end_frame": 1505138,
+      "start_ms": 25119,
+      "end_ms": 36357,
+      "start_frame": 1205692,
+      "end_frame": 1745138,
       "delivery": "singing",
       "seed": 2026101401
     },
@@ -107,10 +107,10 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "官人盛意心领会，只怕薄酒也难支。",
-      "start_ms": 31369,
-      "end_ms": 42653,
-      "start_frame": 1505692,
-      "end_frame": 2047367,
+      "start_ms": 36369,
+      "end_ms": 47653,
+      "start_frame": 1745692,
+      "end_frame": 2287367,
       "delivery": "singing",
       "seed": 2026101402
     },
@@ -119,10 +119,10 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "只此一杯添欢喜，娘子莫再把杯推。",
-      "start_ms": 42669,
-      "end_ms": 51121,
-      "start_frame": 2048092,
-      "end_frame": 2453791,
+      "start_ms": 47669,
+      "end_ms": 56121,
+      "start_frame": 2288092,
+      "end_frame": 2693791,
       "delivery": "singing",
       "seed": 2026101403
     },
@@ -131,19 +131,19 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "既是官人再三劝，且饮一杯谢情意。",
-      "start_ms": 51119,
-      "end_ms": 61103,
-      "start_frame": 2453692,
-      "end_frame": 2932952,
+      "start_ms": 56119,
+      "end_ms": 66103,
+      "start_frame": 2693692,
+      "end_frame": 3172952,
       "delivery": "singing",
       "seed": 2026101404
     }
   ],
   "qing_gate_ms": 19419,
-  "duet_start_ms": 20119,
-  "duet_end_ms": 61119,
-  "duet_gate_ms": 61269,
-  "medicine_gate_ms": 68517,
+  "duet_start_ms": 25119,
+  "duet_end_ms": 66119,
+  "duet_gate_ms": 66269,
+  "medicine_gate_ms": 73517,
   "assets": [
     {
       "asset_id": "xu-offer",
@@ -228,22 +228,20 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-hall/main.wav",
-      "sha256": "1799bd3e48c41e40050875cee7b3d7174bb0acaf0407c5766a0da82d4ed65635",
-      "frames": 3336835,
+      "sha256": "6306d90578de76400dbaf699a32335ede233ce240df717306fd72a7eb79c1da3",
+      "frames": 3576835,
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.74151611328125
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "xu-fright",
       "path": "res://assets/audio/act2-hall/xu-fright.wav",
-      "sha256": "c0db694bcff096220849839db35dcef98097c5d6314c594dd737014bf884c976",
-      "frames": 95295,
+      "sha256": "c98037bc25e8ef17d1f6617ecaf327ea4e2ebdbbfb7937e9c00a7d99488fece9",
+      "frames": 15868,
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.8012481331825256
+      "subtype": "PCM_16"
     }
   ],
   "references": {
@@ -775,7 +773,7 @@
     "qing-reply"
   ],
   "fright_path": "res://assets/audio/act2-hall/xu-fright.wav",
-  "fright_duration_ms": 1985,
+  "fright_duration_ms": 331,
   "fright_production": {
     "request": {
       "version": "act2-xuxian-fright-20261017",
@@ -850,5 +848,87 @@
     },
     "full_generated_samples_preserved": true,
     "human_listening_verified": false
+  },
+  "prelude_duration_ms": 5000,
+  "playtest_revision": {
+    "prelude_source": "D:\\Cursor_program\\灯下\\builds\\act2-hall-audio\\wine-duet-backing.wav",
+    "prelude_source_sha256": "f1bb53207df23f14944bbe17de145db3d782ed6fbc9b8b1602645b1481b4a66f",
+    "prelude_frames": 240000,
+    "fright": {
+      "line_id": "xu-fright",
+      "generation": {
+        "line_id": "xu-fright",
+        "role_id": "xuxian",
+        "text": "大！",
+        "path": "D:\\Cursor_program\\灯下\\builds\\playtest-fright-fourth-vowel-20261017\\tts\\xu-fright.wav",
+        "sha256": "29505efe66eb5d17ba33f33c36ac03626872f48cbac1cfbc03e2bef0f6373980",
+        "duration_s": 0.8426666666666667,
+        "seed": 2026101721,
+        "seconds": 56.5,
+        "steps": 32
+      },
+      "selected_source": "D:\\Cursor_program\\灯下\\builds\\playtest-fright-fourth-vowel-20261017\\fourth-tone-vowel.wav",
+      "selected_sha256": "57de0013adcd9f41ae701e9bab355ce0e052bf9df004d191dd1d90afba03de09",
+      "gain": 3.306016605677843,
+      "full_generated_samples_preserved": false,
+      "vowel_edit": {
+        "source": "D:\\Cursor_program\\灯下\\builds\\playtest-fright-fourth-vowel-20261017\\tts\\xu-fright.wav",
+        "source_sha256": "29505efe66eb5d17ba33f33c36ac03626872f48cbac1cfbc03e2bef0f6373980",
+        "source_text": "大！",
+        "carrier_consonant_and_quiet_removed_frames": 12290,
+        "rate": 24000,
+        "selected_path": "D:\\Cursor_program\\灯下\\builds\\playtest-fright-fourth-vowel-20261017\\fourth-tone-vowel.wav",
+        "selected_sha256": "57de0013adcd9f41ae701e9bab355ce0e052bf9df004d191dd1d90afba03de09",
+        "selected_frames": 7934,
+        "uncut_tail_preserved": true,
+        "start_f0_hz": 513.5222641946159,
+        "end_f0_hz": 324.46823438321326,
+        "pitch_shift": false,
+        "time_stretch": false,
+        "voice_conversion": false,
+        "target": "frightened fourth-tone ah",
+        "human_listening_verified": false
+      },
+      "human_listening_verified": false
+    },
+    "fright_request": {
+      "version": "xu-fright-falling-fear-20261017",
+      "lines": [
+        {
+          "line_id": "xu-fright",
+          "role_id": "xuxian",
+          "text": "啊！",
+          "generation_text": "大！",
+          "seed": 2026101721,
+          "target_seconds": 0.85,
+          "delivery": "Sudden frightened shout, fourth-tone falling contour"
+        }
+      ],
+      "references": {
+        "baisuzhen": {
+          "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\baisheying-baisuzhen-selected-vocals.wav",
+          "sha256": "faadb2cdeda77ba1e66e8add08bee24125d18dcc53d22cf65fa72fb86711c3da",
+          "text": "人世间竟有如此美丽的湖山。"
+        },
+        "xuxian": {
+          "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\return-02.wav",
+          "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+          "text": "些小之事，何劳娘子专程回来。"
+        }
+      },
+      "identity_references": {
+        "baisuzhen": {
+          "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\opening-02.wav",
+          "sha256": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
+          "text": "青妹，你看，柳色映着湖波，果然是好风光。"
+        },
+        "xuxian": {
+          "path": "D:\\Cursor_program\\灯下\\assets\\audio\\act1-natural\\return-02.wav",
+          "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+          "text": "些小之事，何劳娘子专程回来。"
+        }
+      },
+      "voice_scope": "Existing role identities; raw and converted layers saved; human listening not verified"
+    }
   }
 }

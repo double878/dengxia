@@ -36,7 +36,7 @@ for line in score['lines']:
     assert main[begin*4:end*4] == pcm[line['line_id']], 'Incomplete/changed speech: '+line['line_id']
 song_begin = score['duet'][0]['start_frame']
 assert main[song_begin*4:song_begin*4+len(pcm['wine-duet'])] == pcm['wine-duet'], 'Duet changed or truncated'
-for key, next_key in [('qing_gate_ms','duet_start_ms'),('duet_gate_ms',None),('medicine_gate_ms',None)]:
+for key, next_key in [('qing_gate_ms','hall_start_ms'),('duet_gate_ms',None),('medicine_gate_ms',None)]:
     begin=round(score[key]*48)
     end=round(score[next_key]*48) if next_key else score['lines'][5]['start_frame'] if key=='duet_gate_ms' else len(main)//4
     # Millisecond rounding can put the first sample one frame inside a boundary.
