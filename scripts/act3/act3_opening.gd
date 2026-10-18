@@ -442,32 +442,12 @@ func _build_hud() -> void:
 		button.pressed.connect(_enter.bind(id))
 		hud.add_child(button)
 		_cast_buttons.append(button)
-	_card = Control.new()
-	_card.size = Vector2(1920, 1080)
+	var briefing := preload("res://scripts/ui/stage_briefing.gd").new()
+	briefing.stage_id = 3
+	briefing.start_requested.connect(start_scene)
+	_card = briefing
 	hud.add_child(_card)
-	var background := ColorRect.new()
-	background.size = _card.size
-	background.color = Color("#1d2422")
-	_card.add_child(background)
-	var title := _label(_card, Vector2(290, 220), Vector2(1340, 100), 48)
-	title.text = "盗仙草"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var text := _label(_card, Vector2(340, 365), Vector2(1240, 210), 30)
-	text.text = "为救许郎，白素贞奔赴仙山，遇双童拦路，拔剑交锋。\n仙翁出山止战，赠草相助，嘱她速回镇江救夫。\n你操演白素贞；末尾谢别后，可跃起并右键退场，完成这一幕。"
-	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var controls := _label(_card, Vector2(310, 600), Vector2(1300, 110), 23)
-	controls.text = "1 白素贞上场 · 鹿童近山随重音出场 · 空格接手\n拖签走位摆剑 · W 张腿短跳 · S 压身后撤 · Alt 前倾 · R 复位 · Q / E 调灯 · ESC 暂停"
-	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_audio_note = _label(_card, Vector2(310, 725), Vector2(1300, 70), 23)
-	_audio_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var start := Button.new()
-	start.name = "StartScene"
-	start.position = Vector2(740, 825)
-	start.size = Vector2(440, 80)
-	start.text = "开演"
-	start.add_theme_font_size_override("font_size", 30)
-	start.pressed.connect(start_scene)
-	_card.add_child(start)
+	_audio_note = briefing.audio_note
 
 
 func _update_contacts() -> void:

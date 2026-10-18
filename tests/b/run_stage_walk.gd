@@ -19,6 +19,8 @@ func check(value: bool, label: String) -> void:
 func _run() -> void:
 	var game: Node = load("res://scenes/game_flow.tscn").instantiate()
 	root.add_child(game)
+	game._intro_finished()  # 此用例从实际操演开始。
+	game._briefing_finished()  # 本用例从确认演前简介后开始。
 	var level: Node = game.get("_level")
 	level.set_process(false)
 	var harness: Level1Harness = level.get("_harness")

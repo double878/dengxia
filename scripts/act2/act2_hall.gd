@@ -30,7 +30,7 @@ const CAST: Array[String] = ["白素贞", "许仙", "小青", "白蛇"]
 var controller := PuppetController.new()
 var clock := MusicClock.new()
 var lamp_controller := LampController.new()
-var on_stage: Array[int] = [0, 1, 2]
+var on_stage: Array[int] = [0, 1]
 var seated: Array[bool] = [true, true, false]
 var _puppet_input := PuppetInput.new()
 var _lamp_input := LampInput.new()
@@ -117,7 +117,11 @@ func _ready() -> void:
 		return
 	actions.setup(clock, audio.config)
 	add_child(music_cues)
-	music_cues.setup()
+	if not music_cues.setup():
+		clock.set_song_frozen(true)
+		set_process(false)
+		set_process_input(false)
+		return
 	remedy.setup(clock)
 	_remedy_audio = AudioStreamPlayer.new()
 	_remedy_audio.name = "RemedyDrums"
@@ -180,7 +184,6 @@ func _process(delta: float) -> void:
 		events.append_array(lamp_controller.take_events())
 		_update_seats()
 		_update_actions()
-		music_cues.update_fall(actions.collapse_progress)
 		_update_remedy()
 		events.append_array(_pending_remedy_events)
 		_pending_remedy_events = []
@@ -216,7 +219,7 @@ func _update_seats() -> void:
 func _update_actions() -> void:
 	_refresh_views()
 	var hands: Array[Dictionary] = []
-	var mouths: Array[Vector2] = []
+	var heads: Array[Vector2] = []
 	var positions: Array[Vector2] = []
 	for id in range(3):
 		hands.append(
@@ -225,7 +228,7 @@ func _update_actions() -> void:
 				"right": _views[id].hand_screen_position("right")
 			}
 		)
-		mouths.append(_views[id].mouth_screen_position())
+		heads.append(_views[id].head_screen_position())
 		positions.append(controller.get_puppet(id).stage_pos * PuppetController.STAGE_PIXEL_SIZE)
 	var before: String = actions.phase
 	var xu: PuppetState = controller.get_puppet(1)
@@ -234,19 +237,21 @@ func _update_actions() -> void:
 	actions.update(
 		on_stage,
 		hands,
-		mouths,
+		heads,
 		positions,
 		lamp_controller.lamp.exposure,
 		snake.position,
 		visible_facing,
 		controller.get_puppet(0).torso_lean
 	)
-	if before != "startled" and actions.phase == "startled":
-		_fall_origin = controller.get_puppet(1).stage_pos
-		_fall_direction = signf(_fall_origin.x * 1920.0 - snake.position.x)
+	if before != "fright" and actions.phase == "fright":
+		music_cues.play_fright()
 		seated[1] = false
 		_release_control()
 		_puppet_input.set_enabled(false)
+	if before != "startled" and actions.phase == "startled":
+		_fall_origin = controller.get_puppet(1).stage_pos
+		_fall_direction = signf(_fall_origin.x * 1920.0 - snake.position.x)
 	if actions.phase in ["startled", "finished"]:
 		var state: PuppetState = controller.get_puppet(1)
 		state.stage_pos.x = (
@@ -268,7 +273,7 @@ func _input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE:
 			_toggle_pause()
 		elif not _paused:
-			if actions.phase in ["startled", "finished"]:
+			if actions.phase in ["fright", "startled", "finished"]:
 				get_viewport().set_input_as_handled()
 				return
 			match event.keycode:
@@ -296,7 +301,7 @@ func _input(event: InputEvent) -> void:
 	if _paused:
 		return
 	_lamp_input.handle_event(event)
-	if actions.phase in ["startled", "finished"]:
+	if actions.phase in ["fright", "startled", "finished"]:
 		return
 	if _snake_controlled and _handle_snake(event):
 		get_viewport().set_input_as_handled()
@@ -470,7 +475,11 @@ func _toggle_pause() -> void:
 	_paused = not _paused
 	_end_drag()
 	_puppet_input.set_enabled(
-		not _paused and not _snake_controlled and actions.phase not in ["startled", "finished"]
+		(
+			not _paused
+			and not _snake_controlled
+			and actions.phase not in ["fright", "startled", "finished"]
+		)
 	)
 	_lamp_input.set_enabled(not _paused)
 	_remedy_audio.stream_paused = _paused
@@ -551,7 +560,7 @@ func _build_hud() -> void:
 	var lamp_hint := _label(hud, Vector2(72, 918), Vector2(640, 46), 22)
 	lamp_hint.text = "滚轮推拉灯 · Q/E 显露 · W 短跳 · S 后撤"
 	var cast_hint := _label(hud, Vector2(1210, 795), Vector2(630, 90), 22)
-	cast_hint.text = "1 白素贞    2 许仙\n3 小青      4 白蛇"
+	cast_hint.text = "1 白素贞    2 许仙\n4 白蛇"
 
 
 func _label(parent: Node, at: Vector2, size: Vector2, font_size: int) -> Label:
@@ -604,9 +613,6 @@ func _remedy_target() -> Dictionary:
 	var target: Vector2 = start
 	var label: String = ""
 	match id:
-		"qing_exit":
-			target.x = 180
-			label = "向左走 · 右键退场"
 		"medicine_exit":
 			target.x = 1740
 			label = "向右走 · 右键退场"
@@ -620,8 +626,8 @@ func _remedy_target() -> Dictionary:
 			label = "两人的手靠近"
 		"drink":
 			start = _views[0].hand_screen_position(actions.cup_hand)
-			target = _views[0].mouth_screen_position()
-			label = "送到嘴边 · 保持"
+			target = _views[0].head_screen_position()
+			label = "抬到头旁 · 保持"
 		"bend":
 			target = start + Vector2(75 * controller.get_puppet(0).facing, 0)
 			label = "Alt 拖躯干 · 弯腰"

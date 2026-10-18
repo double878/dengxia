@@ -36,6 +36,8 @@ func _run() -> void:
 	graphics = DisplayServer.get_name() != "headless"
 	game = load("res://scenes/game_flow.tscn").instantiate()
 	root.add_child(game)
+	game._intro_finished()  # 跳过已独立验证的首页与片头。
+	game._briefing_finished()  # 本用例从确认演前简介后开始。
 	harness = game._level._harness
 	var xuxian: PuppetState = harness.runtime.puppet_controller.get_puppet(
 		UmbrellaController.XUXIAN_ID

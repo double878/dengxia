@@ -53,8 +53,8 @@ func _run() -> void:
 		check(exists, "正式开场缺少 " + name)
 		complete = complete and exists
 	if complete:
-		check(hall.on_stage == [0, 1, 2], "开场三人应已在场")
-		check(hall.seated == [true, true, false], "两人坐好，小青站立服侍")
+		check(hall.on_stage == [0, 1], "厅堂开场只有许仙与白素贞")
+		check(hall.seated == [true, true, false], "许仙与白素贞对坐")
 		check(hall.controller.get_puppet(0).facing == 1.0, "白素贞面向许仙")
 		check(hall.controller.get_puppet(1).facing == -1.0, "许仙面向白素贞")
 		check(
@@ -188,33 +188,15 @@ func drama() -> void:
 	root.add_child(hall)
 	hall.set_process(false)
 	await process_frame
-	check(until_line(hall, 4), "读取真实音轨时标进入小青应答")
-	check(hall.actions.subtitle() == "小青：好吧。", "白素贞应允后先出现小青应答")
-	check(hall.actions.phase == "dialogue", "小青答完之前不得正式离场")
-	check(until_phase(hall, "qing_exit", 5.0), "小青答完好吧才开放离场")
 	var actions: Variant = hall.get("actions")
-	check(actions != null, "普通字幕结束后应等待小青实际离场")
+	check(actions != null, "厅堂应有动作调度")
 	if actions == null:
 		hall.queue_free()
 		await process_frame
 		return
-	check(actions.phase == "qing_exit", "字幕不得跳过小青离场")
-	var frozen_song: int = hall.clock.get_song_time_ms()
-	advance(hall, 30.0)
-	check(
-		actions.phase == "qing_exit" and hall.clock.get_song_time_ms() == frozen_song,
-		"等待无超时，歌曲时钟冻结"
-	)
-	right(hall, 2)
-	check(actions.phase == "qing_exit" and not actions.qing_departed, "当前位置误退场不算买酒菜")
 	key(hall, KEY_3)
-	take(hall, 2)
-	drag(hall, hall._views[2].torso_screen_position(), Vector2(-430, 0))
-	right(hall, 2)
-	check(actions.qing_departed and not hall.on_stage.has(2), "走到左台边后小青正式离场")
-	key(hall, KEY_3)
-	check(not hall.on_stage.has(2), "已去买菜的小青不可重新串场")
-	check(actions.phase == "duet", "小青离场后先进入饮前对唱")
+	check(not hall.on_stage.has(2), "小青不再参与厅堂")
+	check(actions.phase == "duet", "厅堂直接进入饮前对唱")
 	var duet_line: String = actions.subtitle()
 	key(hall, KEY_ESCAPE)
 	advance(hall, 8.0)
@@ -354,13 +336,14 @@ func drama() -> void:
 		take(hall, 1)
 		drag(hall, hall._views[1].torso_screen_position(), Vector2(-690, 0))
 		advance(hall, 0.2)
-		check(actions.phase == "startled", "许仙回场走近显形白蛇后惊退")
+		check(actions.phase == "fright" and actions.collapse_progress == 0, "许仙回场见蛇先大喊，尚未倒地")
+		check(hall.music_cues.hit_count == 1, "见蛇只喊一次")
 		key(hall, KEY_ESCAPE)
 		var progress: float = actions.collapse_progress
 		advance(hall, 2.0)
-		check(actions.collapse_progress == progress, "暂停冻结惊倒")
+		check(actions.phase == "fright" and actions.collapse_progress == progress, "暂停冻结惊叫和倒地时序")
 		key(hall, KEY_ESCAPE)
-		advance(hall, 2.0)
+		advance(hall, float(hall.audio.config.fright_duration_ms) / 1000.0 + 2.0)
 		check(actions.phase == "finished" and hall._views[1].fall_angle > 1.4, "惊倒结束保持倒地")
 		check(
 			(

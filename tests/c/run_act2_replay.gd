@@ -38,6 +38,7 @@ func _run() -> void:
 	game = GAME.instantiate()
 	game.set("_stage_id", 2)
 	root.add_child(game)
+	game._briefing_finished()  # 两场演出测试从确认简介后开始。
 	var opening: Node = game.get("_level")
 	opening.set_process(live)
 	check(opening.get("capture") != null, "正式第二关第一场没有整关录制")
@@ -103,7 +104,7 @@ func _run() -> void:
 	check(hall.capture.record == record, "换场丢失第一場记录")
 	check(record.snapshots[-1].performance.scene_id == 22, "厅堂首帧未录制")
 	frames.seated = record.snapshots[-1].time_ms
-	check(await until_phase(hall, "qing_exit", 35), "小青回复后才离场")
+	check(hall.actions.phase == "duet" and hall.on_stage == [0, 1], "厅堂首帧直接双人对唱")
 	var before: int = record.snapshots.size()
 	var time_before: int = hall.clock.get_real_time_ms()
 	Helper.key(hall, KEY_ESCAPE)
@@ -113,16 +114,12 @@ func _run() -> void:
 		"菜单暂停不得延长记录"
 	)
 	Helper.key(hall, KEY_ESCAPE)
-	await advance(hall, 8.2)
-	check(hall.remedy.active(), "真实等待触发补救")
-	frames.remedy = record.snapshots[-1].time_ms
-	Helper.take(hall, 2)
-	Helper.drag(hall, hall._views[2].torso_screen_position(), Vector2(-430, 0))
-	Helper.right(hall, 2)
-	check(hall.actions.qing_departed, "小青必须实际退场")
 	await advance(hall, 1.2)
 	frames.duet = record.snapshots[-1].time_ms
 	check(await until_phase(hall, "cup", 50), "完整对唱后才开放取杯")
+	await advance(hall, 8.2)
+	check(hall.remedy.active(), "真实等待触发补救")
+	frames.remedy = record.snapshots[-1].time_ms
 	Helper.take(hall, 1)
 	Helper.drag(
 		hall,
@@ -171,7 +168,7 @@ func _run() -> void:
 	Helper.key(hall, KEY_2)
 	Helper.take(hall, 1)
 	Helper.drag(hall, hall._views[1].torso_screen_position(), Vector2(-690, 0))
-	await advance(hall, 1.8)
+	await advance(hall, float(hall.audio.config.fright_duration_ms) / 1000.0 + 1.8)
 	check(hall.actions.phase == "finished" and game.get("_flow") == null, "倒地后保留收势再显示选择")
 	frames.fallen = record.snapshots[-1].time_ms
 	await advance(hall, 3)
@@ -193,7 +190,7 @@ func _run() -> void:
 	)
 	var waits: Array = record.snapshots.filter(
 		func(s: Variant) -> bool:
-			return s.performance.scene_id == 22 and s.performance.phase == "qing_exit"
+			return s.performance.scene_id == 22 and s.performance.phase == "cup"
 	)
 	check(waits[-1].time_ms - waits[0].time_ms >= 8100, "等待与补救被压缩")
 	check(
@@ -295,6 +292,7 @@ func _run() -> void:
 	game = GAME.instantiate()
 	game.set("_stage_id", 22)
 	root.add_child(game)
+	game._briefing_finished()  # 两场演出测试从确认简介后开始。
 	game._performance_finished(record, 2, "端阳惊变")
 	game._choose_replay(false)
 	check(
@@ -401,7 +399,7 @@ func buffer_peak(capture: AudioEffectCapture) -> float:
 
 
 func _hall_wait(s: CSnapshot) -> bool:
-	return s.performance.scene_id == 22 and s.performance.phase == "qing_exit"
+	return s.performance.scene_id == 22 and s.performance.phase == "cup"
 
 
 func _hit_start(s: CSnapshot) -> bool:
@@ -443,7 +441,7 @@ func wall_playback(replay: Node, flow: CResultFlow) -> void:
 	check(flow.get_flow_state() == &"result", "实时完整回放自然进入收场")
 	check(absi(elapsed - record.duration_ms) < 1000, "完整回放按1:1实际时长播放")
 	check(scenes_seen.has("2") and scenes_seen.has("22"), "实时回放完整播放两场")
-	check(hit_starts == 1, "实时倒地重音实际只播放一次")
+	check(hit_starts == 1, "实时许仙惊叫实际只播放一次")
 	for manifest: String in [
 		"res://assets/audio/act2-opening/score.json", "res://assets/audio/act2-hall/score.json"
 	]:
