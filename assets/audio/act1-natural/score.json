@@ -8,8 +8,8 @@
   "tour_start_ms": 56877,
   "return_gate_ms": 74377,
   "return_start_ms": 74977,
-  "closing_ms": 107661,
-  "duration_ms": 111411,
+  "closing_ms": 107361,
+  "duration_ms": 111111,
   "lines": [
     {
       "line_id": "opening-01",
@@ -152,7 +152,7 @@
       "role_name": "白素贞",
       "text": "那就莫忘了。",
       "start_ms": 106060,
-      "end_ms": 107380,
+      "end_ms": 107080,
       "delivery": "speech"
     }
   ],
@@ -277,8 +277,8 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act1-natural/main.wav",
-      "sha256": "ef36d0e96e829e0d1fc952116924549914f61ef1ce40df977262696e13ab489b",
-      "frames": 5347717,
+      "sha256": "9a621918e2bd7ff063c2999b7372d9359ab7bf91441574331970022feb012afa",
+      "frames": 5333317,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
