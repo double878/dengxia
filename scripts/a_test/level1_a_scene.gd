@@ -391,13 +391,11 @@ func _notification(what: int) -> void:
 		_harness.puppet_input.release_drag()
 
 
-## 点击优先给「备用头架」和「挂钩上的影人」，都不命中才当作抓胸签。
+## 点击优先给「挂钩上的影人」，不命中才当作抓胸签。
+## 备用头架已按 2026-10-18 用户定案从画面移除，命中判定一并下线，
+## 否则玩家点在空白处会悄悄换掉影人头。
 func _handle_left_press(position: Vector2) -> bool:
 	if _paused or _harness.runtime.is_over():
-		return true
-	var slot: int = _rack_slot_at(position)
-	if slot >= 0:
-		_try_swap_head(slot)
 		return true
 	var puppet_id: int = _hung_puppet_at(position)
 	if puppet_id >= 0:
@@ -622,7 +620,7 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_TAKE_BACK:
 			return "点选挂起的影人，按空格取回"
 		CueScript.ACTION_HEAD_SWAP:
-			return "按 1 / 2 / 3 与备用头架换头"
+			return "按 1 / 2 / 3 更换影人头饰"
 		CueScript.ACTION_LAMP_DISTANCE:
 			return "滚轮推拉灯，让全场影子同步缩放"
 		CueScript.ACTION_LAMP_EXPOSURE:
@@ -641,7 +639,9 @@ func _draw() -> void:
 	_draw_canvas = self
 	_draw_canvas.draw_rect(TOP_BAR, Color("#232a27"))
 	_draw_hooks()
-	_draw_head_rack()
+	# 2026-10-18 用户定案：正式演出不再显示「备用影人头架」（调试用）。
+	# 头架只是换头的可视化提示，第一关流程里也没有换头 cue；
+	# `_draw_head_rack()` 保留以便调试时恢复，但默认不调用。
 	_draw_canvas.draw_rect(FOOTER, Color("#222927"))
 	_draw_canvas.draw_line(
 		Vector2(0.0, FOOTER.position.y),
