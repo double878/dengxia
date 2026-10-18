@@ -1,0 +1,25 @@
+{
+	"audio_driver": "WASAPI",
+	"checks": 26,
+	"failures": 0,
+	"jump_cue_ms": 27560,
+	"jump_song_ms": 27563,
+	"levels": {
+		"empty_stage_prelude": 0.250160217285156,
+		"empty_stage_start": 0.1819818764925,
+		"exit_drain": 0.167851805686951,
+		"exited": 0.0,
+		"free_exit_dark": 0.421582698822021,
+		"free_singing": 0.492660284042358,
+		"jump": 0.45783868432045,
+		"pause_drain": 0.513565480709076,
+		"paused": 0.0,
+		"playbill": 0.0,
+		"replay_pause_drain": 0.095706045627594,
+		"replay_paused": 0.0,
+		"replay_resumed": 0.146458327770233,
+		"replay_start": 0.1819818764925,
+		"resumed": 0.498580902814865,
+		"wait_final_accent": 0.274330884218216
+	}
+}

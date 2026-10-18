@@ -1,5 +1,13 @@
 # 录放契约（REPLAY_CONTRACT）
 
+> 2026-10-15 人形腾空身段：三槽 PuppetState 新增 air_height（归一化离地高度）、leg_spread（0..1 张腿）、body_angle（世界弧度）。stage_pos 继续表示脚下地面点。三字段按原演出采样、补采样、插值和显示，缺失为零，拒绝非有限/越界值；回放不重新调用跳跃、躲闪或双童编排。puppet_motion 事件记录动作开始，后续逐帧状态保留实际动作、取消和暂停。
+
+> 2026-10-15 第三关单场连续打戏：stage_id=3、scene_id=31 的同一份记录保存白素贞/鹿童/鹤童三槽真实 PuppetState；新增 performance.sword_progress（对应三人出鞘比例）、fight_phase、clash_point{x,y}、clash_strength。剑从实际腕点与前臂方向重建，幕前只读记录的出鞘和交锋，不重做 NPC 编排或碰撞。上山等待原样保留，自动出山后自由操演，原声不受动作、退场或暗灯影响；菜单暂停不采样。score.complete=false 的现有素材尾不发 performance_finished，不提前回放；测试可显式收尾记录验证已有段落，正式流程等待完整剧情素材。源轨为 performance.wav，记录同一条连续原声的位置与音源版本。
+
+> 2026-10-14 第二关正式录放（优先于下方历史范围）：`scripts/c/c_act2_capture.gd` 在 Act2Opening/Act2Hall 固定步末接宿主已收集的事件，仅读取控制器与 MusicClock。两场同一份 stage_id=2 的记录；场次编号 2/22 存在 performance.scene_id，第二场真实时间叠加第一场终点加 1 ms。首帧零点；离场/等待/补救/收势均包含在 duration_ms，菜单暂停不采样。第三具记录槽在第一场不可见，不虚构第三名演员。performance 追加场内真实时间、阶段、字幕、音源版本、入口遮挡/暗场章节卡、坐姿/倒地角、杯 owner/hand、白蛇六节/位置/翻面/复位计数，以及 main/entry/hit/slow 的 playing/paused/position_ms/volume_db。字幕与阶段变化使用现有 dialogue_line_changed/opera_phase_changed；补救原事件保留，白蛇对象命名空间 white_snake 仅允许漏做与补救事件。漏做 cue_miss 标记 missed_outright，不要求不存在的 cue_fire。回放只消费快照与事件，不重新执行动作许可、输入解算或补救判定；跨场、杯归属、坐姿、入口遮挡在原落点切换，姿态/灯/蛇节与倒地角连续插值，蛇 R 复位前保持原蛇颈，歌曲前向跳段离散应用。幕前复用原影件/杯/蛇与布景并整体镜像；无雨幕、操作手或操控提示。声音按记录播放，冻结/暂停保留原位置，恢复或跳段从记录位置 play，避免在暂停 WAV 上 seek 后恢复静音。整关结束先 choice；不看、跳过、自然结束都 result，下一次鼠标点击进入第三关并释放记录。
+
+> 2026-10-13 上半身补充：PuppetState.to_dict() 新增双肘 `elbow_angle{left,right}`、`head_tilt`、`torso_lean`，旧记录缺字段按零读取。快照保留、校验与变化检测覆盖这三个字段，任一实际变化触发补采样；回放直接插值实际角度，不重新执行鼠标解算。事件白名单新增 `upper_body_pose`、`upper_body_reset`。R 复位在记录落点瞬时应用，上一个样本至复位样本之间保持原上身姿态，位置与下半身继续正常插值；回放显示不提供操控提示。本补充不代表第二关完整录放已经接入。
+
 > 2026-10-11 正式入口补充（以下优先于后文历史原型口径）：`Level1Harness.start_recording()` 在应用开场站位之后写入 t=0 帧；固定步末 `CLiveCapture.capture()` 读取状态和宿主统一事件，不调用 Runtime.tick、不自行取 Runtime 事件。正式记录的 time_ms 使用唯一 MusicClock 的真实演出时间，payload 保留 song_time_ms、real_time_ms、sequence；duration_ms 为实际终点，包括全部等待和补救，菜单暂停除外。CSnapshot.performance 保存 song_ms、on_stage、umbrella（归属、交接起点及进度）、audio（各轨播放位置/暂停、等待增益）。PuppetState 增加 walk_phase/walk_amount，回放保留步态。新增合法类别为 puppet_hook、puppet_take_back、head_swap、opera_wait_begin/end、opera_take_close、opera_score_skipped、opera_phase_changed、dialogue_line_changed；音频事件的 object_id 为 performance_audio。CResultFlow.offer_replay 只进入 choice，choose_replay 才播放或进入 result；显式 begin_replay 保留为旧测试/探针兼容 API。GameFlow 使用选择 API，不自动回放。后文 CRecorder/CStageRecorder 的固定歌曲长度及歌曲时间口径只适用于旧原型，不用于正式游戏。
 
 > 本文件是 C 侧录放行为的**唯一契约**，由 C 负责维护。

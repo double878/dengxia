@@ -16,6 +16,7 @@ class_name CSnapshot
 ## 静态工厂里用 preload 常量而不是类名自引用：godot --headless --script
 ## 不读全局类名缓存，写 CSnapshot.new() 会报 "Could not find type"。
 const CSnapshotScript := preload("res://scripts/c/c_snapshot.gd")
+const UpperPose := preload("res://scripts/a/upper_body_pose.gd")
 
 ## 采样频率。30 Hz 是常规节拍；瞬时动作另有补采样，见 CHANGE_TRIGGERED。
 const SAMPLE_HZ: float = 30.0
@@ -65,11 +66,17 @@ static func _default_puppet_dict(puppet_id: int) -> Dictionary:
 		"facing": 0.0,
 		"turn_progress": 0.0,
 		"hand_angle": {"left": 0.0, "right": 0.0},
+		"elbow_angle": {"left": 0.0, "right": 0.0},
+		"head_tilt": 0.0,
+		"torso_lean": 0.0,
 		"head_id": -1,
 		"hook_slot": -1,
 		"is_controlled": false,
 		"walk_phase": 0.0,
 		"walk_amount": 0.0,
+		"air_height": 0.0,
+		"leg_spread": 0.0,
+		"body_angle": 0.0,
 	}
 
 
@@ -137,6 +144,28 @@ static func _sanitize_puppet_view(view: Variant, index: int) -> Dictionary:
 		}
 	else:
 		push_error("CSnapshot: puppets[%d].hand_angle 不是字典，保留缺省值" % index)
+	var elbow: Variant = view.get("elbow_angle", {})
+	if elbow is Dictionary:
+		for side: String in ["left", "right"]:
+			out.elbow_angle[side] = _pose_scalar(
+				elbow.get(side, 0.0),
+				0.0,
+				UpperPose.ELBOW_MAX,
+				"puppets[%d].elbow_angle.%s" % [index, side]
+			)
+	else:
+		push_error("CSnapshot: puppets[%d].elbow_angle 不是字典，保留缺省值" % index)
+	out.head_tilt = _pose_scalar(
+		view.get("head_tilt", 0.0),
+		-UpperPose.HEAD_LIMIT,
+		UpperPose.HEAD_LIMIT,
+		"puppets[%d].head_tilt" % index
+	)
+	out.torso_lean = _pose_scalar(
+		view.get("torso_lean", 0.0), 0.0, UpperPose.LEAN_MAX, "puppets[%d].torso_lean" % index
+	)
+	for spec: Array in [["air_height", 0.0, .3], ["leg_spread", 0.0, 1.0], ["body_angle", -PI, PI]]:
+		out[spec[0]] = _pose_scalar(view.get(spec[0], 0.0), spec[1], spec[2], "puppets[%d].%s" % [index, spec[0]])
 
 	for key in ["stance", "facing", "turn_progress", "walk_phase", "walk_amount"]:
 		out[key] = float(view.get(key, base[key]))
@@ -144,6 +173,16 @@ static func _sanitize_puppet_view(view: Variant, index: int) -> Dictionary:
 		out[key] = int(view.get(key, base[key]))
 	out["is_controlled"] = bool(view.get("is_controlled", base["is_controlled"]))
 	return out
+
+
+static func _pose_scalar(value: Variant, low: float, high: float, path: String) -> float:
+	if (not value is float and not value is int) or not is_finite(float(value)):
+		push_error("CSnapshot: %s 非有限数值，保留缺省姿态" % path)
+		return 0.0
+	var angle: float = float(value)
+	if angle < low or angle > high:
+		push_error("CSnapshot: %s 越界 %s，约束到 [%s, %s]" % [path, angle, low, high])
+	return clampf(angle, low, high)
 
 
 static func _sanitize_lamp_view(view: Dictionary) -> Dictionary:
@@ -179,7 +218,12 @@ func _changed_puppet_fields(index: int, a: Dictionary, b: Dictionary) -> Array:
 		out.append(prefix + "stage_pos")
 	if _dict_differs(a.get("hand_angle"), b.get("hand_angle")):
 		out.append(prefix + "hand_angle")
-	for key in ["stance", "facing", "turn_progress", "walk_phase", "walk_amount"]:
+	if _dict_differs(a.get("elbow_angle", {}), b.get("elbow_angle", {})):
+		out.append(prefix + "elbow_angle")
+	for key in [
+		"stance", "facing", "turn_progress", "walk_phase", "walk_amount", "head_tilt", "torso_lean",
+		"air_height", "leg_spread", "body_angle"
+	]:
 		if _float_differs(float(a.get(key, 0.0)), float(b.get(key, 0.0))):
 			out.append(prefix + key)
 	for key in ["head_id", "hook_slot"]:

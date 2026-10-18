@@ -1,5 +1,6 @@
 extends SceneTree
-## 第一关实际页面输入与第二关开场操演回归；图形运行另保存舞台截图。
+## 第一关实际页面输入、两级演示跳关（跳过第一关 / 跳过第二关）与第二关开场操演回归；
+## 图形运行另保存舞台截图。
 
 var checks: int = 0
 var failures: int = 0
@@ -22,6 +23,9 @@ func _run() -> void:
 	check(PlaceholderPuppet.SKIN_TEXTURES.size() == 3, "法海污染了第一关头架映射")
 	await test_skip_act1(false)
 	await test_skip_act1(true)
+	await test_skip_act2(2, false)
+	await test_skip_act2(2, true)
+	await test_skip_act2(22, false)
 	for route: String in ["decline", "skip", "complete"]:
 		await test_transition(route)
 	print("ACT2_OPENING checks=%d failures=%d" % [checks, failures])
@@ -61,6 +65,58 @@ func test_skip_act1(paused: bool) -> void:
 	check(opening.scene_file_path == "res://scenes/act2/opening.tscn", "跳过误入旧第二关教学场景")
 	check(opening.on_stage.is_empty() and opening.controller.controlled_id == -1, "跳过点击穿透到第二关操演")
 	check(opening.get_node_or_null("Hud/SkipAct1Button") == null, "跳过按钮残留第二关")
+	game.queue_free()
+	await process_frame
+
+
+## 「跳过第二关」：正式入口在第二关两个场次各注入一个按钮，点击后停住旧场次、
+## 释放整关记录，直接加载第三关入口；暂停时仍可点，操控白蛇时也不能被幕布输入吃掉。
+func test_skip_act2(stage_id: int, paused: bool) -> void:
+	var label: String = "场次 %d" % stage_id
+	var game: Node = GAME_SCENE.instantiate()
+	game.set("_stage_id", stage_id)
+	root.add_child(game)
+	await process_frame
+	var old_level: Node = game.get("_level")
+	if old_level == null:
+		check(false, label + " 没有加载")
+		game.queue_free()
+		await process_frame
+		return
+	old_level.set_process(false)
+	var button: Button = old_level.get_node_or_null("Hud/SkipAct2Button")
+	check(button != null, label + " 缺少跳过第二关按钮")
+	if button == null:
+		game.queue_free()
+		await process_frame
+		return
+	if paused:
+		old_level._toggle_pause()
+	# 操控白蛇时厅堂会吃掉全屏左键，按钮仍须点得动。
+	if stage_id == 22:
+		old_level.set("_snake_controlled", true)
+	check(button.is_visible_in_tree() and not button.disabled, label + " 跳过按钮不可用")
+	click(button.get_global_rect().get_center())
+	check(game.get("_advancing"), label + " 实际按钮点击没有触发切关")
+	button.pressed.emit()
+	var record := CPerformanceRecord.new()
+	game._performance_finished(record, 2, "端阳惊变")
+	check(game.get("_flow") == null, label + " 跳过同帧的完成信号仍触发回放选择")
+	await process_frame
+	await process_frame
+	check(game.get("_stage_id") == 3, label + " 跳过第二关没有进入第三关")
+	check(not is_instance_valid(old_level), label + " 跳过后第二关宿主没有释放")
+	check(game.get("_flow") == null and game.get("_page") == null, label + " 跳过第二关仍显示回放或收场")
+	check(game.get("_act2_capture") == null, label + " 跳过第二关仍保留整关记录")
+	check(game.get_child_count() == 1, label + " 重复跳过加载了多个第三关")
+	check(not game.get("_advancing"), label + " 跳过第二关后卡在切换中")
+	var act3: Node = game.get("_level")
+	check(
+		act3 != null and act3.scene_file_path == "res://scenes/act3/opening.tscn",
+		label + " 跳过第二关没有进入盗仙草入口"
+	)
+	if act3 != null:
+		check(act3.find_child("SkipAct2Button", true, false) == null, label + " 跳过按钮残留第三关")
 	game.queue_free()
 	await process_frame
 

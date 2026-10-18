@@ -1,0 +1,123 @@
+{
+  "clips": [
+    {
+      "filename": "0f60287400519e83dad7f9db37d6292e.mp4",
+      "sha256": "c2d2731d4205d68453228994c28ece54fa4841ff86cab4ffc00b4804610c0f12",
+      "wav": "finale-arrival-original.wav",
+      "decoded_frames": 410624,
+      "pcm_sha256": "69e788308979794032dda0a178e1f0c6748efc6f91f46fde651af61656b70af9",
+      "voice_wav": "finale-arrival-voice.wav",
+      "voice_pcm_sha256": "529453a5ae142289af4ff210a6aba0e28b1c0d2e423d9b9bd6a28038f93c0ac5",
+      "source_video_verified_now": false
+    },
+    {
+      "filename": "ac6fae1063f74a1eff02e1a894908a1e.mp4",
+      "sha256": "6c5e3b703b16b74a7d3d8b8032f6d1561bf57b2bad04b899322c09ca434efa6c",
+      "wav": "finale-blessing-original.wav",
+      "decoded_frames": 1310720,
+      "pcm_sha256": "1d5d620b85d77ea3d27638d1fb6e35d01ed216a812232d17daed254884676816",
+      "voice_wav": "finale-blessing-voice.wav",
+      "voice_pcm_sha256": "aab75b4114465ddcf641b5305a8be4354d130f99a72bcd93a6d136527b271d33",
+      "source_video_verified_now": false
+    }
+  ],
+  "preserved_prefix_frames": 6726551,
+  "preserved_prefix_pcm_sha256": "f060116f81f14ab81912dd02acac44663683f216eaaff89cc8647d13bbfd6e4e",
+  "performance_frames": 8413847,
+  "performance_pcm_sha256": "5aa5f1396131618500370ac17d09fc3a1f3c411304d3db9e164a5e8752b7c9fd",
+  "segments": [
+    {
+      "wav": "",
+      "kind": "silence",
+      "source_start_frame": 0,
+      "start_frame": 6726551,
+      "selected_frames": 14400,
+      "pcm_sha256": "c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390"
+    },
+    {
+      "wav": "finale-arrival-voice.wav",
+      "kind": "voice",
+      "source_start_frame": 48000,
+      "start_frame": 6740951,
+      "selected_frames": 362624,
+      "pcm_sha256": "ca4293bbafea4e31a483e9e07d4df429d08e5b50ac105b6d2584c7f311fb1b5e"
+    },
+    {
+      "wav": "finale-blessing-voice.wav",
+      "kind": "voice",
+      "source_start_frame": 448,
+      "start_frame": 7103575,
+      "selected_frames": 1046400,
+      "pcm_sha256": "ff836cddee7c90bce0e2fb84cdcf7cd7b58c6121c438bfa5eb0f4ac687154f2c"
+    },
+    {
+      "wav": "finale-blessing-original.wav",
+      "kind": "original",
+      "source_start_frame": 1046848,
+      "start_frame": 8149975,
+      "selected_frames": 263872,
+      "pcm_sha256": "92b4aa2c4beef14d107fecfdf13aa95f5d8f4b8b668e39decb01e3d5c4739936"
+    }
+  ],
+  "voice_extraction": {
+    "inputs": {
+      "weights_sha256": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e",
+      "config_sha256": "f63f38eb1e6e40a7db0dade714a5ae257555dd8748f4e774eae8679275a81926",
+      "sources": {
+        "finale-arrival-original.wav": "44ffce1665a8a411dc241eda8e34eaf4ad8c7286d9ab635f3c39a6b2ce5d6e3e",
+        "finale-blessing-original.wav": "bee7c49d166411481426c86e6992ededab68cc4b959498ee66c45746898951d3"
+      },
+      "script_sha256": "fbd28c53dd34af374d6aafd4023e5cf47fa11fbd43a90b4085e43e20e2a4f0cf"
+    },
+    "outputs": [
+      {
+        "file": "finale-arrival-vocals.wav",
+        "sha256": "7557b91315498cba2d4b4b5ae63d8c1e005a3d4cdbaf0c2596a4abea1feb15d3",
+        "source": "finale-arrival-original.wav",
+        "rate": 48000,
+        "frames": 410624,
+        "peak": 0.4743868410587311,
+        "model_rate": 44100,
+        "model_frames": 377261
+      },
+      {
+        "file": "finale-arrival-backing.wav",
+        "sha256": "099f5cafabb9cd7c2cb593aaf9c0114f01839a86031cc9472f65b5f9c5034ef3",
+        "source": "finale-arrival-original.wav",
+        "rate": 48000,
+        "frames": 410624,
+        "peak": 0.595625102519989,
+        "model_rate": 44100,
+        "model_frames": 377261
+      },
+      {
+        "file": "finale-blessing-vocals.wav",
+        "sha256": "ccbd796b7fe2f88c419ca711a363602cfaa29060cf554ffb86e6c759de039244",
+        "source": "finale-blessing-original.wav",
+        "rate": 48000,
+        "frames": 1310720,
+        "peak": 0.514714241027832,
+        "model_rate": 44100,
+        "model_frames": 1204224
+      },
+      {
+        "file": "finale-blessing-backing.wav",
+        "sha256": "6ee22b9b203dab43aba52176b89330ca7ed4749d45483b2e1c55b5be0ef1e1a0",
+        "source": "finale-blessing-original.wav",
+        "rate": 48000,
+        "frames": 1310720,
+        "peak": 0.506732702255249,
+        "model_rate": 44100,
+        "model_frames": 1204224
+      }
+    ],
+    "seconds": 365.31200000000536,
+    "processing": "MelBandRoformer voice extraction; resample to source rate; preserve source frame count; no synthesis, voice conversion or time stretching"
+  },
+  "crane_end_ms": 140136,
+  "response_gap_frames": 14400,
+  "arrival_source_start_frame": 48000,
+  "join_basis": "Keep the complete previous fight recording including the crane final line and tail. Insert 300ms silence. Start the incoming elder voice inside its 0.9-1.2s quiet interval, before vocal activity around 1.3s; omit the repeated opening crane tail.",
+  "timing_basis": "Vocal RMS and video observations; mixed-opera ASR was unreliable and was not used to cut words. Not a human listening assessment.",
+  "processing": "MelBandRoformer extraction of original elder voice, resampled to 48k stereo PCM16. No synthesis, voice conversion or time stretching. Preserve all earlier audio and the final Bai source tail verbatim. No backing track is mixed into elder selections."
+}

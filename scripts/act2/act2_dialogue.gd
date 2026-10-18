@@ -1,5 +1,5 @@
 extends Node
-## 第一幕真实走位许可、自然对白与暗场，只读取宿主唯一 MusicClock。
+## 第一场自然对白、真实迎接许可与暗场，只读取宿主唯一 MusicClock。
 
 signal finished
 
@@ -37,8 +37,8 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 	if dark <= 0 or duration <= dark:
 		return _fail("第二关第一幕暗场时标非法")
 	var lines: Variant = config.get("lines")
-	if not (lines is Array) or lines.size() != 6:
-		return _fail("第二关第一幕须交付六句对白")
+	if not (lines is Array) or lines.is_empty():
+		return _fail("第二关第一场缺少对白字幕")
 	var previous := 0
 	var ids := {}
 	for i in range(lines.size()):
@@ -54,7 +54,7 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 			or str(row.get("text", "")).is_empty()
 			or str(row.get("role_name", "")).is_empty()
 			or str(row.get("delivery", "")) != "speech"
-			or str(row.get("role_id", "")) != ("fahai" if i % 2 == 0 else "xuxian")
+			or str(row.get("role_id", "")) not in ["fahai", "xuxian"]
 			or begin < previous
 			or end <= begin
 			or end > dark
@@ -62,12 +62,9 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 			return _fail("第二关第一幕台词身份、时标或内容非法：" + id)
 		ids[id] = true
 		previous = end
-	var silence := int(config.get("agreement_silence_ms", -1))
-	if silence <= 0 or absi(int(lines[5].start_ms) - int(lines[4].end_ms) - silence) > 1:
-		return _fail("第二关第一幕末句前的沉默须与音轨时标一致")
 	var greeting_gate := int(config.get("greeting_gate_ms", -1))
-	if greeting_gate < int(lines[0].end_ms) or greeting_gate + 200 > int(lines[1].start_ms):
-		return _fail("第二关第一幕迎接等待点须在首句后的保护静音内")
+	if greeting_gate != 0:
+		return _fail("第二关对白须从实际迎接后完整播放，不得提前消耗首句")
 	var path := str(config.get("main_path", ""))
 	if not ResourceLoader.exists(path):
 		return _fail("缺少第二关第一幕主轨：" + path)
@@ -94,41 +91,30 @@ func setup(p_clock: MusicClock, p_controller: PuppetController) -> bool:
 	return true
 
 
-func update(on_stage: Array[int], entrance_clear: bool) -> void:
+func update(on_stage: Array[int], entrance_clear: bool, music_ready: bool = true) -> void:
 	if phase in ["error", "finished"] or clock.is_paused():
 		return
 	_fahai_present = on_stage.has(0)
 	_xuxian_present = on_stage.has(1)
-	_missing_actor = (
-		not _fahai_present or (phase not in ["wait_arrival", "first_line"] and not _xuxian_present)
-	)
+	_missing_actor = not _fahai_present or (phase != "wait_arrival" and not _xuxian_present)
 	if phase != "closing" and _missing_actor:
 		clock.set_song_frozen(true)
 		return
 	if phase == "wait_arrival":
 		var fahai := controller.get_puppet(0)
 		if entrance_clear and fahai.facing == -1.0:
-			phase = "first_line"
-			clock.set_song_frozen(false)
+			_update_greeting_target()
+			phase = "wait_greeting"
 		return
 	var now := clock.get_song_time_ms()
-	if phase == "first_line" and now >= int(config.greeting_gate_ms):
-		clock.set_song_frozen(true)
-		_update_greeting_target()
-		phase = "wait_greeting"
-		return
 	if phase == "wait_greeting":
 		_update_greeting_target()
-		if _has_greeted():
+		if _has_greeted() and music_ready:
 			phase = "dialogue"
 			clock.set_song_frozen(false)
 		return
 	clock.set_song_frozen(false)
-	# 沉默已编入主轨，只读歌曲时间；不再等待走位或另开计时器。
-	if phase == "dialogue" and now >= int(config.lines[4].end_ms):
-		phase = "thinking"
-	if phase == "thinking" and now >= int(config.lines[5].start_ms):
-		phase = "agreement"
+	# 开场音乐完整结束并实际迎接后，六句对白连续走同一主轨。
 	if now >= int(config.dark_start_ms):
 		phase = "closing"
 	if now >= int(config.duration_ms):
@@ -178,12 +164,8 @@ func get_hint() -> String:
 			if not _fahai_present:
 				return "按 1 请法海上场 · 空格接手后向左走出柳树"
 			if controller.controlled_id == 0:
-				return "向左走出柳树，在树旁开口"
-			return "空格接手法海 · 向左走出柳树，在树旁开口"
-		"first_line":
-			if not _fahai_present:
-				return "按 1 请法海重新上场，继续首句"
-			return "法海先开口 · 说完后再请许仙出门迎接"
+				return "向左走出柳树，等许仙出门迎接"
+			return "空格接手法海 · 向左走出柳树，等许仙迎接"
 		"wait_greeting":
 			if not _fahai_present:
 				return "按 1 请法海重新上场，等许仙迎接"
@@ -192,9 +174,6 @@ func get_hint() -> String:
 			if controller.controlled_id == 1:
 				return "从门洞朝法海走近，面对面迎接后回话"
 			return "空格接手许仙 · 从门洞朝法海走近，面对面迎接后回话"
-		"thinking":
-			if not _missing_actor:
-				return "许仙沉默片刻"
 		"closing", "finished":
 			return ""
 	if _missing_actor:
