@@ -68,9 +68,8 @@ func run(harness: LampHarness) -> int:
 	var oil_before: float = lamp.lamp.oil
 	lamp.set_input_map({KEY_DIST_DOWN: true, KEY_EXPO_DOWN: true})
 	for _i in 100:
-		lamp.update(0.1, [])            # 不推进歌曲时间
-	_expect_eq(lamp.lamp.oil, oil_before,
-		"同刻 100 次输入后 oil 未变（%.6f）" % oil_before)
+		lamp.update(0.1, [])  # 不推进歌曲时间
+	_expect_eq(lamp.lamp.oil, oil_before, "同刻 100 次输入后 oil 未变（%.6f）" % oil_before)
 
 	_section("5 歌曲时间推进时 oil 下降")
 	lamp.set_input_map({})
@@ -87,7 +86,7 @@ func run(harness: LampHarness) -> int:
 	var song_paused: int = clock.get_song_time_ms()
 	var oil_paused: float = lamp.lamp.oil
 	for _i in 60:
-		lamp.update(1.0, [])            # 模拟墙钟空转
+		lamp.update(1.0, [])  # 模拟墙钟空转
 	_expect_eq(clock.get_song_time_ms(), song_paused, "暂停期间歌曲时间冻结在 %d ms" % song_paused)
 	_expect_eq(lamp.lamp.oil, oil_paused, "暂停期间 oil 冻结在 %.6f" % oil_paused)
 
@@ -102,9 +101,12 @@ func run(harness: LampHarness) -> int:
 		clock.set_free_time_ms(clock.get_song_time_ms() + 100)
 		lamp.update(0.1, [])
 	var expected_oil: float = LampControllerScript.clamp_unit(
-		oil_paused - LampControllerScript.OIL_CONSUME_PER_S)
-	_expect_true(absf(lamp.lamp.oil - expected_oil) <= 0.002,
-		"恢复后推进 1 秒 oil=%.6f，符合消耗速率（期望 ≈%.6f）" % [lamp.lamp.oil, expected_oil])
+		oil_paused - LampControllerScript.OIL_CONSUME_PER_S
+	)
+	_expect_true(
+		absf(lamp.lamp.oil - expected_oil) <= 0.002,
+		"恢复后推进 1 秒 oil=%.6f，符合消耗速率（期望 ≈%.6f）" % [lamp.lamp.oil, expected_oil]
+	)
 
 	_section("8 命中与错拍事件驱动 flame_feedback")
 	var fb_before: float = lamp.lamp.flame_feedback
@@ -134,18 +136,41 @@ func run(harness: LampHarness) -> int:
 	_expect_true(lamp.take_events().is_empty(), "事件被取走后队列清空，不会重复记录")
 	if not events.is_empty():
 		var e: Dictionary = events[events.size() - 1]
-		var complete: bool = e.has("time_ms") and e.has("kind") and e.has("object_id") \
-			and e.has("cue_id") and e.has("payload")
-		_expect_true(complete, "事件五字段齐备：t=%d kind=%s obj=%s cue=%s" % [
-			int(e["time_ms"]), str(e["kind"]), str(e["object_id"]), str(e["cue_id"])])
-		_expect_true(typeof(e["object_id"]) == TYPE_STRING,
-			"object_id 为字符串「%s」" % str(e["object_id"]))
+		var complete: bool = (
+			e.has("time_ms")
+			and e.has("kind")
+			and e.has("object_id")
+			and e.has("cue_id")
+			and e.has("payload")
+		)
+		_expect_true(
+			complete,
+			(
+				"事件五字段齐备：t=%d kind=%s obj=%s cue=%s"
+				% [int(e["time_ms"]), str(e["kind"]), str(e["object_id"]), str(e["cue_id"])]
+			)
+		)
+		_expect_true(
+			typeof(e["object_id"]) == TYPE_STRING, "object_id 为字符串「%s」" % str(e["object_id"])
+		)
 		var payload: Dictionary = e["payload"]
-		_expect_true(payload.has("distance") and payload.has("exposure") \
-			and payload.has("oil") and payload.has("flame_feedback"),
-			"payload 带四个 LampState 字段：distance=%.3f exposure=%.3f oil=%.4f fb=%.3f" % [
-				float(payload["distance"]), float(payload["exposure"]),
-				float(payload["oil"]), float(payload["flame_feedback"])])
+		_expect_true(
+			(
+				payload.has("distance")
+				and payload.has("exposure")
+				and payload.has("oil")
+				and payload.has("flame_feedback")
+			),
+			(
+				"payload 带四个 LampState 字段：distance=%.3f exposure=%.3f oil=%.4f fb=%.3f"
+				% [
+					float(payload["distance"]),
+					float(payload["exposure"]),
+					float(payload["oil"]),
+					float(payload["flame_feedback"])
+				]
+			)
+		)
 
 	_section("10 结束演出后不再消耗灯油")
 	var oil_finished: float = lamp.lamp.oil
@@ -168,8 +193,13 @@ func run(harness: LampHarness) -> int:
 
 
 func _event(kind: String, cue_id: String, time_ms: int) -> Dictionary:
-	return {"time_ms": time_ms, "kind": kind, "object_id": 0, "cue_id": cue_id,
-		"payload": {"kind": kind}}
+	return {
+		"time_ms": time_ms,
+		"kind": kind,
+		"object_id": 0,
+		"cue_id": cue_id,
+		"payload": {"kind": kind}
+	}
 
 
 func _section(title: String) -> void:

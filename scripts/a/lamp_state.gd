@@ -37,8 +37,7 @@ func clamp_continuous() -> void:
 
 ## 四个连续量是否都落在合法区间内（诊断与断言用，不修改状态）。
 func is_in_range() -> bool:
-	return _in_unit(distance) and _in_unit(exposure) and _in_unit(oil) \
-		and _in_unit(flame_feedback)
+	return _in_unit(distance) and _in_unit(exposure) and _in_unit(oil) and _in_unit(flame_feedback)
 
 
 ## 与另一份状态快照相比，哪些字段发生了变化。changed_fields 按固定顺序输出，

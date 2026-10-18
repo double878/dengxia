@@ -33,11 +33,11 @@ const DefScript := preload("res://scripts/c/c_scenery_def.gd")
 
 ## 颜色：取自 TECH_DESIGN 第 5.2 节项目色板。布景是**背景**，整体压暗、降饱和，
 ## 免得抢了幕前影人的视觉重心。
-const COLOR_WILLOW: Color = Color("#34866A")        ## 皮影绿（小青主色，也用于布景局部）
+const COLOR_WILLOW: Color = Color("#34866A")  ## 皮影绿（小青主色，也用于布景局部）
 const COLOR_WILLOW_DARK: Color = Color("#27503F")
-const COLOR_BRIDGE: Color = Color("#8a5a2b")        ## 木褐（比「幕后木褐 #3A2A18」亮，作桥可见）
+const COLOR_BRIDGE: Color = Color("#8a5a2b")  ## 木褐（比「幕后木褐 #3A2A18」亮，作桥可见）
 const COLOR_BRIDGE_LIGHT: Color = Color("#b07a41")
-const BACKDROP_ALPHA: float = 0.55                   ## 整体透明度：背景不抢戏
+const BACKDROP_ALPHA: float = 0.55  ## 整体透明度：背景不抢戏
 
 ## —— 灯光耦合常量（2026-10-11 切幕前置）——
 ## 基色 0.82：布景天生比幕布暗一档（它是「幕上的景」，不是主角）。
@@ -91,7 +91,7 @@ func _ready() -> void:
 	_content.draw.connect(_draw_items)
 	if clip_rect.size != Vector2.ZERO:
 		clip_children = CanvasItem.CLIP_CHILDREN_ONLY
-		queue_redraw()   # 画裁剪模板
+		queue_redraw()  # 画裁剪模板
 	_content.queue_redraw()
 	# 灯光初值在 _content 建好之后才生效一次——否则建树前调set_light() 会被
 	# 这里的 _content = Node2D.new() 覆盖掉（该节点刚创建，modulate 是默认值）。
@@ -192,9 +192,7 @@ func set_pan(item_id: String, pan_x: float) -> void:
 ## 归一化 → 像素。**与影人同一公式**（PlaceholderPuppet.stage_to_screen）；
 ## 两处必须一致，否则布景与影人会错位。
 func _to_px(nx: float, ny: float) -> Vector2:
-	return Vector2(
-		stage_origin.x + nx * stage_size.x,
-		stage_origin.y + ny * stage_size.y)
+	return Vector2(stage_origin.x + nx * stage_size.x, stage_origin.y + ny * stage_size.y)
 
 
 func _draw() -> void:
@@ -249,8 +247,9 @@ func _draw_texture_item(item: Dictionary, tex: Texture2D, anchor_x: float, ancho
 	var foot: Vector2 = item.get("texture_foot_px", Vector2.ZERO)
 	var size: Vector2 = Vector2(tex.get_width(), tex.get_height()) * scale
 	var top_left: Vector2 = target - foot * scale
-	_content.draw_texture_rect(tex, Rect2(top_left, size), false,
-		Color(1.0, 1.0, 1.0, BACKDROP_ALPHA))
+	_content.draw_texture_rect(
+		tex, Rect2(top_left, size), false, Color(1.0, 1.0, 1.0, BACKDROP_ALPHA)
+	)
 
 
 ## 柳树：树干 + 向左上展开的树冠。
@@ -318,14 +317,22 @@ func _draw_arch_bridge(anchor_x: float, anchor_y: float, params: Dictionary) -> 
 		pts.append(_quad(foot, ctrl, arch_end, float(i) / float(segs)))
 	for i in range(segs):
 		_content.draw_line(pts[i], pts[i + 1], deck, thick)
-		_content.draw_line(pts[i] + Vector2(0.0, -thick * 0.35),
-			pts[i + 1] + Vector2(0.0, -thick * 0.35), deck_hi, 2.0)
+		_content.draw_line(
+			pts[i] + Vector2(0.0, -thick * 0.35),
+			pts[i + 1] + Vector2(0.0, -thick * 0.35),
+			deck_hi,
+			2.0
+		)
 
 	# 水平延伸段：从拱顶一路平伸到画布右缘之外（`_to_px` 不裁剪，渲染器裁剪收进幕布）
 	var off_canvas: Vector2 = Vector2(stage_size.x * 2.0, 0.0)
 	_content.draw_line(arch_end, arch_end + off_canvas, deck, thick)
-	_content.draw_line(arch_end + Vector2(0, -thick * 0.35),
-		arch_end + off_canvas + Vector2(0, -thick * 0.35), deck_hi, 2.0)
+	_content.draw_line(
+		arch_end + Vector2(0, -thick * 0.35),
+		arch_end + off_canvas + Vector2(0, -thick * 0.35),
+		deck_hi,
+		2.0
+	)
 
 	# 拱脚一小段立墩（把桥「种」在接地线上）
 	_content.draw_line(foot, foot + Vector2(0.0, -rise * 0.35), deck, pier_w)
@@ -339,7 +346,9 @@ static func _quad(p0: Vector2, ctrl: Vector2, p1: Vector2, t: float) -> Vector2:
 
 ## 给调用方的挂载说明（本类不自己去改父节点，也不建 .tscn —— 走零 .tscn 路线）。
 static func usage_hint() -> String:
-	return "把 CSceneryView 作为舞台的子节点 add_child，并让它排在幕布之后、影人之前" \
-		+ "（z_index 设为负值，或作为影人节点之前的兄弟节点）。" \
-		+ "若贴图可能越出幕布，请在进树前把 clip_rect 设为幕布矩形（渲染器级裁剪）。" \
+	return (
+		"把 CSceneryView 作为舞台的子节点 add_child，并让它排在幕布之后、影人之前"
+		+ "（z_index 设为负值，或作为影人节点之前的兄弟节点）。"
+		+ "若贴图可能越出幕布，请在进树前把 clip_rect 设为幕布矩形（渲染器级裁剪）。"
 		+ "切勿挂到影子缩放根之下——布景不随灯影缩放。"
+	)

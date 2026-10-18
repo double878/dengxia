@@ -133,8 +133,9 @@ func _test_06_rewatch_same_show(t: Variant) -> void:
 	flow.advance(1.0)
 	# 1 秒处的影人状态应与首次播放一致（同一份记录，不重新生成）
 	var first_record: Variant = _record_without_applause()
-	t.check_eq(int(flow.get_replay_duration_ms()), first_record.get_replay_duration_ms(),
-		"时长与原记录一致")
+	t.check_eq(
+		int(flow.get_replay_duration_ms()), first_record.get_replay_duration_ms(), "时长与原记录一致"
+	)
 	t.finish("可重复重看")
 
 

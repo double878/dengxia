@@ -84,14 +84,15 @@ func _initialize() -> void:
 	var snapshots: int = record.snapshots.size()
 	var expected: int = int(ceil(float(duration_ms) / 1000.0 * 30.0))
 	_expect(snapshots >= expected, "快照数 %d 不低于 30Hz 理论值 %d" % [snapshots, expected])
-	_expect(snapshots <= RUN_STEPS, "快照数 %d 不超过推进帧数 %d（每帧至多一条）"
-		% [snapshots, RUN_STEPS])
+	_expect(snapshots <= RUN_STEPS, "快照数 %d 不超过推进帧数 %d（每帧至多一条）" % [snapshots, RUN_STEPS])
 
 	# ---- 时间轴覆盖 ----
 	var last_snap: Variant = record.snapshots[snapshots - 1]
 	_expect(int(last_snap.time_ms) <= duration_ms, "末帧时间未超出关卡时长")
-	_expect(int(last_snap.time_ms) >= duration_ms - 200,
-		"末帧覆盖到时长末端（实际 %d / %d）" % [int(last_snap.time_ms), duration_ms])
+	_expect(
+		int(last_snap.time_ms) >= duration_ms - 200,
+		"末帧覆盖到时长末端（实际 %d / %d）" % [int(last_snap.time_ms), duration_ms]
+	)
 
 	# ---- 事件完整性 ----
 	var events: int = record.events.size()
@@ -131,10 +132,13 @@ func _initialize() -> void:
 
 	var stats: Dictionary = recorder.get_stats()
 	print("")
-	print("  快照 %d 帧 / 事件 %d 条 / 帧数 %d"
-		% [snapshots, events, int(stats.get("frame_count", 0))])
-	print("  时钟倒退 %d 次 / 末帧 t=%dms"
-		% [int(stats.get("backwards_clock_count", 0)), int(last_snap.time_ms)])
+	print("  快照 %d 帧 / 事件 %d 条 / 帧数 %d" % [snapshots, events, int(stats.get("frame_count", 0))])
+	print(
+		(
+			"  时钟倒退 %d 次 / 末帧 t=%dms"
+			% [int(stats.get("backwards_clock_count", 0)), int(last_snap.time_ms)]
+		)
+	)
 
 	# ---- 释放：记录不留存，符合「不做录像库」约定 ----
 	recorder.discard()

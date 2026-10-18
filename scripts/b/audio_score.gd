@@ -13,10 +13,20 @@ var slow_path: String = "res://assets/audio/act1/remedy_slow.wav"
 
 static func make_act1() -> AudioScore:
 	var score := AudioScore.new()
-	for item in [["drums", ""], ["instrumental", ""], ["vocal_xuxian", "xuxian"],
-			["vocal_baisuzhen", "baisuzhen"], ["vocal_xiaoqing", "xiaoqing"]]:
-		score.tracks.append({"asset_id": item[0], "role_id": item[1],
-			"path": "res://assets/audio/act1/%s.wav" % item[0]})
+	for item in [
+		["drums", ""],
+		["instrumental", ""],
+		["vocal_xuxian", "xuxian"],
+		["vocal_baisuzhen", "baisuzhen"],
+		["vocal_xiaoqing", "xiaoqing"]
+	]:
+		score.tracks.append(
+			{
+				"asset_id": item[0],
+				"role_id": item[1],
+				"path": "res://assets/audio/act1/%s.wav" % item[0]
+			}
+		)
 	var rows: Array = [
 		["xiaoqing_01", "xiaoqing", 5000, 10000, "姐姐移步到亭前。", "l1_c2_move_left"],
 		["xuxian_01", "xuxian", 12500, 20000, "一柄青伞遮春雨。", "l1_c3_hand_raise"],
@@ -25,9 +35,17 @@ static func make_act1() -> AudioScore:
 		["xuxian_02", "xuxian", 47500, 52500, "他朝有缘再相见。", ""],
 	]
 	for row in rows:
-		score.lines.append({"line_id": row[0], "role_id": row[1], "start_ms": row[2],
-			"end_ms": row[3], "text": row[4], "cue_id": row[5],
-			"vocal_asset_id": "vocal_%s" % row[1]})
+		score.lines.append(
+			{
+				"line_id": row[0],
+				"role_id": row[1],
+				"start_ms": row[2],
+				"end_ms": row[3],
+				"text": row[4],
+				"cue_id": row[5],
+				"vocal_asset_id": "vocal_%s" % row[1]
+			}
+		)
 	return score
 
 
@@ -97,7 +115,10 @@ func _check_wav(id: String, stream: Variant, expected_s: float, problems: Array[
 		problems.append("%s 须为 48 kHz / 16-bit 运行 WAV" % id)
 	if wav.loop_mode != AudioStreamWAV.LOOP_DISABLED:
 		problems.append("%s 导入资源须关闭循环，由播放器管理慢鼓循环" % id)
-	if wav.get_length() <= 0.0 or (expected_s > 0.0 and absf(wav.get_length() - expected_s) > 0.001):
+	if (
+		wav.get_length() <= 0.0
+		or (expected_s > 0.0 and absf(wav.get_length() - expected_s) > 0.001)
+	):
 		problems.append("%s 长度错误：%.6f s，要求 %.3f s" % [id, wav.get_length(), expected_s])
 
 

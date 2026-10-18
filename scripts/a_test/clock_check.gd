@@ -16,9 +16,9 @@ const SETTLE_FRAMES: int = 30
 const MEASURE_FRAMES: int = 90
 const PAUSE_FRAMES: int = 60
 const RESUME_FRAMES: int = 30
-const DRIFT_TOLERANCE: float = 0.15        ## 允许的相对漂移（音频缓冲与调度抖动）
+const DRIFT_TOLERANCE: float = 0.15  ## 允许的相对漂移（音频缓冲与调度抖动）
 const RESUME_JUMP_TOLERANCE_MS: int = 200  ## 恢复后允许的读数偏差
-const MIN_PAUSE_REAL_S: float = 0.3        ## 暂停要真的持续一段真实时间，检验才有意义
+const MIN_PAUSE_REAL_S: float = 0.3  ## 暂停要真的持续一段真实时间，检验才有意义
 
 const PHASE_SETTLE: int = 0
 const PHASE_MEASURE: int = 1
@@ -74,8 +74,7 @@ func step(delta: float) -> void:
 ## 打印结论并返回失败条数。
 func report() -> int:
 	print("")
-	print("时钟实测结论：%s" % ("全部符合预期" if failures.is_empty()
-		else "%d 项不符合预期" % failures.size()))
+	print("时钟实测结论：%s" % ("全部符合预期" if failures.is_empty() else "%d 项不符合预期" % failures.size()))
 	for line in failures:
 		print("  不符合预期：%s" % line)
 	return failures.size()
@@ -84,8 +83,7 @@ func report() -> int:
 func _step_settle() -> void:
 	if _frames == 0:
 		var latency_ms: float = clock.get_output_latency_s() * 1000.0
-		_expect(clock.is_audio_driven(),
-			"歌曲时间来自真实音频播放位置（output_latency=%.1f ms）" % latency_ms)
+		_expect(clock.is_audio_driven(), "歌曲时间来自真实音频播放位置（output_latency=%.1f ms）" % latency_ms)
 	_frames += 1
 	if _frames >= SETTLE_FRAMES:
 		_phase = PHASE_MEASURE
@@ -102,11 +100,16 @@ func _step_measure(delta: float) -> void:
 	var song_delta_ms: int = clock.get_song_time_ms() - _song_start_ms
 	var wall_ms: float = _wall_s * 1000.0
 	var relative: float = absf(float(song_delta_ms) - wall_ms) / maxf(wall_ms, 1.0)
-	print("  测速 %d 帧：歌曲时间推进 %d ms，真实时间 %.0f ms，相对偏差 %.2f%%"
-		% [MEASURE_FRAMES, song_delta_ms, wall_ms, relative * 100.0])
-	_expect(relative <= DRIFT_TOLERANCE,
-		"歌曲时间推进与真实时间一致（偏差 %.2f%% ≤ %.0f%%）"
-		% [relative * 100.0, DRIFT_TOLERANCE * 100.0])
+	print(
+		(
+			"  测速 %d 帧：歌曲时间推进 %d ms，真实时间 %.0f ms，相对偏差 %.2f%%"
+			% [MEASURE_FRAMES, song_delta_ms, wall_ms, relative * 100.0]
+		)
+	)
+	_expect(
+		relative <= DRIFT_TOLERANCE,
+		"歌曲时间推进与真实时间一致（偏差 %.2f%% ≤ %.0f%%）" % [relative * 100.0, DRIFT_TOLERANCE * 100.0]
+	)
 	_expect(clock.is_audio_driven(), "测量期间始终由音频播放位置驱动")
 	_phase = PHASE_PAUSED
 	_frames = 0
@@ -131,14 +134,17 @@ func _step_paused() -> void:
 		return
 	_pause_real_s = float(Time.get_ticks_usec() - _pause_started_us) / 1000000.0
 	print("  暂停 %d 帧（真实 %.2f s）：歌曲时间冻结在 %d ms" % [PAUSE_FRAMES, _pause_real_s, _frozen_ms])
-	_expect(_pause_real_s >= MIN_PAUSE_REAL_S,
-		"暂停确实持续了一段真实时间（%.2f s ≥ %.2f s），因此「恢复不跳变」是有意义的检验"
-		% [_pause_real_s, MIN_PAUSE_REAL_S])
+	_expect(
+		_pause_real_s >= MIN_PAUSE_REAL_S,
+		"暂停确实持续了一段真实时间（%.2f s ≥ %.2f s），因此「恢复不跳变」是有意义的检验" % [_pause_real_s, MIN_PAUSE_REAL_S]
+	)
 	clock.resume()
 	_expect(not clock.is_paused(), "resume() 后时钟报告未暂停")
 	_resumed_ms = clock.get_song_time_ms()
-	_expect(absf(float(_resumed_ms - _frozen_ms)) <= RESUME_JUMP_TOLERANCE_MS,
-		"恢复瞬间读数 %d ms 贴近冻结值 %d ms（不跳变、不重播）" % [_resumed_ms, _frozen_ms])
+	_expect(
+		absf(float(_resumed_ms - _frozen_ms)) <= RESUME_JUMP_TOLERANCE_MS,
+		"恢复瞬间读数 %d ms 贴近冻结值 %d ms（不跳变、不重播）" % [_resumed_ms, _frozen_ms]
+	)
 	_phase = PHASE_RESUME
 	_frames = 0
 	_resume_elapsed_s = 0.0
@@ -152,11 +158,16 @@ func _step_resume(delta: float) -> void:
 	var after_ms: int = clock.get_song_time_ms()
 	var expected_ms: int = _frozen_ms + int(round(_resume_elapsed_s * 1000.0))
 	var error_ms: int = after_ms - expected_ms
-	print("  恢复后 %d 帧（真实 %.0f ms）：歌曲时间 %d ms，期望约 %d ms，误差 %d ms"
-		% [RESUME_FRAMES, _resume_elapsed_s * 1000.0, after_ms, expected_ms, error_ms])
-	_expect(absf(float(error_ms)) <= RESUME_JUMP_TOLERANCE_MS,
-		"恢复后继续按真实速度推进（误差 %d ms ≤ %d ms），暂停时长没有被算进歌曲时间"
-		% [error_ms, RESUME_JUMP_TOLERANCE_MS])
+	print(
+		(
+			"  恢复后 %d 帧（真实 %.0f ms）：歌曲时间 %d ms，期望约 %d ms，误差 %d ms"
+			% [RESUME_FRAMES, _resume_elapsed_s * 1000.0, after_ms, expected_ms, error_ms]
+		)
+	)
+	_expect(
+		absf(float(error_ms)) <= RESUME_JUMP_TOLERANCE_MS,
+		"恢复后继续按真实速度推进（误差 %d ms ≤ %d ms），暂停时长没有被算进歌曲时间" % [error_ms, RESUME_JUMP_TOLERANCE_MS]
+	)
 	_expect(after_ms > _frozen_ms, "恢复后歌曲时间确实继续推进：%d -> %d ms" % [_frozen_ms, after_ms])
 	_expect(clock.is_audio_driven(), "恢复后仍由音频播放位置驱动")
 	_phase = PHASE_DONE

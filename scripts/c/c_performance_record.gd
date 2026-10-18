@@ -140,8 +140,9 @@ func append_event(event: Variant) -> bool:
 		push_error("CPerformanceRecord.append_event: 拒绝写入 —— " + "; ".join(problems))
 		return false
 	if duration_ms > 0 and event.time_ms > duration_ms:
-		push_error("CPerformanceRecord.append_event: time_ms %d 超出本关时长 %d"
-			% [event.time_ms, duration_ms])
+		push_error(
+			"CPerformanceRecord.append_event: time_ms %d 超出本关时长 %d" % [event.time_ms, duration_ms]
+		)
 		return false
 	event.assign_seq(_next_seq)
 	_next_seq += 1
@@ -168,12 +169,17 @@ func append_act(p_act_index: int, p_has_applause: bool, p_start_ms: int, p_end_m
 	if p_start_ms > p_end_ms:
 		push_error("CPerformanceRecord.append_act: 段落起止时间非法 [%d, %d]" % [p_start_ms, p_end_ms])
 		return
-	acts.append({
-		"act_index": p_act_index,
-		"has_applause": p_has_applause,
-		"start_ms": p_start_ms,
-		"end_ms": p_end_ms,
-	})
+	(
+		acts
+		. append(
+			{
+				"act_index": p_act_index,
+				"has_applause": p_has_applause,
+				"start_ms": p_start_ms,
+				"end_ms": p_end_ms,
+			}
+		)
+	)
 
 
 ## 演出结束，冻结记录。此后只读。
@@ -181,8 +187,12 @@ func append_act(p_act_index: int, p_has_applause: bool, p_start_ms: int, p_end_m
 func finish(t_end_ms: int = -1) -> void:
 	_finished = true
 	if t_end_ms >= 0 and duration_ms > 0 and t_end_ms > duration_ms:
-		push_warning("CPerformanceRecord.finish: 收尾时间 %d 超出本关时长 %d，仍以 duration_ms 为准"
-			% [t_end_ms, duration_ms])
+		push_warning(
+			(
+				"CPerformanceRecord.finish: 收尾时间 %d 超出本关时长 %d，仍以 duration_ms 为准"
+				% [t_end_ms, duration_ms]
+			)
+		)
 
 
 ## 回放时长。以固定时长为准，不用最后一帧的时间戳（见类注释的时长口径）。
@@ -211,8 +221,12 @@ func validate_invariants() -> Array:
 		if duration_ms > 0 and snap.time_ms > duration_ms:
 			problems.append("snapshot time_ms %d 超出本关时长 %d" % [snap.time_ms, duration_ms])
 		if snap.puppets.size() != CSnapshotScript.PUPPET_COUNT:
-			problems.append("snapshot t=%d 的 puppets 长度应为 %d，实际 %d"
-				% [snap.time_ms, CSnapshotScript.PUPPET_COUNT, snap.puppets.size()])
+			problems.append(
+				(
+					"snapshot t=%d 的 puppets 长度应为 %d，实际 %d"
+					% [snap.time_ms, CSnapshotScript.PUPPET_COUNT, snap.puppets.size()]
+				)
+			)
 		prev = snap.time_ms
 
 	# events：按 (time_ms, seq) 升序，且 seq 从 1 连续。
@@ -228,8 +242,9 @@ func validate_invariants() -> Array:
 			problems.append("event 未分配 seq：%s" % ev.describe())
 	for i in range(1, events.size()):
 		if events[i - 1].compare_order(events[i]) > 0:
-			problems.append("events 顺序错误：%s 出现在 %s 之前"
-				% [events[i - 1].describe(), events[i].describe()])
+			problems.append(
+				"events 顺序错误：%s 出现在 %s 之前" % [events[i - 1].describe(), events[i].describe()]
+			)
 			break
 
 	# 忠实性：补救成功不得抹除此前的失误记录。
@@ -239,8 +254,10 @@ func validate_invariants() -> Array:
 	# 数量不必一一对应。
 	for e in events:
 		var ev: Variant = e
-		if ev.kind == CTimedEventScript.KIND_REMEDY_SUCCESS \
-				and not bool(ev.payload.get("still_missed", true)):
+		if (
+			ev.kind == CTimedEventScript.KIND_REMEDY_SUCCESS
+			and not bool(ev.payload.get("still_missed", true))
+		):
 			problems.append("remedy_success 的 still_missed 应为 true：%s" % ev.describe())
 
 	# 忠实性：错拍时动作照常发生，cue_fire 与 cue_miss 必须并存。
@@ -257,11 +274,12 @@ func validate_invariants() -> Array:
 	# _outcomes，不随事件 payload 下发（performance_system.gd:118 vs :121）。
 	for e in events:
 		var ev2: Variant = e
-		if ev2.kind == CTimedEventScript.KIND_CUE_MISS \
-				and str(ev2.payload.get("reason", "")) != "missed_outright" \
-				and not _has_kind_in(events, CTimedEventScript.KIND_CUE_FIRE, ev2.cue_id):
-			problems.append("cue_miss(%s) 没有对应的 cue_fire，回放将看不到动作确实发生过"
-				% ev2.describe())
+		if (
+			ev2.kind == CTimedEventScript.KIND_CUE_MISS
+			and str(ev2.payload.get("reason", "")) != "missed_outright"
+			and not _has_kind_in(events, CTimedEventScript.KIND_CUE_FIRE, ev2.cue_id)
+		):
+			problems.append("cue_miss(%s) 没有对应的 cue_fire，回放将看不到动作确实发生过" % ev2.describe())
 
 	return problems
 
@@ -315,4 +333,5 @@ func get_stats() -> Dictionary:
 		"event_count": events.size(),
 		"act_count": acts.size(),
 		"last_snapshot_time_ms": _last_snapshot_time_ms,
-		"expected_30hz_count": int(ceil(float(duration_ms) / 1000.0 * SAMPLE_HZ)),	}
+		"expected_30hz_count": int(ceil(float(duration_ms) / 1000.0 * SAMPLE_HZ)),
+	}

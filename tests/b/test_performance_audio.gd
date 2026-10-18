@@ -24,12 +24,22 @@ func _result(t: ATestBase) -> Dictionary:
 
 func _test_timeline(t: ATestBase, score: RefCounted) -> void:
 	t.begin("剧情字幕按歌曲时间推进，过门无台词")
-	for pair in [[4999, ""], [5000, "xiaoqing_01"], [9999, "xiaoqing_01"],
-			[10000, ""], [12500, "xuxian_01"], [20000, ""],
-			[22500, "baisuzhen_01"], [30000, ""], [37500, "baisuzhen_02"],
-			[45000, ""], [47500, "xuxian_02"], [52500, ""], [55000, ""]]:
-		t.check_eq(str(score.line_at(pair[0]).get("line_id", "")), pair[1],
-			"字幕边界 %d ms" % pair[0])
+	for pair in [
+		[4999, ""],
+		[5000, "xiaoqing_01"],
+		[9999, "xiaoqing_01"],
+		[10000, ""],
+		[12500, "xuxian_01"],
+		[20000, ""],
+		[22500, "baisuzhen_01"],
+		[30000, ""],
+		[37500, "baisuzhen_02"],
+		[45000, ""],
+		[47500, "xuxian_02"],
+		[52500, ""],
+		[55000, ""]
+	]:
+		t.check_eq(str(score.line_at(pair[0]).get("line_id", "")), pair[1], "字幕边界 %d ms" % pair[0])
 	t.check_eq(score.validate().size(), 0, "配置合法")
 	t.finish("五句轮唱与过门连续推进")
 
@@ -68,14 +78,18 @@ func _test_states(t: ATestBase, score: RefCounted) -> void:
 	clock.set_player(audio.get_player(), 96.0)
 	clock.start()
 	audio.start()
-	for pair in [[12000, 0.0], [12250, -4.5], [12500, -9.0],
-			[20000, -9.0], [20300, -4.5], [20600, 0.0]]:
+	for pair in [
+		[12000, 0.0], [12250, -4.5], [12500, -9.0], [20000, -9.0], [20300, -4.5], [20600, 0.0]
+	]:
 		clock.set_free_time_ms(pair[0])
 		audio.update(0.02, 0.5)
-		t.check_approx(audio.get_player().stream.get_sync_stream_volume(1), pair[1], 0.01,
-			"器乐入唱与尾腔处平滑让位：%d ms" % pair[0])
-		t.check_approx(audio.get_player().stream.get_sync_stream_volume(0), 0.0, 0.001,
-			"锣鼓不随器乐让位")
+		t.check_approx(
+			audio.get_player().stream.get_sync_stream_volume(1),
+			pair[1],
+			0.01,
+			"器乐入唱与尾腔处平滑让位：%d ms" % pair[0]
+		)
+		t.check_approx(audio.get_player().stream.get_sync_stream_volume(0), 0.0, 0.001, "锣鼓不随器乐让位")
 	audio.take_events()
 	clock.set_free_time_ms(12500)
 	audio.update(0.02, 0.5)
@@ -87,13 +101,26 @@ func _test_states(t: ATestBase, score: RefCounted) -> void:
 	t.check_eq(audio.take_events().size(), 0, "同一唱句不反复触发事件")
 	t.check(not changed.is_empty(), "唱句变化可由记录端消费")
 	for e in changed:
-		t.check(e.has("time_ms") and e.has("kind") and e.has("object_id")
-			and e.has("cue_id") and e.has("payload"), "沿用 TimedEvent 外壳")
-		t.check(e["payload"].has("real_time_ms") and e["payload"].has("sequence")
-			and e["payload"].has("audio_version"), "事件保留真实时钟、顺序和版本")
+		t.check(
+			(
+				e.has("time_ms")
+				and e.has("kind")
+				and e.has("object_id")
+				and e.has("cue_id")
+				and e.has("payload")
+			),
+			"沿用 TimedEvent 外壳"
+		)
+		t.check(
+			(
+				e["payload"].has("real_time_ms")
+				and e["payload"].has("sequence")
+				and e["payload"].has("audio_version")
+			),
+			"事件保留真实时钟、顺序和版本"
+		)
 	audio.update(0.5, 0.0)
-	t.check(audio.vocal_gain_db() < -2.0 and audio.vocal_gain_db() >= -6.0,
-		"唱腔随表现转弱但保留可懂度")
+	t.check(audio.vocal_gain_db() < -2.0 and audio.vocal_gain_db() >= -6.0, "唱腔随表现转弱但保留可懂度")
 	clock.set_song_frozen(true)
 	audio.update(0.2, 0.0)
 	t.check(audio.get_player().stream_paused, "补救真正暂停全部主分轨")
@@ -104,16 +131,16 @@ func _test_states(t: ATestBase, score: RefCounted) -> void:
 	t.check(audio.get_slow_player().stream_paused, "菜单暂停也暂停慢鼓")
 	clock.resume()
 	audio.update(0.2, 0.0)
-	t.check(audio.get_player().stream_paused and not audio.get_slow_player().stream_paused,
-		"菜单恢复时先继续补救")
+	t.check(
+		audio.get_player().stream_paused and not audio.get_slow_player().stream_paused, "菜单恢复时先继续补救"
+	)
 	clock.set_song_frozen(false)
 	audio.update(0.5, 1.0)
 	t.check(not audio.get_player().stream_paused, "解冻原位置续播")
 	t.check(not audio.get_slow_player().playing, "过渡后慢鼓不遗留")
 	t.check_approx(audio.vocal_gain_db(), 0.0, 0.001, "补救结束恢复唱腔增益")
 	audio.stop()
-	t.check(not audio.get_player().playing and not audio.get_slow_player().playing,
-		"收场全部停声")
+	t.check(not audio.get_player().playing and not audio.get_slow_player().playing, "收场全部停声")
 	t.check(audio.current_line().is_empty(), "收场清空字幕")
 	clock.start()
 	audio.start()

@@ -25,21 +25,34 @@ func capture(harness: Object, events: Array) -> void:
 	var puppets: Array = []
 	for state: PuppetState in runtime.puppet_controller.puppets:
 		puppets.append(state.to_dict())
-	var performance := {"song_ms": harness.clock.get_song_time_ms(),
-		"frozen": harness.clock.is_song_frozen(), "waiting": harness.opera_flow != null and harness.opera_flow.is_waiting(),
-		"on_stage": on_stage.duplicate(), "bpm": harness.clock.bpm, "umbrella": {}, "audio": {}}
+	var performance := {
+		"song_ms": harness.clock.get_song_time_ms(),
+		"frozen": harness.clock.is_song_frozen(),
+		"waiting": harness.opera_flow != null and harness.opera_flow.is_waiting(),
+		"on_stage": on_stage.duplicate(),
+		"bpm": harness.clock.bpm,
+		"umbrella": {},
+		"audio": {}
+	}
 	if runtime.director.umbrella != null:
 		performance.umbrella = runtime.director.umbrella.recorded_view()
 	if harness.opera_audio != null:
 		performance.audio = harness.opera_audio.recorded_view()
-	var snap: CSnapshot = Snapshot.from_views(now, puppets, runtime.lamp_controller.lamp.to_dict(), performance)
+	var snap: CSnapshot = Snapshot.from_views(
+		now, puppets, runtime.lamp_controller.lamp.to_dict(), performance
+	)
 	if record.should_sample(now, snap) or runtime.is_over():
 		record.append_snapshot(snap)
 	for source: Dictionary in events:
 		var payload: Dictionary = source.get("payload", {}).duplicate(true)
 		payload["song_time_ms"] = int(source.time_ms)
-		var event: CTimedEvent = Event.new(int(payload.get("real_time_ms", now)),
-			StringName(source.kind), source.object_id, str(source.get("cue_id", "")), payload)
+		var event: CTimedEvent = Event.new(
+			int(payload.get("real_time_ms", now)),
+			StringName(source.kind),
+			source.object_id,
+			str(source.get("cue_id", "")),
+			payload
+		)
 		if not record.append_event(event):
 			problems.append("无法录制 %s@%d" % [source.kind, now])
 	if runtime.is_over():

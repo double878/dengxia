@@ -36,8 +36,10 @@ func _step(harness: ControlsHarness, steps: int = 1) -> void:
 
 ## 与 PuppetController.begin_drag 使用同一命中位置公式
 func _chest_tag_px(state: PuppetState) -> Vector2:
-	return Vector2(state.stage_pos.x * STAGE_W,
-		state.stage_pos.y * STAGE_H - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5)
+	return Vector2(
+		state.stage_pos.x * STAGE_W,
+		state.stage_pos.y * STAGE_H - PuppetControllerScript.CHEST_TAG_RADIUS_PX * 0.5
+	)
 
 
 func _press(harness: ControlsHarness, input_map: Dictionary) -> void:
@@ -67,8 +69,7 @@ func run_all() -> Dictionary:
 	_test_15_head_swap(t)
 	_test_16_hook_hint_speaks_from_availability(t)
 	_test_17_hand_angle_cap_follows_level(t)
-	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed,
-		"failures": t.failures}
+	return {"exit_code": t.report(), "passed": t.passed, "failed": t.failed, "failures": t.failures}
 
 
 ## 手角上限可被关卡收小（第一关的「打伞位」= 90°）。这不是姿势偏好，是手感：
@@ -79,26 +80,25 @@ func _test_17_hand_angle_cap_follows_level(t: ATestBase) -> void:
 	t.begin("17 手角上限可被关卡收小（打伞位 90°），下限不受影响")
 	var harness: ControlsHarness = _new_harness()
 	var state: PuppetState = harness.controller.get_controlled()
-	var umbrella_pose: float = PI * 0.5        ## 第一关的打伞位
+	var umbrella_pose: float = PI * 0.5  ## 第一关的打伞位
 	harness.controller.hand_angle_max = umbrella_pose
 	_press(harness, {"both_raise": true})
 	_step(harness, 60)
-	t.check_approx(state.hand_angle.x, umbrella_pose, 1e-6,
-		"左手应停在本折上限 90°，而不是继续举到 180°")
+	t.check_approx(state.hand_angle.x, umbrella_pose, 1e-6, "左手应停在本折上限 90°，而不是继续举到 180°")
 	t.check_approx(state.hand_angle.y, umbrella_pose, 1e-6, "右手同样停在本折上限")
 
 	_press(harness, {"both_lower": true})
 	_step(harness, 120)
-	t.check_approx(state.hand_angle.x, PuppetStateScript.HAND_ANGLE_MIN, 1e-6,
-		"下限（收手 −90°）不受上限影响")
+	t.check_approx(state.hand_angle.x, PuppetStateScript.HAND_ANGLE_MIN, 1e-6, "下限（收手 −90°）不受上限影响")
 	t.check_approx(state.hand_angle.y, PuppetStateScript.HAND_ANGLE_MIN, 1e-6, "右手同此")
 
 	# 调回硬边界（相当于换到第 2~4 关）：抬到顶仍是 180°
 	harness.controller.hand_angle_max = PuppetStateScript.HAND_ANGLE_MAX
 	_press(harness, {"both_raise": true})
 	_step(harness, 90)
-	t.check_approx(state.hand_angle.x, PuppetStateScript.HAND_ANGLE_MAX, 1e-6,
-		"上限调回 180° 后双手仍能举过头顶")
+	t.check_approx(
+		state.hand_angle.x, PuppetStateScript.HAND_ANGLE_MAX, 1e-6, "上限调回 180° 后双手仍能举过头顶"
+	)
 	t.finish("上限随关卡可调，抬落手感与下限不变")
 
 
@@ -128,8 +128,7 @@ func _test_15_head_swap(t: ATestBase) -> void:
 	t.check(controller.call("swap_head", 1), "按 2 应与头架第二个位置换头")
 	t.check_eq(state.head_id, rack_before, "影人戴上架上的那个头")
 	t.check_eq(controller.head_on_rack(1), head_before, "换下的头留在原位置")
-	t.check_eq(_all_heads(controller), [0, 1, 2, 3, 4, 5],
-		"六个头仍然各出现恰好一次")
+	t.check_eq(_all_heads(controller), [0, 1, 2, 3, 4, 5], "六个头仍然各出现恰好一次")
 	# PRD 第 4.2 节：换头只作用于当前受控影人
 	t.check(controller.call("hook_current"), "先把影人挂起")
 	t.check(not controller.call("swap_head", 0), "无人受控时换头不生效")
@@ -173,22 +172,29 @@ func _test_01_initial_state(t: ATestBase) -> void:
 		t.check_in_range(state.stage_pos.y, 0.0, 1.0, "影人 %d 的 stage_pos.y" % state.puppet_id)
 		t.check_in_range(state.stance, 0.0, 1.0, "影人 %d 的 stance" % state.puppet_id)
 		t.check_in_range(state.facing, -1.0, 1.0, "影人 %d 的 facing" % state.puppet_id)
-		t.check(absf(state.facing) == 1.0,
-			"影人只有正反两面，facing 应恰为 ±1（实际 %s）" % str(state.facing))
-		t.check_in_range(state.turn_progress, 0.0, 1.0,
-			"影人 %d 的 turn_progress" % state.puppet_id)
-		t.check_in_range(state.hand_angle.x, PuppetState.HAND_ANGLE_MIN, PuppetState.HAND_ANGLE_MAX,
-			"影人 %d 的左手角" % state.puppet_id)
-		t.check_in_range(state.hand_angle.y, PuppetState.HAND_ANGLE_MIN, PuppetState.HAND_ANGLE_MAX,
-			"影人 %d 的右手角" % state.puppet_id)
-		t.check_approx(state.hand_angle.x, 0.0, 1e-9,
-			"影人 %d 开局手臂自然垂下（0 弧度）" % state.puppet_id)
-		t.check_approx(state.turn_progress, 1.0, 1e-9,
-			"影人 %d 开局已停稳在正面（turn_progress = 1）" % state.puppet_id)
-		t.check(state.head_id >= 0 and state.head_id <= 5,
-			"影人 %d 的 head_id 应在 0-5，实际 %d" % [state.puppet_id, state.head_id])
-		t.check(not head_owners.has(state.head_id),
-			"head_id %d 不应被两个影人同时占用" % state.head_id)
+		t.check(absf(state.facing) == 1.0, "影人只有正反两面，facing 应恰为 ±1（实际 %s）" % str(state.facing))
+		t.check_in_range(state.turn_progress, 0.0, 1.0, "影人 %d 的 turn_progress" % state.puppet_id)
+		t.check_in_range(
+			state.hand_angle.x,
+			PuppetState.HAND_ANGLE_MIN,
+			PuppetState.HAND_ANGLE_MAX,
+			"影人 %d 的左手角" % state.puppet_id
+		)
+		t.check_in_range(
+			state.hand_angle.y,
+			PuppetState.HAND_ANGLE_MIN,
+			PuppetState.HAND_ANGLE_MAX,
+			"影人 %d 的右手角" % state.puppet_id
+		)
+		t.check_approx(state.hand_angle.x, 0.0, 1e-9, "影人 %d 开局手臂自然垂下（0 弧度）" % state.puppet_id)
+		t.check_approx(
+			state.turn_progress, 1.0, 1e-9, "影人 %d 开局已停稳在正面（turn_progress = 1）" % state.puppet_id
+		)
+		t.check(
+			state.head_id >= 0 and state.head_id <= 5,
+			"影人 %d 的 head_id 应在 0-5，实际 %d" % [state.puppet_id, state.head_id]
+		)
+		t.check(not head_owners.has(state.head_id), "head_id %d 不应被两个影人同时占用" % state.head_id)
 		head_owners[state.head_id] = state.puppet_id
 	t.check_eq(controlled_count, 1, "恰好一个影人受控")
 	t.check_eq(harness.controller.controlled_id, 0, "0 号影人受控")
@@ -201,15 +207,14 @@ func _test_02_drag_horizontal(t: ATestBase) -> void:
 	var state: PuppetState = harness.controller.get_controlled()
 	var x0: float = state.stage_pos.x
 	var started: bool = harness.controller.begin_drag(
-		harness.controller.controlled_id, _chest_tag_px(state))
+		harness.controller.controlled_id, _chest_tag_px(state)
+	)
 	t.check(started, "在胸签位置按下左键应进入拖动")
 	var events_begin: Array[Dictionary] = harness.controller.take_events()
 	t.check(_has_kind(events_begin, "drag_begin"), "拖动开始应发出 drag_begin 事件")
 	_drag_by(harness, Vector2(240.0, 0.0), 3)
-	t.check(state.stage_pos.x > x0, "向右拖动后 stage_pos.x 应增大（%.4f → %.4f）"
-		% [x0, state.stage_pos.x])
-	t.check_approx(state.stage_pos.x, x0 + 720.0 / STAGE_W, 1e-4,
-		"累计 240px x 3 应移动 720px 的名义位置")
+	t.check(state.stage_pos.x > x0, "向右拖动后 stage_pos.x 应增大（%.4f → %.4f）" % [x0, state.stage_pos.x])
+	t.check_approx(state.stage_pos.x, x0 + 720.0 / STAGE_W, 1e-4, "累计 240px x 3 应移动 720px 的名义位置")
 	t.finish("胸签拖动可连续横移，并发出 drag_begin")
 
 
@@ -217,7 +222,9 @@ func _test_03_drag_horizontal_bounds(t: ATestBase) -> void:
 	t.begin("03 横向拖动到限后不再越界")
 	var harness: ControlsHarness = _new_harness()
 	var state: PuppetState = harness.controller.get_controlled()
-	harness.input_reader.controller.begin_drag(harness.controller.controlled_id, _chest_tag_px(state))
+	harness.input_reader.controller.begin_drag(
+		harness.controller.controlled_id, _chest_tag_px(state)
+	)
 	_drag_by(harness, Vector2(600.0, 0.0), 20)
 	t.check_eq(state.stage_pos.x, 1.0, "持续向右拖应停在 stage_pos.x = 1.0")
 	_drag_by(harness, Vector2(600.0, 0.0), 10)
@@ -234,7 +241,9 @@ func _test_04_drag_vertical_stance_bounds(t: ATestBase) -> void:
 	var harness: ControlsHarness = _new_harness()
 	var state: PuppetState = harness.controller.get_controlled()
 	t.check_eq(state.stance, 0.0, "初始应为完全站立")
-	harness.input_reader.controller.begin_drag(harness.controller.controlled_id, _chest_tag_px(state))
+	harness.input_reader.controller.begin_drag(
+		harness.controller.controlled_id, _chest_tag_px(state)
+	)
 
 	_drag_by(harness, Vector2(0.0, 60.0), 4)
 	t.check_in_range(state.stance, 0.0, 1.0, "向下拖后的 stance")
@@ -261,13 +270,13 @@ func _test_05_turn_is_gradual(t: ATestBase) -> void:
 	var state: PuppetState = harness.controller.get_controlled()
 	t.check_eq(state.facing, PuppetState.FACING_FRONT, "初始应为正面朝外")
 	t.check_approx(state.turn_progress, 1.0, 1e-9, "初始应已停稳在正面")
-	harness.input_reader.controller.begin_drag(harness.controller.controlled_id, _chest_tag_px(state))
+	harness.input_reader.controller.begin_drag(
+		harness.controller.controlled_id, _chest_tag_px(state)
+	)
 
 	_drag_by(harness, Vector2(-40.0, 0.0), 1)
-	t.check_eq(state.facing, PuppetState.FACING_FRONT,
-		"第一帧仍是正面：翻面有过渡，不能瞬间翻过去")
-	t.check(state.turn_progress < 1.0,
-		"第一帧翻面已经开始（turn_progress=%.4f）" % state.turn_progress)
+	t.check_eq(state.facing, PuppetState.FACING_FRONT, "第一帧仍是正面：翻面有过渡，不能瞬间翻过去")
+	t.check(state.turn_progress < 1.0, "第一帧翻面已经开始（turn_progress=%.4f）" % state.turn_progress)
 	t.check(state.turn_progress > 0.0, "翻面进度应从 0 起步")
 
 	# 换面发生在「侧对观众」的那一瞬（turn_progress = 0.5），之后宽度再展开回 1.0
@@ -313,8 +322,7 @@ func _test_06_hands_independent(t: ATestBase) -> void:
 
 	_press(harness, {"left_raise": true})
 	_step(harness, 4)
-	t.check(state.hand_angle.x > left0, "按住 A 左手应抬起（%.4f → %.4f）"
-		% [left0, state.hand_angle.x])
+	t.check(state.hand_angle.x > left0, "按住 A 左手应抬起（%.4f → %.4f）" % [left0, state.hand_angle.x])
 	t.check_approx(state.hand_angle.y, right0, 1e-9, "按住 A 不应影响右手")
 	var left_after_a: float = state.hand_angle.x
 	_release_all(harness)
@@ -322,8 +330,7 @@ func _test_06_hands_independent(t: ATestBase) -> void:
 
 	_press(harness, {"right_raise": true})
 	_step(harness, 4)
-	t.check(state.hand_angle.y > right0, "按住 D 右手应抬起（%.4f → %.4f）"
-		% [right0, state.hand_angle.y])
+	t.check(state.hand_angle.y > right0, "按住 D 右手应抬起（%.4f → %.4f）" % [right0, state.hand_angle.y])
 	t.check_approx(state.hand_angle.x, left_after_a, 1e-9, "按住 D 不应影响左手")
 	_release_all(harness)
 	_step(harness, 1)
@@ -393,9 +400,10 @@ func _test_08_opposite_commands_hold_pose(t: ATestBase) -> void:
 	_press(harness, {"left_raise": true, "both_lower": true})
 	_step(harness, 30)
 	t.check_approx(state.hand_angle.x, locked_left, 1e-9, "A+S 净零时左手角应冻结")
-	t.check(state.hand_angle.y < locked_right,
-		"A+S 时右手只收到落手指令，应继续落下（%.4f → %.4f）"
-		% [locked_right, state.hand_angle.y])
+	t.check(
+		state.hand_angle.y < locked_right,
+		"A+S 时右手只收到落手指令，应继续落下（%.4f → %.4f）" % [locked_right, state.hand_angle.y]
+	)
 	var right_after_conflict: float = state.hand_angle.y
 
 	_release_all(harness)
@@ -410,16 +418,23 @@ func _test_09_all_continuous_values_bounded(t: ATestBase) -> void:
 	t.begin("09 所有连续量在极端输入下都不越界")
 	var harness: ControlsHarness = _new_harness()
 	var state: PuppetState = harness.controller.get_controlled()
-	harness.input_reader.controller.begin_drag(harness.controller.controlled_id, _chest_tag_px(state))
+	harness.input_reader.controller.begin_drag(
+		harness.controller.controlled_id, _chest_tag_px(state)
+	)
 	_press(harness, {"left_raise": true, "right_raise": true, "both_raise": true})
 	var bounded: bool = true
 	var worst: String = ""
 	for i in 200:
 		harness.input_reader.controller.drag_to(Vector2(120.0, 90.0))
 		_step(harness, 1)
-		if not (is_finite(state.stage_pos.x) and is_finite(state.stage_pos.y)
-				and is_finite(state.stance) and is_finite(state.facing)
-				and is_finite(state.hand_angle.x) and is_finite(state.hand_angle.y)):
+		if not (
+			is_finite(state.stage_pos.x)
+			and is_finite(state.stage_pos.y)
+			and is_finite(state.stance)
+			and is_finite(state.facing)
+			and is_finite(state.hand_angle.x)
+			and is_finite(state.hand_angle.y)
+		):
 			bounded = false
 			worst = "第 %d 帧出现非有限值" % i
 			break
@@ -439,20 +454,20 @@ func _test_09_all_continuous_values_bounded(t: ATestBase) -> void:
 			bounded = false
 			worst = "第 %d 帧 turn_progress=%.6f" % [i, state.turn_progress]
 			break
-		if state.hand_angle.x < PuppetState.HAND_ANGLE_MIN - 1e-6 \
-				or state.hand_angle.x > PuppetState.HAND_ANGLE_MAX + 1e-6 \
-				or state.hand_angle.y < PuppetState.HAND_ANGLE_MIN - 1e-6 \
-				or state.hand_angle.y > PuppetState.HAND_ANGLE_MAX + 1e-6:
+		if (
+			state.hand_angle.x < PuppetState.HAND_ANGLE_MIN - 1e-6
+			or state.hand_angle.x > PuppetState.HAND_ANGLE_MAX + 1e-6
+			or state.hand_angle.y < PuppetState.HAND_ANGLE_MIN - 1e-6
+			or state.hand_angle.y > PuppetState.HAND_ANGLE_MAX + 1e-6
+		):
 			bounded = false
 			worst = "第 %d 帧 hand_angle=(%.6f, %.6f)" % [i, state.hand_angle.x, state.hand_angle.y]
 			break
 	t.check(bounded, "200 帧极端输入后连续量仍全部在界内：%s" % worst)
 	t.check_approx(state.stage_pos.x, 1.0, 1e-6, "横向应停在右边界")
 	t.check_approx(state.stance, 1.0, 1e-6, "站蹲应停在下边界（完全蹲下）")
-	t.check_approx(state.hand_angle.x, PuppetState.HAND_ANGLE_MAX, 1e-6,
-		"左手角应停在上限 +180°（举过头顶）")
-	t.check_approx(state.hand_angle.y, PuppetState.HAND_ANGLE_MAX, 1e-6,
-		"右手角应停在上限 +180°（举过头顶）")
+	t.check_approx(state.hand_angle.x, PuppetState.HAND_ANGLE_MAX, 1e-6, "左手角应停在上限 +180°（举过头顶）")
+	t.check_approx(state.hand_angle.y, PuppetState.HAND_ANGLE_MAX, 1e-6, "右手角应停在上限 +180°（举过头顶）")
 	t.finish("极端输入 200 帧后无越界、无非有限值，双手可到达 180°")
 
 
@@ -462,7 +477,9 @@ func _test_10_event_contract(t: ATestBase) -> void:
 	var state: PuppetState = harness.controller.get_controlled()
 	_step(harness, 3)
 	var t_before: int = harness.clock.get_song_time_ms()
-	harness.input_reader.controller.begin_drag(harness.controller.controlled_id, _chest_tag_px(state))
+	harness.input_reader.controller.begin_drag(
+		harness.controller.controlled_id, _chest_tag_px(state)
+	)
 	_drag_by(harness, Vector2(200.0, 80.0), 3)
 	_press(harness, {"left_raise": true})
 	_step(harness, 3)
@@ -475,8 +492,13 @@ func _test_10_event_contract(t: ATestBase) -> void:
 	var monotonic: bool = true
 	var shape_ok: bool = true
 	for e in events:
-		if not (e.has("time_ms") and e.has("kind") and e.has("object_id")
-				and e.has("cue_id") and e.has("payload")):
+		if not (
+			e.has("time_ms")
+			and e.has("kind")
+			and e.has("object_id")
+			and e.has("cue_id")
+			and e.has("payload")
+		):
 			shape_ok = false
 			continue
 		if typeof(e["time_ms"]) != TYPE_INT or typeof(e["object_id"]) != TYPE_INT:
@@ -489,7 +511,10 @@ func _test_10_event_contract(t: ATestBase) -> void:
 			monotonic = false
 		previous_time = e["time_ms"]
 		kinds.append(e["kind"])
-	t.check(shape_ok, "每个事件都应含 time_ms(int)/kind(String)/object_id(int)/cue_id(String)/payload(Dictionary)")
+	t.check(
+		shape_ok,
+		"每个事件都应含 time_ms(int)/kind(String)/object_id(int)/cue_id(String)/payload(Dictionary)"
+	)
 	t.check(monotonic, "time_ms 应按歌曲时间单调不减")
 	t.check(previous_time >= t_before, "事件时间应不早于操作前的时钟")
 	t.check(kinds.has("drag_begin"), "应含 drag_begin")
@@ -507,7 +532,9 @@ func _test_11_state_changes_before_events(t: ATestBase) -> void:
 	t.begin("11 状态先变化，再供表现和录制读取")
 	var harness: ControlsHarness = _new_harness()
 	var state: PuppetState = harness.controller.get_controlled()
-	harness.input_reader.controller.begin_drag(harness.controller.controlled_id, _chest_tag_px(state))
+	harness.input_reader.controller.begin_drag(
+		harness.controller.controlled_id, _chest_tag_px(state)
+	)
 	_step(harness, 2)
 	harness.controller.take_events()
 
@@ -524,8 +551,7 @@ func _test_11_state_changes_before_events(t: ATestBase) -> void:
 		if e["kind"] == "pose_stance":
 			stance_event_value = float(e["payload"]["stance"])
 	t.check(not is_nan(stance_event_value), "同一帧应能读到 pose_stance 事件")
-	t.check_approx(stance_event_value, state.stance, 1e-9,
-		"事件载荷应等于同帧状态值，而不是上一帧的旧值")
+	t.check_approx(stance_event_value, state.stance, 1e-9, "事件载荷应等于同帧状态值，而不是上一帧的旧值")
 
 	var hand_snapshot: float = state.hand_angle.x
 	_press(harness, {"left_raise": true})
@@ -536,8 +562,7 @@ func _test_11_state_changes_before_events(t: ATestBase) -> void:
 			motion_angle = float(e["payload"]["angle"])
 	t.check(state.hand_angle.x > hand_snapshot, "按住 A 后状态应先于事件更新")
 	if not is_nan(motion_angle):
-		t.check_approx(motion_angle, state.hand_angle.x, 1e-9,
-			"hand_motion 载荷应等于同帧的 hand_angle")
+		t.check_approx(motion_angle, state.hand_angle.x, 1e-9, "hand_motion 载荷应等于同帧的 hand_angle")
 	t.finish("同帧内 PuppetState 已是新值，事件载荷与之一致")
 
 
@@ -550,10 +575,8 @@ func _test_12_release_keeps_pending_drag(t: ATestBase) -> void:
 	t.check(harness.controller.begin_drag(0, _chest_tag_px(state)), "应命中胸签")
 	harness.controller.drag_to(Vector2(192.0, 108.0))
 	harness.controller.end_drag()
-	t.check_approx(state.stage_pos.x, x_before + 0.1, 1e-6,
-		"松开前积累的横向位移不能丢失")
-	t.check_approx(state.stance, stance_before + 0.1, 1e-6,
-		"松开前积累的站蹲位移不能丢失")
+	t.check_approx(state.stage_pos.x, x_before + 0.1, 1e-6, "松开前积累的横向位移不能丢失")
+	t.check_approx(state.stance, stance_before + 0.1, 1e-6, "松开前积累的站蹲位移不能丢失")
 	t.check(not harness.controller.is_dragging(), "松开后应退出拖动")
 	t.check(_has_kind(harness.controller.take_events(), "drag_end"), "应记录拖动结束")
 	t.finish("同一帧内的最后一次移动在松开时结算")
@@ -605,15 +628,14 @@ func _test_16_hook_hint_speaks_from_availability(t: ATestBase) -> void:
 
 	# 空场：有槽可用，提示可以挂起
 	t.check_eq(controller.find_free_hook_slot(), 0, "空场时第一个挂钩可用")
-	t.check_eq(Level1ASceneScript.hook_hint_text(controller, -1), "空格 = 挂起这个影人",
-		"有空槽时才提示可以挂起")
+	t.check_eq(Level1ASceneScript.hook_hint_text(controller, -1), "空格 = 挂起这个影人", "有空槽时才提示可以挂起")
 
 	# 挂起 0 号之后：受控为空，提示取回
 	t.check(controller.call("hook_current"), "挂起受控影人")
-	t.check_eq(Level1ASceneScript.hook_hint_text(controller, 0), "空格 = 取回 1 号影人",
-		"选中挂起的影人时提示取回")
-	t.check_eq(Level1ASceneScript.hook_hint_text(controller, -1),
-		"点手边的签选中挂起的影人，再按空格取回", "没选中时提示先选中")
+	t.check_eq(Level1ASceneScript.hook_hint_text(controller, 0), "空格 = 取回 1 号影人", "选中挂起的影人时提示取回")
+	t.check_eq(
+		Level1ASceneScript.hook_hint_text(controller, -1), "点手边的签选中挂起的影人，再按空格取回", "没选中时提示先选中"
+	)
 	t.check(controller.call("take_back", 0), "取回影人")
 
 	# 第一关开局布景：0 号受控，另两个影人占满两个挂钩 —— 此时挂起不可能成功
@@ -621,8 +643,9 @@ func _test_16_hook_hint_speaks_from_availability(t: ATestBase) -> void:
 	controller.puppets[2].hook_slot = 1
 	t.check_eq(controller.find_free_hook_slot(), -1, "两个挂钩都被占满时没有空槽")
 	t.check(not controller.call("hook_current"), "没有空槽时按空格挂不起影人")
-	t.check_eq(Level1ASceneScript.hook_hint_text(controller, -1), "",
-		"挂不起来时不再显示「空格 = 挂起」，不承诺做不到的操作")
+	t.check_eq(
+		Level1ASceneScript.hook_hint_text(controller, -1), "", "挂不起来时不再显示「空格 = 挂起」，不承诺做不到的操作"
+	)
 	t.finish("提示与挂钩可用性一致")
 
 
@@ -635,7 +658,10 @@ func _has_kind(events: Array[Dictionary], kind: String) -> bool:
 
 func _has_hand_dir(events: Array[Dictionary], hand: String, dir: int) -> bool:
 	for e in events:
-		if e["kind"] == "hand_motion" and e["payload"]["hand"] == hand \
-				and int(e["payload"]["dir"]) == dir:
+		if (
+			e["kind"] == "hand_motion"
+			and e["payload"]["hand"] == hand
+			and int(e["payload"]["dir"]) == dir
+		):
 			return true
 	return false

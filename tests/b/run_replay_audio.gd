@@ -28,8 +28,13 @@ func _run() -> void:
 	AudioServer.add_bus_effect(bus, capture)
 	for player: AudioStreamPlayer in audio.get_children():
 		player.bus = "ReplayVerification"
-	var view := {"main": {"playing": true, "paused": false, "position_ms": float(config.lines[0].start_ms) + 1000.0},
-		"wait": {"playing": false}, "slow": {"playing": false}, "wait_gain": 0.0}
+	var view := {
+		"main":
+		{"playing": true, "paused": false, "position_ms": float(config.lines[0].start_ms) + 1000.0},
+		"wait": {"playing": false},
+		"slow": {"playing": false},
+		"wait_gain": 0.0
+	}
 	audio.apply_replay(view, [], false)
 	await create_timer(0.3).timeout
 	check(audio.get_player().playing and not audio.get_player().stream_paused, "主轨开始播放")
@@ -47,7 +52,10 @@ func _run() -> void:
 	view.wait_gain = 1.0
 	audio.apply_replay(view, [], false)
 	await create_timer(0.2).timeout
-	check(audio.get_player().stream_paused and audio.get_node("Act1_wait_loop").playing, "等待器乐接管且主轨保持原位")
+	check(
+		audio.get_player().stream_paused and audio.get_node("Act1_wait_loop").playing,
+		"等待器乐接管且主轨保持原位"
+	)
 	if DisplayServer.get_name() != "headless":
 		capture.clear_buffer()
 		await create_timer(0.2).timeout
@@ -61,11 +69,17 @@ func _run() -> void:
 	view.main.paused = false
 	view.wait.playing = false
 	audio.apply_replay(view, [], false)
-	check(not audio.get_player().stream_paused and not audio.get_node("Act1_wait_loop").playing, "继续恢复主轨、关闭等待器乐")
+	check(
+		not audio.get_player().stream_paused and not audio.get_node("Act1_wait_loop").playing,
+		"继续恢复主轨、关闭等待器乐"
+	)
 	view.main.position_ms = float(config.closing_ms)
 	audio.apply_replay(view, [], false)
 	await create_timer(0.08).timeout
-	check(absf(audio.get_player().get_playback_position() * 1000 - float(config.closing_ms)) < 250, "前向跳段到同一音源位置")
+	check(
+		absf(audio.get_player().get_playback_position() * 1000 - float(config.closing_ms)) < 250,
+		"前向跳段到同一音源位置"
+	)
 	audio.stop()
 	check(not audio.get_player().playing and not audio.get_node("Act1_wait_loop").playing, "退出释放音频")
 	audio.queue_free()

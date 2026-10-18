@@ -57,12 +57,23 @@ func _run() -> void:
 	lab = Lab.instantiate()
 	root.add_child(lab)
 	var normal: Image = await _capture("front")
-	var cloth_region := Rect2i(Vector2i(Vector2(66, 92) * Vector2(normal.get_size()) / Vector2(1920, 1080)), Vector2i(Vector2(1788, 588) * Vector2(normal.get_size()) / Vector2(1920, 1080)))
+	var cloth_region := Rect2i(
+		Vector2i(Vector2(66, 92) * Vector2(normal.get_size()) / Vector2(1920, 1080)),
+		Vector2i(Vector2(1788, 588) * Vector2(normal.get_size()) / Vector2(1920, 1080))
+	)
 	var normal_cloth: PackedByteArray = normal.get_region(cloth_region).get_data()
-	var state_before: Array = lab.states.map(func(state: PuppetState) -> Dictionary: return state.to_dict())
+	var state_before: Array = lab.states.map(
+		func(state: PuppetState) -> Dictionary: return state.to_dict()
+	)
 	var paused_image: Image = await _capture("front-paused")
 	_check(normal.get_data() == paused_image.get_data(), "同一暂停时间画面逐像素冻结")
-	_check(state_before == lab.states.map(func(state: PuppetState) -> Dictionary: return state.to_dict()), "渲染不改写姿态")
+	_check(
+		(
+			state_before
+			== lab.states.map(func(state: PuppetState) -> Dictionary: return state.to_dict())
+		),
+		"渲染不改写姿态"
+	)
 	lab.paused = false
 	await _settle()
 	var resumed: Image = root.get_texture().get_image()
@@ -72,7 +83,9 @@ func _run() -> void:
 	for sample: String in ["near", "far", "low", "overlap", "head", "turn", "offscreen", "lifted"]:
 		lab.set_case(sample)
 		var changed: Image = await _capture("front-" + sample)
-		_check(changed.get_region(cloth_region).get_data() != normal_cloth, "状态样例在真实幕面产生变化：" + sample)
+		_check(
+			changed.get_region(cloth_region).get_data() != normal_cloth, "状态样例在真实幕面产生变化：" + sample
+		)
 	lab.front = false
 	lab.set_case("low")
 	await _capture("backstage-low")
@@ -104,7 +117,14 @@ func _run() -> void:
 	_check(_luminance(overlap) < _luminance(single) - 0.08, "实际相乘的重叠皮片更暗")
 	var tile: Color = raw.get_pixel(840, 200)
 	var flat: Color = raw.get_pixel(1000, 200)
-	_check(absf(tile.r - flat.r) < 0.012 and absf(tile.g - flat.g) < 0.012 and absf(tile.b - flat.b) < 0.012, "相同贴图色与顶点色不重复乘色或 alpha")
+	_check(
+		(
+			absf(tile.r - flat.r) < 0.012
+			and absf(tile.g - flat.g) < 0.012
+			and absf(tile.b - flat.b) < 0.012
+		),
+		"相同贴图色与顶点色不重复乘色或 alpha"
+	)
 	var entity_fixture: Node2D = Optics.new()
 	var entity_material := ShaderMaterial.new()
 	entity_material.shader = preload("res://shaders/puppet_back.gdshader")
@@ -115,17 +135,36 @@ func _run() -> void:
 	var entity_raw: Image = lab.surface.projection_viewport.get_texture().get_image()
 	var entity_tile: Color = entity_raw.get_pixel(840, 430)
 	var entity_flat: Color = entity_raw.get_pixel(1000, 430)
-	_check(absf(entity_tile.r - entity_flat.r) < 0.012 and absf(entity_tile.g - entity_flat.g) < 0.012 and absf(entity_tile.b - entity_flat.b) < 0.012, "实体贴图也不能重复乘色或 alpha")
+	_check(
+		(
+			absf(entity_tile.r - entity_flat.r) < 0.012
+			and absf(entity_tile.g - entity_flat.g) < 0.012
+			and absf(entity_tile.b - entity_flat.b) < 0.012
+		),
+		"实体贴图也不能重复乘色或 alpha"
+	)
 	entity_fixture.queue_free()
-	_check(_luminance(_pixel(back, Vector2(360, 220))) > _luminance(_pixel(back, Vector2(320, 180))) + 0.20, "孔与皮片在布面仍有层次")
+	_check(
+		(
+			_luminance(_pixel(back, Vector2(360, 220)))
+			> _luminance(_pixel(back, Vector2(320, 180))) + 0.20
+		),
+		"孔与皮片在布面仍有层次"
+	)
 	lab.surface.front_view = true
 	lab.surface.update_light(lab.lamp, 1250, 1250, 96.0)
 	var front: Image = await _capture("optics-front")
 	var mirror_red: Color = _pixel(front, Vector2(1920 - 320, 180))
-	_check(absf(_luminance(mirror_red) - _luminance(_pixel(back, Vector2(320, 180)))) < 0.015, "幕前透射左右镜像且保持颜色")
+	_check(
+		absf(_luminance(mirror_red) - _luminance(_pixel(back, Vector2(320, 180)))) < 0.015,
+		"幕前透射左右镜像且保持颜色"
+	)
 	fixture.hide()
 	var empty: Image = await _capture("optics-empty")
-	_check(_pixel(front, Vector2(18, 34)).is_equal_approx(_pixel(empty, Vector2(18, 34))), "幕外色片不污染框架或后台")
+	_check(
+		_pixel(front, Vector2(18, 34)).is_equal_approx(_pixel(empty, Vector2(18, 34))),
+		"幕外色片不污染框架或后台"
+	)
 	fixture.queue_free()
 	lab.set_process(true)
 	lab.front = true
@@ -144,7 +183,16 @@ func _run() -> void:
 	var sum: float = 0.0
 	for value: float in intervals:
 		sum += value
-	var metrics := {"resolution": str(normal.get_size()), "frames": intervals.size(), "mean_ms": sum / intervals.size(), "p95_ms": intervals[int(intervals.size() * 0.95)], "max_ms": intervals.back(), "gpu": RenderingServer.get_video_adapter_name(), "checks": checks, "failures": failures}
+	var metrics := {
+		"resolution": str(normal.get_size()),
+		"frames": intervals.size(),
+		"mean_ms": sum / intervals.size(),
+		"p95_ms": intervals[int(intervals.size() * 0.95)],
+		"max_ms": intervals.back(),
+		"gpu": RenderingServer.get_video_adapter_name(),
+		"checks": checks,
+		"failures": failures
+	}
 	var file := FileAccess.open(output_dir + "/graphics-metrics.json", FileAccess.WRITE)
 	_check(file != null, "性能证据可写入")
 	metrics["checks"] = checks

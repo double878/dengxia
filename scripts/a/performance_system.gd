@@ -21,23 +21,23 @@ class_name PerformanceSystem
 const CueScript := preload("res://scripts/a/cue.gd")
 const CueHintScript := preload("res://scripts/a/cue_hint.gd")
 
-var cues: Array = []                  ## 由 StageDef 提供的 Cue 列表
-var clock: Object = null              ## 鸭子类型：只需 get_song_time_ms() -> int
-var puppets: Array = []               ## Array[PuppetState]，由调用方在 setup() 后保持同步
+var cues: Array = []  ## 由 StageDef 提供的 Cue 列表
+var clock: Object = null  ## 鸭子类型：只需 get_song_time_ms() -> int
+var puppets: Array = []  ## Array[PuppetState]，由调用方在 setup() 后保持同步
 ## 油灯状态（LampState）。灯位推拉（`lamp_distance`）与倾灯显露（`lamp_exposure`）
 ## 这两类 Cue 的读数取自这里。传 null 时这两类 Cue 不判定，但绝不影响影人动作的判定
 ## ——第 1、2 关没有灯位类落点，缺油灯不应让整关的判定失效。
 var lamp: LampState = null
 
 var _events: Array[Dictionary] = []
-var _outcomes: Dictionary = {}        ## cue_id -> 判定结果，同一 cue 只判定一次
+var _outcomes: Dictionary = {}  ## cue_id -> 判定结果，同一 cue 只判定一次
 var _hint_emitted: Dictionary = {}
-var _fired: Dictionary = {}           ## "cue_id|拖动代次" -> 已判定
-var _drag_generation: int = 0         ## 每次 begin_drag 递增，用于「一次拖动只算一次」
-var _dragging: bool = false           ## 仅在拖动中才判定「到位」，避免站定不动也被判到位
-var _reach_outside: Dictionary = {}   ## 本次拖动中「已离开过目标范围」的 reach cue_id
-var _lamp_outside: Dictionary = {}    ## 灯位/倾灯类 cue：此刻是否在目标范围之外（只判上升沿）
-var _last_state: Dictionary = {}       ## puppet_id -> 上次判定时的连续状态
+var _fired: Dictionary = {}  ## "cue_id|拖动代次" -> 已判定
+var _drag_generation: int = 0  ## 每次 begin_drag 递增，用于「一次拖动只算一次」
+var _dragging: bool = false  ## 仅在拖动中才判定「到位」，避免站定不动也被判到位
+var _reach_outside: Dictionary = {}  ## 本次拖动中「已离开过目标范围」的 reach cue_id
+var _lamp_outside: Dictionary = {}  ## 灯位/倾灯类 cue：此刻是否在目标范围之外（只判上升沿）
+var _last_state: Dictionary = {}  ## puppet_id -> 上次判定时的连续状态
 
 
 func setup(p_cues: Array, p_clock: Object, p_puppets: Array, p_lamp: LampState = null) -> void:
@@ -123,16 +123,21 @@ func detect_misses(song_time_ms: int) -> void:
 			"offset_ms": song_time_ms - int(cue.get("beat_time_ms", 0)),
 			"metric": NAN,
 			"hit": false,
-			"missed_outright": true,      ## 与「错拍做了」区分：这次是完全没做
+			"missed_outright": true,  ## 与「错拍做了」区分：这次是完全没做
 		}
-		_emit(song_time_ms, "cue_miss", _resolve_object_id(int(cue.get("target_object", 0))),
-			cue_id, {
-			"action": action,
-			"offset_ms": song_time_ms - int(cue.get("beat_time_ms", 0)),
-			"tolerance_ms": int(cue.get("tolerance_ms", 0)),
-			"metric": NAN,
-			"reason": "missed_outright",
-		})
+		_emit(
+			song_time_ms,
+			"cue_miss",
+			_resolve_object_id(int(cue.get("target_object", 0))),
+			cue_id,
+			{
+				"action": action,
+				"offset_ms": song_time_ms - int(cue.get("beat_time_ms", 0)),
+				"tolerance_ms": int(cue.get("tolerance_ms", 0)),
+				"metric": NAN,
+				"reason": "missed_outright",
+			}
+		)
 
 
 func get_outcome(cue_id: String) -> Dictionary:
@@ -220,14 +225,19 @@ func _emit_hints(song_time_ms: int) -> void:
 			continue
 		_hint_emitted[cue_id] = true
 		var hint: Dictionary = CueHintScript.make(cue)
-		_emit(song_time_ms, "cue_hint", _resolve_object_id(int(cue.get("target_object", 0))),
-			cue_id, {
-			"hint_kind": hint["kind"],
-			"action": hint["action"],
-			"demo_action": hint["demo_action"],
-			"target_range": hint["target_range"],
-			"beat_time_ms": hint["beat_time_ms"],
-		})
+		_emit(
+			song_time_ms,
+			"cue_hint",
+			_resolve_object_id(int(cue.get("target_object", 0))),
+			cue_id,
+			{
+				"hint_kind": hint["kind"],
+				"action": hint["action"],
+				"demo_action": hint["demo_action"],
+				"target_range": hint["target_range"],
+				"beat_time_ms": hint["beat_time_ms"],
+			}
+		)
 
 
 ## 判定一个由状态切换触发的动作（站起/蹲下/抬手/落手/横向移动）。
@@ -261,8 +271,10 @@ func _seed_reach_from_previous_state() -> void:
 		if previous.is_empty():
 			continue
 		var range: Dictionary = cue.get("target_range", {})
-		if str(range.get("key", "")) == "x" and not CueScript.condition_met(
-				cue, CueScript.ACTION_REACH, float(previous["x"])):
+		if (
+			str(range.get("key", "")) == "x"
+			and not CueScript.condition_met(cue, CueScript.ACTION_REACH, float(previous["x"]))
+		):
 			_reach_outside[str(cue.get("cue_id", ""))] = true
 
 
@@ -274,26 +286,41 @@ func _evaluate_continuous(song_time_ms: int) -> void:
 		var previous_x: float = float(previous["x"])
 		var current_x: float = state.stage_pos.x
 		if _dragging and not is_equal_approx(previous_x, current_x):
-			var move_action: String = CueScript.ACTION_MOVE_RIGHT if current_x > previous_x \
+			var move_action: String = (
+				CueScript.ACTION_MOVE_RIGHT
+				if current_x > previous_x
 				else CueScript.ACTION_MOVE_LEFT
-			_register_action(song_time_ms, {"actions": [move_action], "metric": current_x}, object_id)
+			)
+			_register_action(
+				song_time_ms, {"actions": [move_action], "metric": current_x}, object_id
+			)
 		for hand_key in ["left_angle", "right_angle"]:
 			var before: float = float(previous[hand_key])
-			var after: float = state.hand_angle.x if hand_key == "left_angle" else state.hand_angle.y
+			var after: float = (
+				state.hand_angle.x if hand_key == "left_angle" else state.hand_angle.y
+			)
 			if is_equal_approx(before, after):
 				continue
-			var hand_action: String = CueScript.ACTION_HAND_RAISE if after > before \
-				else CueScript.ACTION_HAND_LOWER
-			_register_action(song_time_ms, {
-				"actions": [hand_action], "metric": after,
-				"previous_metric": before, "enter_only": true,
-			}, object_id)
+			var hand_action: String = (
+				CueScript.ACTION_HAND_RAISE if after > before else CueScript.ACTION_HAND_LOWER
+			)
+			_register_action(
+				song_time_ms,
+				{
+					"actions": [hand_action],
+					"metric": after,
+					"previous_metric": before,
+					"enter_only": true,
+				},
+				object_id
+			)
 		_last_state[object_id] = _snapshot(state)
 
 
 func _snapshot(state: PuppetState) -> Dictionary:
-	return {"x": state.stage_pos.x, "left_angle": state.hand_angle.x,
-		"right_angle": state.hand_angle.y}
+	return {
+		"x": state.stage_pos.x, "left_angle": state.hand_angle.x, "right_angle": state.hand_angle.y
+	}
 
 
 ## 「到位」是连续状态，没有状态切换事件，因此每帧检查一次。
@@ -310,8 +337,9 @@ func _evaluate_reach(song_time_ms: int) -> void:
 		if not _can_attempt(cue):
 			continue
 		var range: Dictionary = cue.get("target_range", {})
-		var metric: float = _metric_value(str(range.get("key", "")),
-			_resolve_object_id(int(cue.get("target_object", 0))))
+		var metric: float = _metric_value(
+			str(range.get("key", "")), _resolve_object_id(int(cue.get("target_object", 0)))
+		)
 		if is_nan(metric):
 			continue
 		if not CueScript.condition_met(cue, CueScript.ACTION_REACH, metric):
@@ -319,9 +347,11 @@ func _evaluate_reach(song_time_ms: int) -> void:
 			continue
 		if not _reach_outside.has(cue_id):
 			continue
-		_register_action(song_time_ms,
+		_register_action(
+			song_time_ms,
 			{"actions": [CueScript.ACTION_REACH], "metric": metric},
-			int(cue.get("target_object", 0)))
+			int(cue.get("target_object", 0))
+		)
 
 
 ## 灯位推拉与倾灯显露：连续量，每帧检查一次，但只判「从范围外跨入范围内」的上升沿。
@@ -348,8 +378,9 @@ func _evaluate_lamp(song_time_ms: int) -> void:
 		if not _can_attempt(cue):
 			continue
 		var range: Dictionary = cue.get("target_range", {})
-		var metric: float = _metric_value(str(range.get("key", "")),
-			_resolve_object_id(int(cue.get("target_object", 0))))
+		var metric: float = _metric_value(
+			str(range.get("key", "")), _resolve_object_id(int(cue.get("target_object", 0)))
+		)
 		if is_nan(metric):
 			continue
 		if not CueScript.condition_met(cue, action, metric):
@@ -358,8 +389,9 @@ func _evaluate_lamp(song_time_ms: int) -> void:
 		if not _lamp_outside.has(cue_id):
 			continue
 		_lamp_outside.erase(cue_id)
-		_register_action(song_time_ms, {"actions": [action], "metric": metric},
-			int(cue.get("target_object", 0)))
+		_register_action(
+			song_time_ms, {"actions": [action], "metric": metric}, int(cue.get("target_object", 0))
+		)
 
 
 ## 站蹲沿用控制器的到位事件；手和位移读状态跨越，避免方向事件早于到位时刻。
@@ -379,8 +411,9 @@ func _match_event(event: Dictionary) -> Dictionary:
 			if not payload.has("stance"):
 				return {}
 			var stance: float = float(payload.get("stance", 0.0))
-			return {"actions": [CueScript.ACTION_STAND_UP, CueScript.ACTION_CROUCH],
-				"metric": stance}
+			return {
+				"actions": [CueScript.ACTION_STAND_UP, CueScript.ACTION_CROUCH], "metric": stance
+			}
 		"puppet_hook":
 			if not payload.has("hook_slot"):
 				return {}
@@ -403,7 +436,9 @@ func _match_event(event: Dictionary) -> Dictionary:
 		"umbrella_return":
 			if not payload.has("metric"):
 				return {}
-			return {"actions": [CueScript.ACTION_UMBRELLA_RETURN], "metric": float(payload["metric"])}
+			return {
+				"actions": [CueScript.ACTION_UMBRELLA_RETURN], "metric": float(payload["metric"])
+			}
 	return {}
 
 
@@ -425,28 +460,40 @@ func _register_action(song_time_ms: int, match_result: Dictionary, object_id: in
 		var expected: String = str(cue.get("action", ""))
 		if not actions.has(expected):
 			continue
-		if bool(match_result.get("enter_only", false)) and CueScript.condition_met(
-				cue, expected, float(match_result["previous_metric"])):
+		if (
+			bool(match_result.get("enter_only", false))
+			and CueScript.condition_met(cue, expected, float(match_result["previous_metric"]))
+		):
 			continue
 		var fire_key: String = "%s|%d" % [cue_id, _drag_generation]
 		# 「一次拖动只算一次」只适用于由**拖动本身**触发的动作（平移、到位、站蹲）。
 		# 借伞交接、挂起、取回、换头是离散事件：一次交接就一条事件，
 		# 用拖动代次去重反而会把「还伞之后再借一次」在没重新拖动的帧里挡掉。
-		var once_per_drag: bool = expected == CueScript.ACTION_MOVE_LEFT \
-			or expected == CueScript.ACTION_MOVE_RIGHT or expected == CueScript.ACTION_REACH \
-			or expected == CueScript.ACTION_STAND_UP or expected == CueScript.ACTION_CROUCH
+		var once_per_drag: bool = (
+			expected == CueScript.ACTION_MOVE_LEFT
+			or expected == CueScript.ACTION_MOVE_RIGHT
+			or expected == CueScript.ACTION_REACH
+			or expected == CueScript.ACTION_STAND_UP
+			or expected == CueScript.ACTION_CROUCH
+		)
 		if once_per_drag and _fired.has(fire_key):
 			continue
 		if not CueScript.condition_met(cue, expected, metric):
 			continue
 		if once_per_drag:
 			_fired[fire_key] = song_time_ms
-		_emit(song_time_ms, "cue_fire", resolved_object, cue_id, {
-			"action": expected,
-			"metric": metric,
-			"window_start_ms": CueScript.window_start_ms(cue),
-			"window_end_ms": CueScript.window_end_ms(cue),
-		})
+		_emit(
+			song_time_ms,
+			"cue_fire",
+			resolved_object,
+			cue_id,
+			{
+				"action": expected,
+				"metric": metric,
+				"window_start_ms": CueScript.window_start_ms(cue),
+				"window_end_ms": CueScript.window_end_ms(cue),
+			}
+		)
 		_resolve(cue, song_time_ms, expected, metric)
 
 
@@ -485,16 +532,22 @@ func _resolve(cue: Dictionary, song_time_ms: int, action: String, metric: float)
 	}
 	if not hit:
 		## 落点过后才把动作做出来 = 补救尝试；原失误已记录，补救不抹去它。
-		outcome["remedy_attempt"] = song_time_ms > CueScript.window_end_ms(cue) \
-			and not previous.is_empty()
+		outcome["remedy_attempt"] = (
+			song_time_ms > CueScript.window_end_ms(cue) and not previous.is_empty()
+		)
 	_outcomes[cue_id] = outcome
-	_emit(song_time_ms, "cue_hit" if outcome["hit"] else "cue_miss",
-		_resolve_object_id(int(cue.get("target_object", 0))), cue_id, {
+	_emit(
+		song_time_ms,
+		"cue_hit" if outcome["hit"] else "cue_miss",
+		_resolve_object_id(int(cue.get("target_object", 0))),
+		cue_id,
+		{
 			"action": action,
 			"offset_ms": offset,
 			"tolerance_ms": tolerance,
 			"metric": metric,
-		})
+		}
+	)
 
 
 func _metric_value(key: String, object_id: int) -> float:
@@ -550,14 +603,20 @@ func _resolve_object_id(object_id: int) -> int:
 	return controlled.puppet_id if controlled != null else -1
 
 
-func _emit(song_time_ms: int, kind: String, object_id: int, cue_id: String,
-		payload_extra: Dictionary) -> void:
+func _emit(
+	song_time_ms: int, kind: String, object_id: int, cue_id: String, payload_extra: Dictionary
+) -> void:
 	var payload := {"kind": kind}
 	payload.merge(payload_extra, true)
-	_events.append({
-		"time_ms": song_time_ms,
-		"kind": kind,
-		"object_id": object_id,
-		"cue_id": cue_id,
-		"payload": payload,
-	})
+	(
+		_events
+		. append(
+			{
+				"time_ms": song_time_ms,
+				"kind": kind,
+				"object_id": object_id,
+				"cue_id": cue_id,
+				"payload": payload,
+			}
+		)
+	)

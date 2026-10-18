@@ -1,7 +1,10 @@
 shader_type canvas_item;
 render_mode unshaded, blend_mul;
 
+#include "res://shaders/puppet_entrance.gdshaderinc"
+
 void fragment() {
+	if (entrance_hidden()) { discard; }
 	// Godot fragment 输入 COLOR 已含一次默认贴图采样。
 	vec4 ink = COLOR;
 	// 原稿颜色是颜料提示，alpha 是轮廓/镂空；二者不是同一个物理量。

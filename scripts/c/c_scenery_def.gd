@@ -45,8 +45,8 @@ const ANCHOR_Y: float = 0.5
 ##   - ⚠️ 放宽的只是「布景自身能不能移动」；影人接地点仍是 0.5，**没有被改动**。
 ##     布景若离开 0.5 就与影人的脚不在同一条线上——这是使用者的选择，不再报错。
 const Y_TOLERANCE: float = 0.5
-const Y_MIN: float = ANCHOR_Y - Y_TOLERANCE   ## 0.0（放宽后覆盖整个舞台高度）
-const Y_MAX: float = ANCHOR_Y + Y_TOLERANCE   ## 1.0
+const Y_MIN: float = ANCHOR_Y - Y_TOLERANCE  ## 0.0（放宽后覆盖整个舞台高度）
+const Y_MAX: float = ANCHOR_Y + Y_TOLERANCE  ## 1.0
 
 ## —— 第一关「入手 · 游湖借伞」布景参数（用户 2026-10-08 起逐条定案）——
 ## **只有两样东西**（2026-10-09 第二次构图定案后）：
@@ -69,7 +69,7 @@ const Y_MAX: float = ANCHOR_Y + Y_TOLERANCE   ## 1.0
 ##   若强行取 8/9（scale 0.2831）树顶会到 y=50，超出幕布顶 42px 被裁（用户明令禁止）。
 ##   故取「底对齐 + 顶留白 1/9」的解：scale 0.225063 → 树高 416px（幕布 70.7%）、
 ##   顶留白 65.3px＝幕布高 1/9.00。
-const LEVEL1_WILLOW_X: float = 0.116112   ## 柳树树干（树贴图左缘 x=96＝幕布左 66 + 内边距 30px）
+const LEVEL1_WILLOW_X: float = 0.116112  ## 柳树树干（树贴图左缘 x=96＝幕布左 66 + 内边距 30px）
 ## 柳树贴图像素比例（逐资产静态常量，非运行时形变能力）。
 ## 柳素材 1436×1846 与桥素材像素密度不同，全局 TEXTURE_SCALE_PX 不够用。
 ## **0.225063（2026-10-09 第三次构图，由 0.21 上调）**：
@@ -86,7 +86,7 @@ const LEVEL1_WILLOW_SCALE: float = 0.225063
 ## 要两者相等 → anchor_y = (572.8 − 0.225063)/1080 = **0.530162**。
 ## 注：0.530162 与 0.530389（上一版 scale 0.21 的解）差 0.000227——因为 scale 变了，
 ## foot 到贴图底边的 1px 素材差也随之变化。**改 scale 必须重算本常量**，否则底线会漂。
-const LEVEL1_WILLOW_BASE_Y: float = 0.530162   ## = 桥贴图底缘 572.8px（与桥同线）
+const LEVEL1_WILLOW_BASE_Y: float = 0.530162  ## = 桥贴图底缘 572.8px（与桥同线）
 ## 拱桥锚点 = 桥基中心 x（**完整拱**：woop 原素材本就是全拱，两端桥台 + 拱顶齐全）。
 ## 演变记录（用户 2026-10-08 起的定位决定，2026-10-09 定稿为完整拱）：
 ##   - 最初手绘草图：桥头起点 0.72；
@@ -107,11 +107,11 @@ const LEVEL1_BRIDGE_CENTER_X: float = 0.73
 ## 因此 0.53 不再是边界值，仍可继续微调。
 ## 但注意 0.53 已经**离开影人接地线 0.5**：树根/桥脚比影人的脚低 0.03×1080 ≈ 32px。
 ## 这是用户看过截图后的选择；若哪天想回到严格贴合，把它改回 ANCHOR_Y 即可。
-const LEVEL1_GROUND_Y: float = ANCHOR_Y + 0.03   ## = 0.53
+const LEVEL1_GROUND_Y: float = ANCHOR_Y + 0.03  ## = 0.53
 
 ## —— 元素种类 ——
 ## 显示端按 `kind` 选画法。新增种类时两边都要改（数据 + 画面），故集中在这里。
-const KIND_WILLOW: String = "willow"      ## 柳树：树干 + 向左上展开的树冠
+const KIND_WILLOW: String = "willow"  ## 柳树：树干 + 向左上展开的树冠
 const KIND_ARCH_BRIDGE: String = "arch_bridge"  ## 拱桥：半拱 + 水平延伸出画
 
 ## —— 位移字段名（**唯一**合法的位置相关字段）——
@@ -160,6 +160,51 @@ const SCENERY_TEX_CHRYS: String = "res://assets/scenery/level2/chrysanthemum.png
 const SCENERY_TEX_BASKET: String = "res://assets/scenery/level2/flower_basket.png"
 const SCENERY_TEX_WILLOW_BRANCH: String = "res://assets/scenery/level2/willow_branch.png"
 
+## ══════ 第二关**第二幕**「端阳饮酒 · 室内厅堂」素材（用户 2026-10-11 woop 包，8 件）══════
+## 按用户成品图《端阳惊变幕景·成品.jpg》：立柱围出厅堂，圆桌居中，桌上摆酒具。
+## 全部 woop@2 **单件整图**（joints=0），webp→PNG（compat 渲染器上 webp 画白块），
+## 已裁到内容包围盒。
+##
+## ⚠️ 与第一幕（门楼版）**各自独立、互不覆盖**：第一幕 = `make_level2()`（编号 2），
+## 本幕 = `make_level2_act2()`（编号 **22**）。两幕共用「第二关」这个剧情段，
+## 但布景数据是两套——合并时不得把任一方塞进对方的函数里。
+const SCENERY_TEX_COLUMN: String = "res://assets/scenery/level2b/column.png"  # 984×1893（原始素材，现不引用）
+## 右柱用**水平翻转**版（用户 2026-10-12 手绘批注「这个需要镜像」）。
+## Godot 4 的 `draw_texture_rect` 无 flip_h 参数，故离线镜像成独立 PNG，
+## 不走运行时翻转，避开 compat 渲染器的坑。
+const SCENERY_TEX_COLUMN_MIRROR: String = "res://assets/scenery/level2b/column_mirror.png"
+##
+## 🔴 2026-10-12（第二轮定案）：**立柱内侧剪掉，四个横梁保留**。
+## 立柱素材自带一条**横贯两侧的雀替臂**（左侧伸到贴图 x=0、右侧伸到 x≈982），
+## 「顶天立地」后这条内侧臂正压在横梁端头的位置上（上一版因此整条删了横梁，
+## 是把「要剪的」认成了横梁——用户本轮澄清：**梁保留，剪的是柱内侧**）。
+## 实测柱身 x 277~604，故把 x≥604 的部分（内侧雀替臂 + 柱础内侧一小段）整条剪掉，
+## 保留：柱身 + 深褐**梁头**（贴图 x 334~590，完整保住）+ 外侧雀替臂。
+## 剪后 604×1893，**离线切图**再入库——`draw_texture_rect_region` 在 compat 渲染器上
+## 画白块（2026-10-08 已验），运行时裁不可用，与 column_mirror 同一条教训。
+const SCENERY_TEX_COLUMN_CUT: String = "res://assets/scenery/level2b/column_cut.png"  # 604×1893
+const SCENERY_TEX_COLUMN_MIRROR_CUT: String = (
+	"res://assets/scenery/level2b/column_mirror_cut.png"
+)  # 604×1893 = 上者的水平镜像
+## 横梁（**保留**四根）：1762×369，四根等分铺满柱间净宽（见 LEVEL2_BEAM_* 常量）。
+const SCENERY_TEX_BEAM: String = "res://assets/scenery/level2b/beam.png"
+const SCENERY_TEX_FLOWERPOT: String = "res://assets/scenery/level2b/flowerpot.png"  # 1109×1848
+const SCENERY_TEX_TABLE: String = "res://assets/scenery/level2b/table.png"  # 1895×1937
+const SCENERY_TEX_STOOL: String = "res://assets/scenery/level2b/stool.png"  # 1401×1281
+const SCENERY_TEX_VASE: String = "res://assets/scenery/level2b/vase.png"  # 867×1795（当前未进 items）
+const SCENERY_TEX_WINE_POT: String = "res://assets/scenery/level2b/wine_pot.png"  # 1289×1430
+## 酒杯原素材 `wine_cup.png`（1661×730）**内含一对杯**（绿釉 + 朱红），
+## 按 x=854 的透明空隙切开并各自裁框 → 下面两张。原图保留不删。
+const SCENERY_TEX_WINE_CUP_GREEN: String = "res://assets/scenery/level2b/wine_cup_green.png"  # 823×728
+const SCENERY_TEX_WINE_CUP_RED: String = "res://assets/scenery/level2b/wine_cup_red.png"  # 779×722
+
+## ══════ 第三关《盗仙草》素材 ══════
+## 一座山：`plant-ornamental-020` / style chinese，**单件整图**（joints=0），
+## webp→PNG 并裁 bbox → **1494×1754**（宽高比 0.852）。
+## 画面内容：昆仑山峰、峰顶殿宇、古松绕崖、云海翻涌——与 PRD「昆仑山、云雾、
+## 古松与仙草剪影构成山景」逐项对上，**一件顶三件**，不再另加云/松/草（会重叠打架）。
+const SCENERY_TEX_MOUNTAIN: String = "res://assets/scenery/level3/mountain.png"
+
 ## —— 第二关三件布景的定位常量（全部由「参考图目测 → 幕布归一化」推出）——
 ##
 ## 🔴 2026-10-11 用户三次调整：**门楼放大 1/4（×1.25），其余景物一同调整**
@@ -171,23 +216,23 @@ const SCENERY_TEX_WILLOW_BRANCH: String = "res://assets/scenery/level2/willow_br
 ## foot 取**底边左点**（建筑贴图的锚点惯例与树相反，建筑靠左对齐更可控）。
 ## 左缘 x=109px（贴幕布左边距），底 y=661px（贴地）。
 const LEVEL2_GATE_SCALE: float = 0.348174
-const LEVEL2_GATE_X: float = 0.056700# 左缘 109px 归一化
-const LEVEL2_GATE_BASE_Y: float = 0.612037   ## 底座 y=661px（贴地，与菊石同一地平线）
+const LEVEL2_GATE_X: float = 0.056700  # 左缘 109px 归一化
+const LEVEL2_GATE_BASE_Y: float = 0.612037  ## 底座 y=661px（贴地，与菊石同一地平线）
 
 ## 菊花：`plant-ornamental-005`（墨绿），素材 **1020×1807**（竖式，含底座山石）。
 ## 原高 368 → 缩到 0.36 = 132 → **×1.25 = 165px**。scale = 165/1807 = **0.091312**；
 ## foot 取**底边中心**（花盆正中，竖式花木与树同惯例）。
 const LEVEL2_CHRYS_SCALE: float = 0.091312
 ## 菊石仍在门楼左侧露出（几何上限见下），但缩小后露出比例更明显。
-const LEVEL2_CHRYS_X: float = 0.061755        ## 左缘 72px（幕布左+6），露出 37px
-const LEVEL2_CHRYS_BASE_Y: float = 0.612037   ## 底座 y=661px（**与门楼同一地平线**）
+const LEVEL2_CHRYS_X: float = 0.061755  ## 左缘 72px（幕布左+6），露出 37px
+const LEVEL2_CHRYS_BASE_Y: float = 0.612037  ## 底座 y=661px（**与门楼同一地平线**）
 
 ## 花篮（🔴 **已撤下**）：同日在门楼右侧试摆一版（放大 1.2 倍、间隙 15px），
 ## 用户当日定案移除。素材与常量保留在仓库里不删（删了要重新找美术），
 ## 要复用时把 `make_level2` 注释里的那段加回 `items` 即可。
 const LEVEL2_BASKET_SCALE: float = 0.115250
-const LEVEL2_BASKET_X: float = 0.445754# 底边中心 → 左缘 775、右缘 937
-const LEVEL2_BASKET_BASE_Y: float = 0.612037 ## 底 y=661px（贴地，与另三件同一线）
+const LEVEL2_BASKET_X: float = 0.445754  # 底边中心 → 左缘 775、右缘 937
+const LEVEL2_BASKET_BASE_Y: float = 0.612037  ## 底 y=661px（贴地，与另三件同一线）
 
 ## 柳树（第二关为**整株立树**，非第一关那种小垂枝）：`plant-ornamental-013`（粉绿），
 ## 素材 **1377×1866**。
@@ -198,9 +243,149 @@ const LEVEL2_BASKET_BASE_Y: float = 0.612037 ## 底 y=661px（贴地，与另三
 ## ⚠️ `anchor_x` 是**锚点（贴图底边中心）**的归一化，**不是左缘**——第一版误按左缘填，
 ## 实测右缘只到 1689（差 135px），测试当场抓住。现按
 ## 「右缘 1824 = 幕布右 1854 − 内边距 30」反推。
-const LEVEL2_TREE_SCALE: float = 0.245177   ## 458/1866
-const LEVEL2_TREE_X: float = 0.862017        ## 底边中心 → 左缘 1486、右缘 1824
+const LEVEL2_TREE_SCALE: float = 0.245177  ## 458/1866
+const LEVEL2_TREE_X: float = 0.862017  ## 底边中心 → 左缘 1486、右缘 1824
 const LEVEL2_TREE_BASE_Y: float = 0.612037  ## 底 y=661px（贴地）
+
+## —— 第二关**第二幕**「室内厅堂」定位常量（用户 2026-10-11~10-12 逐轮定案，v8 定稿）——
+##
+## 关卡编号：**22**。第二关第一幕是编号 2（门楼版，`act2_opening.gd` 在用），
+## 第二幕必须另起一个键，否则两幕互相覆盖——这正是本文件把两幕拆成
+## `make_level2()` / `make_level2_act2()` 两个函数、两个编号的原因。
+const LEVEL2_ACT2_STAGE_ID: int = 22
+##
+## **六种**锚点高度**并存**（这是本幕与前两关最大的不同，`anchor_y` 是绝对归一化坐标）：
+##   ① 贴地件：**桌 / 两凳 653.4**（地平线 0.605）
+##   ② 花盆：**658.8**（0.61，第四轮定案——比地平线更低，唯一「更靠前」的贴地件）
+##   ③ 桌上酒具：**432**（0.4，第三轮定案）
+##   ④ 立柱：**680**（贴幕布下沿，顶天立地，高 566.4）
+##   ⑤ 悬挂件·四根横梁：**梁顶 129.6 / 梁底 204.3**（第四轮定案 0.12 定高）
+## 参考图上从左到右的布局（第四轮实测：柱内侧已剪、花盆左缘 0.15、两凳 0.4 / 0.6）：
+##   左柱 66~246.7 │ 花盆 288~500.7（底 658.8）│ 左凳 698~838 │ 圆桌 834~1087（居中 960）
+##   │ 右凳 1082~1222 │ 右柱 1673.3~1854（镜像贴图）；四根横梁 246.7~1673.3 铺满柱间。
+const LEVEL2_ACT2_GROUND_Y: float = 0.605  ## 地平线 y=653.4px
+## 立柱：**顶天立地**（顶离幕布上缘 21.6px、**底贴幕布下沿 680**），高 566.4。
+## ⚠️ 立柱是**唯一不跟随地平线**的贴地件——它的底对齐幕布下边缘（680），
+## 而其余贴地件走 653.4。两者差 26.6px 是用户确认过的取舍。
+const LEVEL2_ACT2_COLUMN_BASE_Y: float = 0.629630  ## 柱底 y=680px（幕布下沿）
+## 剪掉内侧后的柱贴图宽（原 984；内侧 x≥604 的雀替臂整条剪掉，见 SCENERY_TEX_COLUMN_CUT）
+const LEVEL2_ACT2_COLUMN_TEX_W: float = 604.0
+const LEVEL2_ACT2_COLUMN_SCALE: float = 0.299208  ## 高 566.4px（604×1893 剪后素材）
+## 两柱**以幕布中心为轴对称**：左柱中心 + 右柱中心 = 2 × 幕布中心（断言按此写，
+## 改幕布尺寸时自动成立，而不是各写死一个数）。
+## ⚠️ `anchor_x` 是**贴图底边中心**（= 绘制矩形中心），不是边缘：
+##   左柱矩形 66~246.7，中心 66 + 302×0.299208 = 156.36 → 0.081438；
+##   右柱矩形 1673.3~1854，中心 1854 − 302×0.299208 = 1763.64 → 0.918563。
+const LEVEL2_ACT2_COLUMN_LEFT_X: float = 0.081438  ## 左柱跨 66~246.7
+const LEVEL2_ACT2_COLUMN_RIGHT_X: float = 0.918563  ## 右柱跨 1673.3~1854
+##
+## —— 横梁四根（用户 2026-10-12 第二轮定案：「**四个横梁保留**」）——
+## 柱内侧剪掉后柱间净宽由 1199 变为 1426.6（1673.28 − 246.72），四根梁按 v7 立下的
+## **同一公式**重新等分：单宽 1426.6/4 = 356.6px → scale = 356.6/1762 = **0.202406**。
+## 即「梁随柱宽自适应」；纵向高度见下面这条（第三轮起**以梁顶为准**）。
+##
+## 🔴 用户 2026-10-12 第四轮：「**横梁移动到 0.12 的位置**」→ 梁顶 **129.6px**（上抬 32.4px）。
+## 以「梁顶」为锚（第三轮起），梁底用「贴图高 × scale」推出——
+## 换贴图 / 改梁宽时底边自动跟随，不会两处各写一个数而漂移：
+##   梁顶 0.12 → **129.6px**；梁高 369 × 0.202406 = 74.7px → **梁底 204.3px**（0.189167）。
+## 沿革：梁底 228.4（v7，以底边为锚）→ 梁顶 0.15 / 底 236.7（第三轮）→ 梁顶 0.12 / 底 204.3（本轮）。
+## 位置校验：梁顶 129.6 距幕布上缘（92）37.6px、距柱顶（680 − 566.4 = 113.6）低 16.0px
+## ——梁仍悬在柱头上方一段，未越幕布、未压柱头。
+const LEVEL2_BEAM_SCALE: float = 0.202406  ## 单梁宽 356.6px、高 74.7px（1762×369）
+const LEVEL2_BEAM_TEX_H: float = 369.0  ## 梁贴图高（1762×369）
+const LEVEL2_BEAM_TOP_Y: float = 0.12  ## 梁顶 y=129.6px（用户第四轮定案）
+const LEVEL2_BEAM_Y: float = (
+	LEVEL2_BEAM_TOP_Y + LEVEL2_BEAM_TEX_H * LEVEL2_BEAM_SCALE / 1080.0
+)  ## 梁底 = 梁顶 + 梁高 → 0.189167 → 204.3px（悬挂件，不接地平线）
+const LEVEL2_BEAM_0_X: float = 0.221375  ## 跨 246.7~603.4
+const LEVEL2_BEAM_1_X: float = 0.407125  ## 跨 603.4~960.0
+const LEVEL2_BEAM_2_X: float = 0.592875  ## 跨 960.0~1316.6
+const LEVEL2_BEAM_3_X: float = 0.778625  ## 跨 1316.6~1673.3
+##
+## 圆桌居中 = 幕布中心，同时是两凳的**对称轴**。
+const LEVEL2_ACT2_TABLE_SCALE: float = 0.13354  ## 高 258.7px（1895×1937）
+const LEVEL2_ACT2_TABLE_X: float = 0.5  ## 桌面中心 = 幕布中心 960px
+## —— 桌面**最高水平面**：桌上酒具的底边一律对齐到这里（用户 2026-10-12 第二轮定案）——
+## 桌贴图裁到内容包围盒后，**第 0 行就是桌面最高点**（桌面椭圆远边），
+## 它在画布上的位置由桌子自身几何推出：
+##   桌底 653.4（地平线） − 1937×0.13354 = **394.7px**
+## 🔴 上一版把酒具锚在 595.6，比桌面最高面低 **200.9px**——酒具被画到了桌布下摆和桌腿上。
+## 写成**表达式**而不是字面量：桌子挪位 / 改比例时酒具自动跟随，不会两处漂移。
+const LEVEL2_ACT2_TABLE_TEX_H: float = 1937.0  ## 桌贴图高（1895×1937）
+const LEVEL2_ACT2_TABLE_TOP_ROW_PX: float = 0.0  ## 贴图内「桌面最高行」的行号
+const LEVEL2_ACT2_TABLE_TOP_Y: float = (
+	(
+		LEVEL2_ACT2_GROUND_Y * 1080.0
+		- (LEVEL2_ACT2_TABLE_TEX_H - LEVEL2_ACT2_TABLE_TOP_ROW_PX) * LEVEL2_ACT2_TABLE_SCALE
+	)
+	/ 1080.0
+)  ## = 0.365494 → 394.7px（断言会与桌面绘制矩形顶部比对）
+const LEVEL2_ACT2_STOOL_SCALE: float = 0.099922  ## 高 128px、宽 140px（1401×1281）
+## 🔴 用户 2026-10-12 第四轮：「**左侧凳子移动到 0.4 的位置，右侧凳子对称**」。
+## 凳心（= `anchor_x`，贴图底边中心）由 0.366391 / 0.633609 改为 **0.4 / 0.6**
+## → 凳心 768 / 1152px（和 = 1920 = 2×幕布中心，仍关于幕布中心对称）、
+##    矩形 698.0~838.0 / 1082.0~1222.0（两凳**各向幕布中心挪 64.5px**，即更靠桌）。
+## ⚠️ 这两个矩形与**桌子的包围盒**（833.5~1086.5）各相吻 4.5px，但**实际像素并不重叠**：
+##   凳顶 525.4 以下的桌只剩中柱与腿基（该高度带实测桌宽仅 24~116px，落在 900~1018），
+##   桌布下摆早在 y≈517 就收完。故测试按「桌在凳高度带内的**实际不透明像素跨度**」判定，
+##   而不是包围盒——用包围盒判会误报（详见 c_test_scenery.gd 的 ⑦b）。
+const LEVEL2_ACT2_STOOL_LEFT_X: float = 0.4  ## 左凳心 768px → 跨 698.0~838.0
+const LEVEL2_ACT2_STOOL_RIGHT_X: float = 0.6  ## 右凳心 1152px → 跨 1082.0~1222.0
+##
+## 花盆：夹在左柱与圆桌之间。
+## 🔴 用户 2026-10-12 第三轮：「**花盆最左侧**移动到 0.15」→ 最左缘 **288px**（原 390px）；
+## 🔴 第四轮：「**花盆最下水平线下移到 0.61**，**稍微放大一点点**」。
+##   ① 最下水平线（= 贴图底足）由地平线 653.4 单独下移到 **0.61 → 658.8px**（下沉 5.4px）。
+##      ⚠️ 花盆从此**不再走地平线**——它是本幕唯一「落线比地平线更低」的贴地件（贴地件里
+##        桌 / 两凳仍 653.4，立柱走幕布下沿 680）。用户要的是「花盆更靠前」的层次感，
+##        不是几何错误，别再"顺手改回 GROUND_Y"。
+##   ② 略微放大：`ZOOM = 1.05`（+5%，高 337.5 → **354.4px**、宽 202.5 → **212.7px**）。
+##      「一点点」未给数值，此 5% 为 AI 取的档；要更大/更小只改这一个数（1.1 = +10%），
+##      `SCALE` 与锚点、左缘都会自动跟随。
+##   ③ **最左缘仍钉在 0.15（288px）**：放大向右长，不左移——第三轮那条约束继续成立，
+##      与左柱右缘 246.7px 留 41.4px 间隙，压不到柱子。
+## `anchor_x` 是**贴图底边中心**（foot 554,1848），故由「左缘」反推锚点：
+##   anchor = 0.15×1920 + 554×0.1917615 = **394.2px** → 0.205331
+## 写成表达式：以后改左缘目标或改缩放，锚点自动跟随（不再手算）。
+const LEVEL2_ACT2_FLOWERPOT_FOOT_X: float = 554.0  ## 贴图内底边中心 x（素材 1109 宽）
+const LEVEL2_ACT2_FLOWERPOT_LEFT_X: float = 0.15  ## 用户定案：最左缘归一化 0.15（288px）
+const LEVEL2_ACT2_FLOWERPOT_BASE_Y: float = 0.61  ## 用户第四轮定案：最下水平线 y=658.8px
+const LEVEL2_ACT2_FLOWERPOT_SCALE_BASE: float = 0.18263  ## 原比例：高 337.5px → 宽 202.5px
+const LEVEL2_ACT2_FLOWERPOT_ZOOM: float = 1.05  ## 用户「稍微放大一点点」→ +5%
+const LEVEL2_ACT2_FLOWERPOT_SCALE: float = (
+	LEVEL2_ACT2_FLOWERPOT_SCALE_BASE * LEVEL2_ACT2_FLOWERPOT_ZOOM
+)  ## = 0.191762 → 高 354.4px、宽 212.7px（1109×1848）
+const LEVEL2_ACT2_FLOWERPOT_X: float = (
+	(
+		LEVEL2_ACT2_FLOWERPOT_LEFT_X * 1920.0
+		+ LEVEL2_ACT2_FLOWERPOT_FOOT_X * LEVEL2_ACT2_FLOWERPOT_SCALE
+	)
+	/ 1920.0
+)  ## 底边中心 394.2px → 左缘 288px、右缘 500.7px
+##
+## 桌上酒具：壶在左、两只杯并排在右（用户手绘图排序）。
+## 🔴 用户 2026-10-12 第三轮：「**酒具对齐 0.4**」——三件的**最低水平面一律落在这条线上**：
+##   0.4 → **432px**，位于桌面椭圆的中前部（桌面可见面 = 后沿 394.7 ~ 前沿 ≈446.2），
+##   即「站在桌面上」；而上一版贴在**后沿 394.7**（`LEVEL2_ACT2_TABLE_TOP_Y`）是悬在桌缘上。
+## ⚠️ 正因底边（432）落在**桌子绘制矩形之内**，酒具必须**画在桌子之后 → 图层在上**，
+##   否则会被桌面盖住。`items` 数组顺序即绘制顺序（后画在上），见 make_level2_act2 的排序说明。
+const LEVEL2_ACT2_WINE_BASE_Y: float = 0.4  ## 酒具最低水平面 y=432px
+const LEVEL2_ACT2_POT_SCALE: float = 0.041958  ## 酒壶高 60px（1289×1430）
+const LEVEL2_ACT2_POT_X: float = 0.476562  ## 跨 888~942
+const LEVEL2_ACT2_CUP_GREEN_SCALE: float = 0.046703  ## 绿釉杯高 34px（823×728）
+const LEVEL2_ACT2_CUP_GREEN_X: float = 0.507812  ## 跨 956~994
+const LEVEL2_ACT2_CUP_RED_SCALE: float = 0.047091  ## 朱红杯高 34px（779×722）
+const LEVEL2_ACT2_CUP_RED_X: float = 0.539062  ## 跨 1017~1053
+
+## —— 第三关《盗仙草》定位常量：**一座山，顶天立地、紧靠最右侧**（用户 2026-10-12 定案）——
+## 地平线取**幕布下沿 680**（第二幕是 653.4）。本关没有家具，不需要与谁共用地面线，
+## 直接贴幕布底沿最稳。
+const LEVEL3_GROUND_Y: float = 0.629630  ## 山底 y=680px（幕布下沿）
+## 山高 = 幕布高 588px（山顶贴幕布顶 92、山脚贴幕布底 680，纵向满幅）。
+## scale = 588/1754 = 0.335234 → 宽 = 1494×0.335234 ≈ 500.8px。
+## 右缘内留 20px（右缘 1834）→ 底边中心 1583.6，**左侧 72% 刻意留空**给三位影人。
+const LEVEL3_MOUNTAIN_SCALE: float = 0.335234  ## 高 588px（1494×1754）→ 宽 501px
+const LEVEL3_MOUNTAIN_X: float = 0.824782  ## 底边中心 → 跨 1333~1834
 
 ## 贴图统一像素比例：素材 1 像素 = 画布多少像素。
 ## 0.42 → 完整拱素材 1842 宽 = 774 画布像素（幕布宽 1788 的 43%），
@@ -211,8 +396,8 @@ const TEXTURE_SCALE_PX: float = 0.42
 ## —— 形状走向（决定贴图是否翻转，**不是**可自由变换）——
 ## 「景物只能左右平移」是硬约束；`polygon` 只是声明这条布景的走向语义，
 ## 且白名单只允许这两个值（断言会拦），保证素材不会被上下翻转/斜切。
-const POLY_ARCH_SPAN: String = "arch_span"    ## 完整拱跨（桥下可过，青白二人可站在拱前后）
-const POLY_ARCH_SIDE: String = "arch_side"    ## 半拱侧入（只露桥头 + 小半截桥身，延伸出画）
+const POLY_ARCH_SPAN: String = "arch_span"  ## 完整拱跨（桥下可过，青白二人可站在拱前后）
+const POLY_ARCH_SIDE: String = "arch_side"  ## 半拱侧入（只露桥头 + 小半截桥身，延伸出画）
 
 var stage_id: int = 1
 ## 布景元素列表。每条：
@@ -254,10 +439,11 @@ static func make_level1() -> CSceneryDef:
 			"texture_foot_px": Vector2(564.0, 1845.0),
 			# 逐资产缩放常量（见 LEVEL1_WILLOW_SCALE 注）；桥仍走全局 TEXTURE_SCALE_PX。
 			"texture_scale_px": LEVEL1_WILLOW_SCALE,
-			"params": {
-				# 树干高 / 树冠横向展开半径 / 树冠纵向半径，单位都是「画布高度比例」。
-				# 树冠向左上展开：`crown_bias_x` 为负表示树冠中心在树干左侧。
-				# 用户 2026-10-08：「树的长度要更高 0.05」→ trunk_height 0.20 → 0.25。
+			"params":
+			# 树干高 / 树冠横向展开半径 / 树冠纵向半径，单位都是「画布高度比例」。
+			# 树冠向左上展开：`crown_bias_x` 为负表示树冠中心在树干左侧。
+			# 用户 2026-10-08：「树的长度要更高 0.05」→ trunk_height 0.20 → 0.25。
+			{
 				# 树冠跟着上移（其位置由 trunk_height 推出），因此整棵树变高、树冠顶更高。
 				"trunk_height": 0.25,
 				"crown_radius_x": 0.075,
@@ -290,8 +476,9 @@ static func make_level1() -> CSceneryDef:
 			# 用户曾观感以为只渲染了半边，实为桥整体偏右、左侧 66~1015（占幕布 53%）全空，
 			# 并非裁剪 bug；桥的横向定位本轮未动。
 			"texture_foot_px": Vector2(921.0, 714.0),
-			"params": {
-				# 程序化占位画法用的形状参数（无贴图时生效；有贴图时被贴图取代）。
+			"params":
+			# 程序化占位画法用的形状参数（无贴图时生效；有贴图时被贴图取代）。
+			{
 				# 保留它们是为了 headless 批跑与断言不依赖贴图资源、且贴图缺失时画面不空。
 				"arch_end_x": 1.0,
 				# 桥面（拱顶）比接地线高多少。用户 2026-10-08 第三次定案：0.10 → 0.13。
@@ -307,12 +494,23 @@ static func make_level1() -> CSceneryDef:
 
 ## 按关卡编号取布景数据。未知编号返回**空布景**（而不是给一关默认的），
 ## 免得「第 2 关没做」被静默顶替成第 1 关的布景、画面看着像做完了。
+##
+## 编号表（**第二关分两幕，各占一个编号**——两幕布景完全不同，不能共键）：
+##   1  = 第一关《许仙借伞》         柳树 + 完整拱桥
+##   2  = 第二关第一幕「法海劝酒」   门楼 + 菊石 + 柳树（`act2_opening.gd` 在用）
+##   3  = 第三关《盗仙草》           一座山（顶天立地）
+##   22 = 第二关第二幕「端阳饮酒」   室内厅堂九件（`LEVEL2_ACT2_STAGE_ID`）
+##   其余（含 4）= 未实现 → 空布景
 static func make_stage(stage_id: int) -> CSceneryDef:
 	match stage_id:
 		1:
 			return make_level1()
 		2:
 			return make_level2()
+		3:
+			return make_level3()
+		22:  # = LEVEL2_ACT2_STAGE_ID；此处写字面量：match 里用标识符会被当作绑定模式
+			return make_level2_act2()
 	var empty := CSceneryDef.new()
 	empty.stage_id = stage_id
 	return empty
@@ -332,7 +530,7 @@ static func make_level2() -> CSceneryDef:
 	def.items = [
 		{
 			"id": "gate",
-			"kind": KIND_ARCH_BRIDGE,   # 复用建筑类回退画法；贴图存在时不会走到
+			"kind": KIND_ARCH_BRIDGE,  # 复用建筑类回退画法；贴图存在时不会走到
 			"anchor_x": LEVEL2_GATE_X,
 			"anchor_y": LEVEL2_GATE_BASE_Y,
 			"pan_x": 0.0,
@@ -345,7 +543,7 @@ static func make_level2() -> CSceneryDef:
 		},
 		{
 			"id": "chrysanthemum",
-			"kind": KIND_WILLOW,        # 同上：有贴图不走回退
+			"kind": KIND_WILLOW,  # 同上：有贴图不走回退
 			"anchor_x": LEVEL2_CHRYS_X,
 			"anchor_y": LEVEL2_CHRYS_BASE_Y,
 			"pan_x": 0.0,
@@ -353,8 +551,13 @@ static func make_level2() -> CSceneryDef:
 			# 锚点 = 贴图底边中心（花盆正中）。素材 1020×1807。
 			"texture_foot_px": Vector2(510.0, 1807.0),
 			"texture_scale_px": LEVEL2_CHRYS_SCALE,
-			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
-				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+			"params":
+			{
+				"trunk_height": 0.25,
+				"crown_radius_x": 0.075,
+				"crown_radius_y": 0.055,
+				"crown_bias_x": 0.0
+			},
 		},
 		# 🔴 花篮（flower_basket）已于 2026-11 用户定案**移除**：加入当天即撤下，
 		# 「门的两侧对称摆两盆花」读起来太满，且与菊花的陪衬角色重复。
@@ -379,8 +582,259 @@ static func make_level2() -> CSceneryDef:
 			# 锚点 = 贴图**底边中心**（树干接地点）。素材 1377×1866。
 			"texture_foot_px": Vector2(688.0, 1866.0),
 			"texture_scale_px": LEVEL2_TREE_SCALE,
-			"params": {"trunk_height": 0.25, "crown_radius_x": 0.075,
-				"crown_radius_y": 0.055, "crown_bias_x": 0.0},
+			"params":
+			{
+				"trunk_height": 0.25,
+				"crown_radius_x": 0.075,
+				"crown_radius_y": 0.055,
+				"crown_bias_x": 0.0
+			},
+		},
+	]
+	return def
+
+
+## 第二关**第二幕**「端阳饮酒」布景 —— **室内厅堂**（用户 2026-10-12 定案，v8）。
+##
+## 与第一幕（门楼版，编号 2）的关系：同属第二关剧情，但**布景是两套**，
+## 第一幕在门外（门楼 + 菊石 + 柳树），第二幕进厅堂（立柱围合 + 桌椅酒具）。
+## 因此各占一个编号：第一幕 2、第二幕 22。切幕时由 A 侧换编号，
+## 本文件只保证「取 22 拿到厅堂、取 2 拿到门楼」。
+##
+## **本轮（2026-10-12 第四轮）的三处调整**（用户逐条给归一化坐标）：
+##   ① 两凳**各向幕布中心挪 64.5px**：左凳心 0.366391 → **0.4**（768px）、右凳心 → **0.6**（1152px，对称）。
+##   ② 花盆**最下水平线** 653.4 → **0.61（658.8px）**，并**放大 5%**（高 337.5 → 354.4px）；
+##      最左缘仍钉 0.15（288px）不动；放大向右长。
+##   ③ 横梁**梁顶** 0.15 → **0.12**（162.0 → **129.6px**，上抬 32.4px）；梁底随之 236.7 → **204.3px**。
+##
+## **第三轮（沿用）**：① 横梁改以**梁顶**定高（底边由梁高推出）；② 花盆最左缘 → 0.15；
+##   ③ 酒具落线 → 0.4（432px，桌面椭圆中前部）→ 因底边落进桌子矩形之内，**酒具须排在 table 之后**
+##      = 「图层在上，不要被桌子遮住」（见下方排序说明）。
+## **第二轮（沿用）**：① 横梁四根恢复；② 立柱内侧剪掉（`column_cut`/`column_mirror_cut`，604×1893）；
+##   ③ 酒具由 595.6 提到桌面。
+## **v8（沿用）**：右柱镜像——手绘图右下批注「这个需要镜像」，右柱用水平翻转贴图。
+##
+## 结构沿革（仅供追溯，勿再当现状）：v3~v7 = 柱×2 / 梁×4 / 花盆 / 桌 / 凳×2 / 壶 / 杯×2 共 13 件；
+## v8 = 误删横梁 → 9 件；第二轮回到 13 件；第三 / 第四轮件数仍是 **13 件**，只调各件的落点。
+##
+## ⚠️ **数组顺序 = 绘制顺序，后画者在上**（`CSceneryView._draw_items` 按 `items` 顺序直绘，
+## 没有逐件 z_index）。所以「酒具要压在桌子之上」在实现上就是**把 wine_* 排在 table 之后**——
+## 见 `_draw_order_covers_wine` 与 `_level2_act2_geometry` 里的绘制顺序断言。
+##
+## ⚠️ 两种 `kind` 只作「有贴图时不走回退画法」的占位（与第一幕同法）：
+##   建筑/家具类（柱、桌、凳）用 `KIND_ARCH_BRIDGE`，花木/器物类（花盆、酒具）用
+##   `KIND_WILLOW`。贴图在，两者都不会真的走程序化回退。
+static func make_level2_act2() -> CSceneryDef:
+	var def := CSceneryDef.new()
+	def.stage_id = LEVEL2_ACT2_STAGE_ID
+	def.items = [
+		# —— 立柱成对：紧贴左右幕布，「顶天立地」（底贴幕布下沿，不随地平线）——
+		# 🔴 2026-10-12 第二轮：用**剪掉内侧**的贴图（column_cut / column_mirror_cut），
+		#    柱身内侧的雀替臂整条去掉，让横梁端头干净地接到柱身上。
+		{
+			"id": "column_left",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_ACT2_COLUMN_LEFT_X,
+			"anchor_y": LEVEL2_ACT2_COLUMN_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_COLUMN_CUT,
+			# 锚点 = 贴图底边中心。剪后 604×1893。
+			"texture_foot_px": Vector2(302.0, 1893.0),
+			"texture_scale_px": LEVEL2_ACT2_COLUMN_SCALE,
+			"params": {},
+		},
+		{
+			"id": "column_right",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_ACT2_COLUMN_RIGHT_X,
+			"anchor_y": LEVEL2_ACT2_COLUMN_BASE_Y,
+			"pan_x": 0.0,
+			# 右柱用**水平翻转贴图**（用户手绘批注「这个需要镜像」）。
+			# Godot 4 的 draw_texture_rect 无 flip_h 参数，故离线镜像成独立 PNG，
+			# 不走运行时翻转，避开 compat 渲染器的坑。镜像只翻内容、不改几何，
+			# 故左右两柱同宽同高（断言会比这一条）。
+			"texture": SCENERY_TEX_COLUMN_MIRROR_CUT,
+			"texture_foot_px": Vector2(302.0, 1893.0),
+			"texture_scale_px": LEVEL2_ACT2_COLUMN_SCALE,
+			"params": {},
+		},
+		# —— 横梁四根：等分铺满柱间净宽，**梁宽随柱宽自适应**（用户定案「四个横梁保留」）——
+		{
+			"id": "beam_0",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_BEAM_0_X,
+			"anchor_y": LEVEL2_BEAM_Y,  # 悬挂：底边挂在柱间上部，不是地平线
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BEAM,
+			# 锚点 = 底边中心。素材 1762×369。
+			"texture_foot_px": Vector2(881.0, 369.0),
+			"texture_scale_px": LEVEL2_BEAM_SCALE,
+			"params": {},
+		},
+		{
+			"id": "beam_1",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_BEAM_1_X,
+			"anchor_y": LEVEL2_BEAM_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BEAM,
+			"texture_foot_px": Vector2(881.0, 369.0),
+			"texture_scale_px": LEVEL2_BEAM_SCALE,
+			"params": {},
+		},
+		{
+			"id": "beam_2",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_BEAM_2_X,
+			"anchor_y": LEVEL2_BEAM_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BEAM,
+			"texture_foot_px": Vector2(881.0, 369.0),
+			"texture_scale_px": LEVEL2_BEAM_SCALE,
+			"params": {},
+		},
+		{
+			"id": "beam_3",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_BEAM_3_X,
+			"anchor_y": LEVEL2_BEAM_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_BEAM,
+			"texture_foot_px": Vector2(881.0, 369.0),
+			"texture_scale_px": LEVEL2_BEAM_SCALE,
+			"params": {},
+		},
+		# —— 花盆：夹在左柱与圆桌之间。
+		#    第四轮：**最下水平线 0.61（658.8px，比地平线低 5.4px）** + 放大 5%；最左缘仍 0.15 ——
+		{
+			"id": "flowerpot",
+			"kind": KIND_WILLOW,
+			"anchor_x": LEVEL2_ACT2_FLOWERPOT_X,
+			"anchor_y": LEVEL2_ACT2_FLOWERPOT_BASE_Y,  # 0.61：本幕唯一「比地平线更低」的贴地件
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_FLOWERPOT,
+			# 锚点 = 底边中心（花盆底足）。素材 1109×1848。
+			# foot x 用常量，好与「左缘 → 锚点」的反推公式同源。
+			"texture_foot_px": Vector2(LEVEL2_ACT2_FLOWERPOT_FOOT_X, 1848.0),
+			"texture_scale_px": LEVEL2_ACT2_FLOWERPOT_SCALE,
+			"params": {},
+		},
+		# —— 圆桌：居中，同时是两凳的对称轴 ——
+		{
+			"id": "table",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_ACT2_TABLE_X,
+			"anchor_y": LEVEL2_ACT2_GROUND_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_TABLE,
+			# 锚点 = 底边中心。素材 1895×1937。
+			# ⚠️ 该素材**近似正方**且自带一张圆凳，桌面在贴图约 35% 处——
+			# 桌面可用宽度 ≈ 桌绘制宽度（零左右余量），桌面道具总宽超过它就会溢出。
+			"texture_foot_px": Vector2(947.0, 1937.0),
+			"texture_scale_px": LEVEL2_ACT2_TABLE_SCALE,
+			"params": {},
+		},
+		# —— 凳子成对：以圆桌为对称轴左右各一（第四轮：凳心 0.4 / 0.6）——
+		{
+			"id": "stool_left",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_ACT2_STOOL_LEFT_X,
+			"anchor_y": LEVEL2_ACT2_GROUND_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_STOOL,
+			# 锚点 = 底边中心（凳脚）。素材 1401×1281。
+			"texture_foot_px": Vector2(700.0, 1281.0),
+			"texture_scale_px": LEVEL2_ACT2_STOOL_SCALE,
+			"params": {},
+		},
+		{
+			"id": "stool_right",
+			"kind": KIND_ARCH_BRIDGE,
+			"anchor_x": LEVEL2_ACT2_STOOL_RIGHT_X,
+			"anchor_y": LEVEL2_ACT2_GROUND_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_STOOL,
+			"texture_foot_px": Vector2(700.0, 1281.0),
+			"texture_scale_px": LEVEL2_ACT2_STOOL_SCALE,
+			"params": {},
+		},
+		# —— 桌上三件：anchor_y = **酒具落线**（0.4 / 432px，见 LEVEL2_ACT2_WINE_BASE_Y），
+		#    三件的「最低水平面」都落在同一条线上（用户第三轮定案）。
+		#    🔴 **必须排在本数组的 table 之后**：绘制顺序 = 数组顺序，后画者在上；
+		#    酒具底边（432）落在桌子矩形（394.7~653.4）之内，排在桌子之前就会被桌面盖住——
+		#    用户原话：「且图层在上，不要被桌子遮住」。顺序由断言钉住，别随手调序。——
+		{
+			"id": "wine_pot",
+			"kind": KIND_WILLOW,
+			"anchor_x": LEVEL2_ACT2_POT_X,
+			"anchor_y": LEVEL2_ACT2_WINE_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_WINE_POT,
+			# 锚点 = 底边中心（壶底）。素材 1289×1430。
+			"texture_foot_px": Vector2(644.0, 1430.0),
+			"texture_scale_px": LEVEL2_ACT2_POT_SCALE,
+			"params": {},
+		},
+		{
+			"id": "wine_cup_green",
+			"kind": KIND_WILLOW,
+			"anchor_x": LEVEL2_ACT2_CUP_GREEN_X,
+			"anchor_y": LEVEL2_ACT2_WINE_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_WINE_CUP_GREEN,
+			# 锚点 = 底边中心（杯底）。素材 823×728。
+			"texture_foot_px": Vector2(412.0, 728.0),
+			"texture_scale_px": LEVEL2_ACT2_CUP_GREEN_SCALE,
+			"params": {},
+		},
+		{
+			"id": "wine_cup_red",
+			"kind": KIND_WILLOW,
+			"anchor_x": LEVEL2_ACT2_CUP_RED_X,
+			"anchor_y": LEVEL2_ACT2_WINE_BASE_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_WINE_CUP_RED,
+			# 锚点 = 底边中心（杯底）。素材 779×722。
+			"texture_foot_px": Vector2(390.0, 722.0),
+			"texture_scale_px": LEVEL2_ACT2_CUP_RED_SCALE,
+			"params": {},
+		},
+	]
+	return def
+
+
+## 第三关《盗仙草》布景 —— **一座山，紧靠布景最右侧**（用户 2026-10-12 定案）。
+##
+## 本关布景**只有这一件**：PRD 写「昆仑山、云雾、古松与仙草剪影构成山景」，
+## 而`山.woop` 这张贴图已把峰顶殿宇、古松、云海全画进去了——**一件顶三件**，
+## 不再另加云/松/草，否则会与山体贴图里的同一元素重叠打架。
+##
+## 地平线用**幕布下沿 680**（第二幕是 653.4）。本关没有家具，不需要与谁共用
+## 地面线，直接贴幕布底沿最稳。
+##
+## 画面左侧（约 72%）刻意留空——三位影人的活动区，山在右侧不压人。
+## 山高 588 = 幕布全高（**顶天立地**：山顶贴幕布顶 92、山脚贴幕布底 680）。
+static func make_level3() -> CSceneryDef:
+	var def := CSceneryDef.new()
+	def.stage_id = 3
+	def.items = [
+		{
+			"id": "mountain",
+			"kind": KIND_WILLOW,  # 有贴图不走回退；与花木同类
+			"anchor_x": LEVEL3_MOUNTAIN_X,
+			"anchor_y": LEVEL3_GROUND_Y,
+			"pan_x": 0.0,
+			"texture": SCENERY_TEX_MOUNTAIN,
+			# 锚点 = 贴图底边中心（山脚正中）。素材 1494×1754。
+			"texture_foot_px": Vector2(747.0, 1754.0),
+			"texture_scale_px": LEVEL3_MOUNTAIN_SCALE,
+			"params":
+			{
+				"trunk_height": 0.4,
+				"crown_radius_x": 0.3,
+				"crown_radius_y": 0.2,
+				"crown_bias_x": 0.0
+			},
 		},
 	]
 	return def

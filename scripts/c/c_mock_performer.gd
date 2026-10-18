@@ -71,9 +71,9 @@ const GROUND_Y: float = 0.5
 ## 注：字典是引用类型，常量本身不可改但内容会被共享，取值时必须 duplicate。
 const PUPPET_HOME_X: Array[float] = [0.50, 0.13, 0.86]
 const PUPPET_HOME_HAND: Array = [
-	{"left": 0.00, "right": 0.00},   # 0 号白素贞：双手自然垂下，要用左手去接伞
-	{"left": 1.20, "right": 1.57},   # 1 号许仙：右手举到 90° 持伞（第一关打伞位）
-	{"left": 0.10, "right": 1.20},   # 2 号小青：开局站姿，整关不动
+	{"left": 0.00, "right": 0.00},  # 0 号白素贞：双手自然垂下，要用左手去接伞
+	{"left": 1.20, "right": 1.57},  # 1 号许仙：右手举到 90° 持伞（第一关打伞位）
+	{"left": 0.10, "right": 1.20},  # 2 号小青：开局站姿，整关不动
 ]
 
 ## 三具影人**开场时的挂起槽位**，-1 表示未挂起（不在挂钩上）。
@@ -120,15 +120,31 @@ const HOOK_ON_MS: int = 5200
 ## 两次错拍（cue_fire + cue_miss 并存）的 cue_id 与时刻。
 ## 放在左移段与灯位段内，错在动作做得到但不合拍的拍点上。
 const WRONG_CUES: Array = [
-	{"cue_id": "mock_c0_wrong", "beat_ms": 1600, "object_id": 0, "action": "move_left", "offset_ms": 210},
-	{"cue_id": "mock_c1_wrong", "beat_ms": 6200, "object_id": 1, "action": "move_right", "offset_ms": -240},
+	{
+		"cue_id": "mock_c0_wrong",
+		"beat_ms": 1600,
+		"object_id": 0,
+		"action": "move_left",
+		"offset_ms": 210
+	},
+	{
+		"cue_id": "mock_c1_wrong",
+		"beat_ms": 6200,
+		"object_id": 1,
+		"action": "move_right",
+		"offset_ms": -240
+	},
 ]
 
 ## 一次漏做（reason = missed_outright，无 cue_fire）。
 ## 放在快速转身段内，验证记录里「没做」这件事也留得下痕迹。
 const MISSED_CUE: Dictionary = {
-	"cue_id": "mock_c2_missed", "beat_ms": 3000, "object_id": 0,
-	"action": "stand_up", "offset_ms": 750, "tolerance_ms": 250,
+	"cue_id": "mock_c2_missed",
+	"beat_ms": 3000,
+	"object_id": 0,
+	"action": "stand_up",
+	"offset_ms": 750,
+	"tolerance_ms": 250,
 }
 
 ## 三幕与掌声。TECH_DESIGN 第 4 节末段的验收要求比对「掌声」，而 21 个事件
@@ -184,26 +200,34 @@ func _append_acts(record: Variant) -> void:
 ## 这条因果顺序靠追加次序保证。
 func _append_events(record: Variant, p_stage_id: int = STAGE_ID) -> void:
 	var specs: Array = []
-	specs.append(_spec(0, &"stage_start", CTimedEventScript.OBJECT_ID_NONE, "",
-		{"stage_id": p_stage_id, "duration_ms": DURATION_MS}))
+	specs.append(
+		_spec(
+			0,
+			&"stage_start",
+			CTimedEventScript.OBJECT_ID_NONE,
+			"",
+			{"stage_id": p_stage_id, "duration_ms": DURATION_MS}
+		)
+	)
 
 	# 每个动作段起始发一条事件，标明「从这一段开始该动作了」。
 	# kind 沿用 A 端已冻结的 21 个里的对应值，不新造 kind。
 	specs.append(_spec(800, &"pose_stance", 0, "", {"segment": "左移"}))
-	specs.append(_spec(2200, &"facing_turn", 0, "",
-		{"from": 0.0, "to": 1.0, "turn_progress": 0.0}))
-	specs.append(_spec(2550, &"facing_turn", 0, "",
-		{"from": 1.0, "to": -1.0, "turn_progress": 1.0}))
-	specs.append(_spec(3400, &"hand_motion", 0, "",
-		{"left": -0.5, "right": 0.45}))
+	specs.append(_spec(2200, &"facing_turn", 0, "", {"from": 0.0, "to": 1.0, "turn_progress": 0.0}))
+	specs.append(
+		_spec(2550, &"facing_turn", 0, "", {"from": 1.0, "to": -1.0, "turn_progress": 1.0})
+	)
+	specs.append(_spec(3400, &"hand_motion", 0, "", {"left": -0.5, "right": 0.45}))
 	specs.append(_spec(HEAD_SWAP_MS, &"drag_end", 0, "", {"reason": "head_swap"}))
 	specs.append(_spec(HOOK_ON_MS, &"drag_begin", 0, "", {"hook_slot": 0}))
 
 	# 灯位推拉：字段名与 A 端 LampState.changed_fields 一致。
-	specs.append(_spec(5400, &"lamp_input_changed", "lamp_main", "",
-		{"field": "distance", "to": 0.2}))
-	specs.append(_spec(6600, &"lamp_input_changed", "lamp_main", "",
-		{"field": "distance", "to": 0.8}))
+	specs.append(
+		_spec(5400, &"lamp_input_changed", "lamp_main", "", {"field": "distance", "to": 0.2})
+	)
+	specs.append(
+		_spec(6600, &"lamp_input_changed", "lamp_main", "", {"field": "distance", "to": 0.8})
+	)
 
 	# 两次错拍：cue_fire 与 cue_miss 并存，payload 不带 missed_outright。
 	# 这是 PRD 5.2.3 的忠实性要求——错拍时动作照常发生，
@@ -213,51 +237,122 @@ func _append_events(record: Variant, p_stage_id: int = STAGE_ID) -> void:
 		var beat_ms: int = int(cue["beat_ms"])
 		var object_id: int = int(cue["object_id"])
 		var action: String = str(cue["action"])
-		specs.append(_spec(beat_ms - 300, &"cue_hint", object_id, cue_id,
-			{"hint_kind": "action", "action": action, "demo_action": action,
-			 "target_range": {}, "beat_time_ms": beat_ms}))
-		specs.append(_spec(beat_ms - 20, &"cue_fire", object_id, cue_id,
-			{"action": action, "metric": 0.0,
-			 "window_start_ms": beat_ms - 250, "window_end_ms": beat_ms + 250}))
-		specs.append(_spec(beat_ms + int(cue["offset_ms"]), &"cue_miss", object_id, cue_id,
-			{"action": action, "offset_ms": int(cue["offset_ms"]),
-			 "tolerance_ms": 250, "metric": 0.0}))
+		specs.append(
+			_spec(
+				beat_ms - 300,
+				&"cue_hint",
+				object_id,
+				cue_id,
+				{
+					"hint_kind": "action",
+					"action": action,
+					"demo_action": action,
+					"target_range": {},
+					"beat_time_ms": beat_ms
+				}
+			)
+		)
+		specs.append(
+			_spec(
+				beat_ms - 20,
+				&"cue_fire",
+				object_id,
+				cue_id,
+				{
+					"action": action,
+					"metric": 0.0,
+					"window_start_ms": beat_ms - 250,
+					"window_end_ms": beat_ms + 250
+				}
+			)
+		)
+		specs.append(
+			_spec(
+				beat_ms + int(cue["offset_ms"]),
+				&"cue_miss",
+				object_id,
+				cue_id,
+				{
+					"action": action,
+					"offset_ms": int(cue["offset_ms"]),
+					"tolerance_ms": 250,
+					"metric": 0.0
+				}
+			)
+		)
 
 	# 一次漏做：只有 cue_miss，且 reason 为 missed_outright。
 	# 判别键是 payload.reason——A 端只把 reason 下发到 payload，
 	# missed_outright 布尔值留在它内部的 _outcomes 里。
 	var missed_beat: int = int(MISSED_CUE["beat_ms"])
-	specs.append(_spec(missed_beat - 300, &"cue_hint", int(MISSED_CUE["object_id"]),
-		str(MISSED_CUE["cue_id"]),
-		{"hint_kind": "action", "action": str(MISSED_CUE["action"]),
-		 "demo_action": str(MISSED_CUE["action"]), "target_range": {},
-		 "beat_time_ms": missed_beat}))
-	specs.append(_spec(missed_beat + int(MISSED_CUE["offset_ms"]), &"cue_miss",
-		int(MISSED_CUE["object_id"]), str(MISSED_CUE["cue_id"]),
-		{"action": str(MISSED_CUE["action"]), "offset_ms": int(MISSED_CUE["offset_ms"]),
-		 "tolerance_ms": int(MISSED_CUE["tolerance_ms"]), "metric": NAN,
-		 "reason": "missed_outright"}))
+	specs.append(
+		_spec(
+			missed_beat - 300,
+			&"cue_hint",
+			int(MISSED_CUE["object_id"]),
+			str(MISSED_CUE["cue_id"]),
+			{
+				"hint_kind": "action",
+				"action": str(MISSED_CUE["action"]),
+				"demo_action": str(MISSED_CUE["action"]),
+				"target_range": {},
+				"beat_time_ms": missed_beat
+			}
+		)
+	)
+	specs.append(
+		_spec(
+			missed_beat + int(MISSED_CUE["offset_ms"]),
+			&"cue_miss",
+			int(MISSED_CUE["object_id"]),
+			str(MISSED_CUE["cue_id"]),
+			{
+				"action": str(MISSED_CUE["action"]),
+				"offset_ms": int(MISSED_CUE["offset_ms"]),
+				"tolerance_ms": int(MISSED_CUE["tolerance_ms"]),
+				"metric": NAN,
+				"reason": "missed_outright"
+			}
+		)
+	)
 
-	specs.append(_spec(DURATION_MS, &"stage_end", CTimedEventScript.OBJECT_ID_NONE, "",
-		{"song_time_ms": DURATION_MS}))
+	specs.append(
+		_spec(
+			DURATION_MS,
+			&"stage_end",
+			CTimedEventScript.OBJECT_ID_NONE,
+			"",
+			{"song_time_ms": DURATION_MS}
+		)
+	)
 
 	# 稳定排序：相同 time_ms 保持书写顺序（Array.sort_custom 不保证稳定，
 	# 故用带原始下标的键显式兜住）。
 	for i in specs.size():
 		specs[i]["_order"] = i
-	specs.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		if int(a["time_ms"]) != int(b["time_ms"]):
-			return int(a["time_ms"]) < int(b["time_ms"])
-		return int(a["_order"]) < int(b["_order"]))
+	specs.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			if int(a["time_ms"]) != int(b["time_ms"]):
+				return int(a["time_ms"]) < int(b["time_ms"])
+			return int(a["_order"]) < int(b["_order"])
+	)
 
 	for spec in specs:
-		record.append_event(_event(int(spec["time_ms"]), spec["kind"], spec["object_id"],
-			str(spec["cue_id"]), spec["payload"]))
+		record.append_event(
+			_event(
+				int(spec["time_ms"]),
+				spec["kind"],
+				spec["object_id"],
+				str(spec["cue_id"]),
+				spec["payload"]
+			)
+		)
 
 
 ## 一条待写入事件的描述。追加前先排序，seq 由记录分配。
-func _spec(time_ms: int, kind: StringName, object_id: Variant, cue_id: String,
-		payload: Dictionary) -> Dictionary:
+func _spec(
+	time_ms: int, kind: StringName, object_id: Variant, cue_id: String, payload: Dictionary
+) -> Dictionary:
 	return {
 		"time_ms": time_ms,
 		"kind": kind,
@@ -279,8 +374,9 @@ func _append_snapshots(record: Variant) -> void:
 	while t < DURATION_MS:
 		record.append_snapshot(CSnapshotScript.from_views(t, _puppet_views(t), _lamp_view(t)))
 		t += STEP_MS
-	record.append_snapshot(CSnapshotScript.from_views(
-		DURATION_MS, _puppet_views(DURATION_MS), _lamp_view(DURATION_MS)))
+	record.append_snapshot(
+		CSnapshotScript.from_views(DURATION_MS, _puppet_views(DURATION_MS), _lamp_view(DURATION_MS))
+	)
 
 
 ## 三具影人的状态视图。字段形状严格照 A 端 PuppetState.to_dict()。
@@ -304,7 +400,9 @@ func _puppet_view(index: int, now_ms: int) -> Dictionary:
 	var name: String = str(segment.get("name", ""))
 	match name:
 		"左移":
-			view["stage_pos"] = {"x": _ramp(now_ms, 800, 2200, PUPPET_HOME_X[0], 0.2), "y": GROUND_Y}
+			view["stage_pos"] = {
+				"x": _ramp(now_ms, 800, 2200, PUPPET_HOME_X[0], 0.2), "y": GROUND_Y
+			}
 		"快速转身":
 			# 400ms 内 0 → +1 → -1，是刻意造的「快速转身」。
 			# turn_progress 由 facing 绝对值派生，与 A 端 clamp_continuous 一致。
@@ -332,7 +430,7 @@ func _puppet_view(index: int, now_ms: int) -> Dictionary:
 	# 「摘头取钩再装回」的假跳变，与「收势不该把东西收回去」的设计意图相悖，
 	# 也让换头/挂起在回放里变得不清晰。放在这里，跳变恰好各发生一次。
 	if now_ms >= HEAD_SWAP_MS:
-		view["head_id"] = 3            # 三个备用头之一
+		view["head_id"] = 3  # 三个备用头之一
 	if now_ms >= HOOK_ON_MS:
 		view["hook_slot"] = 0
 	return view
@@ -349,11 +447,11 @@ func _base_puppet(index: int) -> Dictionary:
 	return {
 		"puppet_id": index,
 		"stage_pos": {"x": PUPPET_HOME_X[index], "y": GROUND_Y},
-		"stance": 0.0,               # 0.0 = 完全站立（A 端语义，B 已确认）
+		"stance": 0.0,  # 0.0 = 完全站立（A 端语义，B 已确认）
 		"facing": 0.0,
 		"turn_progress": 0.0,
 		"hand_angle": home_hand.duplicate(true),
-		"head_id": -1,               # -1 = 未分配
+		"head_id": -1,  # -1 = 未分配
 		"hook_slot": PUPPET_HOME_HOOK[index],  # -1 = 未挂起；1/2 号开局即占满两个挂钩
 		"is_controlled": index == 0,
 	}
@@ -381,8 +479,9 @@ func _lamp_view(now_ms: int) -> Dictionary:
 
 ## 构造一条 CTimedEvent。object_id 原样透传：
 ## 影人事件用 int 0-2，油灯事件用 String "lamp_main"，无对象用 0。
-func _event(time_ms: int, kind: StringName, object_id: Variant, cue_id: String,
-		payload: Dictionary) -> Variant:
+func _event(
+	time_ms: int, kind: StringName, object_id: Variant, cue_id: String, payload: Dictionary
+) -> Variant:
 	return CTimedEventScript.new(time_ms, kind, object_id, cue_id, payload)
 
 
@@ -419,6 +518,14 @@ static func segment_plan() -> Array:
 ## 本类默认不写 acts，以免同一条记录被叠加两套掌声（见 build 的说明）。
 static func covered_features() -> Array[String]:
 	return [
-		"停顿", "横向移动", "快速转身", "双手不同姿势",
-		"换头", "挂起", "灯位变化", "错拍", "漏做", "掌声",
+		"停顿",
+		"横向移动",
+		"快速转身",
+		"双手不同姿势",
+		"换头",
+		"挂起",
+		"灯位变化",
+		"错拍",
+		"漏做",
+		"掌声",
 	]

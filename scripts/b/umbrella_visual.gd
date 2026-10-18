@@ -49,10 +49,15 @@ func _draw() -> void:
 	var edge := Color("#3a2a18")
 	draw_line(hand, canopy, edge, height * 0.034 * maxf(flip, 0.25), true)
 	draw_line(hand, canopy, wood, height * 0.021 * maxf(flip, 0.25), true)
-	var rim := PackedVector2Array([
-		canopy + Vector2(-radius, drop * 0.68), canopy + Vector2(-radius * 0.5, drop * 0.92),
-		canopy + Vector2(0, drop), canopy + Vector2(radius * 0.5, drop * 0.92), canopy + Vector2(radius, drop * 0.68),
-	])
+	var rim := PackedVector2Array(
+		[
+			canopy + Vector2(-radius, drop * 0.68),
+			canopy + Vector2(-radius * 0.5, drop * 0.92),
+			canopy + Vector2(0, drop),
+			canopy + Vector2(radius * 0.5, drop * 0.92),
+			canopy + Vector2(radius, drop * 0.68),
+		]
+	)
 	var face := PackedVector2Array([canopy])
 	face.append_array(rim)
 	draw_colored_polygon(face, Color(0.87, 0.79, 0.62, 0.92))

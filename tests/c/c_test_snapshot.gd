@@ -52,17 +52,22 @@ func _test_03_from_views_roundtrip(t: Variant) -> void:
 	t.begin("from_views：A 端视图原样落入帧")
 	var views: Array = []
 	for i in 3:
-		views.append({
-			"puppet_id": i,
-			"stage_pos": {"x": 0.25 + i * 0.1, "y": 0.5},
-			"stance": 0.8,
-			"facing": -0.5,
-			"turn_progress": 0.5,
-			"hand_angle": {"left": 0.3, "right": -0.2},
-			"head_id": i,
-			"hook_slot": -1,
-			"is_controlled": true,
-		})
+		(
+			views
+			. append(
+				{
+					"puppet_id": i,
+					"stage_pos": {"x": 0.25 + i * 0.1, "y": 0.5},
+					"stance": 0.8,
+					"facing": -0.5,
+					"turn_progress": 0.5,
+					"hand_angle": {"left": 0.3, "right": -0.2},
+					"head_id": i,
+					"hook_slot": -1,
+					"is_controlled": true,
+				}
+			)
+		)
 	var lamp: Dictionary = {"distance": 0.7, "exposure": 0.3, "oil": 0.9, "flame_feedback": 0.4}
 	var s: Variant = CSnapshotScript.from_views(500, views, lamp)
 	t.check_eq(s.time_ms, 500, "time_ms 透传")
@@ -120,8 +125,7 @@ func _test_08_changed_fields_epsilon(t: Variant) -> void:
 	var b: Variant = _new_frame(33)
 	b.lamp["flame_feedback"] = float(a.lamp["flame_feedback"]) + 1.0e-6
 	var changed: Array = b.changed_fields(a)
-	t.check(changed.has("lamp.flame_feedback"),
-		"1e-6 量级变化须被识别（is_equal_approx 会漏判）")
+	t.check(changed.has("lamp.flame_feedback"), "1e-6 量级变化须被识别（is_equal_approx 会漏判）")
 	var c: Variant = _new_frame(66)
 	c.lamp["flame_feedback"] = float(a.lamp["flame_feedback"]) + 1.0e-12
 	var changed2: Array = c.changed_fields(a)

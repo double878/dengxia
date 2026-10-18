@@ -1,0 +1,15 @@
+# 格式由 gdformat 检查；长字符串、资源路径和说明注释不强行拆开。
+# 保留既有声明及初始化顺序，按模块职责分组。
+# 分派函数允许提前返回；公开方法数量不替代模块边界审查。
+disable:
+  - max-line-length
+  - class-definitions-order
+  - max-returns
+  - max-public-methods
+max-file-lines: 1500
+excluded_directories:
+  - .git
+  - .godot
+  - .venv
+  - .firecrawl
+  - builds

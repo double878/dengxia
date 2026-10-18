@@ -229,7 +229,7 @@ func _test_10_interpolates_position(t: Variant) -> void:
 			var v: float = float(f["lamp"][key])
 			if v < 0.0 or v > 1.0:
 				lamp_ok = false
-		at += 137   # 步长故意与插值区间不同步，避免只测到对齐点
+		at += 137  # 步长故意与插值区间不同步，避免只测到对齐点
 	t.check(lamp_ok, "全程灯态四字段都在 0-1（步长 137ms 非插值对齐）")
 	t.finish("插值不越界")
 
@@ -300,8 +300,7 @@ func _test_13_all_events_dispatched_once(t: Variant) -> void:
 	player.play()
 	while not player.is_finished():
 		player.advance(0.017)
-	t.check_eq(player.get_dispatched_event_count(), total,
-		"派发数等于记录事件数（%d）" % total)
+	t.check_eq(player.get_dispatched_event_count(), total, "派发数等于记录事件数（%d）" % total)
 	t.check_eq(player.get_now_ms(), record.get_replay_duration_ms(), "播放头落在末尾")
 	t.finish("不重不漏")
 
@@ -397,8 +396,10 @@ func _test_18_wall_clock_pause_no_drift(t: Variant) -> void:
 	var after_resume: int = player.advance(0.017)["now_ms"]
 	# 恢复后第一帧只应落在「暂停前位置 + 一帧」附近，
 	# 绝不该把 1500ms 的暂停整段补上。
-	t.check(after_resume < before_pause + 200,
-		"恢复后播放头 %d 相对暂停前 %d 不应跳 1500ms" % [after_resume, before_pause])
+	t.check(
+		after_resume < before_pause + 200,
+		"恢复后播放头 %d 相对暂停前 %d 不应跳 1500ms" % [after_resume, before_pause]
+	)
 	t.finish("暂停不漂移")
 
 
@@ -430,8 +431,7 @@ func _test_19_before_first_frame_uses_first(t: Variant) -> void:
 	var got_x: Array = []
 	for p in at_zero["puppets"]:
 		got_x.append(float(p.stage_pos.x))
-	t.check_eq(str(got_x), str(want_x),
-		"t=0 的站位应等于首帧站位 %s（实际 %s）" % [str(want_x), str(got_x)])
+	t.check_eq(str(got_x), str(want_x), "t=0 的站位应等于首帧站位 %s（实际 %s）" % [str(want_x), str(got_x)])
 	# 首帧本身的站位应当是三个不同位置——若等于默认的三个 0.5，
 	# 说明这个用例根本没在验证真实站位，会假绿。
 	t.check(want_x.size() == 3, "首帧有三具影人")
@@ -439,8 +439,7 @@ func _test_19_before_first_frame_uses_first(t: Variant) -> void:
 	for i in range(1, want_x.size()):
 		if absf(float(want_x[i]) - float(want_x[0])) > 1e-6:
 			all_same = false
-	t.check(not all_same,
-		"首帧三具影人站位应互不相同（实测 %s），否则本用例失去意义" % str(want_x))
+	t.check(not all_same, "首帧三具影人站位应互不相同（实测 %s），否则本用例失去意义" % str(want_x))
 	t.finish("开场零瞬移")
 
 

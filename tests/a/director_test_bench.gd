@@ -17,7 +17,7 @@ var director: StageDirector = null
 var stage_def: StageDef = null
 var time_ms: int = 0
 var paused: bool = false
-var director_log: Array = []          ## stage_* / remedy_* / cue_* 全部事件
+var director_log: Array = []  ## stage_* / remedy_* / cue_* 全部事件
 
 
 ## 按关卡数据的开演布景布置影人，与场景 `_configure_initial_stage` 同一口径：
@@ -94,8 +94,10 @@ func chest_tag() -> Vector2:
 	if s == null:
 		# 挂起之后可能一时无人受控（第 2 关的挂起/取回中间态），此时没有可抓的胸签。
 		return Vector2.ZERO
-	return Vector2(s.stage_pos.x * STAGE_W,
-		s.stage_pos.y * STAGE_H - PuppetController.CHEST_TAG_RADIUS_PX * 0.5)
+	return Vector2(
+		s.stage_pos.x * STAGE_W,
+		s.stage_pos.y * STAGE_H - PuppetController.CHEST_TAG_RADIUS_PX * 0.5
+	)
 
 
 ## 推进 steps 步。每步：推进时钟 → tick 控制器 → 把事件交给关卡导演。

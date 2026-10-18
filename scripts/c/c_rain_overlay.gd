@@ -77,7 +77,7 @@ func _ready() -> void:
 	_content.name = "RainContent"
 	add_child(_content)
 	_content.draw.connect(_draw_weather)
-	queue_redraw()          # 画裁剪模板
+	queue_redraw()  # 画裁剪模板
 	_content.queue_redraw()
 	_apply_light()          # 建树前调过 set_light() 也生效（_content 此刻才存在）
 
@@ -87,9 +87,11 @@ func _process(delta: float) -> void:
 		return
 	# posmodv（不是 posmod）：Vector2 逐分量取模要用 posmodv，posmod 只收 float。
 	_off_near = (_off_near + VEL_NEAR * delta).posmodv(
-		Vector2(RAIN_NEAR.get_width(), RAIN_NEAR.get_height()))
+		Vector2(RAIN_NEAR.get_width(), RAIN_NEAR.get_height())
+	)
 	_off_far = (_off_far + VEL_FAR * delta).posmodv(
-		Vector2(RAIN_FAR.get_width(), RAIN_FAR.get_height()))
+		Vector2(RAIN_FAR.get_width(), RAIN_FAR.get_height())
+	)
 	if _content != null:
 		_content.queue_redraw()
 
@@ -172,21 +174,39 @@ func _draw_mist() -> void:
 	var h := _rect_size.y
 	# 底部水汽：底边 0.30 → 45% 高度处 0（水面往上蒸起的濛）
 	var mid_y := h * 0.45
-	var bottom_mist := PackedVector2Array([
-		Vector2(0, mid_y), Vector2(w, mid_y), Vector2(w, h), Vector2(0, h),
-	])
-	var bottom_cols := PackedColorArray([
-		Color(1, 1, 1, 0), Color(1, 1, 1, 0),
-		Color(1, 1, 1, MIST_BOTTOM_ALPHA), Color(1, 1, 1, MIST_BOTTOM_ALPHA),
-	])
+	var bottom_mist := PackedVector2Array(
+		[
+			Vector2(0, mid_y),
+			Vector2(w, mid_y),
+			Vector2(w, h),
+			Vector2(0, h),
+		]
+	)
+	var bottom_cols := PackedColorArray(
+		[
+			Color(1, 1, 1, 0),
+			Color(1, 1, 1, 0),
+			Color(1, 1, 1, MIST_BOTTOM_ALPHA),
+			Color(1, 1, 1, MIST_BOTTOM_ALPHA),
+		]
+	)
 	_content.draw_polygon(bottom_mist, bottom_cols)
 	# 顶部薄霭：顶边 0.10 → 30% 高度处 0（远景朦）
 	var top_y := h * 0.30
-	var top_mist := PackedVector2Array([
-		Vector2(0, 0), Vector2(w, 0), Vector2(w, top_y), Vector2(0, top_y),
-	])
-	var top_cols := PackedColorArray([
-		Color(1, 1, 1, MIST_TOP_ALPHA), Color(1, 1, 1, MIST_TOP_ALPHA),
-		Color(1, 1, 1, 0), Color(1, 1, 1, 0),
-	])
+	var top_mist := PackedVector2Array(
+		[
+			Vector2(0, 0),
+			Vector2(w, 0),
+			Vector2(w, top_y),
+			Vector2(0, top_y),
+		]
+	)
+	var top_cols := PackedColorArray(
+		[
+			Color(1, 1, 1, MIST_TOP_ALPHA),
+			Color(1, 1, 1, MIST_TOP_ALPHA),
+			Color(1, 1, 1, 0),
+			Color(1, 1, 1, 0),
+		]
+	)
 	_content.draw_polygon(top_mist, top_cols)

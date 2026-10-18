@@ -69,17 +69,40 @@ const KIND_LAMP_FINISHED: StringName = &"lamp_finished"
 ##   - 冻结起止：stage_director.gd:13 写明「供 B 提示、C 记录回放节奏」；
 ##   - 借伞/还伞：umbrella_controller.gd:38-39 定义，A-to-B 交接文档 §5 已列。
 const KNOWN_KINDS: Array = [
-	KIND_DRAG_BEGIN, KIND_DRAG_END, KIND_POSE_STANCE, KIND_FACING_TURN,
-	KIND_HAND_MOTION, KIND_CUE_HINT, KIND_CUE_FIRE, KIND_CUE_HIT, KIND_CUE_MISS,
-	KIND_REMEDY_OPEN, KIND_REMEDY_SUCCESS, KIND_REMEDY_TIMEOUT,
-	KIND_REMEDY_SHOW, KIND_REMEDY_HIDE, KIND_STAGE_START, KIND_STAGE_END,
-	KIND_REMEDY_FREEZE_BEGIN, KIND_REMEDY_FREEZE_END,
-	KIND_UMBRELLA_TAKE, KIND_UMBRELLA_RETURN,
-	KIND_LAMP_STATE_CHANGED, KIND_LAMP_INPUT_CHANGED, KIND_LAMP_OIL_CHANGED,
-	KIND_LAMP_FEEDBACK_CHANGED, KIND_LAMP_FINISHED,
-	&"puppet_hook", &"puppet_take_back", &"head_swap",
-	&"opera_wait_begin", &"opera_wait_end", &"opera_take_close",
-	&"opera_score_skipped", &"opera_phase_changed", &"dialogue_line_changed",
+	KIND_DRAG_BEGIN,
+	KIND_DRAG_END,
+	KIND_POSE_STANCE,
+	KIND_FACING_TURN,
+	KIND_HAND_MOTION,
+	KIND_CUE_HINT,
+	KIND_CUE_FIRE,
+	KIND_CUE_HIT,
+	KIND_CUE_MISS,
+	KIND_REMEDY_OPEN,
+	KIND_REMEDY_SUCCESS,
+	KIND_REMEDY_TIMEOUT,
+	KIND_REMEDY_SHOW,
+	KIND_REMEDY_HIDE,
+	KIND_STAGE_START,
+	KIND_STAGE_END,
+	KIND_REMEDY_FREEZE_BEGIN,
+	KIND_REMEDY_FREEZE_END,
+	KIND_UMBRELLA_TAKE,
+	KIND_UMBRELLA_RETURN,
+	KIND_LAMP_STATE_CHANGED,
+	KIND_LAMP_INPUT_CHANGED,
+	KIND_LAMP_OIL_CHANGED,
+	KIND_LAMP_FEEDBACK_CHANGED,
+	KIND_LAMP_FINISHED,
+	&"puppet_hook",
+	&"puppet_take_back",
+	&"head_swap",
+	&"opera_wait_begin",
+	&"opera_wait_end",
+	&"opera_take_close",
+	&"opera_score_skipped",
+	&"opera_phase_changed",
+	&"dialogue_line_changed",
 ]
 
 ## 灯事件的 object_id 命名空间。A 端 lamp_controller.gd:23 的常量值，
@@ -95,7 +118,6 @@ const OBJECT_ID_NONE: int = 0
 
 ## 与关键动作无关的事件填空字符串，而不是 null。
 const CUE_ID_NONE: String = ""
-
 
 var time_ms: int = 0
 var kind: StringName = &""
@@ -114,8 +136,13 @@ var payload: Dictionary = {}
 var seq: int = -1
 
 
-func _init(p_time_ms: int = 0, p_kind: StringName = &"", p_object_id: Variant = OBJECT_ID_NONE,
-		p_cue_id: String = CUE_ID_NONE, p_payload: Dictionary = {}) -> void:
+func _init(
+	p_time_ms: int = 0,
+	p_kind: StringName = &"",
+	p_object_id: Variant = OBJECT_ID_NONE,
+	p_cue_id: String = CUE_ID_NONE,
+	p_payload: Dictionary = {}
+) -> void:
 	time_ms = p_time_ms
 	kind = p_kind
 	object_id = p_object_id
@@ -152,17 +179,46 @@ func _validate_object_id() -> String:
 	if t == TYPE_INT:
 		var v: int = object_id
 		# target_object=-1 表示当前操控者；挂起后无人受控时，判定/补救仍会如实发 -1。
-		if v == -1 and kind in [KIND_CUE_HINT, KIND_CUE_FIRE, KIND_CUE_HIT, KIND_CUE_MISS,
-			KIND_REMEDY_OPEN, KIND_REMEDY_SUCCESS, KIND_REMEDY_TIMEOUT, KIND_REMEDY_SHOW, KIND_REMEDY_HIDE]:
+		if (
+			v == -1
+			and (
+				kind
+				in [
+					KIND_CUE_HINT,
+					KIND_CUE_FIRE,
+					KIND_CUE_HIT,
+					KIND_CUE_MISS,
+					KIND_REMEDY_OPEN,
+					KIND_REMEDY_SUCCESS,
+					KIND_REMEDY_TIMEOUT,
+					KIND_REMEDY_SHOW,
+					KIND_REMEDY_HIDE
+				]
+			)
+		):
 			return ""
 		if v < OBJECT_ID_NONE or v > CSnapshotScript.PUPPET_COUNT - 1:
 			return "object_id 越界（int）：%d" % v
 		return ""
 	if t == TYPE_STRING or t == TYPE_STRING_NAME:
 		var s: String = String(object_id)
-		if s != LAMP_OBJECT_ID and not (s == "performance_audio" and kind in [
-			&"opera_wait_begin", &"opera_wait_end", &"opera_take_close",
-			&"opera_score_skipped", &"opera_phase_changed", &"dialogue_line_changed"]):
+		if (
+			s != LAMP_OBJECT_ID
+			and not (
+				s == "performance_audio"
+				and (
+					kind
+					in [
+						&"opera_wait_begin",
+						&"opera_wait_end",
+						&"opera_take_close",
+						&"opera_score_skipped",
+						&"opera_phase_changed",
+						&"dialogue_line_changed"
+					]
+				)
+			)
+		):
 			return "object_id 未知灯对象（String）：%s" % s
 		return ""
 	return "object_id 类型不支持：%s（值 %s）" % [type_string(t), str(object_id)]
@@ -198,5 +254,7 @@ func to_dict() -> Dictionary:
 ## 供测试与诊断使用的紧凑描述。
 ## object_id 用 %s 而非 %d：它是 Variant，String 命名空间下 %d 会报错。
 func describe() -> String:
-	return "CTimedEvent(seq=%d, t=%dms, kind=%s, obj=%s, cue=%s)" \
+	return (
+		"CTimedEvent(seq=%d, t=%dms, kind=%s, obj=%s, cue=%s)"
 		% [seq, time_ms, kind, str(object_id), cue_id]
+	)

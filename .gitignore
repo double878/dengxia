@@ -17,3 +17,15 @@ exported/
 .DS_Store
 Thumbs.db
 *.swp
+
+# 本地 Python 开发环境与字节码
+.venv/
+__pycache__/
+*.py[cod]
+
+# 单次切片排查入口（验证后仍应删除）
+tests/**/_*_tmp.gd
+tests/**/_*_tmp.gd.uid
+
+# Godot 失败导出的临时可执行文件
+*.exe~*.TMP

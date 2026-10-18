@@ -24,12 +24,12 @@ class_name CResultFlow
 const CReplayPlayerScript := preload("res://scripts/c/c_replay_player.gd")
 
 ## 流程状态。整合了 PRD:42 的链路与任务书要求的十态中属于 C 侧的部分。
-const FLOW_RECORDING: StringName = &"recording"    ## 幕后演出中（录制期）
-const FLOW_CHOICE: StringName = &"choice"          ## 演出结束，等待观众决定是否观看
-const FLOW_REPLAYING: StringName = &"replaying"      ## 幕前完整回放中
-const FLOW_SKIPPED: StringName = &"skipped"          ## 被跳过，直接进结果
-const FLOW_RESULT: StringName = &"result"            ## 本关收场/结果页
-const FLOW_FINISHED: StringName = &"finished"        ## 收场已呈现，等玩家选择去向
+const FLOW_RECORDING: StringName = &"recording"  ## 幕后演出中（录制期）
+const FLOW_CHOICE: StringName = &"choice"  ## 演出结束，等待观众决定是否观看
+const FLOW_REPLAYING: StringName = &"replaying"  ## 幕前完整回放中
+const FLOW_SKIPPED: StringName = &"skipped"  ## 被跳过，直接进结果
+const FLOW_RESULT: StringName = &"result"  ## 本关收场/结果页
+const FLOW_FINISHED: StringName = &"finished"  ## 收场已呈现，等玩家选择去向
 
 ## 本关是否为最终关（第 5 关）。第 5 关回放后要展示两档结局。
 const STAGE_FINAL: int = 5
@@ -40,8 +40,8 @@ const APPLAUSE_THRESHOLD: int = 2
 const FINAL_STAGE_ACTS: int = 3
 
 ## 两档结局。都是正常结局，不分优劣。
-const ENDING_CURTAIN_CALL: StringName = &"curtain_call"   ## 满堂彩
-const ENDING_PLAYED_OUT: StringName = &"played_out"       ## 戏散了
+const ENDING_CURTAIN_CALL: StringName = &"curtain_call"  ## 满堂彩
+const ENDING_PLAYED_OUT: StringName = &"played_out"  ## 戏散了
 
 ## 回放播放器。由演出结束时注入。
 var _player: Variant = null
@@ -64,11 +64,10 @@ var _released: bool = false
 
 ## 集成层挂钩。默认空实现，C 侧不代替 B 或流程层决定画面。
 ## 参数含义见各函数注释。
-var on_enter_replay: Callable = Callable()      ## func(frame: Dictionary)
-var on_enter_result: Callable = Callable()      ## func(summary: Dictionary)
-var on_replay_finished: Callable = Callable()   ## func()
-var on_flow_finished: Callable = Callable()      ## func()
-
+var on_enter_replay: Callable = Callable()  ## func(frame: Dictionary)
+var on_enter_result: Callable = Callable()  ## func(summary: Dictionary)
+var on_replay_finished: Callable = Callable()  ## func()
+var on_flow_finished: Callable = Callable()  ## func()
 
 ## 演出收尾。演出结束时调用：把记录交给回放器，进入幕前完整回放。
 ##
@@ -254,8 +253,15 @@ func get_replay_duration_ms() -> int:
 ## 当前帧。无记录时返回安全缺省，不返回 null——集成层不必到处判空。
 func player_frame() -> Dictionary:
 	if _player == null:
-		return {"now_ms": 0, "progress": 0.0, "puppets": [], "lamp": {},
-			"events": [], "state": &"idle", "is_finished": false}
+		return {
+			"now_ms": 0,
+			"progress": 0.0,
+			"puppets": [],
+			"lamp": {},
+			"events": [],
+			"state": &"idle",
+			"is_finished": false
+		}
 	return _player.sample(_player.get_now_ms())
 
 

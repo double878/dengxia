@@ -37,18 +37,20 @@ func check(condition: bool, message: String) -> bool:
 
 
 func check_eq(actual: Variant, expected: Variant, message: String) -> bool:
-	return check(actual == expected,
-		"%s（期望 %s，实际 %s）" % [message, str(expected), str(actual)])
+	return check(actual == expected, "%s（期望 %s，实际 %s）" % [message, str(expected), str(actual)])
 
 
 func check_approx(actual: float, expected: float, tolerance: float, message: String) -> bool:
-	return check(absf(actual - expected) <= tolerance,
-		"%s（期望 %.6f±%.6f，实际 %.6f）" % [message, expected, tolerance, actual])
+	return check(
+		absf(actual - expected) <= tolerance,
+		"%s（期望 %.6f±%.6f，实际 %.6f）" % [message, expected, tolerance, actual]
+	)
 
 
 func check_in_range(value: float, low: float, high: float, message: String) -> bool:
-	return check(value >= low and value <= high,
-		"%s（应在 [%.4f, %.4f]，实际 %.6f）" % [message, low, high, value])
+	return check(
+		value >= low and value <= high, "%s（应在 [%.4f, %.4f]，实际 %.6f）" % [message, low, high, value]
+	)
 
 
 func check_finite(value: float, message: String) -> bool:
