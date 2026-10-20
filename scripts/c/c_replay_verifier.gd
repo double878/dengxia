@@ -40,10 +40,19 @@ const CONTINUOUS_EPSILON: float = 1.0e-6
 const DISCRETE_FIELDS: Array[String] = ["head_id", "hook_slot"]
 
 ## 影人的连续标量字段。
-const PUPPET_SCALAR_FIELDS: Array[String] = ["stance", "facing", "turn_progress"]
+const PUPPET_SCALAR_FIELDS: Array[String] = [
+	"stance",
+	"facing",
+	"turn_progress",
+	"head_tilt",
+	"torso_lean",
+	"air_height",
+	"leg_spread",
+	"body_angle"
+]
 
 ## 影人的连续二维字段，内含 "x"/"y" 或 "left"/"right"。
-const PUPPET_VECTOR_FIELDS: Array[String] = ["stage_pos", "hand_angle"]
+const PUPPET_VECTOR_FIELDS: Array[String] = ["stage_pos", "hand_angle", "elbow_angle"]
 
 ## 灯态四字段，全为连续量。
 const LAMP_FIELDS: Array[String] = ["distance", "exposure", "oil", "flame_feedback"]
@@ -158,6 +167,24 @@ func _check_sampling_fidelity(p_record: Variant) -> Dictionary:
 			mismatches += _diff_puppet(t, i, want, got, problems)
 		compared += 1
 		mismatches += _diff_lamp(t, snap.lamp, frame_lamp, problems)
+		var finale: Dictionary = snap.performance.get("finale", {})
+		if not finale.is_empty():
+			var got: Dictionary = frame.get("performance", {}).get("finale", {})
+			compared += 1
+			for field: String in [
+				"active", "phase", "elder_visible", "elder_behind", "deer_behind", "herb_owner"
+			]:
+				if finale.get(field) != got.get(field):
+					mismatches += 1
+					_push_problem(problems, "t=%dms finale.%s 未按记录还原" % [t, field])
+			if (
+				absf(float(finale.get("gift_progress", 0)) - float(got.get("gift_progress", 0)))
+				> CONTINUOUS_EPSILON
+			):
+				mismatches += 1
+				_push_problem(problems, "t=%dms 灵芝赠送进度未按记录还原" % t)
+			if finale.has("elder"):
+				mismatches += _diff_puppet(t, 3, finale.elder, got.get("elder", {}), problems)
 
 	var detail: String = "逐帧比对 %d 帧，全部在采样时刻精确还原" % compared
 	if mismatches > 0:

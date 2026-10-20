@@ -58,6 +58,9 @@ var _off_far: Vector2 = Vector2.ZERO
 ## 实际雨/雾内容画在这个子节点上；本节点自身绘制 = 裁剪模板（见类头「裁剪方案」）。
 var _content: Node2D = null
 
+## 雨幕当前亮度倍率，默认满亮（不接灯光时行为与从前一致）。
+var _light_level: float = 1.0
+
 
 ## 注入幕布尺寸（探针与正式集成场景各自传入自己的版面常量）。
 func setup(cloth_size: Vector2) -> void:
@@ -76,6 +79,7 @@ func _ready() -> void:
 	_content.draw.connect(_draw_weather)
 	queue_redraw()  # 画裁剪模板
 	_content.queue_redraw()
+	_apply_light()          # 建树前调过 set_light() 也生效（_content 此刻才存在）
 
 
 func _process(delta: float) -> void:
@@ -99,6 +103,38 @@ func set_visual_time(real_ms: int) -> void:
 	_off_far = (VEL_FAR * float(real_ms) / 1000.0).posmodv(Vector2(RAIN_FAR.get_size()))
 	if _content != null:
 		_content.queue_redraw()
+
+
+## 灯光耦合（2026-10-11，与 CSceneryView.set_light 同口径）。
+## 雨幕是「画在幕上的一层氛围」，不是被灯照到的实物——所以它**不该**跟布景
+## 一起压到 MIN_LIGHT 那种「还留一点轮廓」的程度：灯全灭时雨丝本来就该看不见
+## （雨是灯下才看得见的斜线），故下限取 0，与布景的 0.06 刻意不同。
+func set_light(exposure: float, oil: float) -> void:
+	var e: float = clampf(exposure, 0.0, 1.0) if is_finite(exposure) else 0.0
+	var o: float = clampf(oil, 0.0, 1.0) if is_finite(oil) else 1.0
+	_light_level = clampf(e * (0.55 + 0.45 * o), 0.0, 1.0)
+	_apply_light()
+
+
+func set_light_level(level: float) -> void:
+	_light_level = clampf(level, 0.0, 1.0) if is_finite(level) else 0.0
+	_apply_light()
+
+
+func get_light_level() -> float:
+	return _light_level
+
+
+func _apply_light() -> void:
+	# ⚠️ 必须**同时设本节点**：雨幕开了 clip_children = CLIP_CHILDREN_ONLY，
+	# 本节点是裁剪遮罩，子节点的 modulate 会被合并进遮罩，单独调子节点无效
+	# （与 CSceneryView._apply_light 同一个坑，2026-10-11 实测）。
+	# 只压 RGB 不压 alpha：雨量由 _draw_layer 的 modulate_a 控制，
+	# 这里再压 alpha 会把「雨量」和「灯亮」两个语义搅在一起，调不开。
+	var tint := Color(_light_level, _light_level, _light_level, 1.0)
+	modulate = tint
+	if _content != null:
+		_content.modulate = tint
 
 
 func _draw() -> void:

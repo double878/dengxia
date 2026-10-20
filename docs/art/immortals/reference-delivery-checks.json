@@ -1,0 +1,29 @@
+{
+  "head_scale": {
+    "bailu": 0.65,
+    "baihe": 0.65,
+    "xianweng": 1
+  },
+  "head_ratio_check": "passed",
+  "graphics": "Windows / 4 same-height actors / 3 poses / act3 stage and replay",
+  "import_exit": 0,
+  "parse_exit": 0,
+  "graphics_exit": 0,
+  "smoke_exit": 0,
+  "smoke_release_warnings": {
+    "objectdb": 2,
+    "resources": 1
+  },
+  "export_exit": 0,
+  "regression": {
+    "act3_checks": 27,
+    "act3_failures": 0,
+    "upper_body_assertions": 100,
+    "stage_visual_assertions": 379,
+    "a_assertions": 1284,
+    "a_additional_dialogue_assertions": 22,
+    "c_assertions": 463
+  },
+  "scope": "passed",
+  "complete_playthrough": "not run"
+}

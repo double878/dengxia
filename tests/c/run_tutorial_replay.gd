@@ -18,10 +18,22 @@ func check(value: bool, label: String) -> void:
 func _run() -> void:
 	var game: Node = load("res://scenes/game_flow.tscn").instantiate()
 	root.add_child(game)
+	game._intro_finished()  # 跳过已独立验证的首页与片头。
+	game._briefing_finished()  # 本用例从确认演前简介后开始。
 	var level: Node = game._level
 	level.set_process(false)
 	var harness: Level1Harness = level._harness
-	check(level._stage_def.id == 2, "本测试应带 -- stage=2")
+	var stage_ok: bool = level._stage_def.id == 2
+	check(stage_ok, "本测试应带 -- stage=2")
+	if not stage_ok:
+		# 缺参数时下面取到的全是第 1 关的东西，harness 之后会在 Nil 上崩、
+		# 脚本错误后 quit() 永不执行，进程会一直挂着（实测挂满 20 分钟不退出）。
+		# 提前干净退出，让调用方直接从退出码看出是「参数没带」而不是「功能坏了」。
+		game.queue_free()
+		await process_frame
+		print("TUTORIAL_REPLAY checks=%d failures=%d" % [checks, failures])
+		quit(1)
+		return
 	harness.clock.set_player(null)
 	var controller: PuppetController = harness.runtime.puppet_controller
 	check(controller.hook_current(), "教学关无法挂起")

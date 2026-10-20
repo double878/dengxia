@@ -42,7 +42,7 @@ func _mk(
 
 
 func _test_01_known_kinds_count(t: Variant) -> void:
-	t.begin("KNOWN_KINDS：正式宿主共 34 个事件 kind")
+	t.begin("KNOWN_KINDS：正式宿主共 37 个事件 kind")
 	# 权威口径（实测自 A 端代码，非推算）：
 	#   puppet_controller 5：drag_begin/drag_end/pose_stance/facing_turn/hand_motion
 	#   performance_system 4：cue_hint/cue_fire/cue_hit/cue_miss
@@ -58,7 +58,10 @@ func _test_01_known_kinds_count(t: Variant) -> void:
 	# stage_director.gd:13 写明冻结区间「供 B 提示、C 记录回放节奏」，
 	# umbrella_controller.gd:38-39 定义借伞/还伞且 A-to-B 交接文档 §5 已列。
 	# 正式宿主另有 3 个道具/头架类别、5 个剧情类别和 1 个对白类别。
-	t.check_eq(CTimedEventScript.KNOWN_KINDS.size(), 34, "kind 全集应为 34 个")
+	t.check_eq(CTimedEventScript.KNOWN_KINDS.size(), 37, "kind 全集应为 37 个")
+	t.check(CTimedEventScript.KNOWN_KINDS.has(&"puppet_motion"), "接受人形短动作事件")
+	t.check(CTimedEventScript.KNOWN_KINDS.has(&"upper_body_pose"), "接受上半身姿态事件")
+	t.check(CTimedEventScript.KNOWN_KINDS.has(&"upper_body_reset"), "接受上半身复位事件")
 	t.finish("kind 数量对齐 A 端")
 
 
@@ -79,6 +82,8 @@ func _test_formal_audio_and_prop_kinds(t: Variant) -> void:
 	t.check(_mk(100, &"cue_miss", -1).validate().is_empty(), "无人受控时仍保留动作未完成事件")
 	t.check(_mk(100, &"remedy_open", -1).validate().is_empty(), "无人受控时仍保留补救事件")
 	t.check(not _mk(100, &"head_swap", -1).validate().is_empty(), "具体影人的操作不允许无对象")
+	t.check(_mk(100, &"remedy_open", "white_snake").validate().is_empty(), "白蛇补救使用独立道具命名空间")
+	t.check(not _mk(100, &"head_swap", "white_snake").validate().is_empty(), "白蛇不能伪装成人形换头")
 	t.finish("正式事件白名单及命名空间完整")
 
 

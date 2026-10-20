@@ -22,11 +22,17 @@ var stance: float = 0.0  ## 0.0 完全站立，1.0 完全蹲下
 var facing: float = FACING_FRONT  ## 二值：+1 正面朝外，-1 反面朝外
 var turn_progress: float = 1.0  ## 翻面过渡完成度：1 = 已停稳在某一面
 var hand_angle: Vector2 = Vector2.ZERO  ## x = 左手，y = 右手（弧度）
+var elbow_angle: Vector2 = Vector2.ZERO  ## 左右肘的屈曲角，零为直臂
+var head_tilt: float = 0.0  ## 头部绕颈部俯仰，弧度
+var torso_lean: float = 0.0  ## 腰部前倾，弧度；下半身不参与
 var head_id: int = HEAD_ID_NONE
 var hook_slot: int = HOOK_SLOT_NONE
 var is_controlled: bool = false
 var walk_phase: float = 0.0  ## 距离驱动的连续迈步相位（弧度）
 var walk_amount: float = 0.0  ## 0 收脚站定，1 小步走；回放原样读取
+var air_height: float = 0.0  ## 相对脚下地面的腾空高度，归一化舞台单位
+var leg_spread: float = 0.0  ## 0 并腿，1 空中张腿
+var body_angle: float = 0.0  ## 整身绕髋倾转，世界弧度；与强制跌倒无关
 
 ## 连续量范围。PuppetController 与 clamp_continuous() 共用同一组上下限。
 const STAGE_POS_MIN: float = 0.0
@@ -59,8 +65,15 @@ func clamp_continuous() -> void:
 	facing = FACING_FRONT if facing >= 0.0 else FACING_BACK
 	turn_progress = clampf(turn_progress, TURN_PROGRESS_MIN, TURN_PROGRESS_MAX)
 	walk_amount = clampf(walk_amount, 0.0, 1.0)
+	air_height = clampf(air_height, 0.0, .3)
+	leg_spread = clampf(leg_spread, 0.0, 1.0)
+	body_angle = clampf(body_angle, -PI, PI)
 	hand_angle.x = clampf(hand_angle.x, HAND_ANGLE_MIN, HAND_ANGLE_MAX)
 	hand_angle.y = clampf(hand_angle.y, HAND_ANGLE_MIN, HAND_ANGLE_MAX)
+	elbow_angle.x = clampf(elbow_angle.x, 0.0, PI * 5.0 / 6.0)
+	elbow_angle.y = clampf(elbow_angle.y, 0.0, PI * 5.0 / 6.0)
+	head_tilt = clampf(head_tilt, -PI / 6.0, PI / 6.0)
+	torso_lean = clampf(torso_lean, 0.0, PI / 4.0)
 
 
 ## 幂等的合法性修复：编号越界时报告错误并回到最近的合法值，不静默通过。
@@ -85,9 +98,15 @@ func to_dict() -> Dictionary:
 		"facing": facing,
 		"turn_progress": turn_progress,
 		"hand_angle": {"left": hand_angle.x, "right": hand_angle.y},
+		"elbow_angle": {"left": elbow_angle.x, "right": elbow_angle.y},
+		"head_tilt": head_tilt,
+		"torso_lean": torso_lean,
 		"head_id": head_id,
 		"hook_slot": hook_slot,
 		"is_controlled": is_controlled,
 		"walk_phase": walk_phase,
 		"walk_amount": walk_amount,
+		"air_height": air_height,
+		"leg_spread": leg_spread,
+		"body_angle": body_angle,
 	}

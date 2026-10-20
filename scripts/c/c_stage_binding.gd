@@ -49,6 +49,9 @@ const Z_RAIN: int = 15
 
 var _scenery: Node2D = null
 var _rain: Node2D = null
+## 当前亮度倍率（0~1）。默认满亮——**不接灯光时行为与从前完全一致**，
+## 这样布景探针与只跑布景的测试不会因为没接灯就变黑。
+var _light_level: float = 1.0
 
 
 func _ready() -> void:
@@ -89,3 +92,59 @@ func set_rain_enabled(on: bool) -> void:
 func set_visual_time(real_ms: int) -> void:
 	if _rain != null:
 		_rain.set_visual_time(real_ms)
+
+
+## ——————— 灯光耦合（切幕用，2026-10-11）————————
+## 切幕时「关灯全黑 → 缓缓亮起」要同时压暗**幕布 / 影人 / 布景 / 雨幕**四层。
+## 前两层走 A 侧的 `LampState`（`StageSurface` 与影人自动跟随），后两层是 C 侧的，
+## 所以这里把 `set_light` 透传下去——切幕代码只跟绑定层打交道，不必摸布景内部。
+
+## 按 A 侧灯光状态设置（演出中每帧调）。与 `LampState` 同源，布景与幕布同步暗。
+func set_light(exposure: float, oil: float) -> void:
+	_light_level = clampf(exposure, 0.0, 1.0) if is_finite(exposure) else 0.0
+	if _scenery != null:
+		_scenery.set_light(exposure, oil)
+	if _rain != null:
+		_rain.set_light(exposure, oil)
+
+
+## 直接给一个亮度倍率（0~1），切幕时序里「推到黑」「拉回来」用它最直接。
+## 演出中不要用这个——演出里的灯光变化应走 `set_light()`，与 `LampState` 同源。
+func set_light_level(level: float) -> void:
+	_light_level = clampf(level, 0.0, 1.0) if is_finite(level) else 0.0
+	if _scenery != null:
+		_scenery.set_light_level(_light_level)
+	if _rain != null:
+		_rain.set_light_level(_light_level)
+
+
+## 当前亮度倍率（供测试断言与切幕逻辑判断是否已到黑）。
+func get_light_level() -> float:
+	return _light_level
+
+
+## 换布景：把当前绑定层换成另一关的布景（**切幕时在黑场中调**）。
+## 旧布景节点连同贴图缓存一并释放；`stage_id` 写回，供后续查询。
+##⚠️ 新布景**继承当前亮度**：切幕时正处于黑场（_light_level≈0），
+## 若新布景按默认满亮建出来，会在黑场里凭空亮起——这正是切幕最该避免的穿帮。
+func set_stage(new_stage_id: int) -> void:
+	var carry: float = _light_level
+	if _scenery != null:
+		_scenery.queue_free()
+		_scenery = null
+	stage_id = new_stage_id
+	var def: CSceneryDef = SceneryDefScript.make_stage(stage_id)
+	if def == null or def.items.is_empty():
+		return
+	_scenery = SceneryViewScript.new()
+	_scenery.name = "CScenery"
+	# stage_size/origin 与 clip_rect 必须在**进树前**设好（同 _ready 的理由：
+	# CSceneryView._ready 按 clip_rect 决定开不开裁剪）。
+	_scenery.stage_origin = Vector2.ZERO
+	_scenery.stage_size = CANVAS_SIZE
+	_scenery.z_index = Z_SCENERY
+	_scenery.clip_rect = CLOTH
+	_scenery.setup(def)
+	add_child(_scenery)
+	if _scenery != null and carry < 1.0:
+		_scenery.set_light_level(carry)

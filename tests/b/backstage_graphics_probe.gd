@@ -48,6 +48,8 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(output_dir)
 	entry = Entry.instantiate()
 	root.add_child(entry)
+	entry._intro_finished()  # 此用例验证幕后画面；首页与片头由媒体回归覆盖。
+	entry._briefing_finished()  # 本用例从确认演前简介后开始。
 	stage = entry._level
 	await _settle()
 	_check(not stage._stage_surface.front_view, "正常入口始终为幕后，不泄露幕前")

@@ -88,7 +88,7 @@ func _ready() -> void:
 	_puppet.stage_size = STAGE_SIZE
 	_hud_hint.text = (
 		"拖动胸签 = 横向移动 / 纵向站蹲 / 沿移动方向翻面    "
-		+ "A=抬左手 D=抬右手 Shift+A=落左手 Shift+D=落右手 W=双手抬 S=双手落    "
+		+ "A=抬左手 D=抬右手 Shift+A=落左手 Shift+D=落右手 W=张腿短跳 S=压身后撤    "
 		+ "空格=挂起/取回影人（PRD 第 4.1 节）    ESC=暂停/继续"
 	)
 
@@ -246,7 +246,7 @@ func _refresh_hud() -> void:
 	lines.append("")
 	lines.append(
 		(
-			"输入快照：A=%s Shift+A=%s D=%s Shift+D=%s W=%s S=%s"
+			"输入快照：A=%s Shift+A=%s D=%s Shift+D=%s 内部双抬=%s 内部双落=%s"
 			% [
 				input_map["left_raise"],
 				input_map["left_lower"],

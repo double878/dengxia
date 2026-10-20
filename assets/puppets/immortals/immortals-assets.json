@@ -1,0 +1,1369 @@
+{
+  "version": 1,
+  "atlas_size": [
+    2048,
+    2048
+  ],
+  "tile_size": [
+    512,
+    512
+  ],
+  "part_coordinate_space": "各角色用户原图的像素坐标；原图白边计入坐标。",
+  "reference": {
+    "method": "用户提供的三张原图直接抠图、分件；没有重新绘制脸部与纹样。",
+    "back": "未提供反面；同一组分件整体镜像。",
+    "alpha": "白色背景和近纯白镂空去除；染皮透光沿用舞台材质。"
+  },
+  "characters": {
+    "bailu": {
+      "name_zh": "鹿童",
+      "skin_id": 5,
+      "reference_facing": 1,
+      "atlas": "bailu.png",
+      "editable": "bailu.svg",
+      "head_size_per_radius": 2.1716570185855852,
+      "head_scale": 0.65,
+      "lower_body_size_ratio": [
+        0.7450749743819843,
+        0.9903288201160542
+      ],
+      "hand_size_ratio": 0.1423458349464811,
+      "shoulder_half_width_ratio": 0.051517125742278506,
+      "joint_hex": "#b99a5e",
+      "ink_hex": "#302e22",
+      "parts": {
+        "head": {
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            256
+          ],
+          "axis_pixels": 1,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              343,
+              125
+            ]
+          ],
+          "reference_bounds": [
+            230,
+            26,
+            417,
+            221
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "torso": {
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.79999999999995,
+          "parent": "root",
+          "reference_axis": [
+            [
+              348,
+              239
+            ],
+            [
+              365,
+              511
+            ]
+          ],
+          "reference_bounds": [
+            264,
+            202,
+            454,
+            539
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "lower_body": {
+          "rect": [
+            1024,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            256
+          ],
+          "axis_pixels": 1,
+          "parent": "root",
+          "reference_axis": [
+            [
+              365,
+              511
+            ]
+          ],
+          "reference_bounds": [
+            229,
+            487,
+            476,
+            751
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_upper_arm": {
+          "rect": [
+            1536,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 253.69744742869048,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              310,
+              254
+            ],
+            [
+              243,
+              299
+            ]
+          ],
+          "reference_bounds": [
+            217,
+            255,
+            325,
+            329
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_forearm": {
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 262.92362676056337,
+          "parent": "left_upper_arm",
+          "reference_axis": [
+            [
+              243,
+              299
+            ],
+            [
+              213,
+              397
+            ]
+          ],
+          "reference_bounds": [
+            157,
+            277,
+            271,
+            410
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_hand": {
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 173.6421820041554,
+          "parent": "left_forearm",
+          "reference_axis": [
+            [
+              213,
+              397
+            ],
+            [
+              202.7550004767061,
+              430.4669984427601
+            ]
+          ],
+          "reference_bounds": [
+            187,
+            387,
+            236,
+            465
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_thigh": {
+          "rect": [
+            1024,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 247.817626227694,
+          "parent": "root",
+          "reference_axis": [
+            [
+              330,
+              516
+            ],
+            [
+              294,
+              607
+            ]
+          ],
+          "reference_bounds": [
+            257,
+            509,
+            370,
+            646
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_calf": {
+          "rect": [
+            1536,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 287.11430960344006,
+          "parent": "left_thigh",
+          "reference_axis": [
+            [
+              294,
+              607
+            ],
+            [
+              285,
+              720
+            ]
+          ],
+          "reference_bounds": [
+            229,
+            587,
+            327,
+            750
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_upper_arm": {
+          "rect": [
+            0,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 260.6573770491803,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              388,
+              246
+            ],
+            [
+              462,
+              253
+            ]
+          ],
+          "reference_bounds": [
+            385,
+            229,
+            491,
+            290
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_forearm": {
+          "rect": [
+            512,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.8,
+          "parent": "right_upper_arm",
+          "reference_axis": [
+            [
+              462,
+              253
+            ],
+            [
+              563,
+              255
+            ]
+          ],
+          "reference_bounds": [
+            446,
+            226,
+            575,
+            318
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_hand": {
+          "rect": [
+            1024,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 173.6421820041557,
+          "parent": "right_forearm",
+          "reference_axis": [
+            [
+              563,
+              255
+            ],
+            [
+              597.9931399450537,
+              255.6929334642585
+            ]
+          ],
+          "reference_bounds": [
+            558,
+            239,
+            628,
+            274
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_thigh": {
+          "rect": [
+            1536,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 242.6443100663915,
+          "parent": "root",
+          "reference_axis": [
+            [
+              399,
+              522
+            ],
+            [
+              401,
+              607
+            ]
+          ],
+          "reference_bounds": [
+            343,
+            513,
+            447,
+            652
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_calf": {
+          "rect": [
+            0,
+            1536,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 298.7628123515439,
+          "parent": "right_thigh",
+          "reference_axis": [
+            [
+              401,
+              607
+            ],
+            [
+              428,
+              727
+            ]
+          ],
+          "reference_bounds": [
+            370,
+            587,
+            476,
+            748
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        }
+      },
+      "layout": {
+        "canvas_size": [
+          757,
+          754
+        ],
+        "head_pivot": [
+          343,
+          125
+        ],
+        "waist": [
+          365,
+          511
+        ]
+      },
+      "reference": {
+        "filename": "source/bailu-reference.png",
+        "size": [
+          757,
+          754
+        ],
+        "sha256": "7141d2f06a96f90909955e4b22efbf78399d2bbbe07e793a9e057dc13a7a0d94"
+      },
+      "registration": "额外外观 4/5/6；当前第三幕鹿童沿用编号 5。"
+    },
+    "baihe": {
+      "name_zh": "鹤童",
+      "skin_id": 6,
+      "reference_facing": 1,
+      "atlas": "baihe.png",
+      "editable": "baihe.svg",
+      "head_size_per_radius": 2.1005789041937586,
+      "head_scale": 0.65,
+      "lower_body_size_ratio": [
+        0.684874702708198,
+        0.990328820116054
+      ],
+      "hand_size_ratio": 0.1144608927099843,
+      "shoulder_half_width_ratio": 0.05895327240693215,
+      "joint_hex": "#b99a5e",
+      "ink_hex": "#302e22",
+      "parts": {
+        "head": {
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            256
+          ],
+          "axis_pixels": 1,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              364,
+              151
+            ]
+          ],
+          "reference_bounds": [
+            265,
+            42,
+            437,
+            233
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "torso": {
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.79999999999995,
+          "parent": "root",
+          "reference_axis": [
+            [
+              369,
+              258
+            ],
+            [
+              371,
+              545
+            ]
+          ],
+          "reference_bounds": [
+            263,
+            213,
+            475,
+            566
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "lower_body": {
+          "rect": [
+            1024,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            256
+          ],
+          "axis_pixels": 1,
+          "parent": "root",
+          "reference_axis": [
+            [
+              371,
+              545
+            ]
+          ],
+          "reference_bounds": [
+            224,
+            521,
+            517,
+            765
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_upper_arm": {
+          "rect": [
+            1536,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 243.99130434782606,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              325,
+              275
+            ],
+            [
+              262,
+              329
+            ]
+          ],
+          "reference_bounds": [
+            226,
+            276,
+            335,
+            355
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_forearm": {
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 264.07886245940495,
+          "parent": "left_upper_arm",
+          "reference_axis": [
+            [
+              262,
+              329
+            ],
+            [
+              263,
+              444
+            ]
+          ],
+          "reference_bounds": [
+            164,
+            308,
+            293,
+            452
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_hand": {
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 216.54221720784884,
+          "parent": "left_forearm",
+          "reference_axis": [
+            [
+              263,
+              444
+            ],
+            [
+              263.3043363202054,
+              478.99867682362014
+            ]
+          ],
+          "reference_bounds": [
+            245,
+            435,
+            279,
+            503
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_thigh": {
+          "rect": [
+            1024,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 248.27520208604955,
+          "parent": "root",
+          "reference_axis": [
+            [
+              343,
+              542
+            ],
+            [
+              323,
+              630
+            ]
+          ],
+          "reference_bounds": [
+            275,
+            529,
+            390,
+            666
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_calf": {
+          "rect": [
+            1536,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 224.3166337995872,
+          "parent": "left_thigh",
+          "reference_axis": [
+            [
+              323,
+              630
+            ],
+            [
+              322,
+              740
+            ]
+          ],
+          "reference_bounds": [
+            224,
+            591,
+            394,
+            762
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_upper_arm": {
+          "rect": [
+            0,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 251.8568509447165,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              419,
+              273
+            ],
+            [
+              481,
+              275
+            ]
+          ],
+          "reference_bounds": [
+            433,
+            251,
+            510,
+            310
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_forearm": {
+          "rect": [
+            512,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 262.4560078235358,
+          "parent": "right_upper_arm",
+          "reference_axis": [
+            [
+              481,
+              275
+            ],
+            [
+              584,
+              272
+            ]
+          ],
+          "reference_bounds": [
+            462,
+            251,
+            596,
+            361
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_hand": {
+          "rect": [
+            1024,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 216.54221720784844,
+          "parent": "right_forearm",
+          "reference_axis": [
+            [
+              584,
+              272
+            ],
+            [
+              618.9851635534864,
+              270.9810146537819
+            ]
+          ],
+          "reference_bounds": [
+            574,
+            255,
+            644,
+            286
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_thigh": {
+          "rect": [
+            1536,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 258.69836281365696,
+          "parent": "root",
+          "reference_axis": [
+            [
+              412,
+              543
+            ],
+            [
+              434,
+              632
+            ]
+          ],
+          "reference_bounds": [
+            382,
+            531,
+            475,
+            664
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_calf": {
+          "rect": [
+            0,
+            1536,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 178.4935723158829,
+          "parent": "right_thigh",
+          "reference_axis": [
+            [
+              434,
+              632
+            ],
+            [
+              445,
+              743
+            ]
+          ],
+          "reference_bounds": [
+            396,
+            585,
+            517,
+            764
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        }
+      },
+      "layout": {
+        "canvas_size": [
+          715,
+          766
+        ],
+        "head_pivot": [
+          364,
+          151
+        ],
+        "waist": [
+          371,
+          545
+        ]
+      },
+      "reference": {
+        "filename": "source/baihe-reference.png",
+        "size": [
+          715,
+          766
+        ],
+        "sha256": "360ce499829bfd21e96d514bbac99d818b35f0e526d0400a014b141b1a944d3f"
+      },
+      "registration": "额外外观 4/5/6；当前第三幕鹿童沿用编号 5。"
+    },
+    "xianweng": {
+      "name_zh": "仙翁",
+      "skin_id": 4,
+      "reference_facing": 1,
+      "atlas": "xianweng.png",
+      "editable": "xianweng.svg",
+      "head_size_per_radius": 5.824594045763926,
+      "head_scale": 1.0,
+      "lower_body_size_ratio": [
+        0.9717019457565046,
+        0.990328820116054
+      ],
+      "hand_size_ratio": 0.19063504325696334,
+      "shoulder_half_width_ratio": 0.10977494371418113,
+      "joint_hex": "#b99a5e",
+      "ink_hex": "#302e22",
+      "parts": {
+        "head": {
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            256
+          ],
+          "axis_pixels": 1,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              385,
+              132
+            ]
+          ],
+          "reference_bounds": [
+            314,
+            38,
+            463,
+            329
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "torso": {
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.79999999999995,
+          "parent": "root",
+          "reference_axis": [
+            [
+              375,
+              232
+            ],
+            [
+              369,
+              450
+            ]
+          ],
+          "reference_bounds": [
+            288,
+            176,
+            456,
+            476
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "lower_body": {
+          "rect": [
+            1024,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            256
+          ],
+          "axis_pixels": 1,
+          "parent": "root",
+          "reference_axis": [
+            [
+              369,
+              450
+            ]
+          ],
+          "reference_bounds": [
+            248,
+            425,
+            512,
+            763
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_upper_arm": {
+          "rect": [
+            1536,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 256.3895595524713,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              308,
+              255
+            ],
+            [
+              269,
+              369
+            ]
+          ],
+          "reference_bounds": [
+            215,
+            238,
+            330,
+            409
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_forearm": {
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.8,
+          "parent": "left_upper_arm",
+          "reference_axis": [
+            [
+              269,
+              369
+            ],
+            [
+              274,
+              525
+            ]
+          ],
+          "reference_bounds": [
+            189,
+            352,
+            306,
+            530
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_hand": {
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 129.65738595077258,
+          "parent": "left_forearm",
+          "reference_axis": [
+            [
+              274,
+              525
+            ],
+            [
+              275.1212191140137,
+              559.9820363572272
+            ]
+          ],
+          "reference_bounds": [
+            248,
+            504,
+            299,
+            566
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_thigh": {
+          "rect": [
+            1024,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.8,
+          "parent": "root",
+          "reference_axis": [
+            [
+              338,
+              450
+            ],
+            [
+              322,
+              601
+            ]
+          ],
+          "reference_bounds": [
+            277,
+            425,
+            375,
+            627
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "left_calf": {
+          "rect": [
+            1536,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.8,
+          "parent": "left_thigh",
+          "reference_axis": [
+            [
+              322,
+              601
+            ],
+            [
+              308,
+              738
+            ]
+          ],
+          "reference_bounds": [
+            248,
+            585,
+            385,
+            758
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_upper_arm": {
+          "rect": [
+            0,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 258.7032074141231,
+          "parent": "torso",
+          "reference_axis": [
+            [
+              441,
+              254
+            ],
+            [
+              493,
+              359
+            ]
+          ],
+          "reference_bounds": [
+            411,
+            239,
+            528,
+            400
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_forearm": {
+          "rect": [
+            512,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.79999999999995,
+          "parent": "right_upper_arm",
+          "reference_axis": [
+            [
+              493,
+              359
+            ],
+            [
+              467,
+              519
+            ]
+          ],
+          "reference_bounds": [
+            444,
+            338,
+            572,
+            525
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_hand": {
+          "rect": [
+            1024,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 129.65738595077283,
+          "parent": "right_forearm",
+          "reference_axis": [
+            [
+              467,
+              519
+            ],
+            [
+              461.38613757182634,
+              553.546845711838
+            ]
+          ],
+          "reference_bounds": [
+            448,
+            501,
+            485,
+            556
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_thigh": {
+          "rect": [
+            1536,
+            1024,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.8,
+          "parent": "root",
+          "reference_axis": [
+            [
+              409,
+              450
+            ],
+            [
+              428,
+              601
+            ]
+          ],
+          "reference_bounds": [
+            357,
+            429,
+            468,
+            629
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        },
+        "right_calf": {
+          "rect": [
+            0,
+            1536,
+            512,
+            512
+          ],
+          "pivot": [
+            256,
+            100
+          ],
+          "axis_pixels": 300.79999999999995,
+          "parent": "right_thigh",
+          "reference_axis": [
+            [
+              428,
+              601
+            ],
+            [
+              430,
+              739
+            ]
+          ],
+          "reference_bounds": [
+            361,
+            587,
+            513,
+            762
+          ],
+          "opacity": 1.0,
+          "reconstruction": "原图直接提取；接缝保留少量重叠。"
+        }
+      },
+      "layout": {
+        "canvas_size": [
+          693,
+          765
+        ],
+        "head_pivot": [
+          385,
+          132
+        ],
+        "waist": [
+          369,
+          450
+        ]
+      },
+      "reference": {
+        "filename": "source/xianweng-reference.png",
+        "size": [
+          693,
+          765
+        ],
+        "sha256": "b2709ee3e10806eebd856a891478e27a9c1bfe122ec35745321f9d007e58a5f8"
+      },
+      "registration": "额外外观 4/5/6；当前第三幕鹿童沿用编号 5。"
+    }
+  }
+}

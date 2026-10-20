@@ -1,0 +1,17 @@
+{
+  "filename": "aa7e92b07eb85fc79411b51829fcc998.mp4",
+  "sha256": "ea445cf13f6021335ba5823b4023919f9cfd685321a86713580249146db698df",
+  "video_duration_ms": 101840,
+  "decoded_audio_frames": 4886222,
+  "audio_sample_tables": [
+    {
+      "handler": "soun",
+      "sample_count": 4384
+    }
+  ],
+  "decode_returncode": 0,
+  "decode_message": "[mov,mp4,m4a,3gp,3g2,mj2 @ 000001a3be6e5e40] Skipping unhandled metadata com.video.file.type of type 67",
+  "processing": "FFmpeg AAC decode to PCM16, 48k stereo; no gain, synthesis, denoise or voice conversion",
+  "audio_available": true,
+  "pcm_sha256": "bf30856b282bebcb5554f7244d3754433e4326a9e79f3bef8b9d548bdd11dc72"
+}

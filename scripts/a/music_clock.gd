@@ -250,7 +250,10 @@ func advance_to_ms(song_ms: int) -> void:
 	_last_beat_index = get_beat_index()
 	_stall_s = 0.0
 	if player != null:
-		player.seek(_free_s)
+		# WAV 在 stream_paused 时 seek 不会可靠地更新播放游标。
+		# 从目标位置重新定位，并保留冻结/菜单暂停，避免逻辑时标领先唱白。
+		player.play(_free_s)
+		player.stream_paused = _paused or _song_frozen
 		_position_s = _free_s
 
 

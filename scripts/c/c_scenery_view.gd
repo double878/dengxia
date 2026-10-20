@@ -39,6 +39,16 @@ const COLOR_BRIDGE: Color = Color("#8a5a2b")  ## 木褐（比「幕后木褐 #3A
 const COLOR_BRIDGE_LIGHT: Color = Color("#b07a41")
 const BACKDROP_ALPHA: float = 0.55  ## 整体透明度：背景不抢戏
 
+## —— 灯光耦合常量（2026-10-11 切幕前置）——
+## 基色 0.82：布景天生比幕布暗一档（它是「幕上的景」，不是主角）。
+## 若取1.0，关灯时布景会比幕布还亮，读作「景在发光」而不是「景被照亮」。
+const BASE_LIGHT: float = 0.82
+## 下限 0.06：灯全灭时仍留一丝轮廓。皮影是「暗处的剪影」，真到 0 就消失了；
+## 而幕布本身有环境光（StageLight.environment = 0.58+0.42×oil），布景比它更黑就读不出形。
+const MIN_LIGHT: float = 0.06
+## 暗场时蓝通道的提升系数：火光偏暖，全暗后画面偏红会发脏，补一点冷调。
+const COOL_TINT: float = 1.10
+
 ## 裁剪模板色。CLIP_CHILDREN_ONLY 下模板不显示，只取其 alpha 圈区域——
 ## 用纯白表达「这是模板，不是颜色设计」。
 const MASK_COLOR := Color.WHITE
@@ -58,6 +68,23 @@ var _def: CSceneryDef = null
 var _tex_cache: Dictionary = {}
 ## 实际布景内容画在这个子节点上；本节点自身绘制 = 裁剪模板（见类头「裁剪方案」）。
 var _content: Node2D = null
+## 正式动作场景临时取走道具；默认空列表保持全部布景，数据定义不受修改。
+var hidden_items: Array[String] = []
+
+
+func set_item_visible(id: String, value: bool) -> void:
+	if value == (not hidden_items.has(id)):
+		return
+	if value:
+		hidden_items.erase(id)
+	else:
+		hidden_items.append(id)
+	if _content != null:
+		_content.queue_redraw()
+
+## 布景当前亮度倍率（已含 BASE_LIGHT）。默认满亮——**不接灯光时行为与从前一致**，
+## 这是刻意的：布景探针与只跑布景的测试不应因为没接灯就变黑。
+var _light_level: float = BASE_LIGHT
 
 
 ## 装载一关的布景。传 null 视为空布景（画空白，不报错——第 2~5 关还没做）。
@@ -79,6 +106,9 @@ func _ready() -> void:
 		clip_children = CanvasItem.CLIP_CHILDREN_ONLY
 		queue_redraw()  # 画裁剪模板
 	_content.queue_redraw()
+	# 灯光初值在 _content 建好之后才生效一次——否则建树前调set_light() 会被
+	# 这里的 _content = Node2D.new() 覆盖掉（该节点刚创建，modulate 是默认值）。
+	_apply_light()
 
 
 ## 取贴图（带缓存）。找不到资源返回 null，由调用方回退程序化画法。
@@ -98,6 +128,64 @@ func _get_texture(path: String) -> Texture2D:
 		push_warning("CSceneryView: 贴图不可用，回退程序化占位 —— %s" % path)
 	_tex_cache[path] = tex
 	return tex
+
+
+## 布景受灯光影响（2026-10-11，切幕前置）。
+##
+## 🔴 为什么必须有这个：`StageSurface`（幕布）走 shader 吃 `exposure`/`oil`，
+## 影人有 `lamp_state`，但**布景原本完全不受灯光影响**——灯全灭时幕布黑了，
+## 而门楼/屏风/桌椅依然亮着，直接切幕会看到「黑幕布上浮着几件亮布景」。
+##
+## 亮度口径（与 StageLight 同源，`unit()` 是 clamp 0~1 的保护）：
+##   有效亮度 = 布景基色 0.82× `exposure`× `oil` 的加权平均，
+##   下限 `MIN_LIGHT`——**不能真到 0**：皮影是「暗处的剪影」，全黑等于布景消失，
+##   而幕布本身会留一层环境光（`StageLight.environment = 0.58 + 0.42×oil`），
+##   布景比幕布再暗就读不出来了。
+##
+## 为什么用 `modulate` 而不是给布景写 shader：布景是「幕布前的一块装饰」，
+## 不参与投影变形，亮度只需整体缩放。`modulate` 走引擎的合成阶段，
+## 零新增着色器、零兼容渲染器风险，且可被测试直接断言（`modulate.r`）。
+func set_light(exposure: float, oil: float) -> void:
+	var e: float = clampf(exposure, 0.0, 1.0) if is_finite(exposure) else 0.0
+	var o: float = clampf(oil, 0.0, 1.0) if is_finite(oil) else 1.0
+	# 曝光与油量加权：油量决定「幕后整体还剩多少光」，曝光决定「这盏灯多亮」。
+	var level: float = clampf(e * (0.55 + 0.45 * o), 0.0, 1.0)
+	_light_level = clampf(BASE_LIGHT * level, MIN_LIGHT, 1.0)
+	_apply_light()
+
+
+## 只按油量走（灯油随时间消耗、补救/关灯时由外部统一推 0）。切幕用这个更直接：
+## 「关灯」在演出语义上是**灯被移远/被熄灭**，用 exposure 表达更准确，
+## 但幕布与布景都要一起暗，故两个入口都留着。
+func set_light_level(level: float) -> void:
+	var v: float = clampf(level, 0.0, 1.0) if is_finite(level) else 0.0
+	_light_level = clampf(BASE_LIGHT * v, MIN_LIGHT, 1.0)
+	_apply_light()
+
+
+func get_light_level() -> float:
+	return _light_level
+
+
+## 当前有效亮度（BASE_LIGHT 已被折进 _light_level，这里返回最终乘到 modulate 的值）。
+func get_effective_light() -> float:
+	return _light_level * _content.modulate.r if _content != null else _light_level
+
+
+## 把亮度作用到**本节点**（而不是只作用到 _content）。
+##
+## 🔴踩坑记录（2026-10-11）：最初只设 `_content.modulate`，调试打印确认
+## modulate 确实从 0.82 变成了 0.06，**但画面毫无变化**。原因是本节点开了
+## `clip_children = CLIP_CHILDREN_ONLY`——此时本节点是「裁剪遮罩」，
+## 子节点的 modulate 在合成阶段被合并进遮罩本身，单独调子节点不起作用。
+##正解＝**同时设本节点的 modulate**（遮罩与内容一起变暗）。
+## 因此`_apply_light()` 对两个节点都设，保持一致。
+func _apply_light() -> void:
+	var tint := Color(_light_level, _light_level,
+		minf(1.0, _light_level * COOL_TINT), 1.0)
+	modulate = tint
+	if _content != null:
+		_content.modulate = tint
 
 
 ## 水平平移（**唯一**允许的位移；第 1 关恒 0）。
@@ -133,6 +221,8 @@ func _draw_items() -> void:
 	if _def == null:
 		return
 	for item in _def.items:
+		if hidden_items.has(str(item.get("id", ""))):
+			continue
 		var kind: String = str(item.get("kind", ""))
 		var x: float = float(item.get("anchor_x", 0.0)) + float(item.get("pan_x", 0.0))
 		var y: float = float(item.get("anchor_y", DefScript.ANCHOR_Y))

@@ -1,5 +1,9 @@
 extends Node2D
-## 第二关第一幕操演与动作许可对白；整关录放由后续切片接入。
+## 第二关第一场操演与动作许可对白；固定步末读取状态供整关录放。
+
+## 第一幕收场（末句应允 → 暗场 → 「端阳」标题停留）走完，可以换景进第二幕了。
+## 由宿主 `game_flow.gd` 接住：换到 `scenes/act2/hall.tscn`（编号 22 的厅堂布景）。
+signal scene_finished
 
 const PuppetView := preload("res://scripts/a_test/placeholder_puppet.gd")
 const PuppetInput := preload("res://scripts/a_test/input_reader.gd")
@@ -7,6 +11,7 @@ const LampInput := preload("res://scripts/a_test/lamp_input_reader.gd")
 const OperatorHand := preload("res://scripts/b/operator_hand.gd")
 const Entrance := preload("res://scripts/act2/act2_entrance.gd")
 const Dialogue := preload("res://scripts/act2/act2_dialogue.gd")
+const MusicCues := preload("res://scripts/act2/act2_music_cues.gd")
 const CLOTH := Rect2(66, 92, 1788, 588)
 const HAND_ANCHOR := Vector2(960, 856)
 const HAND_AREA := Rect2(768, 712, 384, 256)
@@ -14,6 +19,11 @@ const HAND_AREA := Rect2(768, 712, 384, 256)
 const FIGURE_HEIGHT: float = 200.0
 const FIXED_DELTA: float = 1.0 / 60.0
 const CAST: Array[String] = ["法海", "许仙"]
+## 暗场后到换景之间，让「端阳」标题停留的时间（秒）。
+## PRD 第 6.2 节要求「应允后自动暗场、清场换景」，两场之间不出现结算或回放。
+## 幕面在 `duration_ms` 处已经全黑，此处只留一小段章节卡时间再发 `scene_finished`；
+## 不留这段时间的话，「端阳」标题一帧都不会被看到。
+const DARK_HOLD_S: float = 1.5
 
 var controller := PuppetController.new()
 var clock := MusicClock.new()
@@ -31,12 +41,18 @@ var _pause_button: Button
 var _cast_labels: Array[Label] = []
 var _paused: bool = false
 var _accumulator: float = 0.0
+## 跳过按钮的按下事件是否已经让给 GUI；松开事件按这个标记配对放行。
+var _skip_press_passed: bool = false
 var _entrance := Entrance.new()
 var _entrance_complete: Array[bool] = [false, false]
 var dialogue := Dialogue.new()
+var music_cues := MusicCues.new()
+## 暗场后章节卡的剩余停留时间（秒）。< 0 表示尚未进入收场。
+var _dark_hold: float = -1.0
 var _subtitle: Label
 var _dark: ColorRect
 var _transition_title: Label
+var capture: RefCounted
 
 
 func _ready() -> void:
@@ -93,7 +109,13 @@ func _ready() -> void:
 	add_child(dialogue)
 	dialogue.finished.connect(_finish_first_scene)
 	dialogue.setup(clock, controller)
+	add_child(music_cues)
+	if not music_cues.setup(str(dialogue.config.get("intro_path", "")), true):
+		dialogue._fail("第二关开场音乐加载失败")
 	_refresh_views()
+	_puppet_input.set_views(_views)
+	if capture != null:
+		capture.begin_scene(self, 2)
 
 
 func _process(delta: float) -> void:
@@ -109,16 +131,39 @@ func _process(delta: float) -> void:
 		_lamp_input.poll_keys()
 		controller.tick(FIXED_DELTA)
 		lamp_controller.update(FIXED_DELTA)
-		controller.take_events()
-		lamp_controller.take_events()
+		var events: Array = controller.take_events()
+		events.append_array(lamp_controller.take_events())
 		_sync_entrances()
-		dialogue.update(on_stage, _entrance_complete[0])
+		dialogue.update(on_stage, _entrance_complete[0], music_cues.can_start_main())
+		music_cues.update_entrance(
+			dialogue.phase,
+			on_stage.has(0) and (dialogue.phase != "dialogue" or not clock.is_song_frozen()),
+			clock.get_song_time_ms(),
+			int(dialogue.config.get("entrance_crossfade_ms", 0))
+		)
+		if capture != null:
+			capture.capture(self, events)
 	if steps == 8:
 		_accumulator = 0.0
 	_refresh_views()
+	_advance_dark_hold(delta)
+
+
+## 收场章节卡倒计时。倒计时结束后发一次 `scene_finished`，由宿主换景进第二幕。
+## 停在暂停时 `_process` 提前返回，倒计时也随之停住（与演出其余部分同口径）。
+func _advance_dark_hold(delta: float) -> void:
+	if _dark_hold < 0.0:
+		return
+	_dark_hold -= delta
+	if _dark_hold > 0.0:
+		return
+	_dark_hold = -1.0
+	scene_finished.emit()
 
 
 func _input(event: InputEvent) -> void:
+	if _skip_button_pressed(event):
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			_toggle_pause()
@@ -127,12 +172,17 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 			match event.keycode:
+				KEY_W, KEY_S:
+					_puppet_input.handle_event(event)
 				KEY_1:
 					_enter(0)
 				KEY_2:
 					_enter(1)
 				KEY_SPACE:
 					_take_next()
+				KEY_R:
+					_puppet_input.release_drag()
+					controller.reset_upper_body()
 		get_viewport().set_input_as_handled()
 		return
 	if _paused or dialogue.phase in ["closing", "finished", "error"]:
@@ -161,6 +211,29 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+## 正式入口注入的「跳过第二关」按钮（`GameFlow._add_skip_button`）：把它矩形内的左键
+## 按下与**配对松开**都留给 GUI。`_input` 在 GUI 之前跑，幕布输入一旦吃掉事件按钮就
+## 按不动，而暂停或收场过渡期间也必须能跳关。两个场次与第一关同一条规则。
+## 松开必须跟着按下一起放行，否则按钮收不到松开、永远发不出 `pressed`。
+func _skip_button_pressed(event: InputEvent) -> bool:
+	if not event is InputEventMouseButton:
+		return false
+	var button := event as InputEventMouseButton
+	if button.button_index != MOUSE_BUTTON_LEFT:
+		return false
+	if not button.pressed:
+		var passed: bool = _skip_press_passed
+		_skip_press_passed = false
+		return passed
+	var skip := get_node_or_null("Hud/SkipAct2Button") as Button
+	_skip_press_passed = (
+		skip != null
+		and skip.is_visible_in_tree()
+		and skip.get_global_rect().has_point(button.position)
+	)
+	return _skip_press_passed
+
+
 func _grab_position(at: Vector2) -> Vector2:
 	var controlled: PuppetState = controller.get_controlled()
 	if controlled == null or not HAND_AREA.has_point(at):
@@ -172,15 +245,21 @@ func _grab_position(at: Vector2) -> Vector2:
 	)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		_puppet_input.release_drag()
+
+
 func _enter(id: int) -> void:
 	if dialogue.phase in ["closing", "finished", "error"]:
 		return
-	if id == 1 and dialogue.phase in ["wait_arrival", "first_line"]:
+	if id == 1 and dialogue.phase == "wait_arrival":
 		return
 	if on_stage.has(id):
 		return
 	on_stage.append(id)
 	on_stage.sort()
+	music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	_refresh_views()
 
 
@@ -203,6 +282,7 @@ func _exit(id: int) -> void:
 	if controller.controlled_id == id:
 		_release_control()
 	on_stage.erase(id)
+	music_cues.update_entrance(dialogue.phase, on_stage.has(0))
 	_refresh_views()
 
 
@@ -226,6 +306,7 @@ func _puppet_at(at: Vector2) -> int:
 
 func _toggle_pause() -> void:
 	_paused = not _paused
+	music_cues.set_paused(_paused)
 	_puppet_input.set_enabled(not _paused)
 	_lamp_input.set_enabled(not _paused)
 	controller.set_input_map({})
@@ -258,7 +339,7 @@ func _refresh_views() -> void:
 		_hint.text = "按空格接手在场影人"
 	else:
 		_hint.text = (
-			"正在接手：%s    空格换人 · 左键拖胸签或手边竹签 · A/D 抬手 · 右键点影人下场" % CAST[controller.controlled_id]
+			"接手：%s    空格换人 · 拖签移步 · A/D 抬手 · W 短跳 · S 后撤 · 右键下场" % CAST[controller.controlled_id]
 		)
 		if not _entrance_complete[controller.controlled_id]:
 			_hint.text = (
@@ -275,7 +356,7 @@ func _refresh_views() -> void:
 		if controller.controlled_id >= 0 and not _hint.text.is_empty():
 			_hint.text = "正在接手：%s · %s" % [CAST[controller.controlled_id], _hint.text]
 		if (
-			dialogue.phase not in ["wait_arrival", "first_line", "wait_greeting"]
+			dialogue.phase not in ["wait_arrival", "wait_greeting"]
 			and (not on_stage.has(0) or not on_stage.has(1))
 		):
 			_hint.text = "按 1 请法海上场，按 2 请许仙上场 · 重新上场保留原姿势"
@@ -302,6 +383,8 @@ func _sync_entrances() -> void:
 
 func _build_hud() -> void:
 	var hud := CanvasLayer.new()
+	# 正式入口按 `Hud` 找这个层注入跳关按钮，名字不能省。
+	hud.name = "Hud"
 	add_child(hud)
 	_status = _label(hud, Vector2(76, 18), Vector2(1570, 50), 28)
 	_hint = _label(hud, Vector2(80, 1005), Vector2(1770, 55), 26)
@@ -320,6 +403,8 @@ func _build_hud() -> void:
 	lamp_hint.text = "滚轮推拉灯 · Q/E 调整显露"
 	var hand_hint := _label(hud, Vector2(790, 925), Vector2(440, 46), 22)
 	hand_hint.text = "空格接手 · 一次操纵一人"
+	var pose_hint := _label(hud, Vector2(790, 966), Vector2(1040, 35), 19)
+	pose_hint.text = "拖手签摆双臂 · 拖头调俯仰 · Alt 拖躯干前倾 · R 恢复上身"
 	_subtitle = _label(hud, Vector2(130, 690), Vector2(1660, 65), 27)
 	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var transition := CanvasLayer.new()
@@ -396,4 +481,6 @@ func _finish_first_scene() -> void:
 	on_stage.clear()
 	_puppet_input.set_enabled(false)
 	_lamp_input.set_enabled(false)
+	# 末句应允 → 暗场 → 清场；标题停留 DARK_HOLD_S 后换景进第二幕。
+	_dark_hold = DARK_HOLD_S
 	_refresh_views()

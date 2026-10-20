@@ -1,0 +1,18 @@
+{
+  "browser": "Chrome / Windows, actual SVG rendering",
+  "checks": [
+    "three characters",
+    "selected controls",
+    "independent poses",
+    "mirror",
+    "reset",
+    "staff hierarchy",
+    "exploded pieces",
+    "animation",
+    "pause",
+    "crouch",
+    "dark background",
+    "390px no overflow"
+  ],
+  "consoleErrors": []
+}

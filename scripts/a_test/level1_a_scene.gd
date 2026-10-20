@@ -18,7 +18,7 @@ signal performance_finished(record: CPerformanceRecord, stage_id: int, title: St
 ##
 ## 键位（只有这些，没有测试专用键）：
 ##   鼠标左键点影人/手边的签 = 接手并拖动胸签；滚轮 = 推拉灯；Q/E = 倾灯
-##   A/D 抬左手/右手，Shift+A / Shift+D 放下，W/S 双手同抬/同落
+##   A/D 抬左手/右手，Shift+A / Shift+D 放下，W 原地短跳，S 压身后撤
 ##   1/2/3 = 与备用头架对应位置换头；空格 = 挂起/取回影人；ESC 或右上角按钮 = 暂停
 
 const HarnessScript := preload("res://scripts/a_test/level1_harness.gd")
@@ -180,7 +180,14 @@ func _ready() -> void:
 	_dialogue_label.add_theme_font_size_override("font_size", 30)
 	_dialogue_label.add_theme_color_override("font_color", Color(0.16, 0.11, 0.07))
 	$Hud.add_child(_dialogue_label)
+	var controls_hint := Label.new()
+	controls_hint.position = Vector2(72, 950)
+	controls_hint.add_theme_font_size_override("font_size", 20)
+	controls_hint.text = "拖手签摆臂 · 拖头俯仰 · Alt 拖躯干 · R 复位 · A/D 抬手 · Shift+A/D 落手 · W 短跳 · S 后撤"
+	controls_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$Hud.add_child(controls_hint)
 	_refresh_ui()
+	_harness.puppet_input.set_views(_puppet_views)
 	if OS.get_cmdline_args().has(PROBE_FLAG) or OS.get_cmdline_user_args().has(PROBE_FLAG):
 		_probe_mode = true
 		# 该探针断言的是第一关的布景与时序（35000 ms / 6 条关键动作 / 两钩皆满），
@@ -348,6 +355,13 @@ func _input(event: InputEvent) -> void:
 
 func _handle_key(keycode: int) -> void:
 	match keycode:
+		KEY_W, KEY_S:
+			if not _paused and not _harness.runtime.is_over():
+				var action := InputEventKey.new()
+				action.keycode = keycode
+				action.pressed = true
+				_harness.puppet_input.handle_event(action)
+			get_viewport().set_input_as_handled()
 		KEY_ESCAPE:
 			_toggle_pause()
 			get_viewport().set_input_as_handled()
@@ -365,15 +379,23 @@ func _handle_key(keycode: int) -> void:
 		KEY_3:
 			_try_swap_head(2)
 			get_viewport().set_input_as_handled()
+		KEY_R:
+			if not _paused and not _harness.runtime.is_over():
+				_harness.puppet_input.release_drag()
+				_harness.runtime.puppet_controller.reset_upper_body()
+			get_viewport().set_input_as_handled()
 
 
-## 点击优先给「备用头架」和「挂钩上的影人」，都不命中才当作抓胸签。
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT and _harness != null:
+		_harness.puppet_input.release_drag()
+
+
+## 点击优先给「挂钩上的影人」，不命中才当作抓胸签。
+## 备用头架已按 2026-10-18 用户定案从画面移除，命中判定一并下线，
+## 否则玩家点在空白处会悄悄换掉影人头。
 func _handle_left_press(position: Vector2) -> bool:
 	if _paused or _harness.runtime.is_over():
-		return true
-	var slot: int = _rack_slot_at(position)
-	if slot >= 0:
-		_try_swap_head(slot)
 		return true
 	var puppet_id: int = _hung_puppet_at(position)
 	if puppet_id >= 0:
@@ -598,7 +620,7 @@ func _action_text(action: String) -> String:
 		CueScript.ACTION_TAKE_BACK:
 			return "点选挂起的影人，按空格取回"
 		CueScript.ACTION_HEAD_SWAP:
-			return "按 1 / 2 / 3 与备用头架换头"
+			return "按 1 / 2 / 3 更换影人头饰"
 		CueScript.ACTION_LAMP_DISTANCE:
 			return "滚轮推拉灯，让全场影子同步缩放"
 		CueScript.ACTION_LAMP_EXPOSURE:
@@ -617,7 +639,9 @@ func _draw() -> void:
 	_draw_canvas = self
 	_draw_canvas.draw_rect(TOP_BAR, Color("#232a27"))
 	_draw_hooks()
-	_draw_head_rack()
+	# 2026-10-18 用户定案：正式演出不再显示「备用影人头架」（调试用）。
+	# 头架只是换头的可视化提示，第一关流程里也没有换头 cue；
+	# `_draw_head_rack()` 保留以便调试时恢复，但默认不调用。
 	_draw_canvas.draw_rect(FOOTER, Color("#222927"))
 	_draw_canvas.draw_line(
 		Vector2(0.0, FOOTER.position.y),
@@ -1017,24 +1041,7 @@ func _action_motion(action: String, sway: float) -> Vector2:
 
 ## 一只手。`outlined` 为 true 时只描边（教学手），false 时实色填充（补救手）。
 func _draw_hand_shape(centre: Vector2, outlined: bool, alpha: float) -> void:
-	var edge := Color(0.44, 0.25, 0.15, alpha)
-	var fill := Color(0.90, 0.73, 0.51, alpha)
-	for i in 4:
-		var root := Vector2(centre.x - 25.0 + float(i) * 17.0, centre.y - 14.0)
-		var tip := Vector2(root.x - 2.0, centre.y - 70.0 - float(i % 2) * 12.0)
-		if not outlined:
-			_draw_canvas.draw_line(root, tip, fill, 11.0)
-		_draw_canvas.draw_line(root, tip, edge, 3.0)
-	var thumb_root: Vector2 = centre + Vector2(-25.0, 16.0)
-	var thumb_tip: Vector2 = centre + Vector2(-62.0, -19.0)
-	if not outlined:
-		_draw_canvas.draw_line(thumb_root, thumb_tip, fill, 14.0)
-	_draw_canvas.draw_line(thumb_root, thumb_tip, edge, 3.0)
-	if outlined:
-		_draw_canvas.draw_arc(centre, 36.0, 0.0, TAU, 32, edge, 4.0)
-	else:
-		_draw_canvas.draw_circle(centre, 36.0, fill)
-		_draw_canvas.draw_arc(centre, 36.0, 0.0, TAU, 36, edge, 3.0)
+	preload("res://scripts/b/teacher_hand.gd").draw_on(_draw_canvas, centre, outlined, alpha)
 
 
 ## 点中备用头架哪个槽位（-1 表示没点中）

@@ -8,16 +8,16 @@
   "tour_start_ms": 56877,
   "return_gate_ms": 74377,
   "return_start_ms": 74977,
-  "closing_ms": 108061,
-  "duration_ms": 111811,
+  "closing_ms": 107361,
+  "duration_ms": 111111,
   "lines": [
     {
       "line_id": "opening-01",
       "role_id": "xiaoqing",
       "role_name": "小青",
       "text": "姐姐，你看，湖上人来人往，可比峨眉热闹多啦！",
-      "start_ms": 120,
-      "end_ms": 5449,
+      "start_ms": 600,
+      "end_ms": 5440,
       "delivery": "speech"
     },
     {
@@ -25,8 +25,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "青妹，你看，柳色映着湖波，果然是好风光。",
-      "start_ms": 5749,
-      "end_ms": 10602,
+      "start_ms": 6200,
+      "end_ms": 10600,
       "delivery": "speech"
     },
     {
@@ -34,8 +34,8 @@
       "role_id": "xiaoqing",
       "role_name": "小青",
       "text": "哎呀，雨来了！那边的君子，倒有一把好伞。",
-      "start_ms": 10902,
-      "end_ms": 15755,
+      "start_ms": 10840,
+      "end_ms": 15740,
       "delivery": "speech"
     },
     {
@@ -43,8 +43,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "待我上前，借问一声。",
-      "start_ms": 16055,
-      "end_ms": 18725,
+      "start_ms": 16440,
+      "end_ms": 18760,
       "delivery": "speech"
     },
     {
@@ -52,8 +52,8 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "湖边风急雨丝长，娘子莫教湿衣裳。",
-      "start_ms": 25025,
-      "end_ms": 36275,
+      "start_ms": 24960,
+      "end_ms": 36175,
       "delivery": "singing"
     },
     {
@@ -62,7 +62,7 @@
       "role_name": "白素贞",
       "text": "君子相怜情意厚，怎教你独受风凉。",
       "start_ms": 36275,
-      "end_ms": 47575,
+      "end_ms": 47475,
       "delivery": "singing"
     },
     {
@@ -71,7 +71,7 @@
       "role_name": "许仙",
       "text": "些小风雨何须讲，请接此伞莫彷徨。",
       "start_ms": 47575,
-      "end_ms": 56377,
+      "end_ms": 56400,
       "delivery": "singing"
     },
     {
@@ -79,8 +79,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "君子，雨住了。这伞，奉还。",
-      "start_ms": 74977,
-      "end_ms": 78158,
+      "start_ms": 75380,
+      "end_ms": 78180,
       "delivery": "speech"
     },
     {
@@ -88,8 +88,8 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "些小之事，何劳娘子专程回来。",
-      "start_ms": 78458,
-      "end_ms": 82081,
+      "start_ms": 78780,
+      "end_ms": 82040,
       "delivery": "speech"
     },
     {
@@ -97,8 +97,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "伞可以托青儿送来，谢意……还是我亲口说的好。",
-      "start_ms": 82381,
-      "end_ms": 87710,
+      "start_ms": 83000,
+      "end_ms": 87740,
       "delivery": "speech"
     },
     {
@@ -106,8 +106,8 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "娘子言重了。",
-      "start_ms": 88010,
-      "end_ms": 89995,
+      "start_ms": 88900,
+      "end_ms": 90000,
       "delivery": "speech"
     },
     {
@@ -115,8 +115,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "还未请教，君子高姓？",
-      "start_ms": 90295,
-      "end_ms": 92965,
+      "start_ms": 90760,
+      "end_ms": 93000,
       "delivery": "speech"
     },
     {
@@ -124,8 +124,8 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "小生姓许，名仙。",
-      "start_ms": 93265,
-      "end_ms": 95460,
+      "start_ms": 93740,
+      "end_ms": 95500,
       "delivery": "speech"
     },
     {
@@ -133,8 +133,8 @@
       "role_id": "baisuzhen",
       "role_name": "白素贞",
       "text": "小女子白素贞。许君子，明日若再游湖，可还认得我么？",
-      "start_ms": 95760,
-      "end_ms": 101797,
+      "start_ms": 96020,
+      "end_ms": 101800,
       "delivery": "speech"
     },
     {
@@ -142,17 +142,17 @@
       "role_id": "xuxian",
       "role_name": "许仙",
       "text": "白小姐……小生怎会不认得。",
-      "start_ms": 102097,
-      "end_ms": 105371,
+      "start_ms": 102600,
+      "end_ms": 105300,
       "delivery": "speech"
     },
     {
       "line_id": "return-09",
       "role_id": "baisuzhen",
       "role_name": "白素贞",
-      "text": "那就……莫忘了。",
-      "start_ms": 105671,
-      "end_ms": 107761,
+      "text": "那就莫忘了。",
+      "start_ms": 106060,
+      "end_ms": 107080,
       "delivery": "speech"
     }
   ],
@@ -277,8 +277,8 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act1-natural/main.wav",
-      "sha256": "584fbc86945707f0bb4c4903d3cc25b0e89d6c65dce8caa515d7fb1873019008",
-      "frames": 5366917,
+      "sha256": "9a621918e2bd7ff063c2999b7372d9359ab7bf91441574331970022feb012afa",
+      "frames": 5333317,
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"

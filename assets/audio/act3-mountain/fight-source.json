@@ -1,0 +1,13 @@
+{
+  "filename": "c27c498b3a24839601fd86c7f71bc339.mp4",
+  "sha256": "9cdc99da56368bb2e33721e26e72d74d31183b3d787f865b746ad5d6af67d7b1",
+  "decoded_audio_frames": 1971653,
+  "pcm_sha256": "8825f4b05a2b385339217cec7106fb4387e673cc9f2b9b48991ca48562ca8e19",
+  "splice_ms": 99625,
+  "incoming_trim_frames": 27102,
+  "incoming_trim_ms": 564.625,
+  "splice_basis": "Keep the opening cut before 说罢分心刺 and remove only the incoming screen recording's exact-zero prefix. All non-silent PCM is retained. Subtitle annotations remain approximately 0.25s precision, not ASR-aligned.",
+  "processing": "AAC decode to PCM16 48k stereo; concatenate after removing leading all-zero frames only; no gain, normalization, synthesis, fades, denoise, time stretching or voice conversion",
+  "performance_frames": 6726551,
+  "performance_pcm_sha256": "f060116f81f14ab81912dd02acac44663683f216eaaff89cc8647d13bbfd6e4e"
+}
