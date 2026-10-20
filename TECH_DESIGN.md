@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-20 Windows 窗口最大化修复：Compatibility 渲染器在 Windows 通过 `rendering/gl_compatibility/driver.windows="opengl3_angle"` 使用 Godot 内置 ANGLE / Direct3D 11，避开本机 Intel Arc 原生 OpenGL 最大化后无响应、无法关闭的路径。建窗尺寸与 1920×1080 画布契约沿用；真实 Win32 最大化、还原、全屏启动和关闭由 `tests/b/check_window_resize.py` 外部有界验证。源工程与正式导出包均须实测，不能以无头启动替代。证据与命令见 [窗口修复交付](docs/window-maximize-delivery.md)。
+
 > 2026-10-17 演前简介：`scripts/ui/stage_briefing.gd` 集中三关文案及既有第三关版式，对外提供 `stage_id`、单次 `start_requested` 与可更新的 `audio_note`。`GameFlow._show_briefing()` 在关号 1/2 创建简介，延后处理开演信号后才实例化宿主、时钟与录制；片头结束、第一关收场/跳过及重新演出均走该入口。关号 22 的厅堂换景沿用整关记录，不重复简介。第三关宿主复用组件并连接既有 `start_scene()`，保留零时钟候场、真实音源提示和原录放流程。指定第二关调试入口同样先简介；第三关排练入口沿用一张内部简介。此补充优先于下文媒体入口的直达描述，不修改记录格式或玩法判定。验证见 [简介交付](docs/stage-briefings-delivery.md)。
 
 > 2026-10-17 媒体入口：`GameFlow` 默认显示 `MediaScreen` 首页，用户确认后依次播放片头、实例化第一关；指定 `_stage_id`、`initial_stage` 或 `--act3-rehearsal` 的既有调试入口保持直达。`scripts/ui/media_screen.gd` 只负责图片、`VideoStreamPlayer`、空格暂停与 Esc 跳过，独立于演出与记录时钟。素材在 `assets/cinematics/`，视频离线转为 Godot 内置 Theora/Vorbis OGV，1280×720、30fps、保留完整原声，无运行时 FFmpeg 或插件。第三关 `_show_page(false)` 统一释放回放记录并播放片尾；结束显示从源片提取的最后一帧，下一次左/右/中键点击回首页，不显示旧最终收场页。首页/播放页的完成信号延后换页，忽略重复按键、松开及滚轮，防止同一输入穿透。两段视频和静帧由预加载引用随 `all_resources` 导出；既有演出、回放与第一、二关收场不变。验证见 [媒体交付](docs/cinematics-delivery.md)。

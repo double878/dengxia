@@ -30,3 +30,6 @@ window/stretch/aspect="keep"
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+; Intel Arc 原生 OpenGL 在 Windows 高 DPI 下最大化会卡死且无法关闭。
+; 保留 Compatibility，改用引擎内置 ANGLE / Direct3D 11 处理窗口缩放。
+gl_compatibility/driver.windows="opengl3_angle"
