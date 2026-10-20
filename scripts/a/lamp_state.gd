@@ -22,7 +22,7 @@ const UNIT_MAX: float = 1.0
 const CHANGE_EPSILON: float = 1.0e-9
 
 var distance: float = 0.5
-var exposure: float = 0.5
+var exposure: float = 1.0  # 默认完整显露，玩家仍可通过 Q/E 调暗或调亮。
 var oil: float = 1.0
 var flame_feedback: float = 0.5
 

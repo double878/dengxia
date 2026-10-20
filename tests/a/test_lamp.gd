@@ -69,6 +69,7 @@ func _test_01_initial_state_in_range(t: ATestBase) -> void:
 	t.check_in_range(s.exposure, 0.0, 1.0, "exposure 初始值应在 [0,1]")
 	t.check_in_range(s.oil, 0.0, 1.0, "oil 初始值应在 [0,1]")
 	t.check_in_range(s.flame_feedback, 0.0, 1.0, "flame_feedback 初始值应在 [0,1]")
+	t.check_eq(s.exposure, 1.0, "默认以影子最清晰的满显露状态开局")
 	t.check_eq(s.oil, 1.0, "灯油满值开局")
 	t.check_eq(s.to_dict().size(), 4, "可序列化视图应正好包含四个字段")
 	t.finish("四个连续量初始值合法且可序列化")
@@ -119,6 +120,7 @@ func _test_05_distance_lower_bound(t: ATestBase) -> void:
 func _test_06_exposure_increase(t: ATestBase) -> void:
 	t.begin("06 exposure 增加输入能连续改变值")
 	var b: LampTestBench = _bench()
+	b.state().exposure = 0.5  # 从中档验证调亮，默认状态已在上界。
 	var before: float = b.state().exposure
 	b.hold_input(200, {KEY_EXPO_UP: true})
 	var after: float = b.state().exposure
