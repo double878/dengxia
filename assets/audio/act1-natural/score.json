@@ -1,5 +1,5 @@
 {
-  "audio_version": "act1-natural-dialogue-v1",
+  "audio_version": "act1-original-accompaniment-46a6e76ef9e5",
   "opening_end_ms": 19025,
   "arrival_ms": 24525,
   "singing_start_ms": 25025,
@@ -162,6 +162,7 @@
       "path": "res://assets/audio/act1-natural/opening-01.wav",
       "sha256": "057d01d7a00572a695589dd9ed68766df0bc98bad45ad94683bcef2ee2871dfe",
       "frames": 255792,
+      "pcm_sha256": "48019661aaec83c9df02a0816ce21ec702b279ab5b6262eddc6698cddcac9a5f",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -171,6 +172,7 @@
       "path": "res://assets/audio/act1-natural/opening-02.wav",
       "sha256": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
       "frames": 232943,
+      "pcm_sha256": "13d90733e44812592f553293f405be5a2dcaceae878373b301dd78b47533a41d",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -180,6 +182,7 @@
       "path": "res://assets/audio/act1-natural/opening-03.wav",
       "sha256": "47a8323e1bc96ce5d13dc23a240b1ba723018e0aa6bc0361e9d7144b07f834dc",
       "frames": 232943,
+      "pcm_sha256": "f5b9710eff4cbd6961ce80a439a17ce47adc6a202c54c6d3e3dc55842cd733d7",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -189,6 +192,7 @@
       "path": "res://assets/audio/act1-natural/opening-04.wav",
       "sha256": "63f286d8c9fccae0936d34348278804ae1e64d6408368329857826ee9dd176cb",
       "frames": 128175,
+      "pcm_sha256": "75f6c71651ccce979e6dc2cfa0674b45206bbcbf27a7abc507e9f7b7de5206c9",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -198,6 +202,7 @@
       "path": "res://assets/audio/act1-natural/return-01.wav",
       "sha256": "3aad4974f65a6bb06a35fe341921d7a7ad9824e29f9938546722830c71bb9868",
       "frames": 152695,
+      "pcm_sha256": "309771556864c3a109c6aacd7587255bd0a4dafb97e7c2071a3d1c32fc1f6dae",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -207,6 +212,7 @@
       "path": "res://assets/audio/act1-natural/return-02.wav",
       "sha256": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
       "frames": 173872,
+      "pcm_sha256": "8e6992c68e3dedc4b174edefc1b5e8b43b3dc26add742df75cad49f6d227193e",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -216,6 +222,7 @@
       "path": "res://assets/audio/act1-natural/return-03.wav",
       "sha256": "cd1f315f56b3863c7a3af6d1b27dc8c2948c3483ed8f8b494940379f6e16ad0b",
       "frames": 255792,
+      "pcm_sha256": "e3f9fa48bfd5728331a7bb530e08dc04ed07c2c31b84eaef7a4a45acc39e073c",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -225,6 +232,7 @@
       "path": "res://assets/audio/act1-natural/return-04.wav",
       "sha256": "689c89894daae0c86ae921e85a8f52cf4b79d90e9950bcd0c36d46efc1cb61eb",
       "frames": 95295,
+      "pcm_sha256": "12c2acbf7f85aedf9ead721830886a2eb3fc1bdeb916c140e29965d1d44c7f49",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -234,6 +242,7 @@
       "path": "res://assets/audio/act1-natural/return-05.wav",
       "sha256": "998d72617c249225b22c7afcaac8428784e3c07fbddab10e0ce2aae2e2b36744",
       "frames": 128175,
+      "pcm_sha256": "cd59aabb1cf05bab35627a83ce0dadff7c7caa9ebedfcaa6352138c87b28c4c9",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -243,6 +252,7 @@
       "path": "res://assets/audio/act1-natural/return-06.wav",
       "sha256": "37ae12ab01c5cc1fe46e1d50ae9cd70aa8c05b4385f2c07ead564407bd1cc978",
       "frames": 105326,
+      "pcm_sha256": "2ae1c423630062ebc7cc040114c084b3a1a4222b00a4131dd494b536c525f7ef",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -252,6 +262,7 @@
       "path": "res://assets/audio/act1-natural/return-07.wav",
       "sha256": "7f68c38e760a9b8a4b1cde5b5b33283bfe99e710d046cbde642d62523956efd3",
       "frames": 289786,
+      "pcm_sha256": "7b4537e9818d15ddd30231170cc5f662ff39a729ac41d5f2c02d4533977b42f6",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -261,6 +272,7 @@
       "path": "res://assets/audio/act1-natural/return-08.wav",
       "sha256": "e5e9263e5b97b3a71551f4dc64adc85e9509d3b4a3b4713f5f62f127271dd17a",
       "frames": 157153,
+      "pcm_sha256": "dcb21afed6298df53b670e885838c2118cf0290ca2a78282ac34636963b82f8c",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -270,6 +282,7 @@
       "path": "res://assets/audio/act1-natural/return-09.wav",
       "sha256": "0509cc5b50911893affd0beda59e4f4e416a391d168f805eddbd5e7148251ff9",
       "frames": 100311,
+      "pcm_sha256": "07a8f1ad561831624db71ab656c72c7676bdd52aabc12cad4b38bcd3ef42aeb8",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -277,8 +290,9 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act1-natural/main.wav",
-      "sha256": "9a621918e2bd7ff063c2999b7372d9359ab7bf91441574331970022feb012afa",
+      "sha256": "46a6e76ef9e57d04a4ea34b707d2de2261fdd5106ffa7dcb546080239eb6864d",
       "frames": 5333317,
+      "pcm_sha256": "68670064e52cdf4e710d95ce076a23b1fea9611916ac46bdaaaeb9956d8aa139",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -286,8 +300,9 @@
     {
       "asset_id": "wait_loop",
       "path": "res://assets/audio/act1-natural/wait_loop.wav",
-      "sha256": "97fb429b18f9e538f86798774799dec49c338f7ec8f2b941f634191324edf664",
+      "sha256": "57884d37105cbcf8bc662bdececb96c2389d8255d9aa0b2e73eff4c156e38525",
       "frames": 104160,
+      "pcm_sha256": "4e09200b7222bcd651a3aae096270078811e6f605783db36816cbde932f9b225",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -295,8 +310,9 @@
     {
       "asset_id": "take_close",
       "path": "res://assets/audio/act1-natural/take_close.wav",
-      "sha256": "5744854b80c3ff27ed028b9a8a3c76e55f4c45a1bdb9a88ced10bae22f6653c7",
+      "sha256": "fa9cd0462f6074a36a0ce8bd38506d64a2467630ee80ef481d2a5010e779de41",
       "frames": 76800,
+      "pcm_sha256": "f59bc3a6df779f368b3622114651f1163937cfc820896eb01dd8e43773071adb",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -306,6 +322,7 @@
       "path": "res://assets/audio/act1-natural/remedy.wav",
       "sha256": "06ca5de627534f260608be923e1608b3e25828888bc2aedf52a232ed039452fb",
       "frames": 240000,
+      "pcm_sha256": "f3403399f9aaae6ecd3a20f32c9a1495e2b28e6630fa03f1c92b3ced04d6d8f5",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -317,7 +334,7 @@
   "generation": "F5-TTS 1.1.22 (pinned weights) -> Seed-VC speech 25 steps CFG 0.7",
   "new_lines_listening": "not_individually_reviewed; user requested direct integration",
   "baseline_listening_user_reply": "自然、无电音，音色也一致",
-  "rights_status": "local_prototype_only; external reference permission unverified",
+  "rights_status": "accompaniment_sample_free; retained_singing_and_other_voice_permissions_unverified",
   "models": [
     {
       "repository": "SWivid/F5-TTS",
@@ -469,9 +486,9 @@
       "reverb": false
     }
   ],
-  "singing_source_sha256": "71ae2a80fdfa9869a1ac401bdf32aa16f953f7e74af57322ab09fc8c11f3f375",
   "main_path": "res://assets/audio/act1-natural/main.wav",
   "wait_loop_path": "res://assets/audio/act1-natural/wait_loop.wav",
   "take_close_path": "res://assets/audio/act1-natural/take_close.wav",
-  "remedy_path": "res://assets/audio/act1-natural/remedy.wav"
+  "remedy_path": "res://assets/audio/act1-natural/remedy.wav",
+  "accompaniment_source": "res://assets/audio/original-audio-sources.json"
 }

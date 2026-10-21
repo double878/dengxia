@@ -1,5 +1,5 @@
 {
-  "audio_version": "act2-hall-direct-duet-fright-v2",
+  "audio_version": "act2-hall-original-accompaniment-52970c9fc53b",
   "scene_id": "wine_transformation",
   "main_path": "res://assets/audio/act2-hall/main.wav",
   "duration_ms": 69517,
@@ -150,100 +150,100 @@
       "path": "res://assets/audio/act2-hall/xu-offer.wav",
       "sha256": "d0568d17277aaab1ca721d8c90074ed3afad341d67b081378c4942556b49408a",
       "frames": 180559,
+      "pcm_sha256": "9343e430196ab33d0e803fefe2b6988bc17ba2652c8c57f22d5ede4decb324e8",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.517791748046875
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "qing-stop",
       "path": "res://assets/audio/act2-hall/qing-stop.wav",
       "sha256": "e6ba719bd2be828ed4443a592823256b33212f8da1a79c78cbee5a98375ac757",
       "frames": 180559,
+      "pcm_sha256": "bf211a32c860f01f19ac3e20cbacfecf079692cd2b8ca97abe285a00a40f7d27",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.599578857421875
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "xu-send",
       "path": "res://assets/audio/act2-hall/xu-send.wav",
       "sha256": "c8de040707ba4f9bb7ec3756f8504ccf2da99f736f5485ef76690ec564cb5c3a",
       "frames": 271953,
+      "pcm_sha256": "cdbf06369ad54bab2adde53b4c4dcfd216a084b5da641bebd3c55da07ee65063",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.607330322265625
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "bai-allow",
       "path": "res://assets/audio/act2-hall/bai-allow.wav",
       "sha256": "3d52b9bbfc3449cf526f957185a94f103eb68fc47ddd9cc6952008f5b7afdac5",
       "frames": 105326,
+      "pcm_sha256": "1b2779ced44a59349d567d6058946f50770042624e77f515ca7f470239022eab",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.74151611328125
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "qing-reply",
       "path": "res://assets/audio/act2-hall/qing-reply.wav",
       "sha256": "87b28ed87f3e3454e0b5197b78da05cc53d0ce7ad09033eb52814e3866d0e26a",
       "frames": 95295,
+      "pcm_sha256": "0f482c71c9b4978e8dae4502514185ac5405e37388fb697076719b8ef30fe7c0",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.362518310546875
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "bai-unwell",
       "path": "res://assets/audio/act2-hall/bai-unwell.wav",
       "sha256": "7abe78c2f6dfb69cda253bb9b83e35e5687a7f19c88b0d38180b968432ccb71d",
       "frames": 139320,
+      "pcm_sha256": "2d9e204061a70b6227a0e0394fc17b274ebae19774017eb2004914d21f648207",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.50982666015625
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "xu-medicine",
       "path": "res://assets/audio/act2-hall/xu-medicine.wav",
       "sha256": "46f16c621768011d2a690c9fbde6e86ce6e99da247d01b86d3c3d4ece5df1675",
       "frames": 151023,
+      "pcm_sha256": "855e6fe09084232ae5450972801e5790822a535116129d4516d711e5db8bcb51",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.631622314453125
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "wine-duet",
       "path": "res://assets/audio/act2-hall/wine-duet.wav",
-      "sha256": "ad390750f8daed131a36607ce8d5ee94023d97a4692777c8c5abeaed76e41303",
+      "sha256": "9e4076c483eb2bd6427b8fb05398b7360b3f6d0946072e0008a74869d03e5217",
       "frames": 1968000,
+      "pcm_sha256": "7b34d3d5bd8394211f5bf9cfebb7a6f713488f7795e953adf9b2442009887205",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.667205810546875
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-hall/main.wav",
-      "sha256": "1799bd3e48c41e40050875cee7b3d7174bb0acaf0407c5766a0da82d4ed65635",
+      "sha256": "52970c9fc53b7bbea7e45975f996868db48c653f5353155faf64b1d10bf9fdb4",
       "frames": 3336835,
+      "pcm_sha256": "327b21cc6999549b94f6555d90bb9d5623f7bfdf7a48438dc20cf8c08f8f1fc8",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.74151611328125
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "xu-fright",
       "path": "res://assets/audio/act2-hall/xu-fright.wav",
       "sha256": "c0db694bcff096220849839db35dcef98097c5d6314c594dd737014bf884c976",
       "frames": 95295,
+      "pcm_sha256": "667891dd3987fccce0600582fc8731f85efbb42262402509edc9e206cb4c40f6",
       "sample_rate_hz": 48000,
       "channels": 2,
-      "subtype": "PCM_16",
-      "peak": 0.8012481331825256
+      "subtype": "PCM_16"
     }
   ],
   "references": {
@@ -270,36 +270,13 @@
     "sil_len_to_end": 0.5,
     "lrc_align_mode": "sentence_level"
   },
-  "singing_source": "https://tv.cctv.com/2020/07/02/VIDEGhi9Sw6SpdWEg573OBfO200702.shtml",
-  "plot_reference": "https://scripts.xikao.com/play/06000050",
-  "user_video": {
-    "filename": "20261013-1538-24.6072238.mp4",
-    "sha256": "b9118e9678f40981c69426d84bead1e6e500d968f87b39e9a48472a2a46f43fc",
-    "music_cues": {
-      "source": "D:\\Cursor_program\\灯下\\builds\\act2-hall-audio\\user-music-full.wav",
-      "source_sha256": "b017d8b87996411910e1c7afe4c5a7b3ffdfcd050e9e48e37573ecd0ca670efc",
-      "attack_s": 6.435,
-      "hit_end_s": 7.735,
-      "outputs": {
-        "fahai-entry": {
-          "path": "D:\\Cursor_program\\灯下\\builds\\worktrees\\feat-act2-actions\\assets\\audio\\act2-hall\\fahai-entry.wav",
-          "sha256": "bb93e07b781ad770fc15690ae1689ab46e294b79a5e91f9b794134c97a892f2c",
-          "frames": 396288,
-          "rate": 48000,
-          "fixed_gain": 0.65
-        },
-        "xu-fall-hit": {
-          "path": "D:\\Cursor_program\\灯下\\builds\\worktrees\\feat-act2-actions\\assets\\audio\\act2-hall\\xu-fall-hit.wav",
-          "sha256": "4a2152dd277c94ef6e02f253bd0f30338ca61bf920b79689f3a35d4f4d854ec2",
-          "frames": 62400,
-          "rate": 48000,
-          "fixed_gain": 1.0
-        }
-      },
-      "processing": "source music preserved; boundary fades and fixed gain only",
-      "human_listening_verified": false
-    }
+  "singing_source": {
+    "vocals": "res://assets/audio/retained-vocals/act2.wav",
+    "historical_melody_reference": "https://tv.cctv.com/2020/07/02/VIDEGhi9Sw6SpdWEg573OBfO200702.shtml",
+    "permission_verified": false,
+    "backing": "new symbolic composition and mathematical synthesis"
   },
+  "plot_reference": "https://scripts.xikao.com/play/06000050",
   "source_fingerprints": {
     "speech": "6e76d83a39af2a7dbe595c24926e44a7b1a9d4963d518fec68e979a47a172fe3",
     "singing": "3363c302a4e65d8e24a65937f9a5b6acaaa81d0c536be27c3b0a64008370c0de",
@@ -538,7 +515,8 @@
         "normalization_type": "dynamic",
         "target_offset": "0.49"
       },
-      "processing": "constant gain; full samples; no trim, time/pitch change or reverb"
+      "processing": "constant gain; full samples; no trim, time/pitch change or reverb",
+      "measurement_scope": "Historical old mix measurement; gain_db retained for the unchanged vocal stem only"
     }
   ],
   "human_listening_verified": false,
@@ -850,5 +828,24 @@
     },
     "full_generated_samples_preserved": true,
     "human_listening_verified": false
+  },
+  "accompaniment_source": "res://assets/audio/original-audio-sources.json",
+  "rights_status": "accompaniment_sample_free; retained_singing_and_other_voice_permissions_unverified",
+  "music_cues": {
+    "source": "res://assets/audio/original-audio-sources.json",
+    "outputs": {
+      "fahai-entry": {
+        "path": "res://assets/audio/act2-hall/fahai-entry.wav",
+        "sha256": "e71164285fde04095924b0cffd61286bcef4d1831b0ea14148c9013768287e8b",
+        "frames": 396288,
+        "source": "original procedural synthesis; previous video audio removed"
+      },
+      "xu-fall-hit": {
+        "path": "res://assets/audio/act2-hall/xu-fall-hit.wav",
+        "sha256": "fa57e7a564a70eff0e49f735bd220013d9d7a7d46cd0d851fce6e87def65eb9e",
+        "frames": 62400,
+        "source": "original procedural synthesis; previous video audio removed"
+      }
+    }
   }
 }

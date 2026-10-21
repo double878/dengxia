@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-22 第一、二关音频素材修订（当前版本）：`compose_original_accompaniment.py` 只接收时长、种子、调中心与段落类型，从显式音符事件表以数学振荡器/噪声合成拨弦、笛、鼓、木梆与锣，不读录音、音色库或参考旋律。`replace_stage_accompaniment.py` 先做基线快照，用原制作纯人声分轨加新伴奏重建第一关及厅堂唱段，保持原时长及范围外 PCM；法海改用 Kokoro-82M-v1.1-zh 的 `zm_010`，无身份/韵律录音，完整句子原生速度 0.86、48kHz PCM16，不裁尾或后期强制变速。许仙三句保持原 PCM。六句主轨现为 2,020,535 帧（42.094479 秒），含两秒暗场，字幕从帧边界派生。唯一 MusicClock、开场一次播放、动作许可和真实回放契约沿用；不引入运行时生成依赖。`original-audio-sources.json` 随发布包保留来源清单，记录事件表、工具/输入/输出哈希、模型许可及未确认的保留素材权限；`check_original_audio.py` 与更新的自然对白检查器核对完整性。旧制作用法及旧法海小样哈希仅作为历史记录。验证见 [本次交付](docs/audio/2026-10-22-original-accompaniment-fahai.md)。
+
 > 2026-10-20 Windows 窗口最大化修复：Compatibility 渲染器在 Windows 通过 `rendering/gl_compatibility/driver.windows="opengl3_angle"` 使用 Godot 内置 ANGLE / Direct3D 11，避开本机 Intel Arc 原生 OpenGL 最大化后无响应、无法关闭的路径。建窗尺寸与 1920×1080 画布契约沿用；真实 Win32 最大化、还原、全屏启动和关闭由 `tests/b/check_window_resize.py` 外部有界验证。源工程与正式导出包均须实测，不能以无头启动替代。证据与命令见 [窗口修复交付](docs/window-maximize-delivery.md)。
 
 > 2026-10-17 演前简介：`scripts/ui/stage_briefing.gd` 集中三关文案及既有第三关版式，对外提供 `stage_id`、单次 `start_requested` 与可更新的 `audio_note`。`GameFlow._show_briefing()` 在关号 1/2 创建简介，延后处理开演信号后才实例化宿主、时钟与录制；片头结束、第一关收场/跳过及重新演出均走该入口。关号 22 的厅堂换景沿用整关记录，不重复简介。第三关宿主复用组件并连接既有 `start_scene()`，保留零时钟候场、真实音源提示和原录放流程。指定第二关调试入口同样先简介；第三关排练入口沿用一张内部简介。此补充优先于下文媒体入口的直达描述，不修改记录格式或玩法判定。验证见 [简介交付](docs/stage-briefings-delivery.md)。

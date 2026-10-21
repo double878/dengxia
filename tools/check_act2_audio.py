@@ -16,7 +16,7 @@ score = json.loads((project/'assets/audio/act2-hall/score.json').read_text(encod
 checks = []
 pcm = {}
 assets = list(score['assets'])
-for name, row in score['user_video']['music_cues']['outputs'].items():
+for name, row in score['music_cues']['outputs'].items():
     assets.append(dict(asset_id=name, path='res://assets/audio/act2-hall/'+name+'.wav', **{k:row[k] for k in ['sha256','frames']}))
 for row in assets:
     path = project/row['path'].removeprefix('res://')

@@ -450,7 +450,11 @@ func wall_playback(replay: Node, flow: CResultFlow) -> void:
 		lines.append_array(score.get("duet", []))
 		for line: Dictionary in lines:
 			var text: String = "%s：%s" % [line.role_name, line.text]
-			check(float(line_peaks.get(text, 0)) > .001, "实时录放台词有声 " + str(line.line_id))
+			# 厅堂直接从对唱开始；清单前五句仅保留为历史音源。
+			if int(line.start_ms) < int(score.get("duet_start_ms", 0)):
+				check(not line_peaks.has(text), "已删除的厅堂前置对白不得回放 " + str(line.line_id))
+			else:
+				check(float(line_peaks.get(text, 0)) > .001, "实时录放台词有声 " + str(line.line_id))
 	AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
 	FileAccess.open("res://builds/act2-replay/realtime.json", FileAccess.WRITE).store_string(
 		JSON.stringify(
