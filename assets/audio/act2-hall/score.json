@@ -1,5 +1,5 @@
 {
-  "audio_version": "act2-hall-original-accompaniment-52970c9fc53b",
+  "audio_version": "act2-hall-vocals-only-999dcca862f8",
   "scene_id": "wine_transformation",
   "main_path": "res://assets/audio/act2-hall/main.wav",
   "duration_ms": 69517,
@@ -218,9 +218,9 @@
     {
       "asset_id": "wine-duet",
       "path": "res://assets/audio/act2-hall/wine-duet.wav",
-      "sha256": "9e4076c483eb2bd6427b8fb05398b7360b3f6d0946072e0008a74869d03e5217",
+      "sha256": "0526fe9bd867d4e454fa7e0ab30b006ed792bd3ca9d28ebf196582e1f04830f9",
       "frames": 1968000,
-      "pcm_sha256": "7b34d3d5bd8394211f5bf9cfebb7a6f713488f7795e953adf9b2442009887205",
+      "pcm_sha256": "0ead71d1a698566cd22b8db1a125a9f9d80f733b0445a9e4b63b734d3b90a381",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -228,9 +228,9 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-hall/main.wav",
-      "sha256": "52970c9fc53b7bbea7e45975f996868db48c653f5353155faf64b1d10bf9fdb4",
+      "sha256": "999dcca862f8d39bb8d5ad29a25e0b525a57f2a89bf8e9e7c7b9353aeac210ac",
       "frames": 3336835,
-      "pcm_sha256": "327b21cc6999549b94f6555d90bb9d5623f7bfdf7a48438dc20cf8c08f8f1fc8",
+      "pcm_sha256": "3fc1b96aa2b41f5fec41f475b9c5a60f5ef9dfd338d25db300143572db0bfcdd",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -274,7 +274,7 @@
     "vocals": "res://assets/audio/retained-vocals/act2.wav",
     "historical_melody_reference": "https://tv.cctv.com/2020/07/02/VIDEGhi9Sw6SpdWEg573OBfO200702.shtml",
     "permission_verified": false,
-    "backing": "new symbolic composition and mathematical synthesis"
+    "backing": "none; clean vocals only"
   },
   "plot_reference": "https://scripts.xikao.com/play/06000050",
   "source_fingerprints": {
@@ -830,13 +830,13 @@
     "human_listening_verified": false
   },
   "accompaniment_source": "res://assets/audio/original-audio-sources.json",
-  "rights_status": "accompaniment_sample_free; retained_singing_and_other_voice_permissions_unverified",
+  "rights_status": "no_background_music; retained_singing_and_other_voice_permissions_unverified",
   "music_cues": {
     "source": "res://assets/audio/original-audio-sources.json",
     "outputs": {
       "fahai-entry": {
         "path": "res://assets/audio/act2-hall/fahai-entry.wav",
-        "sha256": "e71164285fde04095924b0cffd61286bcef4d1831b0ea14148c9013768287e8b",
+        "sha256": "8b5e2d97bd8dd1bac5ebd99952495f756634046ee7173fd3a4a48fb31db45a29",
         "frames": 396288,
         "source": "original procedural synthesis; previous video audio removed"
       },
@@ -847,5 +847,6 @@
         "source": "original procedural synthesis; previous video audio removed"
       }
     }
-  }
+  },
+  "background_music": false
 }

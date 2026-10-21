@@ -64,10 +64,18 @@ def main():
 
     music = {}
     for name, row in manifest["music"].items():
-        assert row["external_audio_inputs"] == [] and row["events"], name
-        data, score = compose(row["frames"], seed=row["seed"], tonic=row["tonic_midi"], scene=row["scene"], loop=row["loop"])
-        assert score == row, ("Score not reproducible", name)
+        assert row["external_audio_inputs"] == [], name
+        if row.get("muted", False):
+            assert manifest["background_music"] is False and not row["events"], name
+            data = np.zeros((row["frames"], 2), dtype=np.float32)
+        else:
+            assert row["events"], name
+            data, score = compose(row["frames"], seed=row["seed"], tonic=row["tonic_midi"], scene=row["scene"], loop=row["loop"])
+            assert score == row, ("Score not reproducible", name)
         music[name] = data
+    if manifest.get("background_music") is False:
+        effects = {"act1-take-close", "act2-xu-fall-hit"}
+        assert all(row.get("muted", False) == (name not in effects) for name, row in manifest["music"].items())
 
     vocals = {}
     for row in manifest["retained_vocals"]:
@@ -83,6 +91,8 @@ def main():
     for folder in ["act1-natural", "act2-hall", "act2-opening"]:
         score = read_json(audio_root / folder / "score.json")
         previous = read_json(old / folder / "score.json")
+        if manifest.get("background_music") is False:
+            assert score["background_music"] is False
         if folder != "act2-opening":
             assert score["lines"] == previous["lines"], "Existing subtitles changed"
         for line in score["lines"]:
@@ -142,7 +152,8 @@ def main():
         subprocess.run([str(args.ffmpeg), "-nostdin", "-v", "error", "-xerror", "-i", str(path), "-f", "null", "-"], check=True, timeout=60)
     report = dict(passed=True, decoded_files=len(files), preserved_speech_clips=preserved,
         retained_singing_stems=2, sample_exact_reconstruction=True, accompaniment_recording_inputs=[],
-        reproducible_symbolic_cues=len(music), fahai_recording_references=[], subtitle_timing="unchanged Act1/hall; opening audited separately",
+        reproducible_symbolic_cues=sum(not r.get("muted", False) for r in manifest["music"].values()), fahai_recording_references=[], subtitle_timing="unchanged Act1/hall; opening audited separately",
+        background_music=manifest.get("background_music", True), silent_backing_cues=sum(bool(r.get("muted")) for r in manifest["music"].values()),
         peaks=peaks, human_listening_verified=False, residual_rights=manifest["residual_rights"])
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf8")

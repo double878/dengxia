@@ -1,7 +1,7 @@
 extends SceneTree
 ## 自然对白完整实播（保留旧测试入口）：Windows/WASAPI，早到/晚到和暂停。
 const Helper := preload("res://tests/c/run_act2_actions.gd")
-const OUTPUT := "res://builds/act2-natural-opening-20261017"
+const OUTPUT := "res://builds/no-background-audio-20261022"
 var opening: Node
 var capture: AudioEffectCapture
 var checks: int = 0
@@ -70,7 +70,8 @@ func _run() -> void:
 	opening.scene_finished.connect(func(): completed = true)
 	await pump(.8, "entry")
 	check(opening.on_stage.is_empty(), "空台开场场景错误")
-	check(levels.entry.peak > .001 and opening.music_cues.entry.playing, "进入第二关空台即播放视频音乐")
+	check(opening.dialogue.config.get("background_music", true) == false, "正式第二关禁用背景伴奏")
+	check(levels.entry.peak < .001 and not opening.music_cues.entry.playing, "第二关空台无背景音乐")
 	Helper.key(opening, KEY_ESCAPE)
 	var intro_position: float = opening.music_cues.entry.get_playback_position()
 	check(await silence() < .001, "出场器乐在菜单暂停时必须实际静音")
@@ -81,18 +82,19 @@ func _run() -> void:
 	Helper.drag(opening, opening.HAND_ANCHOR, Vector2(-400, 0))
 	await pump(.1, "arrival")
 	check(opening.dialogue.phase == "wait_greeting", "出树后未等待迎接")
-	check(await silence() > .001 and opening.dialogue.player.stream_paused, "音乐期间不提前播放对白")
+	check(await silence() < .001 and opening.dialogue.player.stream_paused, "迎接前保持静音，不提前播放对白")
 	check(opening.clock.get_song_time_ms() == 0, "迎接等待消耗了首句")
 	Helper.key(opening, KEY_2)
 	Helper.key(opening, KEY_SPACE)
 	var gap: float = opening.controller.get_puppet(0).stage_pos.x * 1920 - 300
 	var xu: float = opening.controller.get_puppet(1).stage_pos.x * 1920
 	Helper.drag(opening, opening.HAND_ANCHOR, Vector2(gap - xu, 0))
-	check(opening.dialogue.phase == "wait_greeting" and opening.clock.is_song_frozen(), "提前迎接不得打断音乐")
-	var entry_deadline: int = Time.get_ticks_msec() + 10000
+	var greeting_ms: int = Time.get_ticks_msec()
+	var entry_deadline: int = greeting_ms + 500
 	while opening.dialogue.phase != "dialogue" and Time.get_ticks_msec() < entry_deadline:
 		await pump(.03)
-	check(opening.dialogue.phase == "dialogue" and opening.music_cues.can_start_main(), "完整音乐结束且实际迎接后才对白")
+	check(opening.dialogue.phase == "dialogue" and opening.music_cues.can_start_main(), "实际迎接后及时对白，不等旧开场音乐")
+	check(Time.get_ticks_msec() - greeting_ms < 500, "无伴奏迎接后不应有音乐等待")
 	check(not opening.music_cues.entry.playing, "开场音乐与对白叠声")
 	check(opening.clock.is_audio_driven(), "对白没有使用真实播放器时钟")
 	var paused: bool = false
@@ -141,11 +143,11 @@ func _run() -> void:
 	output.close()
 	opening.queue_free()
 	await process_frame
-	# 晚出场：完整音乐在空台结束，等待及人物重新上下场都不重播。
+	# 晚出场：空台及迎接等待持续静音，人物就位后才对白。
 	opening = load("res://scenes/act2/opening.tscn").instantiate()
 	root.add_child(opening)
-	await pump(8.5, "late_empty_intro")
-	check(opening.music_cues.can_start_main() and not opening.music_cues.entry.playing, "空台开场音乐未完整结束")
+	await pump(.6, "late_empty_intro")
+	check(opening.music_cues.can_start_main() and not opening.music_cues.entry.playing, "空台静音片段未结束")
 	check(opening.clock.get_song_time_ms() == 0 and opening.dialogue.get_line().is_empty(), "晚出场提前消耗对白")
 	check(await silence() < .001, "音乐结束后等待不得循环器乐或偷播对白")
 	Helper.key(opening, KEY_1)

@@ -43,7 +43,9 @@ def main():
             assert setting in settings, (path, setting)
     assert len(data) == 8 and score["intro_once"] is True
     assert not score["pitch_shift"] and not score["time_stretch"] and not score["reverb"]
-    assert score["music_source"]["kind"] == "original_symbolic_composition"
+    assert score["music_source"]["kind"] == ("none" if score.get("background_music") is False else "original_symbolic_composition")
+    if score.get("background_music") is False:
+        assert not any(data["intro"]) and score["intro_duration_ms"] == 100
     assert score["music_source"]["external_audio_inputs"] == []
     identity = score["identity_reference"]
     assert identity["kind"] == "licensed_preset_synthetic_voice" and identity["recording_references"] == []

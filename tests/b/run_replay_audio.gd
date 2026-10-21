@@ -17,6 +17,7 @@ func check(value: bool, label: String) -> void:
 
 func _run() -> void:
 	var config: Dictionary = Act1OperaAudio.read_config()
+	check(config.get("background_music", true) == false, "正式第一关禁用背景伴奏")
 	var audio := Act1OperaAudio.new()
 	root.add_child(audio)
 	check(audio.setup_replay(config), "正式回放音源加载")
@@ -59,7 +60,7 @@ func _run() -> void:
 	if DisplayServer.get_name() != "headless":
 		capture.clear_buffer()
 		await create_timer(0.2).timeout
-		check(_peak(capture) > 0.001, "等待器乐输出真实样本")
+		check(_peak(capture) < 0.001, "动作等待期间没有背景音乐")
 	var gong := CTimedEvent.new(1000, &"opera_take_close", "performance_audio")
 	gong.seq = 42
 	audio.apply_replay(view, [gong], false)

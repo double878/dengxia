@@ -66,12 +66,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--batch", type=Path, required=True)
+    parser.add_argument("--delivery", type=Path, help="Separate staging directory; keeps the previous delivery intact")
+    parser.add_argument("--no-background-music", action="store_true", help="Keep vocals and action effects; replace backing with silence")
     parser.add_argument("--install", action="store_true")
     args = parser.parse_args()
     root, batch = args.project.resolve(), args.batch.resolve()
-    backup, delivery = batch / "before", batch / "delivery"
+    backup = batch / "before"
+    delivery = args.delivery.resolve() if args.delivery else batch / "delivery"
     backup.mkdir(exist_ok=True)
-    delivery.mkdir(exist_ok=True)
+    delivery.mkdir(parents=True, exist_ok=True)
     if not (backup / "inputs.json").exists():
         baseline = {}
         for folder in FOLDERS:
@@ -94,11 +97,19 @@ def main():
         accompaniment_method="New symbolic composition and mathematical instrument synthesis; no external audio samples",
         residual_rights="Existing singing melody/timbre and other dialogue retained by user choice; their external permissions remain unverified",
         baseline=baseline, retained_vocals=[], music={}, replaced_regions={}, human_listening_verified=False)
+    manifest["background_music"] = not args.no_background_music
+    if args.no_background_music:
+        manifest["accompaniment_method"] = "No background music; retained clean vocals and isolated action effects only"
     manifest["tools"] = {name: sha(root / "tools" / name) for name in
         ["compose_original_accompaniment.py", "replace_stage_accompaniment.py", "prepare_fahai_synthetic.py"]}
 
     def music(name, frames, seed, scene="gentle", loop=False):
-        data, score = compose(frames, seed=seed, tonic=62, scene=scene, loop=loop)
+        if args.no_background_music and name not in ["act1-take-close", "act2-xu-fall-hit"]:
+            data = np.zeros((frames, 2), dtype=np.float32)
+            score = dict(frames=frames, sample_rate_hz=RATE, muted=True, scene=scene,
+                loop=loop, external_audio_inputs=[], events=[])
+        else:
+            data, score = compose(frames, seed=seed, tonic=62, scene=scene, loop=loop)
         manifest["music"][name] = score
         return data
 
@@ -238,6 +249,10 @@ def main():
     cursor += 96000
     write(folder / "main.wav", np.concatenate(parts))
     intro_frames = len(pcm(old / "intro.wav")) // 4
+    if args.no_background_music:
+        # A short silent control clip preserves the existing finished signal.
+        # It avoids both zero-length WAV behavior and the old 7.936-second wait.
+        intro_frames = 4800
     write(folder / "intro.wav", music("act2-intro", intro_frames, 230, scene="instrumental"))
     # Retired from live playback, but still exported by the project preset.
     legacy_count = len(pcm(old / "entrance-loop.wav")) // 4
@@ -251,6 +266,20 @@ def main():
     manifest["fahai"] = dict(request=request, lines=tts["lines"], request_sha256=tts["request_sha256"])
     score["rights_status"] = "new_accompaniment_and_preset_fahai; retained_xuxian_permissions_unverified"
     refresh(folder, score)
+    for name in FOLDERS:
+        path = delivery / name / "score.json"
+        config = load(path)
+        config["background_music"] = not args.no_background_music
+        if args.no_background_music:
+            config["audio_version"] = config["audio_version"].replace("original-accompaniment", "vocals-only").replace("original-music", "no-bgm")
+            config["rights_status"] = "no_background_music; retained_singing_and_other_voice_permissions_unverified"
+            if name == "act2-opening":
+                config["intro_duration_ms"] = 100
+                config["music_source"]["kind"] = "none"
+                config["human_listening_scope"] = "Retained vocals and preset Fahai voice require user listening; background music removed"
+            elif name == "act2-hall":
+                config["singing_source"]["backing"] = "none; clean vocals only"
+        dump(path, config)
     manifest["outputs"] = {f"{folder}/{p.name}": sha(p) for folder in FOLDERS for p in (delivery / folder).iterdir() if p.suffix in [".wav", ".json"]}
     # Keep machine-specific working paths out of the permanent provenance file.
     for row in manifest["fahai"]["lines"]:
@@ -263,13 +292,15 @@ def main():
         # Do not overwrite edits that appeared after the baseline snapshot.
         for rel, expected in baseline.items():
             actual = sha(root / "assets/audio" / rel)
-            if actual not in [expected, previous_outputs.get(rel)]:
+            # A previous interrupted install may already contain this exact delivery.
+            if actual not in [expected, previous_outputs.get(rel), manifest["outputs"][rel]]:
                 raise ValueError("Concurrent audio edit detected: " + rel)
         for source in delivery.rglob("*"):
             if source.is_file():
                 dest = root / "assets/audio" / source.relative_to(delivery)
                 dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, dest)
+                if not dest.exists() or sha(source) != sha(dest):
+                    shutil.copyfile(source, dest)
         print("ORIGINAL_AUDIO_INSTALLED")
 
 

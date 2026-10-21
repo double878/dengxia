@@ -1,11 +1,11 @@
 {
-  "audio_version": "act2-original-music-preset-fahai-c2ecb339945b",
+  "audio_version": "act2-no-bgm-preset-fahai-c2ecb339945b",
   "stage_id": 2,
   "scene_id": "fahai_advice",
   "main_path": "res://assets/audio/act2-opening/main.wav",
   "intro_path": "res://assets/audio/act2-opening/intro.wav",
   "intro_once": true,
-  "intro_duration_ms": 7936,
+  "intro_duration_ms": 100,
   "greeting_gate_ms": 0,
   "duration_ms": 42094,
   "dark_start_ms": 40094,
@@ -92,9 +92,9 @@
     {
       "asset_id": "intro",
       "path": "res://assets/audio/act2-opening/intro.wav",
-      "sha256": "d1a2097791e72d5a0fc959d1d69c9997fbaebd5f977de516775dc10083e4c2bc",
-      "frames": 380928,
-      "pcm_sha256": "651184710d994c014db24327aeef3e055fb61d8fb01042add78f7a836bdda36a",
+      "sha256": "3ac1bdf363578593c029ce12bf607ba277901c9c959ad7fed11b05d0edaadb06",
+      "frames": 4800,
+      "pcm_sha256": "17744bb6a4ed1d9d51d85d7eb645cde30352530d494233c434027f9e3193bae4",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -193,7 +193,7 @@
     }
   },
   "music_source": {
-    "kind": "original_symbolic_composition",
+    "kind": "none",
     "manifest": "res://assets/audio/original-audio-sources.json",
     "external_audio_inputs": []
   },
@@ -226,6 +226,7 @@
   "pitch_shift": false,
   "time_stretch": false,
   "reverb": false,
-  "human_listening_scope": "New accompaniment and Fahai voice require user listening; automated checks do not certify naturalness",
-  "rights_status": "new_accompaniment_and_preset_fahai; retained_xuxian_permissions_unverified"
+  "human_listening_scope": "Retained vocals and preset Fahai voice require user listening; background music removed",
+  "rights_status": "no_background_music; retained_singing_and_other_voice_permissions_unverified",
+  "background_music": false
 }

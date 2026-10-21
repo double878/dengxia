@@ -1,5 +1,7 @@
 # 第一、二关原创伴奏与法海合成音色 Implementation Plan
 
+> 用户后续改为取消第一、二关背景音乐。最终范围为：保留唱腔纯人声、对白与动作音效；法海沿用新合成预设。验收为十处背景 cue 全零、人物迎接后及时对白、现场与回放无伴奏、Godot 三项门禁通过。原伴奏方案保留为制作历史；本次验证见 `docs/audio/2026-10-22-no-background-music.md`。
+
 > **Execution:** Implement authorized tasks in the current chat, respecting dependency order and the user's stage boundaries. Use subagents only when the user explicitly requests or approves them. Track steps with checkbox (`- [ ]`) syntax.
 
 **Goal:** 保留现有唱腔人声，移除第一、二关伴奏中的外部录音采样，法海三句对白改用不参考现有演员录音的预设合成男声。
