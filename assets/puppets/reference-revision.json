@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "method": "Manually traced original photo pixels, with seeded GrabCut edge cleanup; no generated replacement artwork",
+  "tool_sha256": "6f153b25994827766440f0ae8393c63b43e2c5e6cd943bdab0fa766c824bb179",
+  "characters": {
+    "baisuzhen": {
+      "source_sha256": "5a86420904861e3b97648b14fc53c60383593ed4a7e9db07e8a197f38eb6064a",
+      "atlas_sha256": "999f81189c2cb694aa972d33b838ea07cbada70655248f02b92a5849807c9f83",
+      "parts": 16,
+      "intact_robe": true,
+      "original_pivots_retained": true
+    },
+    "xuxian": {
+      "source_sha256": "62e25491aaaee80d6a9c4ab55e1ae9a0bf94f8509aa7f7b7caf601aa2b24a8ae",
+      "atlas_sha256": "cb045ffa9fd7d44e25a3f73ab58e0546943be2d91faa130e04764f061a434236",
+      "parts": 13,
+      "intact_robe": true,
+      "original_pivots_retained": true
+    }
+  },
+  "limitations": [
+    "Reverse sides mirror the supplied face; no independently observed reverse.",
+    "Photographs hide rear-arm/leg garment; pieces reuse visible cloth inside the traced silhouette.",
+    "Ivory fabric retains photographed illumination; alpha is a display cutout, not measured leather transmittance."
+  ],
+  "staff": {
+    "rotation_rad": 1.3914983384126198,
+    "down_length_ratio": 1.1,
+    "orientation": "Vertical, fixed in stage axes, follows right wrist; lower shaft may enter the ground"
+  },
+  "outputs": {
+    "puppet_assets.json": "57fe881fc14322359ad32143b7ba99117ce15e3bfc7a588316d2657191295c0f",
+    "baisuzhen.png": "999f81189c2cb694aa972d33b838ea07cbada70655248f02b92a5849807c9f83",
+    "xuxian.png": "cb045ffa9fd7d44e25a3f73ab58e0546943be2d91faa130e04764f061a434236",
+    "fahai.png": "006cdb98d24b4e5a748443c61bff003b7e69ef8eeaf4a7ca14dc03de8484c4ea"
+  }
+}

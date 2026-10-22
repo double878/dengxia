@@ -342,13 +342,25 @@ func head_screen_position() -> Vector2:
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
 	var height: float = figure_px_height()
 	var shoulder := ground + Vector2(0, -height * SHOULDER_RATIO + walk_body_offset(height))
-	var neck: Vector2 = shoulder + Vector2(0, -height * 0.04)
-	var centre: Vector2 = shoulder + Vector2(0, -height * HEAD_CENTRE_RATIO)
 	return (
 		_skin_figure_transform(ground)
 		* upper_transform()
-		* (neck + (centre - neck).rotated(puppet_state.head_tilt))
+		* _head_centre_local(shoulder, height)
 	)
+
+
+## 头和衣领使用同一源图颈根对接；查询与绘制共用此链，伞与拖头不偏移。
+func _head_centre_local(shoulder: Vector2, height: float) -> Vector2:
+	var skin_id: int = skin_override if skin_override >= 0 else puppet_state.head_id
+	if _has_body_skin() and skin_id == _body_skin_id():
+		var skin: Dictionary = _skins[str(skin_id)]
+		if skin.has("neck_attachment_ratio") and skin.has("head_neck_offset_ratio"):
+			var attachment: Array = skin["neck_attachment_ratio"]
+			var offset: Array = skin["head_neck_offset_ratio"]
+			return (shoulder + Vector2(attachment[0], attachment[1]) * height
+				- (Vector2(offset[0], offset[1]) * height).rotated(puppet_state.head_tilt))
+	var neck := shoulder + Vector2(0, -height * .04)
+	return neck + Vector2(0, -height * (HEAD_CENTRE_RATIO - .04)).rotated(puppet_state.head_tilt)
 
 
 ## 固定枢轴上完成整个人的水平翻面；宽度压缩也作用于肩、手和伞的挂点。
@@ -507,7 +519,7 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0)) * flip_width
 	var continuous_lower: bool = (
 		_has_body_skin() and _skins[str(_body_skin_id())]["parts"].has("lower_body")
-		and state.leg_spread <= .01
+		and state.leg_spread <= .01 and not seated
 	)
 	if continuous_lower:
 		var lower_size: Array = _skins[str(_body_skin_id())]["lower_body_size_ratio"]
@@ -581,10 +593,7 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	)
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
-	var neck: Vector2 = shoulder + Vector2(0, -height * 0.04)
-	var head_center: Vector2 = (
-		neck + Vector2(0, -height * (HEAD_CENTRE_RATIO - 0.04)).rotated(state.head_tilt)
-	)
+	var head_center: Vector2 = _head_centre_local(shoulder, height)
 	var head_r: float = height * HEAD_RADIUS_RATIO if _has_body_skin() else head_radius_px(height)
 	draw_set_transform_matrix(_skin_canvas_transform)
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
@@ -811,7 +820,11 @@ func _draw_skin_accessories(ground: Vector2, height: float, alpha: float) -> voi
 		var upper_matrix: Transform2D = _skin_canvas_transform
 		_skin_canvas_transform = _skin_figure_transform(ground)
 		wrist = upper_transform() * wrist
-		_draw_skin_tile(id, "staff", wrist, 0.0, Vector2.ONE * staff_size, alpha)
+		var staff_rotation: float = float(skin.get("staff_rotation_rad", 0.0))
+		if skin["parts"].has("staff_extension"):
+			_draw_skin_tile(id, "staff_extension", wrist, 0.0,
+				Vector2(staff_size, height * float(skin["staff_down_length_ratio"]) * 512.0 / 426.0), alpha)
+		_draw_skin_tile(id, "staff", wrist, staff_rotation, Vector2.ONE * staff_size, alpha)
 		_skin_canvas_transform = upper_matrix
 
 
