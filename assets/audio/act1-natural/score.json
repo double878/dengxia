@@ -1,5 +1,5 @@
 {
-  "audio_version": "act1-natural-vocal-only-ebb9c46ea989",
+  "audio_version": "act1-leting-preview-200fac722157",
   "opening_end_ms": 19025,
   "arrival_ms": 24525,
   "singing_start_ms": 25025,
@@ -290,9 +290,9 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act1-natural/main.wav",
-      "sha256": "ebb9c46ea9892cd3c94d3e36ab7f84574192db77bc9826cab965164044e43a1e",
+      "sha256": "200fac72215776b476dc65e24a1adccbbb305788866463d9dff284c59ed948a1",
       "frames": 5333317,
-      "pcm_sha256": "e5330c44e5f7ce2f8adf4df1e8e1c38822748b949feb8b67e35918392a702dc5",
+      "pcm_sha256": "723fb5730748f03a56d196974c1c7ec56d43311aff608dca30e4b183009aeca0",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -300,9 +300,9 @@
     {
       "asset_id": "wait_loop",
       "path": "res://assets/audio/act1-natural/wait_loop.wav",
-      "sha256": "79cd860b1d56ca4d3dca71ca674eb318d7f167a9c6c23263a35ed5e5e73b9b6c",
-      "frames": 104160,
-      "pcm_sha256": "cbbfe76afcf840d60efb8ea5fca3f63cca898165d9399a79273d3e8047426eea",
+      "sha256": "b5c8a73bfbc31f48db527e366c97de8e6e22758f1ba71e3db4ec44e33d95accb",
+      "frames": 278400,
+      "pcm_sha256": "663117acaae39eca745909ba4381cb33d64151a630afb03a181477e2a765b255",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -491,7 +491,12 @@
   "take_close_path": "res://assets/audio/act1-natural/take_close.wav",
   "remedy_path": "res://assets/audio/act1-natural/remedy.wav",
   "accompaniment_source": "res://assets/audio/original-audio-sources.json",
-  "background_music": false,
-  "accompaniment_scope": "none; clean retained vocals only",
-  "human_listening_scope": "Original clean vocal PCM restored exactly at the user's request"
+  "background_music": true,
+  "accompaniment_scope": "Authorized Leting instruments after opening speech and after actual umbrella take; vocal-only duets",
+  "human_listening_scope": "Integrated preview; user listening pending",
+  "duet_accompaniment_enabled": false,
+  "waiting_music_phases": [
+    "wait_arrival",
+    "wait_return"
+  ]
 }

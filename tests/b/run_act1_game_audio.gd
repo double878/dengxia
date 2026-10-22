@@ -59,6 +59,12 @@ func _run() -> void:
 	t.check(wait_player.stream_paused, "等待器乐跟随菜单暂停")
 	harness.set_paused(false)
 	t.check(not wait_player.stream_paused and harness.clock.player.stream_paused, "恢复只续播等待器乐")
+	harness.opera_flow.phase = "wait_take"
+	harness.opera_audio.update([], 0.1)
+	t.check(not wait_player.playing, "实际接伞前不提前播放游湖背景音乐")
+	harness.opera_flow.phase = "wait_return"
+	harness.opera_audio.update([], 0.1)
+	t.check(wait_player.playing, "还伞等待期间器乐延续")
 	var events := harness.take_events()
 	var previous_sequence := -1
 	for event in events:

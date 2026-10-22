@@ -17,7 +17,8 @@ func check(value: bool, label: String) -> void:
 
 func _run() -> void:
 	var config: Dictionary = Act1OperaAudio.read_config()
-	check(config.get("background_music", true) == false, "正式第一关对唱仅保留人声")
+	check(config.get("background_music", false), "正式第一关移步和游湖接入器乐")
+	check(config.get("duet_accompaniment_enabled", true) == false, "对唱仍仅保留人声")
 	var audio := Act1OperaAudio.new()
 	root.add_child(audio)
 	check(audio.setup_replay(config), "正式回放音源加载")
@@ -41,6 +42,14 @@ func _run() -> void:
 	check(audio.get_player().playing and not audio.get_player().stream_paused, "主轨开始播放")
 	if DisplayServer.get_name() != "headless":
 		check(_peak(capture) > 0.001, "声卡混音确实输出对白样本")
+	for cue_ms: int in [int(config.opening_end_ms) + 1000, int(config.tour_start_ms) + 2000]:
+		view.main.position_ms = float(cue_ms)
+		audio.apply_replay(view, [], false)
+		await create_timer(0.1).timeout
+		capture.clear_buffer()
+		await create_timer(0.2).timeout
+		if DisplayServer.get_name() != "headless":
+			check(_peak(capture) > 0.001, "回放两处器乐均有混音输出：%d" % cue_ms)
 	audio.set_replay_paused(true)
 	await create_timer(0.1).timeout
 	var position: float = audio.get_player().get_playback_position()
@@ -60,7 +69,7 @@ func _run() -> void:
 	if DisplayServer.get_name() != "headless":
 		capture.clear_buffer()
 		await create_timer(0.2).timeout
-		check(_peak(capture) < 0.001, "动作等待期间没有背景音乐")
+		check(_peak(capture) > 0.001, "到位/还伞等待器乐确实输出")
 	var gong := CTimedEvent.new(1000, &"opera_take_close", "performance_audio")
 	gong.seq = 42
 	audio.apply_replay(view, [gong], false)

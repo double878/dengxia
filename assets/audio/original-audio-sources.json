@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "batch": "user-restoration-20261022-v1",
   "scope": "Act1/2 singing accompaniment, restored Act2 intro and user Fahai recordings",
   "duet_listening_approved": false,
@@ -2638,10 +2638,11 @@
     "build_fahai_assets.py": "a71022e3d176a44506295580f8e30bd6e22f6d4fb2bc44aa3efad7c2979e13da",
     "install_user_restoration.py": "65f0b0791e685b3e3c80070f5bd92059edf7946ff0ba626cbf53ba7115231d99",
     "remove_duet_backing.py": "f56face173bfa9aa626d8c8c37398746e787e78f1532fa15a3189007ca18c196",
-    "prepare_couple_references.py": "d35bfca41eead7954341fbbcf56bbcee0be6b5ab4c67cd9c167163ac1fd849a3"
+    "prepare_couple_references.py": "d35bfca41eead7954341fbbcf56bbcee0be6b5ab4c67cd9c167163ac1fd849a3",
+    "prepare_act1_leting_music.py": "fa680d5549f9fe447f24a7b077e11f893eba60f5dedb13da5f8fcc7885143345"
   },
   "outputs": {
-    "act1-natural/main.wav": "ebb9c46ea9892cd3c94d3e36ab7f84574192db77bc9826cab965164044e43a1e",
+    "act1-natural/main.wav": "200fac72215776b476dc65e24a1adccbbb305788866463d9dff284c59ed948a1",
     "act1-natural/opening-01.wav": "057d01d7a00572a695589dd9ed68766df0bc98bad45ad94683bcef2ee2871dfe",
     "act1-natural/opening-02.wav": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
     "act1-natural/opening-03.wav": "47a8323e1bc96ce5d13dc23a240b1ba723018e0aa6bc0361e9d7144b07f834dc",
@@ -2656,9 +2657,9 @@
     "act1-natural/return-07.wav": "7f68c38e760a9b8a4b1cde5b5b33283bfe99e710d046cbde642d62523956efd3",
     "act1-natural/return-08.wav": "e5e9263e5b97b3a71551f4dc64adc85e9509d3b4a3b4713f5f62f127271dd17a",
     "act1-natural/return-09.wav": "0509cc5b50911893affd0beda59e4f4e416a391d168f805eddbd5e7148251ff9",
-    "act1-natural/score.json": "6dbcab919ee26a614207290fc511e71d2d9afea8cdc9fcd89771caa8d1ec3815",
+    "act1-natural/score.json": "396815374bd0366741ffde0b524ef65022b12655ae660359a3a10f0cfab240dd",
     "act1-natural/take_close.wav": "fa9cd0462f6074a36a0ce8bd38506d64a2467630ee80ef481d2a5010e779de41",
-    "act1-natural/wait_loop.wav": "79cd860b1d56ca4d3dca71ca674eb318d7f167a9c6c23263a35ed5e5e73b9b6c",
+    "act1-natural/wait_loop.wav": "b5c8a73bfbc31f48db527e366c97de8e6e22758f1ba71e3db4ec44e33d95accb",
     "act2-hall/bai-allow.wav": "3d52b9bbfc3449cf526f957185a94f103eb68fc47ddd9cc6952008f5b7afdac5",
     "act2-hall/bai-unwell.wav": "7abe78c2f6dfb69cda253bb9b83e35e5687a7f19c88b0d38180b968432ccb71d",
     "act2-hall/fahai-entry.wav": "8b5e2d97bd8dd1bac5ebd99952495f756634046ee7173fd3a4a48fb31db45a29",
@@ -2685,10 +2686,75 @@
   },
   "duet_accompaniment_enabled": false,
   "duet_approval_history": "Both backing previews were approved, then the user explicitly canceled duet accompaniment",
-  "background_music_scope": "Act2 original intro only; duets use clean retained vocals",
-  "current_revision": "vocal-only-reference-puppets-20261022",
+  "background_music_scope": "Act1 approach/tour and arrival/return waits; Act2 original intro; vocal-only duets",
+  "current_revision": "act1-leting-music-preview-20261022",
   "previous_puppet_outputs": {
     "fahai.png": "5ad31892df7711b0bd6659ad004aecb7ebe05e266d2e0610585d3e01afa12d52",
     "puppet_assets.json": "3caaebb1bc6a5bf7e5c298ba45e1d32e23c0f71b64fbdf3c9da41ff8ba91921a"
+  },
+  "act1_leting_preview": {
+    "source_url": "https://www.bilibili.com/video/BV1xX4y1Y7sJ/",
+    "part": 1,
+    "source_sha256": "a8d909b1a16ac2384f6d0f71c61a2169f5930189b05704aad28316c2084e9701",
+    "source_interval_s": [
+      0,
+      32
+    ],
+    "permission": "user_confirmed_authorized_2026-10-22",
+    "separation": {
+      "source_interval_s": [
+        0,
+        32
+      ],
+      "input_sha256": "0a51d997f926d6e70baf6252b003af89c88f2838326f223b340aa9bbf50238c5",
+      "weights_sha256": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e",
+      "config_sha256": "f63f38eb1e6e40a7db0dade714a5ae257555dd8748f4e774eae8679275a81926",
+      "script_sha256": "591aa13fbcc9f6d79d527b88a73b82489bc7dd922fd40930b2e819540049788a",
+      "outputs": {
+        "vocals": {
+          "path": "D:\\Cursor_program\\灯下\\builds\\act1-leting-music-20261022\\vocals.wav",
+          "sha256": "3da9b32610d1a4495fc4c3a11fb5a0de32f8b02b1eefdc19f1b5301fe7650917",
+          "frames": 1411200,
+          "rate": 44100
+        },
+        "backing": {
+          "path": "D:\\Cursor_program\\灯下\\builds\\act1-leting-music-20261022\\backing.wav",
+          "sha256": "b503063fb5663e291981245433b2adb3c436e601f2b7d89df1177fefdfc7c139",
+          "frames": 1411200,
+          "rate": 44100
+        }
+      },
+      "processing": "MelBandRoformer instrumental separation; no generated music; user listening pending"
+    },
+    "gain": 0.2844380465729622,
+    "regions": [
+      {
+        "name": "approach",
+        "start_frame": 913213,
+        "end_frame": 1201213,
+        "source_start_s": 2.0,
+        "source_end_s": 8.0,
+        "fade_in_ms": 180,
+        "fade_out_ms": 350,
+        "pcm_sha256": "6f3732be86fa39a3eb6d80534964388a9961413bc5962f9c77a345b5d75dd92d"
+      },
+      {
+        "name": "tour",
+        "start_frame": 2730112,
+        "end_frame": 3594112,
+        "source_start_s": 10.0,
+        "source_end_s": 28.0,
+        "fade_in_ms": 180,
+        "fade_out_ms": 650,
+        "pcm_sha256": "70490d08b07482b2ccce8bfcc27811dab2bc5c905131325259a380f75cb28885"
+      }
+    ],
+    "waiting_source_interval_s": [
+      22,
+      28
+    ],
+    "loop_overlap_ms": 200,
+    "human_listening_verified": false,
+    "status": "integrated_preview_pending_user_feedback"
   }
 }

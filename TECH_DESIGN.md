@@ -1,5 +1,7 @@
 # 《灯下》技术设计与美术配色
 
+> 2026-10-22 第一关乐亭器乐试听：离线从用户授权 BV1xX4y1Y7sJ 第一集 00:00–00:32 分离器乐，`prepare_act1_leting_music.py` 只替换第一关主轨 approach `[913213,1201213)` 与 tour `[2730112,3594112)` 两处 PCM 帧；总帧数及范围外 PCM 沿用。`waiting_music_phases=["wait_arrival","wait_return"]` 复用现有等待播放器、音频快照及回放，不新增时钟或录放字段；实际接伞前等待静音。两关对唱仍无伴奏。新来源、选区、增益、分离模型和输出哈希写入原来源清单；为试听状态，听感待用户确认。见 [本轮验证](docs/audio/2026-10-22-act1-leting-music.md)。
+
 > 2026-10-22 最新分腿及身形修订（覆盖下方 8×4 整袍网格）：`prepare_couple_references.py` 用已存档的旧腿片轮廓与当前参考图衣料制作三人的四件腿片，去除原整片 `lower_body`；直立、行走、坐姿及跳跃统一使用现有髋—膝—脚链和 `walk_phase/walk_amount`。清理照片腿片的背景碎边，轮廓按骨轴对齐。白素贞 torso `width_scale=.85`，颈根横向同步适配；法海四腿片 `width_scale=1.30`，膝/脚半间距为身高 .040/.075，白/许为 .025/.055。袖宽按旧版可见宽与骨长比适配，肩腕不移动；29 个上身及锡杖 atlas tile 与上一提交像素一致。旧轮廓输入与源图、工具、输出均有哈希；审计允许本轮明确修改的腿片，继续约束其他分件、原枢轴、颈部和全部音频。无新增时钟或状态字段。见 [验证](docs/art/2026-10-22-reference-revision.md#最新分腿与身形协调验证)。
 
 > 2026-10-22 最新纯人声与影人修订（覆盖下方当日对唱伴奏及穿地法杖方案）：`remove_duet_backing.py` 从经哈希确认的干声基线恢复两关主轨和厅堂对唱，保持总帧数及唱段外 PCM；当前审计入口为 `check_reference_revision.py`，第二关开场及法海录音不变。`prepare_couple_references.py` 描取两张新参考图源像素，在原 atlas rect/pivot 和骨架朝向下制作分件，许仙肩距适配新图可见肩宽，两人前臂袖片 `width_scale=.72`，腕点与骨长不变。连续袍摆用 8×4 纹理网格固定腰线，下摆及鞋按现有 `walk_phase/walk_amount` 交替迈步；坐姿/跳跃沿用分腿链。`walk_step_offset()` 将腾空前送与接地后蹬分开，按素材 `reference_facing` 适配方向，修正法海脚步倒滑。`neck_attachment_ratio` 与 `head_neck_offset_ratio` 保留，显示及头部查询仍共用颈根连接。法海采用新参考图的金色环首锡杖，离线拟合直杆轴线并转正，只加长直杆，整杖 tile 尺寸为身高 1.5 倍；握点 `[256,270]` 绑定实际右腕、保持舞台竖直。删除旧 `staff_extension`，不要求穿地；法海其余分件逐像素保留。均只读演出状态，无新增时钟、玩法或运行时依赖。来源及当前验证见 [本轮交付](docs/art/2026-10-22-reference-revision.md)。
