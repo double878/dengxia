@@ -1,5 +1,5 @@
 {
-  "audio_version": "act2-natural-opening-fa10139bd845",
+  "audio_version": "act2-user-recordings-restored-intro-0d2e28a235ae",
   "stage_id": 2,
   "scene_id": "fahai_advice",
   "main_path": "res://assets/audio/act2-opening/main.wav",
@@ -7,9 +7,9 @@
   "intro_once": true,
   "intro_duration_ms": 7936,
   "greeting_gate_ms": 0,
-  "duration_ms": 46606,
-  "dark_start_ms": 44606,
-  "dark_start_frame": 2141091,
+  "duration_ms": 44413,
+  "dark_start_ms": 42413,
+  "dark_start_frame": 2035831,
   "lines": [
     {
       "line_id": "dialogue-01",
@@ -18,9 +18,9 @@
       "text": "许施主。你家娘子，并非凡人。贫僧今日，正是为此而来。",
       "delivery": "speech",
       "start_frame": 12000,
-      "end_frame": 475212,
+      "end_frame": 425280,
       "start_ms": 250,
-      "end_ms": 9900
+      "end_ms": 8860
     },
     {
       "line_id": "dialogue-02",
@@ -28,10 +28,10 @@
       "role_name": "许仙",
       "text": "我娘子心地善良，怎会是妖？",
       "delivery": "speech",
-      "start_frame": 516012,
-      "end_frame": 678738,
-      "start_ms": 10750,
-      "end_ms": 14140
+      "start_frame": 466080,
+      "end_frame": 628806,
+      "start_ms": 9710,
+      "end_ms": 13100
     },
     {
       "line_id": "dialogue-03",
@@ -39,10 +39,10 @@
       "role_name": "法海",
       "text": "人妖有别。莫被她的温情，蒙蔽了双眼。",
       "delivery": "speech",
-      "start_frame": 719538,
-      "end_frame": 1041638,
-      "start_ms": 14990,
-      "end_ms": 21701
+      "start_frame": 669606,
+      "end_frame": 927366,
+      "start_ms": 13950,
+      "end_ms": 19320
     },
     {
       "line_id": "dialogue-04",
@@ -50,10 +50,10 @@
       "role_name": "许仙",
       "text": "大师这样说，可有凭据？",
       "delivery": "speech",
-      "start_frame": 1082438,
-      "end_frame": 1221758,
-      "start_ms": 22551,
-      "end_ms": 25453
+      "start_frame": 968166,
+      "end_frame": 1107486,
+      "start_ms": 20170,
+      "end_ms": 23073
     },
     {
       "line_id": "dialogue-05",
@@ -61,10 +61,10 @@
       "role_name": "法海",
       "text": "端午将至。你劝她，喝杯雄黄酒。是人是妖。一试，便知。",
       "delivery": "speech",
-      "start_frame": 1262558,
-      "end_frame": 1809354,
-      "start_ms": 26303,
-      "end_ms": 37695
+      "start_frame": 1148286,
+      "end_frame": 1704094,
+      "start_ms": 23923,
+      "end_ms": 35502
     },
     {
       "line_id": "dialogue-06",
@@ -72,172 +72,153 @@
       "role_name": "许仙",
       "text": "这，我便劝她一杯。若是无事，还请大师莫再疑她。",
       "delivery": "speech",
-      "start_frame": 1850154,
-      "end_frame": 2117091,
-      "start_ms": 38545,
-      "end_ms": 44106
+      "start_frame": 1744894,
+      "end_frame": 2011831,
+      "start_ms": 36352,
+      "end_ms": 41913
     }
   ],
   "assets": [
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-opening/main.wav",
-      "sha256": "fa10139bd845d7332c905777e144e72c5b8f974111673d4eda5af3c14b07cae5",
-      "frames": 2237091,
-      "pcm_sha256": "a9834db113b3985ca6ed8167ab678f494c9781cc09a86986242527c055d1de1b"
+      "sha256": "0d2e28a235ae788a81718f79cbcdb613383f4181f7e67b8b8ff669344a824126",
+      "frames": 2131831,
+      "pcm_sha256": "2b7fe8490bc95e654c33c833377891e445118308cb928483562f332b1aa59a6b",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "intro",
       "path": "res://assets/audio/act2-opening/intro.wav",
       "sha256": "cc155d2f467797af45d5949ff9a828daa6d1fa7f6c8e565a670c631e892d8183",
       "frames": 380928,
-      "pcm_sha256": "3a67b077346eda0650b26408d723d7a0c81bd0f69f8e77ff74ad352de86b1a3c"
+      "pcm_sha256": "3a67b077346eda0650b26408d723d7a0c81bd0f69f8e77ff74ad352de86b1a3c",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "dialogue-01",
       "path": "res://assets/audio/act2-opening/dialogue-01.wav",
-      "sha256": "7e13574fd107ede34f539cb37c3fceb8ff223fc71be307c0bc2dee6c942f7bbf",
-      "frames": 463212,
-      "pcm_sha256": "0aa10277ae03d1c414ae5d1e87e097038afbb8cd1e4bbe6b190786f511e6d92b"
+      "sha256": "4544a637bdad6087e3661761244df086ea58b709085b62dfd76f064158535bfd",
+      "frames": 413280,
+      "pcm_sha256": "3a355fbf2dd2f94a7fcd181979d4547423d60077cc1c524988b90ce4398364f6",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "dialogue-02",
       "path": "res://assets/audio/act2-opening/dialogue-02.wav",
       "sha256": "b1fed1a2c3bffde9c188c33ebb377775ac0bf521644410775ac908edfaa74d05",
       "frames": 162726,
-      "pcm_sha256": "7b4e48c0cafb7809a6363e7aed8a30379aa3dfcab36651177d897c35d598cb86"
+      "pcm_sha256": "7b4e48c0cafb7809a6363e7aed8a30379aa3dfcab36651177d897c35d598cb86",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "dialogue-03",
       "path": "res://assets/audio/act2-opening/dialogue-03.wav",
-      "sha256": "633b5489103b1aef331b85313d3a4ff75c1800b8b92b4cc4f90d428423aa2e61",
-      "frames": 322100,
-      "pcm_sha256": "bf731f7c74b8cbf0574d3d68b42e2bfa98c26d0e039ab5b95a4bd8e5ead33e33"
+      "sha256": "2ba0ee19f8f91279acf6988d38786c63bcbcbf0ffb2b6d90e656dc0ffa743f09",
+      "frames": 257760,
+      "pcm_sha256": "a5f02dd302bb08a05ad36d1d182c80b30674ad4ac4dc75452ebe03b8c1c8e9da",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "dialogue-04",
       "path": "res://assets/audio/act2-opening/dialogue-04.wav",
       "sha256": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
       "frames": 139320,
-      "pcm_sha256": "c975c393ade1d872b3bbaf4985ba66ab07243c10ba8e268635f25cb92caf7932"
+      "pcm_sha256": "c975c393ade1d872b3bbaf4985ba66ab07243c10ba8e268635f25cb92caf7932",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "dialogue-05",
       "path": "res://assets/audio/act2-opening/dialogue-05.wav",
-      "sha256": "870f95b77953c5cb1ef8f06638265e8a64557dd6f921b2e5a0fddec6b9009f4a",
-      "frames": 546796,
-      "pcm_sha256": "96fd8c0b13066f7fed0d004550034ee927bbb3f87ceb4e175d84e41e3627f8dd"
+      "sha256": "d71aa2a9c60563eee5d116a770380c58f8d564f5686e52ab11c159a48f122d4f",
+      "frames": 555808,
+      "pcm_sha256": "745c6f72c0e51ee1efe97eff617f8e5038764f420b1ca690b23f07cffb10b343",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
     },
     {
       "asset_id": "dialogue-06",
       "path": "res://assets/audio/act2-opening/dialogue-06.wav",
       "sha256": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
       "frames": 266937,
-      "pcm_sha256": "baa52f9f6274fd91f2e2c8a43a276888035ed653d2f102c27e43aba97b28ff5c"
+      "pcm_sha256": "baa52f9f6274fd91f2e2c8a43a276888035ed653d2f102c27e43aba97b28ff5c",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "subtype": "PCM_16"
     }
   ],
   "production": {
     "dialogue-01": {
-      "source": "D:\\Cursor_program\\灯下\\builds\\act2-fahai-slower-sample-20261017\\法海慢速断句小样.wav",
-      "sha256": "7e13574fd107ede34f539cb37c3fceb8ff223fc71be307c0bc2dee6c942f7bbf",
-      "user_approved": true,
-      "byte_identical": true
+      "source": "User-provided recording; mild noise/EQ/compression/loudness processing",
+      "sha256": "4544a637bdad6087e3661761244df086ea58b709085b62dfd76f064158535bfd",
+      "complete_converted_frames": true
     },
     "dialogue-02": {
-      "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\assembly\\act2_opening_xuxian_01-restored.wav",
+      "source": "Unchanged shipped Xuxian PCM",
       "sha256": "b1fed1a2c3bffde9c188c33ebb377775ac0bf521644410775ac908edfaa74d05",
-      "git_revision": "4999956b9782a83dffd7a10d0c8e33fb9f75a6fc",
-      "byte_identical": true,
-      "complete_converted_frames": true
-    },
-    "dialogue-04": {
-      "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\assembly\\act2_opening_xuxian_02-restored.wav",
-      "sha256": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
-      "git_revision": "4999956b9782a83dffd7a10d0c8e33fb9f75a6fc",
-      "byte_identical": true,
-      "complete_converted_frames": true
-    },
-    "dialogue-06": {
-      "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\assembly\\act2_opening_xuxian_03-restored.wav",
-      "sha256": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
-      "git_revision": "4999956b9782a83dffd7a10d0c8e33fb9f75a6fc",
-      "byte_identical": true,
       "complete_converted_frames": true
     },
     "dialogue-03": {
-      "constant_gain_db": 1.5899999999999999,
-      "pauses": [
-        {
-          "start_frame": 95295,
-          "end_frame": 126495
-        }
-      ],
-      "complete_converted_frames": true,
-      "inputs": [
-        {
-          "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\fahai-02a-float.wav",
-          "sha256": "293380012d91afaf3e5acfa2b79bd727a521b982d32c372b7107f23763fa2fee",
-          "pause_after_ms": 650
-        },
-        {
-          "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\fahai-02b-float.wav",
-          "sha256": "1d21bb298a55a76814c4f95ad45bc712fda93e0260d852b5787053936b92904d",
-          "pause_after_ms": 0
-        }
-      ]
+      "source": "User-provided recording; mild noise/EQ/compression/loudness processing",
+      "sha256": "2ba0ee19f8f91279acf6988d38786c63bcbcbf0ffb2b6d90e656dc0ffa743f09",
+      "complete_converted_frames": true
+    },
+    "dialogue-04": {
+      "source": "Unchanged shipped Xuxian PCM",
+      "sha256": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
+      "complete_converted_frames": true
     },
     "dialogue-05": {
-      "constant_gain_db": 0.9300000000000002,
-      "pauses": [
-        {
-          "start_frame": 100311,
-          "end_frame": 131511
-        },
-        {
-          "start_frame": 284206,
-          "end_frame": 325006
-        },
-        {
-          "start_frame": 420301,
-          "end_frame": 451501
-        }
-      ],
-      "complete_converted_frames": true,
-      "inputs": [
-        {
-          "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\fahai-03a-float.wav",
-          "sha256": "e480aa495afd510328364a9aa012bc6b1c94d60d7e60adde446194bd9dd7eb39",
-          "pause_after_ms": 650
-        },
-        {
-          "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\fahai-03b-float.wav",
-          "sha256": "d0b6369454b1730cd98ad0306892a62fca3aa2d49d5c99771905ed81137033af",
-          "pause_after_ms": 850
-        },
-        {
-          "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\fahai-03c-float.wav",
-          "sha256": "5b9043a3d38f6ef20b7f3f2d58ef24abb17aa3acd59461bd81a21fdf4ca34110",
-          "pause_after_ms": 650
-        },
-        {
-          "source": "D:\\Cursor_program\\灯下\\builds\\act2-natural-opening-20261017\\fahai-03d-float.wav",
-          "sha256": "b5bf5e4694c86dd37d3f7a8506d1faf98a121f6557d7fce26432f242df81b762",
-          "pause_after_ms": 0
-        }
-      ]
+      "source": "User-provided recording; mild noise/EQ/compression/loudness processing",
+      "sha256": "d71aa2a9c60563eee5d116a770380c58f8d564f5686e52ab11c159a48f122d4f",
+      "complete_converted_frames": true
+    },
+    "dialogue-06": {
+      "source": "Unchanged shipped Xuxian PCM",
+      "sha256": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
+      "complete_converted_frames": true
     }
   },
   "music_source": {
-    "file_name": "4d581c8d224a06b09165d2a57003d266.mp4",
-    "video_sha256": "d27ac5ff48c0d55614e4667d9d36c1f1f8a5b772f6550d2b557e0363d795e9e1",
-    "decoded_pcm_sha256": "3a67b077346eda0650b26408d723d7a0c81bd0f69f8e77ff74ad352de86b1a3c",
-    "complete_audio": true
+    "kind": "restored_historical_recording",
+    "sha256": "cc155d2f467797af45d5949ff9a828daa6d1fa7f6c8e565a670c631e892d8183",
+    "manifest": "res://assets/audio/original-audio-sources.json",
+    "external_audio_inputs": [
+      "existing_original_intro"
+    ]
   },
   "identity_reference": {
-    "path": "D:\\Cursor_program\\灯下\\builds\\act2-fahai-deep-sample-20261017\\reference-vocals.wav",
-    "sha256": "ef49610e39a9a423d83bcfd06d766a07502c83ca43bbd4a014819ce067da538f",
-    "frames": 502388,
-    "rate": 44100
+    "kind": "user_provided_recordings",
+    "recording_references": [
+      {
+        "line_id": "dialogue-01",
+        "filename": "2026年10月22日 14点43分.m4a",
+        "sha256": "98610b39fbb581cb59050f8b0149cde86b7dbc4d208389f50b317dcb67f301ed"
+      },
+      {
+        "line_id": "dialogue-03",
+        "filename": "2026年10月22日 14点45分.m4a",
+        "sha256": "bda452ae3fb38ecd2992e60425ed59a07f38154add098ce9defe8666f2c62ead"
+      },
+      {
+        "line_id": "dialogue-05",
+        "filename": "2026年10月22日 14点45分(2).m4a",
+        "sha256": "c6b940ebefa3176c63deeb3a679c9ef3af5e1ab415f61dcd91abeaa65a1e15f0"
+      }
+    ]
   },
   "xuxian_identity": {
     "path": "D:\\Cursor_program\\灯下\\builds\\act2-voice-revision\\xuxian-act1-speech-identity.wav",
@@ -258,271 +239,10 @@
       }
     ]
   },
-  "inference": {
-    "f5_steps": 32,
-    "f5_cfg": 2.0,
-    "seed_vc_steps": 25,
-    "seed_vc_cfg": 0.7,
-    "length_adjust": 1.0,
-    "f0_condition": false,
-    "auto_f0_adjust": false,
-    "semi_tone_shift": 0
-  },
-  "request_sha256": "cd460e054532ca571a278955619d17978ce5246f4fbd83be42d94a7455986fda",
   "pitch_shift": false,
   "time_stretch": false,
   "reverb": false,
-  "phrase_request": [
-    {
-      "line_id": "fahai-02a",
-      "role_id": "fahai",
-      "text": "人妖有别。",
-      "seed": 2026101720,
-      "native_duration_s": 2.0,
-      "pause_after_ms": 650
-    },
-    {
-      "line_id": "fahai-02b",
-      "role_id": "fahai",
-      "text": "莫被她的温情，蒙蔽了双眼。",
-      "seed": 2026101721,
-      "native_duration_s": 4.1,
-      "pause_after_ms": 0
-    },
-    {
-      "line_id": "fahai-03a",
-      "role_id": "fahai",
-      "text": "端午将至。",
-      "seed": 2026101722,
-      "native_duration_s": 2.1,
-      "pause_after_ms": 650
-    },
-    {
-      "line_id": "fahai-03b",
-      "role_id": "fahai",
-      "text": "你劝她，喝杯雄黄酒。",
-      "seed": 2026101723,
-      "native_duration_s": 3.2,
-      "pause_after_ms": 850
-    },
-    {
-      "line_id": "fahai-03c",
-      "role_id": "fahai",
-      "text": "是人是妖。",
-      "seed": 2026101724,
-      "native_duration_s": 2.0,
-      "pause_after_ms": 650
-    },
-    {
-      "line_id": "fahai-03d",
-      "role_id": "fahai",
-      "text": "一试，便知。",
-      "seed": 2026101725,
-      "native_duration_s": 2.0,
-      "pause_after_ms": 0
-    }
-  ],
-  "synthesis_inputs": {
-    "request_sha256": "cd460e054532ca571a278955619d17978ce5246f4fbd83be42d94a7455986fda",
-    "model_inputs": [
-      {
-        "repository": "SWivid/F5-TTS",
-        "revision": "84e5a410d9cead4de2f847e7c9369a6440bdfaca",
-        "file": "F5TTS_v1_Base/vocab.txt",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\weights\\tts\\F5TTS_v1_Base\\vocab.txt",
-        "bytes": 13800,
-        "sha256": "2a05f992e00af9b0bd3800a8d23e78d520dbd705284ed2eedb5f4bd29398fa3c",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "charactr/vocos-mel-24khz",
-        "revision": "0feb3fdd929bcd6649e0e7c5a688cf7dd012ef21",
-        "file": "config.yaml",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\weights\\vocoder\\config.yaml",
-        "bytes": 461,
-        "sha256": "da9033922f969a47f0c160010226919e59f27761fd5066f3828d46de6650b0fc",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "SWivid/F5-TTS",
-        "revision": "84e5a410d9cead4de2f847e7c9369a6440bdfaca",
-        "file": "F5TTS_v1_Base/model_1250000.safetensors",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\weights\\tts\\F5TTS_v1_Base\\model_1250000.safetensors",
-        "bytes": 1348435761,
-        "sha256": "670900fd14e6c458b95da6e9ed317cdb20dbaf7a1c02ac06a05475a9d32b6a38",
-        "published_lfs_sha256": "670900fd14e6c458b95da6e9ed317cdb20dbaf7a1c02ac06a05475a9d32b6a38"
-      },
-      {
-        "repository": "charactr/vocos-mel-24khz",
-        "revision": "0feb3fdd929bcd6649e0e7c5a688cf7dd012ef21",
-        "file": "pytorch_model.bin",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\f5-game-dialogue\\weights\\vocoder\\pytorch_model.bin",
-        "bytes": 54365991,
-        "sha256": "97ec976ad1fd67a33ab2682d29c0ac7df85234fae875aefcc5fb215681a91b2a",
-        "published_lfs_sha256": "97ec976ad1fd67a33ab2682d29c0ac7df85234fae875aefcc5fb215681a91b2a"
-      }
-    ],
-    "loader_sha256": "8fb0fe4c81fc16967d6db286ab5f0bf7ae315f52d8150f2a101941f1b4d78132",
-    "recipe_sha256": "ecef2890d9c49b2e409d3049e6c96e1d033e4c02aa8ccb48e13cdc123fad13bc",
-    "script_sha256": "e5d4043c49fcca2d1b9ae7b82d906e4aaeb8b11ba24d3de3e0172309e0de02ce"
-  },
-  "conversion_inputs": {
-    "model_inputs": [
-      {
-        "repository": "Plachta/Seed-VC",
-        "revision": "257283f9f41585055e8f858fba4fd044e5caed6e",
-        "file": "config_dit_mel_seed_uvit_whisper_small_wavenet.yml",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\seed\\config_dit_mel_seed_uvit_whisper_small_wavenet.yml",
-        "bytes": 2289,
-        "sha256": "27a91ac41bdb41d0b6951c63642d791b4a70d60b9fc5550eb645f9ddcb3c94da",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "config.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\config.json",
-        "bytes": 1967,
-        "sha256": "e6a2b489da1b5aed65a8eb8d1e7466fa867ad5643a8bc138ba708bd56b2875c4",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "generation_config.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\generation_config.json",
-        "bytes": 3868,
-        "sha256": "71565b8ef50d0bf7a1193ed4bbed195b94e70c18894d81bba2f1233dcec3ab53",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "preprocessor_config.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\preprocessor_config.json",
-        "bytes": 184990,
-        "sha256": "9b5cd03a36fbb8a627c64d98a5b5b126ead95a77720723944487311f0110b666",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "tokenizer_config.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\tokenizer_config.json",
-        "bytes": 282683,
-        "sha256": "2a4c4281cf9f51ac6ccc406fdc711a087afe6530f671fa7b80953edc498275ce",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "tokenizer.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\tokenizer.json",
-        "bytes": 2480466,
-        "sha256": "27fc476bfe7f17299480be2273fc0608e4d5a99aba2ab5dec5374b4482d1a566",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "special_tokens_map.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\special_tokens_map.json",
-        "bytes": 2194,
-        "sha256": "e67ae3a0aaa99abcd9f187138e12db1f65c16a14761c50ef10eef2c174a7a691",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "added_tokens.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\added_tokens.json",
-        "bytes": 34604,
-        "sha256": "9715fd2243b6f06a5858b5e32950d2853f73dd5bc201aafcf76f5082a2d8acd1",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "normalizer.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\normalizer.json",
-        "bytes": 52666,
-        "sha256": "bf1c507dc8724ca9cf9903640dacfb69dae2f00edee4f21ceba106a7392f26dd",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "merges.txt",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\merges.txt",
-        "bytes": 493869,
-        "sha256": "2df2990a395e35e8dfbc7511e08c12d56018d8d04691e0133e5d63b21e154dc6",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "vocab.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\vocab.json",
-        "bytes": 835550,
-        "sha256": "8f680bba319e01a653d2e8a5dbc17a9157179e0576e6ce74ce0c06356c6e24f9",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "nvidia/bigvgan_v2_22khz_80band_256x",
-        "revision": "633ff708ed5b74903e86ff1298cf4a98e921c513",
-        "file": "config.json",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\vocoder\\config.json",
-        "bytes": 1405,
-        "sha256": "88a1f47acf747db0b21e97a389d838566147f7a5464583ff5c8d819d870f03ee",
-        "published_lfs_sha256": null
-      },
-      {
-        "repository": "Plachta/Seed-VC",
-        "revision": "257283f9f41585055e8f858fba4fd044e5caed6e",
-        "file": "DiT_seed_v2_uvit_whisper_small_wavenet_bigvgan_pruned.pth",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\seed\\DiT_seed_v2_uvit_whisper_small_wavenet_bigvgan_pruned.pth",
-        "bytes": 440312082,
-        "sha256": "8ec8841b20bb46df9f7e8e570a6946a4b87b940133c7f0e778487ff33841f720",
-        "published_lfs_sha256": "8ec8841b20bb46df9f7e8e570a6946a4b87b940133c7f0e778487ff33841f720"
-      },
-      {
-        "repository": "openai/whisper-small",
-        "revision": "973afd24965f72e36ca33b3055d56a652f456b4d",
-        "file": "model.safetensors",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\whisper\\model.safetensors",
-        "bytes": 966995080,
-        "sha256": "1d7734884874f1a1513ed9aa760a4f8e97aaa02fd6d93a3a85d27b2ae9ca596b",
-        "published_lfs_sha256": "1d7734884874f1a1513ed9aa760a4f8e97aaa02fd6d93a3a85d27b2ae9ca596b"
-      },
-      {
-        "repository": "nvidia/bigvgan_v2_22khz_80band_256x",
-        "revision": "633ff708ed5b74903e86ff1298cf4a98e921c513",
-        "file": "bigvgan_generator.pt",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\vocoder\\bigvgan_generator.pt",
-        "bytes": 449228171,
-        "sha256": "e95ba25972d3de0628d99cd156e9315a9c018899bf739988959ebe3544080ced",
-        "published_lfs_sha256": "e95ba25972d3de0628d99cd156e9315a9c018899bf739988959ebe3544080ced"
-      },
-      {
-        "repository": "funasr/campplus",
-        "revision": "e4b6ede7ce16997aff4ae69fbca1f0175e2afede",
-        "file": "campplus_cn_common.bin",
-        "path": "D:\\Cursor_program\\灯下\\builds\\baisuzhen-speech-song-comparison\\seed-vc-speech\\weights\\speaker\\campplus_cn_common.bin",
-        "bytes": 28036335,
-        "sha256": "3388cf5fd3493c9ac9c69851d8e7a8badcfb4f3dc631020c4961371646d5ada8",
-        "published_lfs_sha256": "3388cf5fd3493c9ac9c69851d8e7a8badcfb4f3dc631020c4961371646d5ada8"
-      }
-    ],
-    "identity_reference": {
-      "path": "D:\\Cursor_program\\灯下\\builds\\act2-fahai-deep-sample-20261017\\reference-vocals.wav",
-      "sha256": "ef49610e39a9a423d83bcfd06d766a07502c83ca43bbd4a014819ce067da538f",
-      "frames": 502388,
-      "rate": 44100
-    },
-    "request_sha256": "cd460e054532ca571a278955619d17978ce5246f4fbd83be42d94a7455986fda",
-    "source_manifest_sha256": "a0e7b36d0091963a80522065e808ca8a4e1ff01da67680b97413ae2946bd6908",
-    "loader_sha256": "7a10ff4f9b6c2b77e1e195682c8fd682a68a63036d4552b43c0ca864844d801d",
-    "script_sha256": "ecef2890d9c49b2e409d3049e6c96e1d033e4c02aa8ccb48e13cdc123fad13bc"
-  },
-  "human_listening_scope": "Only dialogue-01 directly heard and approved by user; other lines follow its production recipe"
+  "human_listening_scope": "User recording performance retained; new cleanup not separately approved by ear",
+  "rights_status": "user_requested_original_intro_and_recordings; prior_external_source_status_retained",
+  "background_music": true
 }

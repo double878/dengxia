@@ -342,13 +342,25 @@ func head_screen_position() -> Vector2:
 	var ground: Vector2 = stage_to_screen(puppet_state.stage_pos)
 	var height: float = figure_px_height()
 	var shoulder := ground + Vector2(0, -height * SHOULDER_RATIO + walk_body_offset(height))
-	var neck: Vector2 = shoulder + Vector2(0, -height * 0.04)
-	var centre: Vector2 = shoulder + Vector2(0, -height * HEAD_CENTRE_RATIO)
 	return (
 		_skin_figure_transform(ground)
 		* upper_transform()
-		* (neck + (centre - neck).rotated(puppet_state.head_tilt))
+		* _head_centre_local(shoulder, height)
 	)
+
+
+## 头和衣领使用同一源图颈根对接；查询与绘制共用此链，伞与拖头不偏移。
+func _head_centre_local(shoulder: Vector2, height: float) -> Vector2:
+	var skin_id: int = skin_override if skin_override >= 0 else puppet_state.head_id
+	if _has_body_skin() and skin_id == _body_skin_id():
+		var skin: Dictionary = _skins[str(skin_id)]
+		if skin.has("neck_attachment_ratio") and skin.has("head_neck_offset_ratio"):
+			var attachment: Array = skin["neck_attachment_ratio"]
+			var offset: Array = skin["head_neck_offset_ratio"]
+			return (shoulder + Vector2(attachment[0], attachment[1]) * height
+				- (Vector2(offset[0], offset[1]) * height).rotated(puppet_state.head_tilt))
+	var neck := shoulder + Vector2(0, -height * .04)
+	return neck + Vector2(0, -height * (HEAD_CENTRE_RATIO - .04)).rotated(puppet_state.head_tilt)
 
 
 ## 固定枢轴上完成整个人的水平翻面；宽度压缩也作用于肩、手和伞的挂点。
@@ -399,6 +411,16 @@ func head_top_screen_position() -> Vector2:
 
 func walk_body_offset(height: float) -> float:
 	return -absf(sin(puppet_state.walk_phase)) * height * 0.008 * puppet_state.walk_amount
+
+
+## 上半周期离地向前送脚，下半周期落地向后蹬；局部方向遵循贴图原朝向。
+func walk_step_offset(side: float, height: float) -> Vector2:
+	var phase: float = fposmod(puppet_state.walk_phase + (PI if side < 0.0 else 0.0), TAU)
+	var forward: float = -cos(phase) if phase < PI else 1.0 - 2.0 * (phase - PI) / PI
+	return Vector2(
+		forward * height * .065 * pose_reference_facing(),
+		-maxf(sin(phase), 0.0) * height * .035
+	) * puppet_state.walk_amount
 
 
 func _draw() -> void:
@@ -503,28 +525,17 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	var half_w: float = half_width_px(height, flip_width)
 	var shoulder_half_w: float = shoulder_half_width_px(height, flip_width)
 
-	# 完整袍摆保留原图轮廓；其余影人沿用髋 → 膝 → 脚的分件链。
-	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0)) * flip_width
-	var continuous_lower: bool = (
-		_has_body_skin() and _skins[str(_body_skin_id())]["parts"].has("lower_body")
-		and state.leg_spread <= .01
-	)
-	if continuous_lower:
-		var lower_size: Array = _skins[str(_body_skin_id())]["lower_body_size_ratio"]
-		_draw_skin_tile(
-			_body_skin_id(), "lower_body", hip, 0.0,
-			Vector2(float(lower_size[0]), float(lower_size[1])) * height, alpha
-		)
+	# 三人使用分开的髋—膝—脚；窄腰与长袍的腿片衔接，不再形变整袍。
+	var skin: Dictionary = _skins[str(_body_skin_id())] if _has_body_skin() else {}
+	var knee_out: float = height * (float(skin.get("leg_knee_half_width_ratio", .03)) + .11 * clampf(state.stance, 0.0, 1.0)) * flip_width
+	var foot_out: float = height * float(skin.get("leg_foot_half_width_ratio", HALF_W_RATIO * .95)) * flip_width
 	for side in [-1.0, 1.0]:
-		if continuous_lower:
-			continue
-		var stride: float = sin(state.walk_phase + (PI if side < 0.0 else 0.0)) * state.walk_amount
-		var lift: float = maxf(stride, 0.0) * height * 0.035
+		var step: Vector2 = walk_step_offset(side, height)
 		var knee := Vector2(
-			hip.x + side * knee_out + stride * height * 0.045, ground.y - height * 0.22 - lift * 0.5
+			hip.x + side * knee_out + step.x * .69, ground.y - height * 0.22 + step.y * .5
 		)
 		var foot := Vector2(
-			ground.x + side * half_w * 0.95 + stride * height * 0.065, ground.y - lift
+			ground.x + side * foot_out + step.x, ground.y + step.y
 		)
 		if state.leg_spread > 0.0:
 			var spread: float = state.leg_spread
@@ -581,10 +592,7 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	)
 
 	# 头：正反两面各有自己的标记，换面因此是可核对的，而不是只靠宽度变化猜
-	var neck: Vector2 = shoulder + Vector2(0, -height * 0.04)
-	var head_center: Vector2 = (
-		neck + Vector2(0, -height * (HEAD_CENTRE_RATIO - 0.04)).rotated(state.head_tilt)
-	)
+	var head_center: Vector2 = _head_centre_local(shoulder, height)
 	var head_r: float = height * HEAD_RADIUS_RATIO if _has_body_skin() else head_radius_px(height)
 	draw_set_transform_matrix(_skin_canvas_transform)
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
@@ -735,6 +743,12 @@ func _read_skins() -> Dictionary:
 		if not is_finite(shoulder_width) or shoulder_width <= 0.0 or shoulder_width > 0.25:
 			push_error("影人肩间距无效：%s (%s)" % [character, SKIN_MANIFEST_PATH])
 			valid = false
+		for field: String in ["leg_foot_half_width_ratio", "leg_knee_half_width_ratio"]:
+			if skin.has(field):
+				var ratio: float = float(skin[field])
+				if not is_finite(ratio) or ratio <= 0.0 or ratio > .20:
+					push_error("影人腿部间距无效：%s/%s" % [character, field])
+					valid = false
 		for part_name: String in [
 			"head",
 			"torso",
@@ -811,7 +825,8 @@ func _draw_skin_accessories(ground: Vector2, height: float, alpha: float) -> voi
 		var upper_matrix: Transform2D = _skin_canvas_transform
 		_skin_canvas_transform = _skin_figure_transform(ground)
 		wrist = upper_transform() * wrist
-		_draw_skin_tile(id, "staff", wrist, 0.0, Vector2.ONE * staff_size, alpha)
+		var staff_rotation: float = float(skin.get("staff_rotation_rad", 0.0))
+		_draw_skin_tile(id, "staff", wrist, staff_rotation, Vector2.ONE * staff_size, alpha)
 		_skin_canvas_transform = upper_matrix
 
 

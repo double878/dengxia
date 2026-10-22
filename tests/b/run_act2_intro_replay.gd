@@ -1,5 +1,5 @@
 extends SceneTree
-## 实际空台完整音乐录制，再按真实时长回放；不注入音乐结束或自由时钟。
+## 实际完整空台音乐录制，再按真实时长回放；不注入完成事件或自由时钟。
 const Capture := preload("res://scripts/c/c_act2_capture.gd")
 const ReplayAudio := preload("res://scripts/b/act2_replay_audio.gd")
 var checks: int = 0
@@ -38,12 +38,13 @@ func _run() -> void:
 	var recording: RefCounted = opening.capture
 	var record: CPerformanceRecord = recording.record
 	var expected_ms: int = int(opening.dialogue.config.intro_duration_ms)
+	check(expected_ms == 7936 and opening.dialogue.config.get("background_music", false), "恢复完整7.936秒单次开场音乐")
 	var deadline: int = Time.get_ticks_msec() + expected_ms + 3000
 	while opening.clock.get_real_time_ms() < expected_ms + 400 and Time.get_ticks_msec() < deadline:
 		await create_timer(.02).timeout
 		mix_peak("live")
 	check(recording.finish(), "实际音乐记录不完整")
-	check(peaks.live > .001, "实际开场无声")
+	check(peaks.live > .001, "空台实际录制须有原开场音乐")
 	check(record.snapshots[0].time_ms == 0 and record.snapshots[0].performance.audio.entry.playing, "零点未记录音乐")
 	var ended_ms: int = -1
 	var final_playing_ms: int = 0
@@ -74,12 +75,13 @@ func _run() -> void:
 		mix_peak("replay")
 	check(player.get_now_ms() == record.duration_ms, "完整音乐回放未走到终点")
 	check(absi(Time.get_ticks_msec() - begun - record.duration_ms) < 200, "开场回放未按1:1实际时长")
-	check(peaks.replay > .001, "完整音乐回放无声")
+	check(peaks.replay > .001, "空台实际回放须有完整开场音乐")
 	check(not audio.players.entry.playing and not audio.players.opening.playing, "音乐结束后等待仍响声")
 	var report := {"checks": checks, "failures": failures, "intro_ms": expected_ms,
 		"recorded_end_ms": ended_ms, "record_duration_ms": record.duration_ms, "peaks": peaks,
 		"audio": AudioServer.get_driver_name(), "display": DisplayServer.get_name()}
-	FileAccess.open("res://builds/act2-natural-opening-20261017/intro-replay.json", FileAccess.WRITE).store_string(JSON.stringify(report, "  "))
+	DirAccess.make_dir_recursive_absolute("res://builds/user-restoration-20261022-v1")
+	FileAccess.open("res://builds/user-restoration-20261022-v1/intro-replay.json", FileAccess.WRITE).store_string(JSON.stringify(report, "  "))
 	audio.queue_free()
 	await process_frame
 	AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)

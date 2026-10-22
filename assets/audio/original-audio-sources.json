@@ -1,0 +1,2760 @@
+{
+  "version": 4,
+  "batch": "user-restoration-20261022-v1",
+  "scope": "Act1/2 singing accompaniment, restored Act2 intro and user Fahai recordings",
+  "duet_listening_approved": false,
+  "approval": "User selected A: both supplied previews accepted",
+  "background_music": true,
+  "baseline": {
+    "act1-natural/main.wav": "ebb9c46ea9892cd3c94d3e36ab7f84574192db77bc9826cab965164044e43a1e",
+    "act1-natural/opening-01.wav": "057d01d7a00572a695589dd9ed68766df0bc98bad45ad94683bcef2ee2871dfe",
+    "act1-natural/opening-02.wav": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
+    "act1-natural/opening-03.wav": "47a8323e1bc96ce5d13dc23a240b1ba723018e0aa6bc0361e9d7144b07f834dc",
+    "act1-natural/opening-04.wav": "63f286d8c9fccae0936d34348278804ae1e64d6408368329857826ee9dd176cb",
+    "act1-natural/remedy.wav": "06ca5de627534f260608be923e1608b3e25828888bc2aedf52a232ed039452fb",
+    "act1-natural/return-01.wav": "3aad4974f65a6bb06a35fe341921d7a7ad9824e29f9938546722830c71bb9868",
+    "act1-natural/return-02.wav": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+    "act1-natural/return-03.wav": "cd1f315f56b3863c7a3af6d1b27dc8c2948c3483ed8f8b494940379f6e16ad0b",
+    "act1-natural/return-04.wav": "689c89894daae0c86ae921e85a8f52cf4b79d90e9950bcd0c36d46efc1cb61eb",
+    "act1-natural/return-05.wav": "998d72617c249225b22c7afcaac8428784e3c07fbddab10e0ce2aae2e2b36744",
+    "act1-natural/return-06.wav": "37ae12ab01c5cc1fe46e1d50ae9cd70aa8c05b4385f2c07ead564407bd1cc978",
+    "act1-natural/return-07.wav": "7f68c38e760a9b8a4b1cde5b5b33283bfe99e710d046cbde642d62523956efd3",
+    "act1-natural/return-08.wav": "e5e9263e5b97b3a71551f4dc64adc85e9509d3b4a3b4713f5f62f127271dd17a",
+    "act1-natural/return-09.wav": "0509cc5b50911893affd0beda59e4f4e416a391d168f805eddbd5e7148251ff9",
+    "act1-natural/score.json": "a2f11d9ded67b0e57dce47f8e84cafd0ef30219e31f64a74c4fe74c8e893a661",
+    "act1-natural/take_close.wav": "fa9cd0462f6074a36a0ce8bd38506d64a2467630ee80ef481d2a5010e779de41",
+    "act1-natural/wait_loop.wav": "79cd860b1d56ca4d3dca71ca674eb318d7f167a9c6c23263a35ed5e5e73b9b6c",
+    "act2-hall/bai-allow.wav": "3d52b9bbfc3449cf526f957185a94f103eb68fc47ddd9cc6952008f5b7afdac5",
+    "act2-hall/bai-unwell.wav": "7abe78c2f6dfb69cda253bb9b83e35e5687a7f19c88b0d38180b968432ccb71d",
+    "act2-hall/fahai-entry.wav": "8b5e2d97bd8dd1bac5ebd99952495f756634046ee7173fd3a4a48fb31db45a29",
+    "act2-hall/main.wav": "999dcca862f8d39bb8d5ad29a25e0b525a57f2a89bf8e9e7c7b9353aeac210ac",
+    "act2-hall/qing-reply.wav": "87b28ed87f3e3454e0b5197b78da05cc53d0ce7ad09033eb52814e3866d0e26a",
+    "act2-hall/qing-stop.wav": "e6ba719bd2be828ed4443a592823256b33212f8da1a79c78cbee5a98375ac757",
+    "act2-hall/score.json": "3c6993e6ed6cc11b74de8049d8df8c491c0368cb16497af49c8815c8c960c057",
+    "act2-hall/wine-duet.wav": "0526fe9bd867d4e454fa7e0ab30b006ed792bd3ca9d28ebf196582e1f04830f9",
+    "act2-hall/xu-fall-hit.wav": "fa57e7a564a70eff0e49f735bd220013d9d7a7d46cd0d851fce6e87def65eb9e",
+    "act2-hall/xu-fright.wav": "c0db694bcff096220849839db35dcef98097c5d6314c594dd737014bf884c976",
+    "act2-hall/xu-medicine.wav": "46f16c621768011d2a690c9fbde6e86ce6e99da247d01b86d3c3d4ece5df1675",
+    "act2-hall/xu-offer.wav": "d0568d17277aaab1ca721d8c90074ed3afad341d67b081378c4942556b49408a",
+    "act2-hall/xu-send.wav": "c8de040707ba4f9bb7ec3756f8504ccf2da99f736f5485ef76690ec564cb5c3a",
+    "act2-opening/dialogue-01.wav": "754be8b428cb7179197e4e27f3d232b2ee2cf9ccebc86f5f1b832929639b35ff",
+    "act2-opening/dialogue-02.wav": "b1fed1a2c3bffde9c188c33ebb377775ac0bf521644410775ac908edfaa74d05",
+    "act2-opening/dialogue-03.wav": "91f3b2521913599952346253dc8ae49f7de3cd11b819064cfed7a2876575137f",
+    "act2-opening/dialogue-04.wav": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
+    "act2-opening/dialogue-05.wav": "0776ee658d16f29b109262065fa2f5e3ef0d2af8c6918e983cc0ed7704a61e95",
+    "act2-opening/dialogue-06.wav": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
+    "act2-opening/entrance-loop.wav": "27f4a1dde94efd55b309a9acee672f3ee74c092436ac4cfaad70b288f905509f",
+    "act2-opening/intro.wav": "3ac1bdf363578593c029ce12bf607ba277901c9c959ad7fed11b05d0edaadb06",
+    "act2-opening/main.wav": "c2ecb339945b7c90a4471517f538c792441f11d92c386b2f20a365bf0c328f0b",
+    "act2-opening/score.json": "a2326c91896762614caf162751da25f7f50f220db5df9599d99032eb1fc453ea"
+  },
+  "music": {
+    "act1-duet": {
+      "kind": "retained_vocals_without_backing",
+      "accompaniment_enabled": false,
+      "clean_master_sha256": "ebb9c46ea9892cd3c94d3e36ab7f84574192db77bc9826cab965164044e43a1e",
+      "frames": 1504899,
+      "pcm_sha256": "1f3423a5a44073ad94ba2591d9ffb4d489db31413234827807a88b712a98879f",
+      "previous_preview_composition": {
+        "act": 1,
+        "frames": 1504899,
+        "sample_rate_hz": 48000,
+        "tempo_bpm": 82.0,
+        "tonic_midi": 65,
+        "instruments": [
+          "synthetic bowed string",
+          "additive pluck",
+          "breath flute",
+          "modal gong",
+          "modal drum",
+          "wood",
+          "modal cymbal"
+        ],
+        "external_audio_inputs": [],
+        "events": [
+          {
+            "instrument": "pluck",
+            "frame": 2880,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 73124,
+            "duration": 76800,
+            "midi": 60,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 20441,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 55563,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 90685,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 125807,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 2880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 73124,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "gong",
+            "frame": 2880,
+            "duration": 124800,
+            "midi": 53,
+            "gain": 0.025,
+            "pan": 0
+          },
+          {
+            "instrument": "bowed",
+            "frame": 2880,
+            "duration": 42146,
+            "midi": 74,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 55563,
+            "duration": 17561,
+            "midi": 72,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 90685,
+            "duration": 35122,
+            "midi": 67,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 143368,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 160929,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 196051,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 231173,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 266295,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 143368,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 213612,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 160929,
+            "duration": 21073,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 196051,
+            "duration": 24585,
+            "midi": 67,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 248734,
+            "duration": 28098,
+            "midi": 65,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 283856,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 354100,
+            "duration": 76800,
+            "midi": 60,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 301417,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 336539,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 371660,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 406782,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 283856,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 354100,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 283856,
+            "duration": 38634,
+            "midi": 84,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 336539,
+            "duration": 15805,
+            "midi": 86,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 354100,
+            "duration": 15805,
+            "midi": 84,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 389221,
+            "duration": 28098,
+            "midi": 79,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 424343,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 441904,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 477026,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 512148,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 547270,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 424343,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 494587,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 441904,
+            "duration": 17561,
+            "midi": 67,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 477026,
+            "duration": 35122,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 529709,
+            "duration": 28098,
+            "midi": 72,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 564831,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 635075,
+            "duration": 76800,
+            "midi": 60,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 582392,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 617514,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 652636,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 687758,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 564831,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 635075,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "gong",
+            "frame": 564831,
+            "duration": 124800,
+            "midi": 53,
+            "gain": 0.025,
+            "pan": 0
+          },
+          {
+            "instrument": "bowed",
+            "frame": 564831,
+            "duration": 28098,
+            "midi": 74,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 617514,
+            "duration": 17561,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 652636,
+            "duration": 17561,
+            "midi": 67,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 678978,
+            "duration": 22829,
+            "midi": 65,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 705319,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 722880,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 758002,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 793124,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 828246,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 705319,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 775563,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 705319,
+            "duration": 28098,
+            "midi": 77,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 740441,
+            "duration": 14049,
+            "midi": 79,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 758002,
+            "duration": 24585,
+            "midi": 84,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 793124,
+            "duration": 35122,
+            "midi": 81,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 845807,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 916051,
+            "duration": 76800,
+            "midi": 60,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 863368,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 898490,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 933612,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 968734,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 845807,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 916051,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 845807,
+            "duration": 42146,
+            "midi": 74,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 898490,
+            "duration": 17561,
+            "midi": 72,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 933612,
+            "duration": 35122,
+            "midi": 67,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 986295,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1003856,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1038978,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1074100,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1109221,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 986295,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1056539,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1003856,
+            "duration": 21073,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1038978,
+            "duration": 24585,
+            "midi": 67,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1091660,
+            "duration": 28098,
+            "midi": 65,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1126782,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1197026,
+            "duration": 76800,
+            "midi": 60,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1144343,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1179465,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1214587,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1249709,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1126782,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1197026,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "gong",
+            "frame": 1126782,
+            "duration": 124800,
+            "midi": 53,
+            "gain": 0.025,
+            "pan": 0
+          },
+          {
+            "instrument": "flute",
+            "frame": 1126782,
+            "duration": 38634,
+            "midi": 84,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1179465,
+            "duration": 15805,
+            "midi": 86,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1197026,
+            "duration": 15805,
+            "midi": 84,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1232148,
+            "duration": 28098,
+            "midi": 79,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1267270,
+            "duration": 105600,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1284831,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1319953,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1355075,
+            "duration": 52800,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1390197,
+            "duration": 52800,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1267270,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1337514,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1284831,
+            "duration": 17561,
+            "midi": 67,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1319953,
+            "duration": 35122,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1372636,
+            "duration": 28098,
+            "midi": 72,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1407758,
+            "duration": 97141,
+            "midi": 53,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1478002,
+            "duration": 26897,
+            "midi": 60,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1425319,
+            "duration": 52800,
+            "midi": 65,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1460441,
+            "duration": 44458,
+            "midi": 72,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1495563,
+            "duration": 9336,
+            "midi": 67,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1407758,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1478002,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1407758,
+            "duration": 28098,
+            "midi": 74,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1460441,
+            "duration": 17561,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1495563,
+            "duration": 9336,
+            "midi": 67,
+            "gain": 0.032,
+            "pan": -0.12
+          }
+        ],
+        "master_gain": 1.6234531434519237,
+        "source_sha256": "ebb9c46ea9892cd3c94d3e36ab7f84574192db77bc9826cab965164044e43a1e",
+        "vocal_region": {
+          "start_frame": 1201213,
+          "frames": 1504899,
+          "pcm_sha256": "1f3423a5a44073ad94ba2591d9ffb4d489db31413234827807a88b712a98879f"
+        },
+        "preview_mix_sha256": "6b32ed07b5e74ca95484a6687aad4473af48a21a012f6fa3b09efc5c5008a4ab"
+      }
+    },
+    "act2-duet": {
+      "kind": "retained_vocals_without_backing",
+      "accompaniment_enabled": false,
+      "clean_master_sha256": "999dcca862f8d39bb8d5ad29a25e0b525a57f2a89bf8e9e7c7b9353aeac210ac",
+      "frames": 1968000,
+      "pcm_sha256": "0ead71d1a698566cd22b8db1a125a9f9d80f733b0445a9e4b63b734d3b90a381",
+      "previous_preview_composition": {
+        "act": 2,
+        "frames": 1968000,
+        "sample_rate_hz": 48000,
+        "tempo_bpm": 90.0,
+        "tonic_midi": 62,
+        "instruments": [
+          "synthetic bowed string",
+          "additive pluck",
+          "breath flute",
+          "modal gong",
+          "modal drum",
+          "wood",
+          "modal cymbal"
+        ],
+        "external_audio_inputs": [],
+        "events": [
+          {
+            "instrument": "pluck",
+            "frame": 2880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 66880,
+            "duration": 76800,
+            "midi": 57,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 18880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 50880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 82880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 114880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 2880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 66880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "cymbal",
+            "frame": 98880,
+            "duration": 36000,
+            "midi": 60,
+            "gain": 0.018,
+            "pan": 0.15
+          },
+          {
+            "instrument": "gong",
+            "frame": 2880,
+            "duration": 124800,
+            "midi": 50,
+            "gain": 0.025,
+            "pan": 0
+          },
+          {
+            "instrument": "bowed",
+            "frame": 18880,
+            "duration": 19200,
+            "midi": 66,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 50880,
+            "duration": 22400,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 98880,
+            "duration": 25600,
+            "midi": 62,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 130880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 146880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 178880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 210880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 242880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 130880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 194880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 130880,
+            "duration": 35200,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 178880,
+            "duration": 14400,
+            "midi": 71,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 194880,
+            "duration": 14400,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 226880,
+            "duration": 25600,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 258880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 322880,
+            "duration": 76800,
+            "midi": 57,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 274880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 306880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 338880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 370880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 258880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 322880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "cymbal",
+            "frame": 354880,
+            "duration": 36000,
+            "midi": 60,
+            "gain": 0.018,
+            "pan": 0.15
+          },
+          {
+            "instrument": "flute",
+            "frame": 274880,
+            "duration": 16000,
+            "midi": 76,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 306880,
+            "duration": 32000,
+            "midi": 78,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 354880,
+            "duration": 25600,
+            "midi": 81,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 386880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 402880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 434880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 466880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 498880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 386880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 450880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 386880,
+            "duration": 25600,
+            "midi": 71,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 434880,
+            "duration": 16000,
+            "midi": 66,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 466880,
+            "duration": 16000,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 490880,
+            "duration": 20800,
+            "midi": 62,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 514880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 578880,
+            "duration": 76800,
+            "midi": 57,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 530880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 562880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 594880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 626880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 514880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 578880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "cymbal",
+            "frame": 610880,
+            "duration": 36000,
+            "midi": 60,
+            "gain": 0.018,
+            "pan": 0.15
+          },
+          {
+            "instrument": "gong",
+            "frame": 514880,
+            "duration": 124800,
+            "midi": 50,
+            "gain": 0.025,
+            "pan": 0
+          },
+          {
+            "instrument": "bowed",
+            "frame": 514880,
+            "duration": 25600,
+            "midi": 62,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 546880,
+            "duration": 12800,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 562880,
+            "duration": 22400,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 594880,
+            "duration": 32000,
+            "midi": 66,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 642880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 658880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 690880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 722880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 754880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 642880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 706880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 642880,
+            "duration": 38400,
+            "midi": 83,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 690880,
+            "duration": 16000,
+            "midi": 81,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 722880,
+            "duration": 32000,
+            "midi": 76,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 770880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 834880,
+            "duration": 76800,
+            "midi": 57,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 786880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 818880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 850880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 882880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 770880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 834880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "cymbal",
+            "frame": 866880,
+            "duration": 36000,
+            "midi": 60,
+            "gain": 0.018,
+            "pan": 0.15
+          },
+          {
+            "instrument": "bowed",
+            "frame": 786880,
+            "duration": 19200,
+            "midi": 66,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 818880,
+            "duration": 22400,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 866880,
+            "duration": 25600,
+            "midi": 62,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 898880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 914880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 946880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 978880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1010880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.05,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 898880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 962880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 898880,
+            "duration": 35200,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 946880,
+            "duration": 14400,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 962880,
+            "duration": 14400,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 994880,
+            "duration": 25600,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1026880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1090880,
+            "duration": 76800,
+            "midi": 57,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1042880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.048794559099437154,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1074880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.048794559099437154,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1106880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.048794559099437154,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1138880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.048794559099437154,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1026880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04120544090056285,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1090880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "gong",
+            "frame": 1026880,
+            "duration": 124800,
+            "midi": 50,
+            "gain": 0.027410881801125702,
+            "pan": 0
+          },
+          {
+            "instrument": "flute",
+            "frame": 1042880,
+            "duration": 16000,
+            "midi": 76,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1074880,
+            "duration": 32000,
+            "midi": 77,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1122880,
+            "duration": 25600,
+            "midi": 81,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1154880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1170880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.046918386491557225,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1202880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.046918386491557225,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1234880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.046918386491557225,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1266880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.046918386491557225,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1154880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04308161350844278,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1218880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1154880,
+            "duration": 25600,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1202880,
+            "duration": 16000,
+            "midi": 65,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1234880,
+            "duration": 16000,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1258880,
+            "duration": 20800,
+            "midi": 62,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1282880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1346880,
+            "duration": 76800,
+            "midi": 57,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1298880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.0450422138836773,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1330880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.0450422138836773,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1362880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.0450422138836773,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1394880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.0450422138836773,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1282880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.0449577861163227,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1346880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1282880,
+            "duration": 25600,
+            "midi": 62,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1314880,
+            "duration": 12800,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1330880,
+            "duration": 22400,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1362880,
+            "duration": 32000,
+            "midi": 65,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1322880,
+            "duration": 70400,
+            "midi": 50,
+            "gain": 0.007271419637273291,
+            "pan": 0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1410880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1426880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.04316604127579737,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1458880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.04316604127579737,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1490880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.04316604127579737,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1522880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.04316604127579737,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1410880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04683395872420262,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1474880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1410880,
+            "duration": 38400,
+            "midi": 81,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1458880,
+            "duration": 16000,
+            "midi": 81,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1490880,
+            "duration": 32000,
+            "midi": 76,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1450880,
+            "duration": 70400,
+            "midi": 50,
+            "gain": 0.010023139462163847,
+            "pan": 0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1538880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1602880,
+            "duration": 76800,
+            "midi": 57,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1554880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.04128986866791745,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1586880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.04128986866791745,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1618880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.04128986866791745,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1650880,
+            "duration": 52800,
+            "midi": 69,
+            "gain": 0.04128986866791745,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1538880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.04871013133208255,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1602880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "gong",
+            "frame": 1538880,
+            "duration": 124800,
+            "midi": 50,
+            "gain": 0.042420262664165105,
+            "pan": 0
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1554880,
+            "duration": 19200,
+            "midi": 65,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1586880,
+            "duration": 22400,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1634880,
+            "duration": 25600,
+            "midi": 62,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1578880,
+            "duration": 70400,
+            "midi": 50,
+            "gain": 0.01277485928705441,
+            "pan": 0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1666880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1682880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.03941369606003753,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1746880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.03941369606003753,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1666880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.05058630393996248,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1730880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1666880,
+            "duration": 35200,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1714880,
+            "duration": 14400,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1730880,
+            "duration": 14400,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1762880,
+            "duration": 25600,
+            "midi": 64,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1706880,
+            "duration": 70400,
+            "midi": 50,
+            "gain": 0.015526579111944968,
+            "pan": 0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1794880,
+            "duration": 105600,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1858880,
+            "duration": 76800,
+            "midi": 57,
+            "gain": 0.055,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1810880,
+            "duration": 52800,
+            "midi": 62,
+            "gain": 0.037537523452157606,
+            "pan": 0.28
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1874880,
+            "duration": 52800,
+            "midi": 64,
+            "gain": 0.037537523452157606,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1794880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.052462476547842404,
+            "pan": 0
+          },
+          {
+            "instrument": "wood",
+            "frame": 1858880,
+            "duration": 5280,
+            "midi": 81,
+            "gain": 0.014,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1810880,
+            "duration": 16000,
+            "midi": 76,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1842880,
+            "duration": 32000,
+            "midi": 77,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "flute",
+            "frame": 1890880,
+            "duration": 25600,
+            "midi": 81,
+            "gain": 0.025,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1834880,
+            "duration": 70400,
+            "midi": 50,
+            "gain": 0.01827829893683552,
+            "pan": 0.12
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1922880,
+            "duration": 45120,
+            "midi": 50,
+            "gain": 0.09,
+            "pan": -0.3
+          },
+          {
+            "instrument": "pluck",
+            "frame": 1938880,
+            "duration": 29120,
+            "midi": 62,
+            "gain": 0.03566135084427768,
+            "pan": 0.28
+          },
+          {
+            "instrument": "drum",
+            "frame": 1922880,
+            "duration": 14400,
+            "midi": 48,
+            "gain": 0.05433864915572233,
+            "pan": 0
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1922880,
+            "duration": 25600,
+            "midi": 69,
+            "gain": 0.032,
+            "pan": -0.12
+          },
+          {
+            "instrument": "bowed",
+            "frame": 1962880,
+            "duration": 5120,
+            "midi": 50,
+            "gain": 0.021030018761726083,
+            "pan": 0.12
+          }
+        ],
+        "master_gain": 1.709253206922634,
+        "source_sha256": "999dcca862f8d39bb8d5ad29a25e0b525a57f2a89bf8e9e7c7b9353aeac210ac",
+        "vocal_region": {
+          "start_frame": 965692,
+          "frames": 1968000,
+          "pcm_sha256": "0ead71d1a698566cd22b8db1a125a9f9d80f733b0445a9e4b63b734d3b90a381"
+        },
+        "preview_mix_sha256": "b3a0f7d13a8220138dd91e7acc2170a146cf5ac7d4fa89e3ce6b71d7e6f6e24a"
+      }
+    },
+    "act2-intro": {
+      "kind": "restored_historical_recording",
+      "frames": 380928,
+      "sha256": "cc155d2f467797af45d5949ff9a828daa6d1fa7f6c8e565a670c631e892d8183",
+      "source": "Original intro from the existing project backup; explicitly requested restoration"
+    }
+  },
+  "replaced_regions": {
+    "act1": [
+      {
+        "name": "singing",
+        "start_frame": 1201213,
+        "end_frame": 2706112,
+        "retained_vocals": true
+      }
+    ],
+    "act2-hall": [
+      {
+        "name": "singing",
+        "start_frame": 965692,
+        "end_frame": 2933692,
+        "retained_vocals": true,
+        "vocal_gain_db": -1.9499999999999993
+      }
+    ]
+  },
+  "residual_rights": "Existing singing melody/timbre and other dialogue retained by user choice; their external permissions remain unverified",
+  "fahai": {
+    "version": 1,
+    "tool_sha256": "381521587cec0988a5557bc20bf35cbfbc361fa03a99320021b80b1f5c523048",
+    "game_assets_installed": true,
+    "human_listening_verified": false,
+    "pitch_shift": false,
+    "time_stretch": false,
+    "voice_conversion": false,
+    "reverb": false,
+    "lines": [
+      {
+        "line_id": "dialogue-01",
+        "source_filename": "2026年10月22日 14点43分.m4a",
+        "source_sha256": "98610b39fbb581cb59050f8b0149cde86b7dbc4d208389f50b317dcb67f301ed",
+        "source_decoded_frames": 437248,
+        "retained_start_frame": 12000,
+        "retained_end_frame": 425280,
+        "duration_ms": 8610.0,
+        "frames": 413280,
+        "sample_rate_hz": 48000,
+        "channels": 2,
+        "subtype": "PCM_16",
+        "sha256": "4544a637bdad6087e3661761244df086ea58b709085b62dfd76f064158535bfd",
+        "filters": "atrim=start_sample=12000:end_sample=425280,asetpts=PTS-STARTPTS,highpass=f=65,afftdn=nr=8:nf=-50:tn=1,equalizer=f=220:t=q:w=1:g=-1.8,equalizer=f=2800:t=q:w=0.8:g=1.2,lowpass=f=11000,acompressor=threshold=0.125:ratio=1.7:attack=18:release=150:makeup=1",
+        "normalization": "loudnorm=I=-18:TP=-2.5:LRA=9:linear=true:measured_I=-20.85:measured_TP=-5.96:measured_LRA=1.50:measured_thresh=-31.25:offset=-0.24:print_format=json",
+        "normalization_type": "linear",
+        "measured_lufs": -18.0,
+        "measured_true_peak_db": -3.11,
+        "path": "assets/audio/act2-opening/dialogue-01.wav"
+      },
+      {
+        "line_id": "dialogue-03",
+        "source_filename": "2026年10月22日 14点45分.m4a",
+        "source_sha256": "bda452ae3fb38ecd2992e60425ed59a07f38154add098ce9defe8666f2c62ead",
+        "source_decoded_frames": 291840,
+        "retained_start_frame": 33600,
+        "retained_end_frame": 291360,
+        "duration_ms": 5370.0,
+        "frames": 257760,
+        "sample_rate_hz": 48000,
+        "channels": 2,
+        "subtype": "PCM_16",
+        "sha256": "2ba0ee19f8f91279acf6988d38786c63bcbcbf0ffb2b6d90e656dc0ffa743f09",
+        "filters": "atrim=start_sample=33600:end_sample=291360,asetpts=PTS-STARTPTS,highpass=f=65,afftdn=nr=8:nf=-50:tn=1,equalizer=f=220:t=q:w=1:g=-1.8,equalizer=f=2800:t=q:w=0.8:g=1.2,lowpass=f=11000,acompressor=threshold=0.125:ratio=1.7:attack=18:release=150:makeup=1",
+        "normalization": "loudnorm=I=-18:TP=-2.5:LRA=9:linear=true:measured_I=-18.63:measured_TP=-5.49:measured_LRA=0.80:measured_thresh=-28.79:offset=0.31:print_format=json",
+        "normalization_type": "linear",
+        "measured_lufs": -17.99,
+        "measured_true_peak_db": -4.86,
+        "path": "assets/audio/act2-opening/dialogue-03.wav"
+      },
+      {
+        "line_id": "dialogue-05",
+        "source_filename": "2026年10月22日 14点45分(2).m4a",
+        "source_sha256": "c6b940ebefa3176c63deeb3a679c9ef3af5e1ab415f61dcd91abeaa65a1e15f0",
+        "source_decoded_frames": 575488,
+        "retained_start_frame": 19680,
+        "retained_end_frame": 575488,
+        "duration_ms": 11579.333333333334,
+        "frames": 555808,
+        "sample_rate_hz": 48000,
+        "channels": 2,
+        "subtype": "PCM_16",
+        "sha256": "d71aa2a9c60563eee5d116a770380c58f8d564f5686e52ab11c159a48f122d4f",
+        "filters": "atrim=start_sample=19680:end_sample=575488,asetpts=PTS-STARTPTS,highpass=f=65,afftdn=nr=8:nf=-50:tn=1,equalizer=f=220:t=q:w=1:g=-1.8,equalizer=f=2800:t=q:w=0.8:g=1.2,lowpass=f=11000,acompressor=threshold=0.125:ratio=1.7:attack=18:release=150:makeup=1",
+        "normalization": "loudnorm=I=-18:TP=-2.5:LRA=9:linear=true:measured_I=-17.57:measured_TP=-3.66:measured_LRA=9.20:measured_thresh=-30.01:offset=-0.55:print_format=json",
+        "normalization_type": "dynamic",
+        "measured_lufs": -18.16,
+        "measured_true_peak_db": -3.03,
+        "path": "assets/audio/act2-opening/dialogue-05.wav"
+      }
+    ]
+  },
+  "puppet_outputs": {
+    "puppet_assets.json": "6bf8471944e7ac1b30439e6c1f64082b0fc0d26d1aa4f91ac7125621a93e0d17",
+    "baisuzhen.png": "39d0a3e5fce23fafc15df61fce44a93bfe28b567f943ed71ac98f66cae0bf6c6",
+    "xuxian.png": "d5164c93b6bf2ec4651baac5d7e3dd2e2e094f95b3fe5e47457d0bf50c2101e0",
+    "fahai.png": "cab27f2c69e9d163ad4d18a42716b23848dcadbe4edb506c73c3db57df9c133e"
+  },
+  "tools": {
+    "build_duet_previews.py": "4626c887cd8f57ccc1833283dfa52bc5639cc1c17428bdf0b7bbea095d15b312",
+    "compose_original_accompaniment.py": "97058a2aa8357b8cfdd545ea030ccc240b0dbec41d7af50c45816bbeb4fa1f07",
+    "prepare_fahai_recordings.py": "381521587cec0988a5557bc20bf35cbfbc361fa03a99320021b80b1f5c523048",
+    "prepare_fahai_photo.py": "1f0e842bb82a4d9e24105d787077df989f10094ba063726ac4e01010e23dd0f5",
+    "build_fahai_assets.py": "a71022e3d176a44506295580f8e30bd6e22f6d4fb2bc44aa3efad7c2979e13da",
+    "install_user_restoration.py": "65f0b0791e685b3e3c80070f5bd92059edf7946ff0ba626cbf53ba7115231d99",
+    "remove_duet_backing.py": "f56face173bfa9aa626d8c8c37398746e787e78f1532fa15a3189007ca18c196",
+    "prepare_couple_references.py": "d35bfca41eead7954341fbbcf56bbcee0be6b5ab4c67cd9c167163ac1fd849a3",
+    "prepare_act1_leting_music.py": "fa680d5549f9fe447f24a7b077e11f893eba60f5dedb13da5f8fcc7885143345"
+  },
+  "outputs": {
+    "act1-natural/main.wav": "200fac72215776b476dc65e24a1adccbbb305788866463d9dff284c59ed948a1",
+    "act1-natural/opening-01.wav": "057d01d7a00572a695589dd9ed68766df0bc98bad45ad94683bcef2ee2871dfe",
+    "act1-natural/opening-02.wav": "74c0011c0766b0fb62c993ae5fbe38ebbe2a8fa16d1050e1345e0126765c4d4b",
+    "act1-natural/opening-03.wav": "47a8323e1bc96ce5d13dc23a240b1ba723018e0aa6bc0361e9d7144b07f834dc",
+    "act1-natural/opening-04.wav": "63f286d8c9fccae0936d34348278804ae1e64d6408368329857826ee9dd176cb",
+    "act1-natural/remedy.wav": "06ca5de627534f260608be923e1608b3e25828888bc2aedf52a232ed039452fb",
+    "act1-natural/return-01.wav": "3aad4974f65a6bb06a35fe341921d7a7ad9824e29f9938546722830c71bb9868",
+    "act1-natural/return-02.wav": "b23b678e81ecd0a532d7dc037495a43d75d63b28de948354da32ff38719b105a",
+    "act1-natural/return-03.wav": "cd1f315f56b3863c7a3af6d1b27dc8c2948c3483ed8f8b494940379f6e16ad0b",
+    "act1-natural/return-04.wav": "689c89894daae0c86ae921e85a8f52cf4b79d90e9950bcd0c36d46efc1cb61eb",
+    "act1-natural/return-05.wav": "998d72617c249225b22c7afcaac8428784e3c07fbddab10e0ce2aae2e2b36744",
+    "act1-natural/return-06.wav": "37ae12ab01c5cc1fe46e1d50ae9cd70aa8c05b4385f2c07ead564407bd1cc978",
+    "act1-natural/return-07.wav": "7f68c38e760a9b8a4b1cde5b5b33283bfe99e710d046cbde642d62523956efd3",
+    "act1-natural/return-08.wav": "e5e9263e5b97b3a71551f4dc64adc85e9509d3b4a3b4713f5f62f127271dd17a",
+    "act1-natural/return-09.wav": "0509cc5b50911893affd0beda59e4f4e416a391d168f805eddbd5e7148251ff9",
+    "act1-natural/score.json": "396815374bd0366741ffde0b524ef65022b12655ae660359a3a10f0cfab240dd",
+    "act1-natural/take_close.wav": "fa9cd0462f6074a36a0ce8bd38506d64a2467630ee80ef481d2a5010e779de41",
+    "act1-natural/wait_loop.wav": "b5c8a73bfbc31f48db527e366c97de8e6e22758f1ba71e3db4ec44e33d95accb",
+    "act2-hall/bai-allow.wav": "3d52b9bbfc3449cf526f957185a94f103eb68fc47ddd9cc6952008f5b7afdac5",
+    "act2-hall/bai-unwell.wav": "7abe78c2f6dfb69cda253bb9b83e35e5687a7f19c88b0d38180b968432ccb71d",
+    "act2-hall/fahai-entry.wav": "8b5e2d97bd8dd1bac5ebd99952495f756634046ee7173fd3a4a48fb31db45a29",
+    "act2-hall/main.wav": "999dcca862f8d39bb8d5ad29a25e0b525a57f2a89bf8e9e7c7b9353aeac210ac",
+    "act2-hall/qing-reply.wav": "87b28ed87f3e3454e0b5197b78da05cc53d0ce7ad09033eb52814e3866d0e26a",
+    "act2-hall/qing-stop.wav": "e6ba719bd2be828ed4443a592823256b33212f8da1a79c78cbee5a98375ac757",
+    "act2-hall/score.json": "0fdba5cdd637af4a3ef170936811bf5b772fbbc035ebb15ba9868a9e193a17ed",
+    "act2-hall/wine-duet.wav": "0526fe9bd867d4e454fa7e0ab30b006ed792bd3ca9d28ebf196582e1f04830f9",
+    "act2-hall/xu-fall-hit.wav": "fa57e7a564a70eff0e49f735bd220013d9d7a7d46cd0d851fce6e87def65eb9e",
+    "act2-hall/xu-fright.wav": "c0db694bcff096220849839db35dcef98097c5d6314c594dd737014bf884c976",
+    "act2-hall/xu-medicine.wav": "46f16c621768011d2a690c9fbde6e86ce6e99da247d01b86d3c3d4ece5df1675",
+    "act2-hall/xu-offer.wav": "d0568d17277aaab1ca721d8c90074ed3afad341d67b081378c4942556b49408a",
+    "act2-hall/xu-send.wav": "c8de040707ba4f9bb7ec3756f8504ccf2da99f736f5485ef76690ec564cb5c3a",
+    "act2-opening/dialogue-01.wav": "4544a637bdad6087e3661761244df086ea58b709085b62dfd76f064158535bfd",
+    "act2-opening/dialogue-02.wav": "b1fed1a2c3bffde9c188c33ebb377775ac0bf521644410775ac908edfaa74d05",
+    "act2-opening/dialogue-03.wav": "2ba0ee19f8f91279acf6988d38786c63bcbcbf0ffb2b6d90e656dc0ffa743f09",
+    "act2-opening/dialogue-04.wav": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
+    "act2-opening/dialogue-05.wav": "d71aa2a9c60563eee5d116a770380c58f8d564f5686e52ab11c159a48f122d4f",
+    "act2-opening/dialogue-06.wav": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
+    "act2-opening/entrance-loop.wav": "27f4a1dde94efd55b309a9acee672f3ee74c092436ac4cfaad70b288f905509f",
+    "act2-opening/intro.wav": "cc155d2f467797af45d5949ff9a828daa6d1fa7f6c8e565a670c631e892d8183",
+    "act2-opening/main.wav": "0d2e28a235ae788a81718f79cbcdb613383f4181f7e67b8b8ff669344a824126",
+    "act2-opening/score.json": "b76405476da0a2b6f3a7c220021b5133b92570154f5902e381d86ffbad2bb0a4"
+  },
+  "duet_accompaniment_enabled": false,
+  "duet_approval_history": "Both backing previews were approved, then the user explicitly canceled duet accompaniment",
+  "background_music_scope": "Act1 approach/tour and arrival/return waits; Act2 original intro; vocal-only duets",
+  "current_revision": "act1-leting-music-preview-20261022",
+  "previous_puppet_outputs": {
+    "fahai.png": "5ad31892df7711b0bd6659ad004aecb7ebe05e266d2e0610585d3e01afa12d52",
+    "puppet_assets.json": "3caaebb1bc6a5bf7e5c298ba45e1d32e23c0f71b64fbdf3c9da41ff8ba91921a"
+  },
+  "act1_leting_preview": {
+    "source_url": "https://www.bilibili.com/video/BV1xX4y1Y7sJ/",
+    "part": 1,
+    "source_sha256": "a8d909b1a16ac2384f6d0f71c61a2169f5930189b05704aad28316c2084e9701",
+    "source_interval_s": [
+      0,
+      32
+    ],
+    "permission": "user_confirmed_authorized_2026-10-22",
+    "separation": {
+      "source_interval_s": [
+        0,
+        32
+      ],
+      "input_sha256": "0a51d997f926d6e70baf6252b003af89c88f2838326f223b340aa9bbf50238c5",
+      "weights_sha256": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e",
+      "config_sha256": "f63f38eb1e6e40a7db0dade714a5ae257555dd8748f4e774eae8679275a81926",
+      "script_sha256": "591aa13fbcc9f6d79d527b88a73b82489bc7dd922fd40930b2e819540049788a",
+      "outputs": {
+        "vocals": {
+          "path": "D:\\Cursor_program\\灯下\\builds\\act1-leting-music-20261022\\vocals.wav",
+          "sha256": "3da9b32610d1a4495fc4c3a11fb5a0de32f8b02b1eefdc19f1b5301fe7650917",
+          "frames": 1411200,
+          "rate": 44100
+        },
+        "backing": {
+          "path": "D:\\Cursor_program\\灯下\\builds\\act1-leting-music-20261022\\backing.wav",
+          "sha256": "b503063fb5663e291981245433b2adb3c436e601f2b7d89df1177fefdfc7c139",
+          "frames": 1411200,
+          "rate": 44100
+        }
+      },
+      "processing": "MelBandRoformer instrumental separation; no generated music; user listening pending"
+    },
+    "gain": 0.2844380465729622,
+    "regions": [
+      {
+        "name": "approach",
+        "start_frame": 913213,
+        "end_frame": 1201213,
+        "source_start_s": 2.0,
+        "source_end_s": 8.0,
+        "fade_in_ms": 180,
+        "fade_out_ms": 350,
+        "pcm_sha256": "6f3732be86fa39a3eb6d80534964388a9961413bc5962f9c77a345b5d75dd92d"
+      },
+      {
+        "name": "tour",
+        "start_frame": 2730112,
+        "end_frame": 3594112,
+        "source_start_s": 10.0,
+        "source_end_s": 28.0,
+        "fade_in_ms": 180,
+        "fade_out_ms": 650,
+        "pcm_sha256": "70490d08b07482b2ccce8bfcc27811dab2bc5c905131325259a380f75cb28885"
+      }
+    ],
+    "waiting_source_interval_s": [
+      22,
+      28
+    ],
+    "loop_overlap_ms": 200,
+    "human_listening_verified": false,
+    "status": "integrated_preview_pending_user_feedback"
+  }
+}

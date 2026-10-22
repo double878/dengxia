@@ -177,13 +177,16 @@ func update(events: Array = [], delta: float = 1.0 / 60.0) -> void:
 	_slow.stream_paused = paused
 	if paused:
 		return
-	if flow.is_waiting():
+	var waiting_music: bool = flow.is_waiting() and flow.phase in config.get(
+		"waiting_music_phases", ["wait_arrival", "wait_take", "wait_return"]
+	)
+	if waiting_music:
 		if not _wait.playing:
 			_wait.volume_db = -60.0
 			_wait.play()
-	_wait_gain = move_toward(_wait_gain, 1.0 if flow.is_waiting() else 0.0, maxf(delta, 0.0) / 0.08)
+	_wait_gain = move_toward(_wait_gain, 1.0 if waiting_music else 0.0, maxf(delta, 0.0) / 0.08)
 	_wait.volume_db = linear_to_db(maxf(_wait_gain, 0.001))
-	if not flow.is_waiting() and _wait_gain <= 0.0:
+	if not waiting_music and _wait_gain <= 0.0:
 		_wait.stop()
 	if clock.is_song_frozen() and not flow.is_waiting():
 		if not _slow.playing:
