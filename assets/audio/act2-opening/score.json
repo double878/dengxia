@@ -1,15 +1,15 @@
 {
-  "audio_version": "act2-no-bgm-preset-fahai-c2ecb339945b",
+  "audio_version": "act2-user-recordings-restored-intro-0d2e28a235ae",
   "stage_id": 2,
   "scene_id": "fahai_advice",
   "main_path": "res://assets/audio/act2-opening/main.wav",
   "intro_path": "res://assets/audio/act2-opening/intro.wav",
   "intro_once": true,
-  "intro_duration_ms": 100,
+  "intro_duration_ms": 7936,
   "greeting_gate_ms": 0,
-  "duration_ms": 42094,
-  "dark_start_ms": 40094,
-  "dark_start_frame": 1924535,
+  "duration_ms": 44413,
+  "dark_start_ms": 42413,
+  "dark_start_frame": 2035831,
   "lines": [
     {
       "line_id": "dialogue-01",
@@ -18,9 +18,9 @@
       "text": "许施主。你家娘子，并非凡人。贫僧今日，正是为此而来。",
       "delivery": "speech",
       "start_frame": 12000,
-      "end_frame": 415136,
+      "end_frame": 425280,
       "start_ms": 250,
-      "end_ms": 8649
+      "end_ms": 8860
     },
     {
       "line_id": "dialogue-02",
@@ -28,10 +28,10 @@
       "role_name": "许仙",
       "text": "我娘子心地善良，怎会是妖？",
       "delivery": "speech",
-      "start_frame": 455936,
-      "end_frame": 618662,
-      "start_ms": 9499,
-      "end_ms": 12889
+      "start_frame": 466080,
+      "end_frame": 628806,
+      "start_ms": 9710,
+      "end_ms": 13100
     },
     {
       "line_id": "dialogue-03",
@@ -39,10 +39,10 @@
       "role_name": "法海",
       "text": "人妖有别。莫被她的温情，蒙蔽了双眼。",
       "delivery": "speech",
-      "start_frame": 659462,
-      "end_frame": 922150,
-      "start_ms": 13739,
-      "end_ms": 19211
+      "start_frame": 669606,
+      "end_frame": 927366,
+      "start_ms": 13950,
+      "end_ms": 19320
     },
     {
       "line_id": "dialogue-04",
@@ -50,10 +50,10 @@
       "role_name": "许仙",
       "text": "大师这样说，可有凭据？",
       "delivery": "speech",
-      "start_frame": 962950,
-      "end_frame": 1102270,
-      "start_ms": 20061,
-      "end_ms": 22964
+      "start_frame": 968166,
+      "end_frame": 1107486,
+      "start_ms": 20170,
+      "end_ms": 23073
     },
     {
       "line_id": "dialogue-05",
@@ -61,10 +61,10 @@
       "role_name": "法海",
       "text": "端午将至。你劝她，喝杯雄黄酒。是人是妖。一试，便知。",
       "delivery": "speech",
-      "start_frame": 1143070,
-      "end_frame": 1592798,
-      "start_ms": 23814,
-      "end_ms": 33183
+      "start_frame": 1148286,
+      "end_frame": 1704094,
+      "start_ms": 23923,
+      "end_ms": 35502
     },
     {
       "line_id": "dialogue-06",
@@ -72,19 +72,19 @@
       "role_name": "许仙",
       "text": "这，我便劝她一杯。若是无事，还请大师莫再疑她。",
       "delivery": "speech",
-      "start_frame": 1633598,
-      "end_frame": 1900535,
-      "start_ms": 34033,
-      "end_ms": 39594
+      "start_frame": 1744894,
+      "end_frame": 2011831,
+      "start_ms": 36352,
+      "end_ms": 41913
     }
   ],
   "assets": [
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-opening/main.wav",
-      "sha256": "c2ecb339945b7c90a4471517f538c792441f11d92c386b2f20a365bf0c328f0b",
-      "frames": 2020535,
-      "pcm_sha256": "ba4126b7454dbfc5b4a705894568e8b675b70233a08f3621588e1284d55c5ce2",
+      "sha256": "0d2e28a235ae788a81718f79cbcdb613383f4181f7e67b8b8ff669344a824126",
+      "frames": 2131831,
+      "pcm_sha256": "2b7fe8490bc95e654c33c833377891e445118308cb928483562f332b1aa59a6b",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -92,9 +92,9 @@
     {
       "asset_id": "intro",
       "path": "res://assets/audio/act2-opening/intro.wav",
-      "sha256": "3ac1bdf363578593c029ce12bf607ba277901c9c959ad7fed11b05d0edaadb06",
-      "frames": 4800,
-      "pcm_sha256": "17744bb6a4ed1d9d51d85d7eb645cde30352530d494233c434027f9e3193bae4",
+      "sha256": "cc155d2f467797af45d5949ff9a828daa6d1fa7f6c8e565a670c631e892d8183",
+      "frames": 380928,
+      "pcm_sha256": "3a67b077346eda0650b26408d723d7a0c81bd0f69f8e77ff74ad352de86b1a3c",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -102,9 +102,9 @@
     {
       "asset_id": "dialogue-01",
       "path": "res://assets/audio/act2-opening/dialogue-01.wav",
-      "sha256": "754be8b428cb7179197e4e27f3d232b2ee2cf9ccebc86f5f1b832929639b35ff",
-      "frames": 403136,
-      "pcm_sha256": "9c72cbc32504f81c9bd1a19f642f62bc797fbf0e3442d80b3581fd3d0f6036e6",
+      "sha256": "4544a637bdad6087e3661761244df086ea58b709085b62dfd76f064158535bfd",
+      "frames": 413280,
+      "pcm_sha256": "3a355fbf2dd2f94a7fcd181979d4547423d60077cc1c524988b90ce4398364f6",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -122,9 +122,9 @@
     {
       "asset_id": "dialogue-03",
       "path": "res://assets/audio/act2-opening/dialogue-03.wav",
-      "sha256": "91f3b2521913599952346253dc8ae49f7de3cd11b819064cfed7a2876575137f",
-      "frames": 262688,
-      "pcm_sha256": "b43aacb8b96b983d403df1d3c6852f03e0c888301240a4f3ddff0c39387a72c9",
+      "sha256": "2ba0ee19f8f91279acf6988d38786c63bcbcbf0ffb2b6d90e656dc0ffa743f09",
+      "frames": 257760,
+      "pcm_sha256": "a5f02dd302bb08a05ad36d1d182c80b30674ad4ac4dc75452ebe03b8c1c8e9da",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -142,9 +142,9 @@
     {
       "asset_id": "dialogue-05",
       "path": "res://assets/audio/act2-opening/dialogue-05.wav",
-      "sha256": "0776ee658d16f29b109262065fa2f5e3ef0d2af8c6918e983cc0ed7704a61e95",
-      "frames": 449728,
-      "pcm_sha256": "46658d70f7d164bb554de989125cd5151d413666d540e6bf97cf53c04f02480d",
+      "sha256": "d71aa2a9c60563eee5d116a770380c58f8d564f5686e52ab11c159a48f122d4f",
+      "frames": 555808,
+      "pcm_sha256": "745c6f72c0e51ee1efe97eff617f8e5038764f420b1ca690b23f07cffb10b343",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -162,47 +162,63 @@
   ],
   "production": {
     "dialogue-01": {
-      "source": "Kokoro preset male voice without recording reference",
-      "sha256": "754be8b428cb7179197e4e27f3d232b2ee2cf9ccebc86f5f1b832929639b35ff",
+      "source": "User-provided recording; mild noise/EQ/compression/loudness processing",
+      "sha256": "4544a637bdad6087e3661761244df086ea58b709085b62dfd76f064158535bfd",
       "complete_converted_frames": true
     },
     "dialogue-02": {
-      "source": "unchanged shipped Xuxian PCM",
+      "source": "Unchanged shipped Xuxian PCM",
       "sha256": "b1fed1a2c3bffde9c188c33ebb377775ac0bf521644410775ac908edfaa74d05",
       "complete_converted_frames": true
     },
     "dialogue-03": {
-      "source": "Kokoro preset male voice without recording reference",
-      "sha256": "91f3b2521913599952346253dc8ae49f7de3cd11b819064cfed7a2876575137f",
+      "source": "User-provided recording; mild noise/EQ/compression/loudness processing",
+      "sha256": "2ba0ee19f8f91279acf6988d38786c63bcbcbf0ffb2b6d90e656dc0ffa743f09",
       "complete_converted_frames": true
     },
     "dialogue-04": {
-      "source": "unchanged shipped Xuxian PCM",
+      "source": "Unchanged shipped Xuxian PCM",
       "sha256": "2f4e31c98aae7d4362f2157feb236065665b19ea0817306d196f7136d5506c55",
       "complete_converted_frames": true
     },
     "dialogue-05": {
-      "source": "Kokoro preset male voice without recording reference",
-      "sha256": "0776ee658d16f29b109262065fa2f5e3ef0d2af8c6918e983cc0ed7704a61e95",
+      "source": "User-provided recording; mild noise/EQ/compression/loudness processing",
+      "sha256": "d71aa2a9c60563eee5d116a770380c58f8d564f5686e52ab11c159a48f122d4f",
       "complete_converted_frames": true
     },
     "dialogue-06": {
-      "source": "unchanged shipped Xuxian PCM",
+      "source": "Unchanged shipped Xuxian PCM",
       "sha256": "c765d2f387754cbb644f55e42b6c1cdfa66d48b6f085ccbace65802a362b7b39",
       "complete_converted_frames": true
     }
   },
   "music_source": {
-    "kind": "none",
+    "kind": "restored_historical_recording",
+    "sha256": "cc155d2f467797af45d5949ff9a828daa6d1fa7f6c8e565a670c631e892d8183",
     "manifest": "res://assets/audio/original-audio-sources.json",
-    "external_audio_inputs": []
+    "external_audio_inputs": [
+      "existing_original_intro"
+    ]
   },
   "identity_reference": {
-    "kind": "licensed_preset_synthetic_voice",
-    "model": "hexgrad/Kokoro-82M-v1.1-zh",
-    "voice": "zm_010",
-    "license": "Apache-2.0",
-    "recording_references": []
+    "kind": "user_provided_recordings",
+    "recording_references": [
+      {
+        "line_id": "dialogue-01",
+        "filename": "2026年10月22日 14点43分.m4a",
+        "sha256": "98610b39fbb581cb59050f8b0149cde86b7dbc4d208389f50b317dcb67f301ed"
+      },
+      {
+        "line_id": "dialogue-03",
+        "filename": "2026年10月22日 14点45分.m4a",
+        "sha256": "bda452ae3fb38ecd2992e60425ed59a07f38154add098ce9defe8666f2c62ead"
+      },
+      {
+        "line_id": "dialogue-05",
+        "filename": "2026年10月22日 14点45分(2).m4a",
+        "sha256": "c6b940ebefa3176c63deeb3a679c9ef3af5e1ab415f61dcd91abeaa65a1e15f0"
+      }
+    ]
   },
   "xuxian_identity": {
     "path": "D:\\Cursor_program\\灯下\\builds\\act2-voice-revision\\xuxian-act1-speech-identity.wav",
@@ -226,7 +242,7 @@
   "pitch_shift": false,
   "time_stretch": false,
   "reverb": false,
-  "human_listening_scope": "Retained vocals and preset Fahai voice require user listening; background music removed",
-  "rights_status": "no_background_music; retained_singing_and_other_voice_permissions_unverified",
-  "background_music": false
+  "human_listening_scope": "User recording performance retained; new cleanup not separately approved by ear",
+  "rights_status": "user_requested_original_intro_and_recordings; prior_external_source_status_retained",
+  "background_music": true
 }

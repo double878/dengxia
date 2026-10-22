@@ -342,11 +342,11 @@ func audio_probe(replay: Node, player: CReplayPlayer) -> void:
 		capture.clear_buffer()
 		replay.apply_frame(player.sample(int(sound_frames[key])))
 		# 重音与补救第一拍很短，采集起音，不能先丢掉前250毫秒。
-		# entry 现在应持续静音；其他短音效仍采集起音。
+		# entry 恢复完整开场音乐；短音效仍采集起音。
 		await create_timer(1.1 if key == "entry" else .6).timeout
 		var peak: float = buffer_peak(capture)
 		report.peaks[key] = peak
-		check(peak < .001 if key in ["entry", "cup"] else peak > .001, "实际回放混音/等待静音 " + key)
+		check(peak < .001 if key == "cup" else peak > .001, "实际回放混音/等待静音 " + key)
 		if key == "speech":
 			check(not replay.get("_act2_audio").players.entry.playing, "回放法海开口必须停止视频音乐")
 		if key == "duet":

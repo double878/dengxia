@@ -1,5 +1,5 @@
 {
-  "audio_version": "act2-hall-vocals-only-999dcca862f8",
+  "audio_version": "act2-user-approved-backing-2d45b4f8244d",
   "scene_id": "wine_transformation",
   "main_path": "res://assets/audio/act2-hall/main.wav",
   "duration_ms": 69517,
@@ -218,9 +218,9 @@
     {
       "asset_id": "wine-duet",
       "path": "res://assets/audio/act2-hall/wine-duet.wav",
-      "sha256": "0526fe9bd867d4e454fa7e0ab30b006ed792bd3ca9d28ebf196582e1f04830f9",
+      "sha256": "b3a0f7d13a8220138dd91e7acc2170a146cf5ac7d4fa89e3ce6b71d7e6f6e24a",
       "frames": 1968000,
-      "pcm_sha256": "0ead71d1a698566cd22b8db1a125a9f9d80f733b0445a9e4b63b734d3b90a381",
+      "pcm_sha256": "2c3f4dd40724ea354aa4924e3766758301b33a24c988969d8a704e2e1b7fe2e2",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -228,9 +228,9 @@
     {
       "asset_id": "main",
       "path": "res://assets/audio/act2-hall/main.wav",
-      "sha256": "999dcca862f8d39bb8d5ad29a25e0b525a57f2a89bf8e9e7c7b9353aeac210ac",
+      "sha256": "2d45b4f8244db74829800623dc53dcdd9f340660151f2d9f6fdb980c84b43558",
       "frames": 3336835,
-      "pcm_sha256": "3fc1b96aa2b41f5fec41f475b9c5a60f5ef9dfd338d25db300143572db0bfcdd",
+      "pcm_sha256": "6617f73c6f817890f6f5f04f3b1cffb55d20da6d7d9303730c8adc22f78e92c8",
       "sample_rate_hz": 48000,
       "channels": 2,
       "subtype": "PCM_16"
@@ -274,7 +274,7 @@
     "vocals": "res://assets/audio/retained-vocals/act2.wav",
     "historical_melody_reference": "https://tv.cctv.com/2020/07/02/VIDEGhi9Sw6SpdWEg573OBfO200702.shtml",
     "permission_verified": false,
-    "backing": "none; clean vocals only"
+    "backing": "Approved new symbolic opera-style composition; no external instrumental recordings"
   },
   "plot_reference": "https://scripts.xikao.com/play/06000050",
   "source_fingerprints": {
@@ -830,7 +830,7 @@
     "human_listening_verified": false
   },
   "accompaniment_source": "res://assets/audio/original-audio-sources.json",
-  "rights_status": "no_background_music; retained_singing_and_other_voice_permissions_unverified",
+  "rights_status": "new_sample_free_backing; retained_performances_keep_prior_source_status",
   "music_cues": {
     "source": "res://assets/audio/original-audio-sources.json",
     "outputs": {
@@ -848,5 +848,7 @@
       }
     }
   },
-  "background_music": false
+  "background_music": true,
+  "accompaniment_scope": "singing_only; other cues retain the previous configuration",
+  "human_listening_scope": "User accepted this exact complete vocal+backing preview"
 }

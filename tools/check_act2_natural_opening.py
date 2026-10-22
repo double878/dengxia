@@ -1,4 +1,4 @@
-"""Read-only audit of original intro music, preset Fahai and complete dialogue."""
+"""Read-only audit of intro provenance, Fahai identity and complete dialogue."""
 import argparse
 import hashlib
 import json
@@ -43,22 +43,34 @@ def main():
             assert setting in settings, (path, setting)
     assert len(data) == 8 and score["intro_once"] is True
     assert not score["pitch_shift"] and not score["time_stretch"] and not score["reverb"]
-    assert score["music_source"]["kind"] == ("none" if score.get("background_music") is False else "original_symbolic_composition")
+    user_recordings = score["identity_reference"]["kind"] == "user_provided_recordings"
+    assert score["music_source"]["kind"] == ("restored_historical_recording" if user_recordings else "none" if score.get("background_music") is False else "original_symbolic_composition")
     if score.get("background_music") is False:
         assert not any(data["intro"]) and score["intro_duration_ms"] == 100
-    assert score["music_source"]["external_audio_inputs"] == []
     identity = score["identity_reference"]
-    assert identity["kind"] == "licensed_preset_synthetic_voice" and identity["recording_references"] == []
-    assert identity["voice"] == "zm_010" and identity["license"] == "Apache-2.0"
-    request = manifest["fahai"]["request"]
-    assert request["recording_references"] == [] and request["pitch_shift"] == 0
-    assert request["voice"] == identity["voice"] and request["model"] == identity["model"]
+    if user_recordings:
+        assert score["music_source"]["external_audio_inputs"] == ["existing_original_intro"]
+        assert digest((folder / "intro.wav").read_bytes()) == manifest["music"]["act2-intro"]["sha256"]
+        assert len(identity["recording_references"]) == 3
+        assert not manifest["fahai"]["pitch_shift"] and not manifest["fahai"]["time_stretch"]
+        assert not manifest["fahai"]["voice_conversion"]
+    else:
+        assert score["music_source"]["external_audio_inputs"] == []
+        assert identity["kind"] == "licensed_preset_synthetic_voice" and identity["recording_references"] == []
+        assert identity["voice"] == "zm_010" and identity["license"] == "Apache-2.0"
+        request = manifest["fahai"]["request"]
+        assert request["recording_references"] == [] and request["pitch_shift"] == 0
+        assert request["voice"] == identity["voice"] and request["model"] == identity["model"]
     assert len(data["intro"]) // 4 == manifest["music"]["act2-intro"]["frames"]
     assert score["intro_duration_ms"] == round(len(data["intro"]) / 4 / 48)
     for line in manifest["fahai"]["lines"]:
         path = folder / (line["line_id"] + ".wav")
         assert digest(path.read_bytes()) == line["sha256"]
         assert len(data[line["line_id"]]) // 4 == line["frames"]
+        if user_recordings:
+            assert line["frames"] == line["retained_end_frame"] - line["retained_start_frame"]
+            assert abs(line["measured_lufs"] + 18) <= .3
+            continue
         assert line["complete_phrases"][-1]["end_frame"] == line["frames"]
         assert [p["text"] for p in line["complete_phrases"]] == request["phrases"][line["line_id"]]
         pauses = [(a["end_frame"], b["start_frame"]) for a, b in zip(line["complete_phrases"], line["complete_phrases"][1:])]
@@ -82,7 +94,8 @@ def main():
     for ref in score["xuxian_identity"]["source_assets"]:
         assert digest((root / ref["path"].removeprefix("res://")).read_bytes()) == ref["sha256"]
     report = dict(passed=True, assets=8, strict_decode=True, original_music_manifest=True,
-        preset_fahai_without_recording_reference=True, complete_dialogue_lines=6, silence_and_subtitles_verified=True,
+        preset_fahai_without_recording_reference=not user_recordings, user_fahai_recordings=user_recordings,
+        complete_dialogue_lines=6, silence_and_subtitles_verified=True,
         intro_frames=len(data["intro"]) // 4, main_frames=len(data["main"]) // 4,
         human_listening_scope=score["human_listening_scope"])
     args.report.parent.mkdir(exist_ok=True, parents=True)
