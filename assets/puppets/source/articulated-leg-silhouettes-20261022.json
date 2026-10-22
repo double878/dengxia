@@ -1,0 +1,121 @@
+{
+  "method": "Original articulated leg silhouettes; colour replaced with current reference garment pixels",
+  "characters": {
+    "baisuzhen": {
+      "parts": {
+        "left_thigh": {
+          "rect": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            64.0
+          ],
+          "axis_pixels": 320
+        },
+        "left_calf": {
+          "rect": [
+            512,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            64.0
+          ],
+          "axis_pixels": 320
+        },
+        "right_thigh": {
+          "rect": [
+            1024,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            64.0
+          ],
+          "axis_pixels": 320
+        },
+        "right_calf": {
+          "rect": [
+            1536,
+            0,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            64.0
+          ],
+          "axis_pixels": 320
+        }
+      },
+      "sleeve_width_per_bone": 1.0153125,
+      "original_atlas_sha256": "0b9940926261d4dfe8d9722a0c2b4664a2d95b0077046a1a40e1c71768887600"
+    },
+    "xuxian": {
+      "parts": {
+        "left_thigh": {
+          "rect": [
+            0,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            64.0
+          ],
+          "axis_pixels": 320
+        },
+        "left_calf": {
+          "rect": [
+            512,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            64.0
+          ],
+          "axis_pixels": 320
+        },
+        "right_thigh": {
+          "rect": [
+            1024,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            64.0
+          ],
+          "axis_pixels": 320
+        },
+        "right_calf": {
+          "rect": [
+            1536,
+            512,
+            512,
+            512
+          ],
+          "pivot": [
+            256.0,
+            64.0
+          ],
+          "axis_pixels": 320
+        }
+      },
+      "sleeve_width_per_bone": 0.874296875,
+      "original_atlas_sha256": "9b91b8987cc99354604dd813a518837d4763f5e52b5bb89b535b10974d3e279e"
+    }
+  }
+}

@@ -1,7 +1,8 @@
 """Trace the two user-created reference photographs into existing puppet rigs.
 
 Contours use the original 1280x2278 photo coordinates. No colour key is used:
-ivory fabric and gold carving stay visible. Hidden garment is not redrawn.
+ivory fabric and gold carving stay visible. Articulated lower garments adapt
+the old silhouettes with observed cloth rather than inventing hidden anatomy.
 """
 from __future__ import annotations
 import argparse
@@ -162,6 +163,7 @@ XU["right_forearm"] = ([(620,990),(650,975),(699,951),(733,938),(768,924),(788,9
 # The atlas pivots stay unchanged; display offsets align the independently
 # scaled head and torso at these anatomical joints, including during head tilt.
 NECK = {"baisuzhen": (620,782), "xuxian": (582,732)}
+BAI_TORSO_WIDTH = .85
 BAI["torso"] = ([(581,772),(598,776),(624,787),(646,804),(658,832)]
     + BAI["torso"][0][4:], BAI["torso"][1], BAI["torso"][2])
 
@@ -275,6 +277,84 @@ def add_legs(definition, split_x, knee_y, foot_y):
             (edge,foot_y+12),(split_x+sign*-10,foot_y+12)],knee,foot)
 
 
+def articulate_lower_body(assets, name, skin, atlas):
+    """Fit current cloth into the old articulated silhouette, keeping joint pivots.
+
+    Scanline mapping preserves observed embroidery/hem colours. It is a garment
+    adaptation, not a claim that the hidden legs were observed in the photo.
+    """
+    from scipy.ndimage import distance_transform_edt
+    import cv2
+    template_path=assets/"source/articulated-leg-silhouettes-20261022.png"
+    metadata_path=template_path.with_suffix(".json")
+    template=Image.open(template_path)
+    metadata=json.loads(metadata_path.read_text(encoding="utf-8"))
+    reference=metadata["characters"]["xuxian" if name=="xuxian" else "baisuzhen"]
+    # Fahai's photographed raised rear leg must not become a permanent walking pose.
+    source_parts={p:atlas.crop((v["rect"][0],v["rect"][1],v["rect"][0]+512,v["rect"][1]+512))
+        for p,v in skin["parts"].items() if p.endswith(("_thigh","_calf"))}
+    for part,old in reference["parts"].items():
+        x,y,w,h=old["rect"]
+        shape=template.crop((x,y,x+w,y+h))
+        if name=="fahai":
+            shape=shape.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        # Old cutouts include a photographed lateral lean. Centre each row on
+        # its bone before articulation, so the two knees do not cross at rest.
+        rows=np.asarray(shape).copy()
+        count,labels,stats,_=cv2.connectedComponentsWithStats((rows>0).astype(np.uint8))
+        if count<2:raise ValueError("Empty old leg silhouette")
+        rows[labels!=(1+int(np.argmax(stats[1:,cv2.CC_STAT_AREA])))]=0
+        # Photograph cutouts include thin floor/rod remnants below the hem.
+        substantial=np.flatnonzero(np.count_nonzero(rows,axis=1)>=24)
+        rows[substantial[-1]+1:]=0
+        centred=np.zeros_like(rows)
+        for yy in np.flatnonzero(rows.any(axis=1)):
+            xs=np.flatnonzero(rows[yy]);shift=256-round((int(xs[0])+int(xs[-1]))*.5)
+            dest=xs+shift
+            if dest.min()<4 or dest.max()>507:raise ValueError("Leg silhouette exceeds tile")
+            centred[yy,dest]=rows[yy,xs]
+        shape=Image.fromarray(centred)
+        target=skin["parts"][part]
+        offset=(round(target["pivot"][0]-old["pivot"][0]),round(target["pivot"][1]-old["pivot"][1]))
+        alpha=Image.new("L",(512,512));alpha.paste(shape,offset)
+        mask=np.asarray(alpha)>0
+        source_name=("right_thigh" if part.endswith("_thigh") else "right_calf") if name=="fahai" else part
+        source=np.asarray(source_parts[source_name])
+        inside=source[:,:,3]>100
+        if inside.sum()<100:raise ValueError("Empty garment "+name+"/"+source_name)
+        nearest=distance_transform_edt(~inside,return_distances=False,return_indices=True)
+        filled=source[nearest[0],nearest[1],:3]
+        sy=np.flatnonzero(inside.any(axis=1));ty=np.flatnonzero(mask.any(axis=1))
+        rgb=np.zeros((512,512,4),np.uint8)
+        for yy in ty:
+            sample=int(round(np.interp(yy,[ty[0],ty[-1]],[sy[0],sy[-1]])))
+            if not inside[sample].any():sample=int(sy[np.argmin(abs(sy-sample))])
+            sx=np.flatnonzero(inside[sample]);tx=np.flatnonzero(mask[yy])
+            mapped=np.rint(np.linspace(sx[0],sx[-1],len(tx))).astype(int)
+            rgb[yy,tx,:3]=filled[sample,mapped]
+        rgb[:,:,3]=np.asarray(alpha)
+        image=Image.fromarray(rgb)
+        rect=target["rect"];atlas.paste(image,(rect[0],rect[1]))
+        target.update(axis_pixels=old["axis_pixels"],method="Old articulated silhouette fitted with current reference cloth",template_part=part)
+        if name=="fahai":
+            target["width_scale"]=1.30
+        target.pop("reference_outline",None);target.pop("reference_axis",None)
+    skin.pop("lower_body_size_ratio",None)
+    unused=skin["parts"].pop("lower_body",None)
+    if unused:
+        x,y,w,h=unused["rect"];atlas.paste((0,0,0,0),(x,y,x+w,y+h))
+    skin["leg_foot_half_width_ratio"]=.075 if name=="fahai" else .055
+    skin["leg_knee_half_width_ratio"]=.040 if name=="fahai" else .025
+    if name in ["baisuzhen","xuxian"]:
+        for side in ["left","right"]:
+            p=skin["parts"][side+"_forearm"];x,y,w,h=p["rect"]
+            a=np.asarray(atlas.crop((x,y,x+w,y+h)).getchannel("A"))>100
+            p["width_scale"]=reference["sleeve_width_per_bone"]*p["axis_pixels"]/float(max(np.count_nonzero(a,axis=1)))
+    return dict(template=template_path.name,template_sha256=sha(template_path),
+        metadata_sha256=sha(metadata_path),method="Old silhouette and joint chain, current garment colours and embroidery",
+        photographed_upper_body_preserved=True)
+
+
 def prepare_staff(source, assets, skin, atlas):
     """Cut the supplied gold ring staff and rectify its shaft to stage vertical."""
     image=Image.open(source).convert("RGB")
@@ -358,7 +438,7 @@ def main():
         for name in ["puppet_assets.json","baisuzhen.png","xuxian.png","fahai.png"]:
             shutil.copyfile(assets/name,before/name)
     manifest=json.loads((before/"puppet_assets.json").read_text(encoding="utf-8"))
-    report=dict(version=1,method="Manually traced original photo pixels, with seeded GrabCut edge cleanup; no generated replacement artwork",
+    report=dict(version=1,method="Manually traced original photo pixels with seeded GrabCut edge cleanup; old articulated lower silhouettes fitted with current cloth",
         tool_sha256=sha(Path(__file__)),characters={},limitations=[
         "Reverse sides mirror the supplied face; no independently observed reverse.",
         "Photographs hide rear-arm/leg garment; pieces reuse visible cloth inside the traced silhouette.",
@@ -425,7 +505,6 @@ def main():
             scales[part]=scale
             if part.endswith("_forearm"):
                 parts[part]["width_scale"]=.72
-        atlas.save(out/"atlas.png",optimize=True)
         skin.update(parts=parts,
             head_size_per_radius=512/(scales["head"]*natural_height*.105),
             hand_size_ratio=512/(hand_scale*natural_height),
@@ -437,6 +516,9 @@ def main():
                 excluded="Photographic stage, background figures, control rods; Xuxian basket and carrying pole"))
         if name=="xuxian":
             skin["shoulder_half_width_ratio"]=.055
+        else:
+            # Slim only the garment across the bone; neck follows its collar.
+            parts["torso"]["width_scale"]=BAI_TORSO_WIDTH
         neck=NECK[name]
         origin=definition["torso"][1];end=definition["torso"][2]
         angle=math.pi/2-math.atan2(end[1]-origin[1],end[0]-origin[0])
@@ -444,20 +526,25 @@ def main():
         dx,dy=neck[0]-origin[0],neck[1]-origin[1]
         skin["neck_attachment_ratio"]=[source_mirror*factor*(math.cos(angle)*dx-math.sin(angle)*dy),
             factor*(math.sin(angle)*dx+math.cos(angle)*dy)]
+        if name=="baisuzhen":
+            skin["neck_attachment_ratio"][0]*=BAI_TORSO_WIDTH
         skin["head_neck_offset_ratio"]=[(neck[i]-definition["head"][1][i])/natural_height*(source_mirror if i==0 else 1) for i in range(2)]
         skin["reference"]["neck_insertion_xy"]=list(neck)
         skin["reference"]["canonical_mirror_x"]=source_mirror
         if "ribbons" in parts:
             skin["ribbons_size_ratio"]=512/(scales["ribbons"]*natural_height)
+        lower=articulate_lower_body(assets,name,skin,atlas)
+        atlas.save(out/"atlas.png",optimize=True)
         display=cutout.crop(cutout.getbbox());display.thumbnail((730,1430),Image.Resampling.LANCZOS)
         board.paste(display,(index*800+(800-display.width)//2,45),display)
         font=ImageFont.truetype("C:/Windows/Fonts/msyh.ttc",32)
         ImageDraw.Draw(board).text((index*800+400,1505),"白素贞" if index==0 else "许仙 · 无篮子挑杆",fill="#403b32",font=font,anchor="mm")
         report["characters"][name]=dict(source_sha256=sha(source_path),atlas_sha256=sha(out/"atlas.png"),parts=len(parts),
-            intact_robe=True,original_pivots_retained=True)
+            articulated_lower=lower,original_pivots_retained=True)
     staff=manifest["characters"]["fahai"]
     fahai=Image.open(before/"fahai.png").convert("RGBA")
     report["staff"]=prepare_staff(args.staff,assets,staff,fahai)
+    report["fahai_lower"]=articulate_lower_body(assets,"fahai",staff,fahai)
     fahai.save(assets/"fahai.png",optimize=True)
     for name in ["baisuzhen","xuxian"]:
         shutil.copyfile(batch/name/"atlas.png",assets/(name+".png"))

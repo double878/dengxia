@@ -2625,10 +2625,10 @@
     ]
   },
   "puppet_outputs": {
-    "puppet_assets.json": "3684120450241813cf39424a8efcb932d0530ea1b69d9ad43c3f13ecf796d330",
-    "baisuzhen.png": "999f81189c2cb694aa972d33b838ea07cbada70655248f02b92a5849807c9f83",
-    "xuxian.png": "cb045ffa9fd7d44e25a3f73ab58e0546943be2d91faa130e04764f061a434236",
-    "fahai.png": "bc83511fda7f2946d42895a0cc37695a49255912883a3c1e7bfe351b594c1122"
+    "puppet_assets.json": "6bf8471944e7ac1b30439e6c1f64082b0fc0d26d1aa4f91ac7125621a93e0d17",
+    "baisuzhen.png": "39d0a3e5fce23fafc15df61fce44a93bfe28b567f943ed71ac98f66cae0bf6c6",
+    "xuxian.png": "d5164c93b6bf2ec4651baac5d7e3dd2e2e094f95b3fe5e47457d0bf50c2101e0",
+    "fahai.png": "cab27f2c69e9d163ad4d18a42716b23848dcadbe4edb506c73c3db57df9c133e"
   },
   "tools": {
     "build_duet_previews.py": "4626c887cd8f57ccc1833283dfa52bc5639cc1c17428bdf0b7bbea095d15b312",
@@ -2638,7 +2638,7 @@
     "build_fahai_assets.py": "a71022e3d176a44506295580f8e30bd6e22f6d4fb2bc44aa3efad7c2979e13da",
     "install_user_restoration.py": "65f0b0791e685b3e3c80070f5bd92059edf7946ff0ba626cbf53ba7115231d99",
     "remove_duet_backing.py": "f56face173bfa9aa626d8c8c37398746e787e78f1532fa15a3189007ca18c196",
-    "prepare_couple_references.py": "1a8acd9a7d49473e99172e48e4374ade253d666a5980662e1c6081ac9c25e487"
+    "prepare_couple_references.py": "d35bfca41eead7954341fbbcf56bbcee0be6b5ab4c67cd9c167163ac1fd849a3"
   },
   "outputs": {
     "act1-natural/main.wav": "ebb9c46ea9892cd3c94d3e36ab7f84574192db77bc9826cab965164044e43a1e",

@@ -525,23 +525,17 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	var half_w: float = half_width_px(height, flip_width)
 	var shoulder_half_w: float = shoulder_half_width_px(height, flip_width)
 
-	# 完整袍摆保留原图轮廓；其余影人沿用髋 → 膝 → 脚的分件链。
-	var knee_out: float = height * (0.03 + 0.11 * clampf(state.stance, 0.0, 1.0)) * flip_width
-	var continuous_lower: bool = (
-		_has_body_skin() and _skins[str(_body_skin_id())]["parts"].has("lower_body")
-		and state.leg_spread <= .01 and not seated
-	)
-	if continuous_lower:
-		_draw_walking_robe(hip, height, alpha)
+	# 三人使用分开的髋—膝—脚；窄腰与长袍的腿片衔接，不再形变整袍。
+	var skin: Dictionary = _skins[str(_body_skin_id())] if _has_body_skin() else {}
+	var knee_out: float = height * (float(skin.get("leg_knee_half_width_ratio", .03)) + .11 * clampf(state.stance, 0.0, 1.0)) * flip_width
+	var foot_out: float = height * float(skin.get("leg_foot_half_width_ratio", HALF_W_RATIO * .95)) * flip_width
 	for side in [-1.0, 1.0]:
-		if continuous_lower:
-			continue
 		var step: Vector2 = walk_step_offset(side, height)
 		var knee := Vector2(
 			hip.x + side * knee_out + step.x * .69, ground.y - height * 0.22 + step.y * .5
 		)
 		var foot := Vector2(
-			ground.x + side * half_w * 0.95 + step.x, ground.y + step.y
+			ground.x + side * foot_out + step.x, ground.y + step.y
 		)
 		if state.leg_spread > 0.0:
 			var spread: float = state.leg_spread
@@ -604,40 +598,6 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
 	draw_set_transform(Vector2.ZERO)
 	_skin_canvas_transform = Transform2D.IDENTITY
-
-
-## 同一张完整袍摆从静止过渡到迈步，腰线固定、下摆两侧反相；不切换站姿贴图。
-func _draw_walking_robe(hip: Vector2, height: float, alpha: float) -> void:
-	var id: int = _body_skin_id()
-	var skin: Dictionary = _skins[str(id)]
-	var ratios: Array = skin["lower_body_size_ratio"]
-	var size := Vector2(float(ratios[0]), float(ratios[1])) * height
-	if puppet_state.walk_amount <= 0.0:
-		_draw_skin_tile(id, "lower_body", hip, 0.0, size, alpha)
-		return
-	var part: Dictionary = skin["parts"]["lower_body"]
-	var rect: Array = part["rect"]
-	var pivot := Vector2(part["pivot"][0], part["pivot"][1]) / 512.0
-	var texture: Texture2D = SKIN_TEXTURES[id] if id < SKIN_TEXTURES.size() else EXTRA_SKIN_TEXTURES[id]
-	var texture_size := Vector2(texture.get_size())
-	var left_step: Vector2 = walk_step_offset(-1, height)
-	var right_step: Vector2 = walk_step_offset(1, height)
-	draw_set_transform_matrix(_skin_canvas_transform)
-	# 8×4 小网格足以表达袍摆/鞋的交替位移，共享边顶点避免缝隙。
-	for row in range(4):
-		for column in range(8):
-			var points := PackedVector2Array()
-			var uvs := PackedVector2Array()
-			for corner: Vector2 in [Vector2(0,0),Vector2(1,0),Vector2(1,1),Vector2(0,1)]:
-				var uv := Vector2((column + corner.x) / 8.0, (row + corner.y) / 4.0)
-				var point: Vector2 = hip + (uv - pivot) * size
-				var depth: float = clampf((point.y - hip.y) / (height * HIP_RATIO), 0.0, 1.0)
-				var side_blend: float = smoothstep(-height * .12, height * .12, point.x - hip.x)
-				var step: Vector2 = left_step.lerp(right_step, side_blend)
-				points.append(point + step * depth * depth)
-				uvs.append((Vector2(rect[0],rect[1]) + uv * Vector2(rect[2],rect[3])) / texture_size)
-			draw_polygon(points, PackedColorArray([Color(1,1,1,alpha)]), uvs, texture)
-	draw_set_transform(Vector2.ZERO)
 
 
 ## 一条手臂。手角以「自然垂下」为 0，向抬手方向为正；屏幕角口径见 `arm_direction()`。
@@ -783,6 +743,12 @@ func _read_skins() -> Dictionary:
 		if not is_finite(shoulder_width) or shoulder_width <= 0.0 or shoulder_width > 0.25:
 			push_error("影人肩间距无效：%s (%s)" % [character, SKIN_MANIFEST_PATH])
 			valid = false
+		for field: String in ["leg_foot_half_width_ratio", "leg_knee_half_width_ratio"]:
+			if skin.has(field):
+				var ratio: float = float(skin[field])
+				if not is_finite(ratio) or ratio <= 0.0 or ratio > .20:
+					push_error("影人腿部间距无效：%s/%s" % [character, field])
+					valid = false
 		for part_name: String in [
 			"head",
 			"torso",

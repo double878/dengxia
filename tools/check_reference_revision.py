@@ -75,12 +75,22 @@ def main():
     staff=current_fahai["parts"]["staff"]
     assert staff["rect"]==[512,1536,512,512] and staff["pivot"]==[256,270]
     current_fahai["parts"]["staff"]=previous_fahai["parts"]["staff"]
+    leg_names=[s+"_"+p for s in ["left","right"] for p in ["thigh","calf"]]
+    for key in ["leg_foot_half_width_ratio","leg_knee_half_width_ratio"]:
+        assert current_fahai.pop(key)==(.075 if "foot" in key else .040)
+    for part in leg_names:
+        assert current_fahai["parts"][part]["pivot"]==previous_fahai["parts"][part]["pivot"]
+        assert current_fahai["parts"][part]["rect"]==previous_fahai["parts"][part]["rect"]
+        assert current_fahai["parts"][part]["axis_pixels"]==320
+        assert current_fahai["parts"][part]["width_scale"]==1.30
+        current_fahai["parts"][part]=previous_fahai["parts"][part]
     assert current_fahai==previous_fahai
     old_fahai=np.asarray(Image.open(before/"puppets/fahai.png"))
     new_fahai=np.asarray(Image.open(art/"fahai.png"))
-    assert np.array_equal(old_fahai[:1536],new_fahai[:1536])
-    assert np.array_equal(old_fahai[1536:,:512],new_fahai[1536:,:512])
-    assert np.array_equal(old_fahai[1536:,1536:],new_fahai[1536:,1536:])
+    for part,definition in previous_fahai["parts"].items():
+        if part in leg_names+["staff"]:continue
+        x,y,w,h=definition["rect"]
+        assert np.array_equal(old_fahai[y:y+h,x:x+w],new_fahai[y:y+h,x:x+w]),part
     assert not new_fahai[1536:,1024:1536,3].any()
     assert (new_fahai[1681:2026,760:776,3]>127).sum()>700
     assert sha(art/report["staff"]["filename"])==report["staff"]["source_sha256"]
@@ -89,10 +99,12 @@ def main():
         assert skin["reference_facing"]==old["characters"][name]["reference_facing"]
         if name=="baisuzhen":
             assert skin["shoulder_half_width_ratio"]==old["characters"][name]["shoulder_half_width_ratio"]
+            assert skin["parts"]["torso"]["width_scale"]==.85
         else:
             assert skin["shoulder_half_width_ratio"]==.055
-        assert "lower_body" in skin["parts"]
-        assert all(skin["parts"][side+"_forearm"]["width_scale"]==.72 for side in ["left","right"])
+        assert "lower_body" not in skin["parts"]
+        assert skin["leg_foot_half_width_ratio"]==.055
+        assert skin["leg_knee_half_width_ratio"]==.025
         for field in ["neck_attachment_ratio","head_neck_offset_ratio"]:
             assert len(skin[field])==2 and np.isfinite(skin[field]).all(),(name,field)
         ref=art/skin["reference"]["filename"]
@@ -108,6 +120,12 @@ def main():
             alpha=np.asarray(atlas.crop((x,y,x+w,y+h)))[:,:,3]
             assert (alpha>127).sum()>50,(name,part)
             assert not alpha[:4].any() and not alpha[-4:].any() and not alpha[:,:4].any() and not alpha[:,-4:].any(),(name,part)
+            if part not in leg_names:
+                assert np.array_equal(np.asarray(atlas.crop((x,y,x+w,y+h))),np.asarray(Image.open(batch/name/(part+".png")))),(name,part,"upper body source tile")
+            if part.endswith("_forearm"):
+                template=load(art/"source/articulated-leg-silhouettes-20261022.json")["characters"][name]
+                visible_width=max(np.count_nonzero(alpha>100,axis=1))/row["axis_pixels"]*row["width_scale"]
+                assert abs(visible_width-template["sleeve_width_per_bone"])<.001,(name,part)
         # No stage floor, Doubao attribution, pole tail or basket is extracted.
         cutout=Image.open(batch/name/"cutout.png")
         assert cutout.getchannel("A").getbbox()[3]<1900
@@ -125,8 +143,13 @@ def main():
         exact_clean_vocal_masters=2,only_duet_pcm_changed=True,opening_and_fahai_unchanged=True,
         new_couple_parts=[len(now["characters"][n]["parts"]) for n in ["baisuzhen","xuxian"]],
         original_rects_and_pivots=True,other_characters_unchanged=True)
-    result.update(neck_source_preserved=True,fahai_body_tiles_unchanged=True,
-        gold_ring_staff=True,forearm_width_scale=.72,obsolete_staff_extension_removed=True)
+    for lower in [report["characters"][n]["articulated_lower"] for n in ["baisuzhen","xuxian"]]+[report["fahai_lower"]]:
+        template=art/"source"/lower["template"]
+        assert sha(template)==lower["template_sha256"]
+        assert sha(template.with_suffix(".json"))==lower["metadata_sha256"]
+    result.update(neck_source_preserved=True,fahai_upper_body_tiles_unchanged=True,
+        articulated_lower_bodies=3,old_sleeve_proportions=True,
+        gold_ring_staff=True,obsolete_staff_extension_removed=True)
     (batch/"audit.json").write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(result))
 

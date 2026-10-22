@@ -1,20 +1,32 @@
 {
   "version": 1,
-  "method": "Manually traced original photo pixels, with seeded GrabCut edge cleanup; no generated replacement artwork",
-  "tool_sha256": "1a8acd9a7d49473e99172e48e4374ade253d666a5980662e1c6081ac9c25e487",
+  "method": "Manually traced original photo pixels with seeded GrabCut edge cleanup; old articulated lower silhouettes fitted with current cloth",
+  "tool_sha256": "d35bfca41eead7954341fbbcf56bbcee0be6b5ab4c67cd9c167163ac1fd849a3",
   "characters": {
     "baisuzhen": {
       "source_sha256": "5a86420904861e3b97648b14fc53c60383593ed4a7e9db07e8a197f38eb6064a",
-      "atlas_sha256": "999f81189c2cb694aa972d33b838ea07cbada70655248f02b92a5849807c9f83",
-      "parts": 16,
-      "intact_robe": true,
+      "atlas_sha256": "39d0a3e5fce23fafc15df61fce44a93bfe28b567f943ed71ac98f66cae0bf6c6",
+      "parts": 15,
+      "articulated_lower": {
+        "template": "articulated-leg-silhouettes-20261022.png",
+        "template_sha256": "adb2e3fc32f0fa602a1b02356e73e5c2a95dfea0a2197e98d809ed4e7b6e4ec1",
+        "metadata_sha256": "b2fc66b46900fce10e5a8d90632f34e67120910c8cac9b418472b737919b05cc",
+        "method": "Old silhouette and joint chain, current garment colours and embroidery",
+        "photographed_upper_body_preserved": true
+      },
       "original_pivots_retained": true
     },
     "xuxian": {
       "source_sha256": "62e25491aaaee80d6a9c4ab55e1ae9a0bf94f8509aa7f7b7caf601aa2b24a8ae",
-      "atlas_sha256": "cb045ffa9fd7d44e25a3f73ab58e0546943be2d91faa130e04764f061a434236",
-      "parts": 13,
-      "intact_robe": true,
+      "atlas_sha256": "d5164c93b6bf2ec4651baac5d7e3dd2e2e094f95b3fe5e47457d0bf50c2101e0",
+      "parts": 12,
+      "articulated_lower": {
+        "template": "articulated-leg-silhouettes-20261022.png",
+        "template_sha256": "adb2e3fc32f0fa602a1b02356e73e5c2a95dfea0a2197e98d809ed4e7b6e4ec1",
+        "metadata_sha256": "b2fc66b46900fce10e5a8d90632f34e67120910c8cac9b418472b737919b05cc",
+        "method": "Old silhouette and joint chain, current garment colours and embroidery",
+        "photographed_upper_body_preserved": true
+      },
       "original_pivots_retained": true
     }
   },
@@ -39,10 +51,17 @@
     "orientation": "Gold ring-head staff, vertical in stage axes, follows right wrist; no ground insertion required",
     "method": "User reference pixels; neutral backdrop removed; upright ring head with lengthened straight shaft"
   },
+  "fahai_lower": {
+    "template": "articulated-leg-silhouettes-20261022.png",
+    "template_sha256": "adb2e3fc32f0fa602a1b02356e73e5c2a95dfea0a2197e98d809ed4e7b6e4ec1",
+    "metadata_sha256": "b2fc66b46900fce10e5a8d90632f34e67120910c8cac9b418472b737919b05cc",
+    "method": "Old silhouette and joint chain, current garment colours and embroidery",
+    "photographed_upper_body_preserved": true
+  },
   "outputs": {
-    "puppet_assets.json": "3684120450241813cf39424a8efcb932d0530ea1b69d9ad43c3f13ecf796d330",
-    "baisuzhen.png": "999f81189c2cb694aa972d33b838ea07cbada70655248f02b92a5849807c9f83",
-    "xuxian.png": "cb045ffa9fd7d44e25a3f73ab58e0546943be2d91faa130e04764f061a434236",
-    "fahai.png": "bc83511fda7f2946d42895a0cc37695a49255912883a3c1e7bfe351b594c1122"
+    "puppet_assets.json": "6bf8471944e7ac1b30439e6c1f64082b0fc0d26d1aa4f91ac7125621a93e0d17",
+    "baisuzhen.png": "39d0a3e5fce23fafc15df61fce44a93bfe28b567f943ed71ac98f66cae0bf6c6",
+    "xuxian.png": "d5164c93b6bf2ec4651baac5d7e3dd2e2e094f95b3fe5e47457d0bf50c2101e0",
+    "fahai.png": "cab27f2c69e9d163ad4d18a42716b23848dcadbe4edb506c73c3db57df9c133e"
   }
 }

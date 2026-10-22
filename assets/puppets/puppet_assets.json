@@ -3264,7 +3264,7 @@
             ]
           ],
           "method": "Source pixels with joint overlap; no backdrop keying",
-          "width_scale": 0.72
+          "width_scale": 0.927318815118234
         },
         "left_hand": {
           "rect": [
@@ -3554,7 +3554,7 @@
             ]
           ],
           "method": "Source pixels with joint overlap; no backdrop keying",
-          "width_scale": 0.72
+          "width_scale": 0.6848794051123964
         },
         "right_hand": {
           "rect": [
@@ -3690,37 +3690,10 @@
             256.0,
             64.0
           ],
-          "axis_pixels": 310.40000000000003,
+          "axis_pixels": 320,
           "opacity": 1.0,
-          "reference_outline": [
-            [
-              570,
-              1224
-            ],
-            [
-              269,
-              1224
-            ],
-            [
-              269,
-              1568
-            ],
-            [
-              570,
-              1568
-            ]
-          ],
-          "reference_axis": [
-            [
-              536,
-              1250
-            ],
-            [
-              475,
-              1540
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "left_thigh"
         },
         "left_calf": {
           "rect": [
@@ -3733,37 +3706,10 @@
             256.0,
             64.0
           ],
-          "axis_pixels": 310.4,
+          "axis_pixels": 320,
           "opacity": 1.0,
-          "reference_outline": [
-            [
-              570,
-              1512
-            ],
-            [
-              269,
-              1512
-            ],
-            [
-              269,
-              1860
-            ],
-            [
-              570,
-              1860
-            ]
-          ],
-          "reference_axis": [
-            [
-              475,
-              1540
-            ],
-            [
-              415,
-              1848
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "left_calf"
         },
         "right_thigh": {
           "rect": [
@@ -3776,37 +3722,10 @@
             256.0,
             64.0
           ],
-          "axis_pixels": 310.40000000000003,
+          "axis_pixels": 320,
           "opacity": 1.0,
-          "reference_outline": [
-            [
-              550,
-              1224
-            ],
-            [
-              863,
-              1224
-            ],
-            [
-              863,
-              1568
-            ],
-            [
-              550,
-              1568
-            ]
-          ],
-          "reference_axis": [
-            [
-              584,
-              1250
-            ],
-            [
-              645,
-              1540
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "right_thigh"
         },
         "right_calf": {
           "rect": [
@@ -3819,262 +3738,12 @@
             256.0,
             64.0
           ],
-          "axis_pixels": 310.4,
+          "axis_pixels": 320,
           "opacity": 1.0,
-          "reference_outline": [
-            [
-              550,
-              1512
-            ],
-            [
-              863,
-              1512
-            ],
-            [
-              863,
-              1860
-            ],
-            [
-              550,
-              1860
-            ]
-          ],
-          "reference_axis": [
-            [
-              645,
-              1540
-            ],
-            [
-              705,
-              1848
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
-        },
-        "lower_body": {
-          "rect": [
-            0,
-            1536,
-            512,
-            512
-          ],
-          "pivot": [
-            256,
-            64
-          ],
-          "axis_pixels": 1,
-          "opacity": 1.0,
-          "reference_outline": [
-            [
-              448,
-              1225
-            ],
-            [
-              658,
-              1224
-            ],
-            [
-              680,
-              1299
-            ],
-            [
-              702,
-              1370
-            ],
-            [
-              730,
-              1450
-            ],
-            [
-              757,
-              1520
-            ],
-            [
-              794,
-              1594
-            ],
-            [
-              830,
-              1667
-            ],
-            [
-              858,
-              1734
-            ],
-            [
-              839,
-              1745
-            ],
-            [
-              812,
-              1760
-            ],
-            [
-              785,
-              1774
-            ],
-            [
-              759,
-              1790
-            ],
-            [
-              778,
-              1792
-            ],
-            [
-              775,
-              1810
-            ],
-            [
-              758,
-              1828
-            ],
-            [
-              742,
-              1843
-            ],
-            [
-              705,
-              1847
-            ],
-            [
-              667,
-              1848
-            ],
-            [
-              650,
-              1838
-            ],
-            [
-              653,
-              1828
-            ],
-            [
-              615,
-              1832
-            ],
-            [
-              595,
-              1800
-            ],
-            [
-              583,
-              1755
-            ],
-            [
-              571,
-              1705
-            ],
-            [
-              558,
-              1657
-            ],
-            [
-              546,
-              1630
-            ],
-            [
-              528,
-              1691
-            ],
-            [
-              508,
-              1744
-            ],
-            [
-              493,
-              1795
-            ],
-            [
-              509,
-              1815
-            ],
-            [
-              502,
-              1835
-            ],
-            [
-              485,
-              1845
-            ],
-            [
-              463,
-              1844
-            ],
-            [
-              435,
-              1838
-            ],
-            [
-              414,
-              1823
-            ],
-            [
-              387,
-              1805
-            ],
-            [
-              362,
-              1786
-            ],
-            [
-              338,
-              1779
-            ],
-            [
-              307,
-              1770
-            ],
-            [
-              274,
-              1760
-            ],
-            [
-              279,
-              1733
-            ],
-            [
-              297,
-              1680
-            ],
-            [
-              316,
-              1619
-            ],
-            [
-              338,
-              1553
-            ],
-            [
-              359,
-              1486
-            ],
-            [
-              384,
-              1415
-            ],
-            [
-              407,
-              1344
-            ],
-            [
-              428,
-              1283
-            ]
-          ],
-          "reference_axis": [
-            [
-              560,
-              1250
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "right_calf"
         }
       },
-      "lower_body_size_ratio": [
-        0.5150149806521709,
-        0.5326775749550742
-      ],
       "palette_layout": "User-created source pixels, including ivory/gold and teal garment details",
       "reference": {
         "filename": "source/xuxian-reference-20261022.jpg",
@@ -4084,7 +3753,7 @@
         ],
         "sha256": "62e25491aaaee80d6a9c4ab55e1ae9a0bf94f8509aa7f7b7caf601aa2b24a8ae",
         "creator": "User states these images were created with Doubao",
-        "method": "Manually traced original photo pixels, with seeded GrabCut edge cleanup; no generated replacement artwork",
+        "method": "Manually traced original photo pixels with seeded GrabCut edge cleanup; old articulated lower silhouettes fitted with current cloth",
         "excluded": "Photographic stage, background figures, control rods; Xuxian basket and carrying pole",
         "neck_insertion_xy": [
           582,
@@ -4100,7 +3769,9 @@
       "head_neck_offset_ratio": [
         -0.011420413990007138,
         0.0728051391862955
-      ]
+      ],
+      "leg_foot_half_width_ratio": 0.055,
+      "leg_knee_half_width_ratio": 0.025
     },
     "baisuzhen": {
       "puppet_id": 0,
@@ -4585,7 +4256,8 @@
               1250
             ]
           ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Source pixels with joint overlap; no backdrop keying",
+          "width_scale": 0.85
         },
         "left_upper_arm": {
           "rect": [
@@ -4760,7 +4432,7 @@
             ]
           ],
           "method": "Source pixels with joint overlap; no backdrop keying",
-          "width_scale": 0.72
+          "width_scale": 0.8535632473668886
         },
         "left_hand": {
           "rect": [
@@ -5042,7 +4714,7 @@
             ]
           ],
           "method": "Source pixels with joint overlap; no backdrop keying",
-          "width_scale": 0.72
+          "width_scale": 0.6320938535038934
         },
         "right_hand": {
           "rect": [
@@ -5162,37 +4834,10 @@
             256.0,
             64.0
           ],
-          "axis_pixels": 310.4,
+          "axis_pixels": 320,
           "opacity": 1.0,
-          "reference_outline": [
-            [
-              600,
-              1224
-            ],
-            [
-              338,
-              1224
-            ],
-            [
-              338,
-              1568
-            ],
-            [
-              600,
-              1568
-            ]
-          ],
-          "reference_axis": [
-            [
-              576,
-              1250
-            ],
-            [
-              505,
-              1540
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "left_thigh"
         },
         "left_calf": {
           "rect": [
@@ -5205,37 +4850,10 @@
             256.0,
             64.0
           ],
-          "axis_pixels": 310.4,
+          "axis_pixels": 320,
           "opacity": 1.0,
-          "reference_outline": [
-            [
-              600,
-              1512
-            ],
-            [
-              338,
-              1512
-            ],
-            [
-              338,
-              1860
-            ],
-            [
-              600,
-              1860
-            ]
-          ],
-          "reference_axis": [
-            [
-              505,
-              1540
-            ],
-            [
-              445,
-              1848
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "left_calf"
         },
         "right_thigh": {
           "rect": [
@@ -5248,37 +4866,10 @@
             256.0,
             64.0
           ],
-          "axis_pixels": 249.94692602833166,
+          "axis_pixels": 320,
           "opacity": 1.0,
-          "reference_outline": [
-            [
-              580,
-              1224
-            ],
-            [
-              1114,
-              1224
-            ],
-            [
-              1114,
-              1568
-            ],
-            [
-              580,
-              1568
-            ]
-          ],
-          "reference_axis": [
-            [
-              624,
-              1250
-            ],
-            [
-              675,
-              1540
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "right_thigh"
         },
         "right_calf": {
           "rect": [
@@ -5291,37 +4882,10 @@
             256.0,
             64.0
           ],
-          "axis_pixels": 173.9242605528688,
+          "axis_pixels": 320,
           "opacity": 1.0,
-          "reference_outline": [
-            [
-              580,
-              1512
-            ],
-            [
-              1114,
-              1512
-            ],
-            [
-              1114,
-              1860
-            ],
-            [
-              580,
-              1860
-            ]
-          ],
-          "reference_axis": [
-            [
-              675,
-              1540
-            ],
-            [
-              735,
-              1848
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "right_calf"
         },
         "left_hand_grip": {
           "rect": [
@@ -5517,229 +5081,6 @@
           ],
           "method": "Source pixels with joint overlap; no backdrop keying"
         },
-        "lower_body": {
-          "rect": [
-            1024,
-            1536,
-            512,
-            512
-          ],
-          "pivot": [
-            256,
-            64
-          ],
-          "axis_pixels": 1,
-          "opacity": 1.0,
-          "reference_outline": [
-            [
-              510,
-              1225
-            ],
-            [
-              733,
-              1220
-            ],
-            [
-              767,
-              1284
-            ],
-            [
-              790,
-              1333
-            ],
-            [
-              812,
-              1387
-            ],
-            [
-              836,
-              1448
-            ],
-            [
-              864,
-              1508
-            ],
-            [
-              900,
-              1564
-            ],
-            [
-              941,
-              1602
-            ],
-            [
-              987,
-              1635
-            ],
-            [
-              1039,
-              1667
-            ],
-            [
-              1099,
-              1700
-            ],
-            [
-              1109,
-              1709
-            ],
-            [
-              1086,
-              1738
-            ],
-            [
-              1044,
-              1764
-            ],
-            [
-              1006,
-              1789
-            ],
-            [
-              961,
-              1811
-            ],
-            [
-              923,
-              1824
-            ],
-            [
-              896,
-              1818
-            ],
-            [
-              877,
-              1797
-            ],
-            [
-              858,
-              1771
-            ],
-            [
-              838,
-              1754
-            ],
-            [
-              822,
-              1758
-            ],
-            [
-              795,
-              1776
-            ],
-            [
-              752,
-              1795
-            ],
-            [
-              710,
-              1810
-            ],
-            [
-              666,
-              1820
-            ],
-            [
-              636,
-              1827
-            ],
-            [
-              619,
-              1847
-            ],
-            [
-              579,
-              1850
-            ],
-            [
-              555,
-              1844
-            ],
-            [
-              556,
-              1830
-            ],
-            [
-              518,
-              1821
-            ],
-            [
-              478,
-              1812
-            ],
-            [
-              463,
-              1844
-            ],
-            [
-              432,
-              1846
-            ],
-            [
-              398,
-              1841
-            ],
-            [
-              386,
-              1835
-            ],
-            [
-              400,
-              1814
-            ],
-            [
-              357,
-              1801
-            ],
-            [
-              343,
-              1790
-            ],
-            [
-              362,
-              1760
-            ],
-            [
-              382,
-              1728
-            ],
-            [
-              404,
-              1691
-            ],
-            [
-              426,
-              1646
-            ],
-            [
-              450,
-              1594
-            ],
-            [
-              468,
-              1539
-            ],
-            [
-              482,
-              1484
-            ],
-            [
-              493,
-              1423
-            ],
-            [
-              502,
-              1367
-            ]
-          ],
-          "reference_axis": [
-            [
-              600,
-              1250
-            ]
-          ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
-        },
         "ribbons": {
           "rect": [
             1536,
@@ -5862,10 +5203,6 @@
       },
       "palette_layout": "User-created source pixels, including ivory/gold and teal garment details",
       "shoulder_half_width_ratio": 0.074,
-      "lower_body_size_ratio": [
-        0.7787730268717256,
-        0.8022143554397708
-      ],
       "reference": {
         "filename": "source/baisuzhen-reference-20261022.jpg",
         "size": [
@@ -5874,7 +5211,7 @@
         ],
         "sha256": "5a86420904861e3b97648b14fc53c60383593ed4a7e9db07e8a197f38eb6064a",
         "creator": "User states these images were created with Doubao",
-        "method": "Manually traced original photo pixels, with seeded GrabCut edge cleanup; no generated replacement artwork",
+        "method": "Manually traced original photo pixels with seeded GrabCut edge cleanup; old articulated lower silhouettes fitted with current cloth",
         "excluded": "Photographic stage, background figures, control rods; Xuxian basket and carrying pole",
         "neck_insertion_xy": [
           620,
@@ -5883,14 +5220,16 @@
         "canonical_mirror_x": -1.0
       },
       "neck_attachment_ratio": [
-        -0.026945524790727617,
+        -0.022903696072118476,
         -0.06706709594333549
       ],
       "head_neck_offset_ratio": [
         0.015714285714285715,
         0.08714285714285715
       ],
-      "ribbons_size_ratio": 1.0553610661773583
+      "ribbons_size_ratio": 1.0553610661773583,
+      "leg_foot_half_width_ratio": 0.055,
+      "leg_knee_half_width_ratio": 0.025
     },
     "xiaoqing": {
       "puppet_id": 2,
@@ -8655,90 +7994,12 @@
             256,
             100
           ],
-          "axis_pixels": 320.0,
+          "axis_pixels": 320,
           "opacity": 1.0,
           "inferred": false,
-          "reference_outline": [
-            [
-              580,
-              1196
-            ],
-            [
-              611,
-              1190
-            ],
-            [
-              643,
-              1213
-            ],
-            [
-              672,
-              1256
-            ],
-            [
-              688,
-              1288
-            ],
-            [
-              687,
-              1329
-            ],
-            [
-              680,
-              1373
-            ],
-            [
-              675,
-              1416
-            ],
-            [
-              639,
-              1428
-            ],
-            [
-              601,
-              1423
-            ],
-            [
-              565,
-              1413
-            ],
-            [
-              533,
-              1403
-            ],
-            [
-              506,
-              1389
-            ],
-            [
-              524,
-              1351
-            ],
-            [
-              540,
-              1310
-            ],
-            [
-              551,
-              1267
-            ],
-            [
-              565,
-              1227
-            ]
-          ],
-          "reference_axis": [
-            [
-              596,
-              1220
-            ],
-            [
-              588,
-              1394
-            ]
-          ],
-          "width_scale": 0.86
+          "width_scale": 1.3,
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "left_thigh"
         },
         "left_calf": {
           "rect": [
@@ -8751,169 +8012,12 @@
             256,
             100
           ],
-          "axis_pixels": 320.0,
+          "axis_pixels": 320,
           "opacity": 1.0,
           "inferred": false,
-          "reference_outline": [
-            [
-              539,
-              1358
-            ],
-            [
-              582,
-              1369
-            ],
-            [
-              629,
-              1372
-            ],
-            [
-              676,
-              1373
-            ],
-            [
-              681,
-              1416
-            ],
-            [
-              685,
-              1462
-            ],
-            [
-              686,
-              1517
-            ],
-            [
-              681,
-              1545
-            ],
-            [
-              680,
-              1587
-            ],
-            [
-              687,
-              1622
-            ],
-            [
-              684,
-              1656
-            ],
-            [
-              675,
-              1666
-            ],
-            [
-              641,
-              1669
-            ],
-            [
-              607,
-              1670
-            ],
-            [
-              577,
-              1669
-            ],
-            [
-              568,
-              1663
-            ],
-            [
-              545,
-              1655
-            ],
-            [
-              518,
-              1643
-            ],
-            [
-              493,
-              1631
-            ],
-            [
-              479,
-              1621
-            ],
-            [
-              490,
-              1611
-            ],
-            [
-              478,
-              1604
-            ],
-            [
-              490,
-              1592
-            ],
-            [
-              478,
-              1586
-            ],
-            [
-              491,
-              1575
-            ],
-            [
-              487,
-              1565
-            ],
-            [
-              511,
-              1552
-            ],
-            [
-              532,
-              1536
-            ],
-            [
-              548,
-              1511
-            ],
-            [
-              532,
-              1498
-            ],
-            [
-              514,
-              1488
-            ],
-            [
-              489,
-              1477
-            ],
-            [
-              477,
-              1467
-            ],
-            [
-              474,
-              1453
-            ],
-            [
-              480,
-              1436
-            ],
-            [
-              494,
-              1413
-            ],
-            [
-              510,
-              1390
-            ]
-          ],
-          "reference_axis": [
-            [
-              579,
-              1392
-            ],
-            [
-              602,
-              1645
-            ]
-          ]
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "left_calf",
+          "width_scale": 1.3
         },
         "right_thigh": {
           "rect": [
@@ -8926,138 +8030,12 @@
             256,
             100
           ],
-          "axis_pixels": 293.25458225141284,
+          "axis_pixels": 320,
           "opacity": 1.0,
           "inferred": false,
-          "reference_outline": [
-            [
-              500,
-              983
-            ],
-            [
-              537,
-              980
-            ],
-            [
-              577,
-              979
-            ],
-            [
-              615,
-              977
-            ],
-            [
-              652,
-              982
-            ],
-            [
-              692,
-              1002
-            ],
-            [
-              736,
-              1023
-            ],
-            [
-              780,
-              1038
-            ],
-            [
-              809,
-              1044
-            ],
-            [
-              826,
-              1062
-            ],
-            [
-              831,
-              1091
-            ],
-            [
-              817,
-              1127
-            ],
-            [
-              796,
-              1158
-            ],
-            [
-              773,
-              1192
-            ],
-            [
-              751,
-              1226
-            ],
-            [
-              724,
-              1254
-            ],
-            [
-              700,
-              1274
-            ],
-            [
-              681,
-              1285
-            ],
-            [
-              663,
-              1287
-            ],
-            [
-              639,
-              1273
-            ],
-            [
-              616,
-              1251
-            ],
-            [
-              593,
-              1223
-            ],
-            [
-              566,
-              1195
-            ],
-            [
-              539,
-              1168
-            ],
-            [
-              516,
-              1141
-            ],
-            [
-              498,
-              1114
-            ],
-            [
-              487,
-              1080
-            ],
-            [
-              483,
-              1047
-            ],
-            [
-              488,
-              1011
-            ]
-          ],
-          "reference_axis": [
-            [
-              551,
-              1039
-            ],
-            [
-              792,
-              1105
-            ]
-          ],
-          "width_scale": 0.72
+          "width_scale": 1.3,
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "right_thigh"
         },
         "right_calf": {
           "rect": [
@@ -9070,165 +8048,12 @@
             256,
             100
           ],
-          "axis_pixels": 320.0,
+          "axis_pixels": 320,
           "opacity": 1.0,
           "inferred": false,
-          "reference_outline": [
-            [
-              790,
-              1044
-            ],
-            [
-              817,
-              1048
-            ],
-            [
-              837,
-              1067
-            ],
-            [
-              846,
-              1106
-            ],
-            [
-              854,
-              1156
-            ],
-            [
-              863,
-              1205
-            ],
-            [
-              876,
-              1254
-            ],
-            [
-              891,
-              1303
-            ],
-            [
-              908,
-              1336
-            ],
-            [
-              917,
-              1347
-            ],
-            [
-              914,
-              1366
-            ],
-            [
-              902,
-              1375
-            ],
-            [
-              895,
-              1392
-            ],
-            [
-              910,
-              1410
-            ],
-            [
-              921,
-              1434
-            ],
-            [
-              924,
-              1457
-            ],
-            [
-              916,
-              1475
-            ],
-            [
-              897,
-              1481
-            ],
-            [
-              870,
-              1485
-            ],
-            [
-              839,
-              1491
-            ],
-            [
-              811,
-              1493
-            ],
-            [
-              790,
-              1490
-            ],
-            [
-              773,
-              1487
-            ],
-            [
-              757,
-              1477
-            ],
-            [
-              752,
-              1467
-            ],
-            [
-              756,
-              1428
-            ],
-            [
-              758,
-              1394
-            ],
-            [
-              741,
-              1385
-            ],
-            [
-              710,
-              1382
-            ],
-            [
-              694,
-              1380
-            ],
-            [
-              704,
-              1344
-            ],
-            [
-              706,
-              1296
-            ],
-            [
-              719,
-              1254
-            ],
-            [
-              738,
-              1207
-            ],
-            [
-              755,
-              1165
-            ],
-            [
-              771,
-              1123
-            ]
-          ],
-          "reference_axis": [
-            [
-              805,
-              1091
-            ],
-            [
-              838,
-              1465
-            ]
-          ]
+          "method": "Old articulated silhouette fitted with current reference cloth",
+          "template_part": "right_calf",
+          "width_scale": 1.3
         },
         "staff": {
           "rect": [
@@ -9273,7 +8098,9 @@
           "staff": 2290
         }
       },
-      "staff_rotation_rad": 0.0
+      "staff_rotation_rad": 0.0,
+      "leg_foot_half_width_ratio": 0.075,
+      "leg_knee_half_width_ratio": 0.04
     }
   }
 }

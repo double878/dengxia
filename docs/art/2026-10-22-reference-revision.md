@@ -83,3 +83,32 @@ Windows 图形环境加载最终 `builds/dengxia-refined.pck`，比较五份清�
 本轮回归曾暴露额外角色使用独立贴图字典、不能索引原三人纹理数组；已修正并把三名额外角色加入正式步态回归。初次新杖抠图轴线偏移与羽毛残留也已按源图无遮挡杆段拟合、裁取修复。旧失败日志保留用于追溯，以上表格仅列最终结果。单次接伞测试入口验证后已删除。
 
 实际 `builds/dengxia-gait.pck` 再经 Windows ANGLE 校验：步态 249 项、颈部/锡杖与两份当前清单 SHA-256 共 74 项，均 0 失败，stderr 无脚本错误。打包资源渲染的 104 帧与源码批次逐字节相同。日志为 `gait-packed-final`、`gait-packed-reference`；外部测试入口只改输出目录以适应 PCK 的只读 `res://`，已清理。导出 EXE 无头及 Windows ANGLE 启动均退出 0，日志为 `gait-exe-headless`、`gait-exe-windows`。
+
+## 最新分腿与身形协调验证
+
+用户提供的两段旧版录屏分别为 151 帧 / 5.033 秒与 141 帧 / 4.7 秒。本次参考其分开的髋、膝与脚及袖口比例，不恢复旧头像或整套旧服色。旧腿部轮廓作为 `assets/puppets/source/articulated-leg-silhouettes-20261022.png` 和同名 JSON 保存，记录原 atlas 哈希；制作工具以当前参考图衣料适配轮廓，清理背景碎片、按骨轴对齐。白素贞和许仙不再使用完整袍摆网格，三人统一复用现有腿链、步相及坐姿/跳跃。照片隐藏部分仍为衣料适配，不宣称还原了不可见的真实解剖或背面。
+
+按用户后续补充，白素贞衣身横向收至 85%，颈根随衣领定位；法海四件腿片横向加宽 30%，膝/脚半间距增至身高 .040/.075。白/许为 .025/.055。袖口按旧版可见宽/骨长比适配，头部不压缩、肩腕点不移动。三人上身和金色长锡杖共 29 个 atlas tile 与 `4a5b7f9` 逐像素一致；本轮改变衣身宽度的是显示参数。纯人声及所有音频文件没有本轮改动，音频来源清单仅刷新美术与制作工具哈希。
+
+本轮使用 `tools/run_godot.ps1` 和固定 Godot `4.7.2.stable.official.ed1daf0bf`，日志前缀为 `lower-*`。实际验证：
+
+| 命令（wrapper 后参数） | 本轮结果 |
+| --- | --- |
+| `--headless --path . --check-only --script scripts/a_test/placeholder_puppet.gd` | 退出 0，修改后先解析。 |
+| `--path . --script tests/b/run_puppet_gait.gd` | 249 项，0 失败；包含 104 张动态帧保存，覆盖六皮肤、实体/投影、左右面向和起停。 |
+| `--path . --script tests/b/run_reference_puppets.gd` | 72 项，0 失败；收身后颈领连接、环首及竖杖/腕点。 |
+| `--path . --script tests/b/run_upper_body_graphics.gd` | 22 项，0 失败；操控及第一关姿态录放。 |
+| `--path . --script tests/b/run_combat_motion_graphics.gd` | 61 项，0 失败；三关跳跃、剑动作、实际录放；人工查看本轮跳跃与厅堂坐姿截图。 |
+| `--path . --script tests/b/run_stage_walk.gd` | 24 项，0 失败；正式输入与桥面步态。 |
+| `--path . --script tests/c/run_act2_replay.gd` | 82 项，0 失败；两场快速录放，未重跑实时全长模式。 |
+| `--path . --script tests/b/run_replay_audio.gd` | 13 项，0 失败。 |
+| `--headless --path . --script tests/a/run_tests.gd` | 1285 项及唱说 22 项，0 失败；仍有故意非法输入报错和原有退出资源警告。 |
+| `--headless --path . --script tests/c/run_game_replay_success.gd` | 12 项，0 失败；117017 ms 模拟演出及接还伞回放。 |
+| `--headless --path . --import`、`--headless --path . --quit-after 60` | 均退出 0。 |
+| `--headless --path . --export-release "Windows Desktop" builds/dengxia-articulated.exe` | 退出 0；EXE 无头和真实 Windows ANGLE 启动均退出 0。 |
+
+`prepare_couple_references.py` 与 `check_reference_revision.py` 的 `py_compile` 通过；来源审计命令 `python tools/check_reference_revision.py --batch builds/reference-revision-20261022 --ffmpeg builds/audio-tools/Lib/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe` 退出 0。核对 38 条 WAV、纯人声、开场和法海录音、源图/模板/工具/输出哈希、原枢轴、三人分腿和旧袖口比例。
+
+最终 PCK 在 Windows ANGLE 中加载实际资源，步态 249 项及颈/杖/三份清单 75 项均通过；104 张步态帧、6 张颈部图、4 张锡杖图和总览共 115 张与源码渲染逐字节一致。初次比对误含历史 `staff-source-large.png`，按探针明确生成的 115 个文件重做比对后通过；没有为此重跑游戏测试。临时打包入口已删除。
+
+当前交付为 `builds/dengxia-articulated.exe` 与同名 `.pck`，请放在一起运行。动态预览 `builds/lower-body-revision-20261022/walk-preview.mp4` / `.gif`，当前总览同目录 `character-check.png`；哈希和逐帧比较证据为 `packed-verification.json`。人工已查看当前静态衔接、双向步相、真实跳跃及坐姿；造型美观程度仍以用户最终看验为准。
