@@ -1,7 +1,7 @@
 {
   "version": 1,
   "method": "Manually traced original photo pixels, with seeded GrabCut edge cleanup; no generated replacement artwork",
-  "tool_sha256": "6f153b25994827766440f0ae8393c63b43e2c5e6cd943bdab0fa766c824bb179",
+  "tool_sha256": "1a8acd9a7d49473e99172e48e4374ade253d666a5980662e1c6081ac9c25e487",
   "characters": {
     "baisuzhen": {
       "source_sha256": "5a86420904861e3b97648b14fc53c60383593ed4a7e9db07e8a197f38eb6064a",
@@ -24,14 +24,25 @@
     "Ivory fabric retains photographed illumination; alpha is a display cutout, not measured leather transmittance."
   ],
   "staff": {
-    "rotation_rad": 1.3914983384126198,
-    "down_length_ratio": 1.1,
-    "orientation": "Vertical, fixed in stage axes, follows right wrist; lower shaft may enter the ground"
+    "filename": "source/staff-reference-20261022.png",
+    "source_sha256": "2abf3d36ca2f108af05f6936f80b1d79e14d1409d2db10f25023b88331655e56",
+    "size": [
+      92,
+      282
+    ],
+    "rotation_rad": 0.0,
+    "size_ratio": 1.5,
+    "source_shaft_fit_x_per_y": [
+      -0.18513143041444952,
+      77.26495726495727
+    ],
+    "orientation": "Gold ring-head staff, vertical in stage axes, follows right wrist; no ground insertion required",
+    "method": "User reference pixels; neutral backdrop removed; upright ring head with lengthened straight shaft"
   },
   "outputs": {
-    "puppet_assets.json": "57fe881fc14322359ad32143b7ba99117ce15e3bfc7a588316d2657191295c0f",
+    "puppet_assets.json": "3684120450241813cf39424a8efcb932d0530ea1b69d9ad43c3f13ecf796d330",
     "baisuzhen.png": "999f81189c2cb694aa972d33b838ea07cbada70655248f02b92a5849807c9f83",
     "xuxian.png": "cb045ffa9fd7d44e25a3f73ab58e0546943be2d91faa130e04764f061a434236",
-    "fahai.png": "006cdb98d24b4e5a748443c61bff003b7e69ef8eeaf4a7ca14dc03de8484c4ea"
+    "fahai.png": "bc83511fda7f2946d42895a0cc37695a49255912883a3c1e7bfe351b594c1122"
   }
 }

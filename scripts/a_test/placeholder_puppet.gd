@@ -413,6 +413,16 @@ func walk_body_offset(height: float) -> float:
 	return -absf(sin(puppet_state.walk_phase)) * height * 0.008 * puppet_state.walk_amount
 
 
+## 上半周期离地向前送脚，下半周期落地向后蹬；局部方向遵循贴图原朝向。
+func walk_step_offset(side: float, height: float) -> Vector2:
+	var phase: float = fposmod(puppet_state.walk_phase + (PI if side < 0.0 else 0.0), TAU)
+	var forward: float = -cos(phase) if phase < PI else 1.0 - 2.0 * (phase - PI) / PI
+	return Vector2(
+		forward * height * .065 * pose_reference_facing(),
+		-maxf(sin(phase), 0.0) * height * .035
+	) * puppet_state.walk_amount
+
+
 func _draw() -> void:
 	if puppet_state == null:
 		return
@@ -522,21 +532,16 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 		and state.leg_spread <= .01 and not seated
 	)
 	if continuous_lower:
-		var lower_size: Array = _skins[str(_body_skin_id())]["lower_body_size_ratio"]
-		_draw_skin_tile(
-			_body_skin_id(), "lower_body", hip, 0.0,
-			Vector2(float(lower_size[0]), float(lower_size[1])) * height, alpha
-		)
+		_draw_walking_robe(hip, height, alpha)
 	for side in [-1.0, 1.0]:
 		if continuous_lower:
 			continue
-		var stride: float = sin(state.walk_phase + (PI if side < 0.0 else 0.0)) * state.walk_amount
-		var lift: float = maxf(stride, 0.0) * height * 0.035
+		var step: Vector2 = walk_step_offset(side, height)
 		var knee := Vector2(
-			hip.x + side * knee_out + stride * height * 0.045, ground.y - height * 0.22 - lift * 0.5
+			hip.x + side * knee_out + step.x * .69, ground.y - height * 0.22 + step.y * .5
 		)
 		var foot := Vector2(
-			ground.x + side * half_w * 0.95 + stride * height * 0.065, ground.y - lift
+			ground.x + side * half_w * 0.95 + step.x, ground.y + step.y
 		)
 		if state.leg_spread > 0.0:
 			var spread: float = state.leg_spread
@@ -599,6 +604,40 @@ func _draw_figure(ground: Vector2, height: float, alpha: float) -> void:
 	_draw_head(head_center, head_r, showing_front, body, rim, alpha)
 	draw_set_transform(Vector2.ZERO)
 	_skin_canvas_transform = Transform2D.IDENTITY
+
+
+## 同一张完整袍摆从静止过渡到迈步，腰线固定、下摆两侧反相；不切换站姿贴图。
+func _draw_walking_robe(hip: Vector2, height: float, alpha: float) -> void:
+	var id: int = _body_skin_id()
+	var skin: Dictionary = _skins[str(id)]
+	var ratios: Array = skin["lower_body_size_ratio"]
+	var size := Vector2(float(ratios[0]), float(ratios[1])) * height
+	if puppet_state.walk_amount <= 0.0:
+		_draw_skin_tile(id, "lower_body", hip, 0.0, size, alpha)
+		return
+	var part: Dictionary = skin["parts"]["lower_body"]
+	var rect: Array = part["rect"]
+	var pivot := Vector2(part["pivot"][0], part["pivot"][1]) / 512.0
+	var texture: Texture2D = SKIN_TEXTURES[id] if id < SKIN_TEXTURES.size() else EXTRA_SKIN_TEXTURES[id]
+	var texture_size := Vector2(texture.get_size())
+	var left_step: Vector2 = walk_step_offset(-1, height)
+	var right_step: Vector2 = walk_step_offset(1, height)
+	draw_set_transform_matrix(_skin_canvas_transform)
+	# 8×4 小网格足以表达袍摆/鞋的交替位移，共享边顶点避免缝隙。
+	for row in range(4):
+		for column in range(8):
+			var points := PackedVector2Array()
+			var uvs := PackedVector2Array()
+			for corner: Vector2 in [Vector2(0,0),Vector2(1,0),Vector2(1,1),Vector2(0,1)]:
+				var uv := Vector2((column + corner.x) / 8.0, (row + corner.y) / 4.0)
+				var point: Vector2 = hip + (uv - pivot) * size
+				var depth: float = clampf((point.y - hip.y) / (height * HIP_RATIO), 0.0, 1.0)
+				var side_blend: float = smoothstep(-height * .12, height * .12, point.x - hip.x)
+				var step: Vector2 = left_step.lerp(right_step, side_blend)
+				points.append(point + step * depth * depth)
+				uvs.append((Vector2(rect[0],rect[1]) + uv * Vector2(rect[2],rect[3])) / texture_size)
+			draw_polygon(points, PackedColorArray([Color(1,1,1,alpha)]), uvs, texture)
+	draw_set_transform(Vector2.ZERO)
 
 
 ## 一条手臂。手角以「自然垂下」为 0，向抬手方向为正；屏幕角口径见 `arm_direction()`。
@@ -821,9 +860,6 @@ func _draw_skin_accessories(ground: Vector2, height: float, alpha: float) -> voi
 		_skin_canvas_transform = _skin_figure_transform(ground)
 		wrist = upper_transform() * wrist
 		var staff_rotation: float = float(skin.get("staff_rotation_rad", 0.0))
-		if skin["parts"].has("staff_extension"):
-			_draw_skin_tile(id, "staff_extension", wrist, 0.0,
-				Vector2(staff_size, height * float(skin["staff_down_length_ratio"]) * 512.0 / 426.0), alpha)
 		_draw_skin_tile(id, "staff", wrist, staff_rotation, Vector2.ONE * staff_size, alpha)
 		_skin_canvas_transform = upper_matrix
 

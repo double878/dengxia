@@ -67,17 +67,23 @@ def main():
             assert now["characters"][name]==old["characters"][name],name
     previous_fahai=old["characters"]["fahai"].copy()
     current_fahai=copy.deepcopy(now["characters"]["fahai"])
-    assert 1.38<current_fahai.pop("staff_rotation_rad")<1.4
-    assert current_fahai.pop("staff_down_length_ratio")==1.1
-    extension=current_fahai["parts"].pop("staff_extension")
-    assert extension["rect"]==[1024,1536,512,512]
+    assert current_fahai.pop("staff_rotation_rad")==0.0
+    assert current_fahai["staff_size_ratio"]==1.5
+    current_fahai["staff_size_ratio"]=previous_fahai["staff_size_ratio"]
+    assert "staff_extension" not in current_fahai["parts"]
+    assert "staff_down_length_ratio" not in current_fahai
+    staff=current_fahai["parts"]["staff"]
+    assert staff["rect"]==[512,1536,512,512] and staff["pivot"]==[256,270]
+    current_fahai["parts"]["staff"]=previous_fahai["parts"]["staff"]
     assert current_fahai==previous_fahai
     old_fahai=np.asarray(Image.open(before/"puppets/fahai.png"))
     new_fahai=np.asarray(Image.open(art/"fahai.png"))
     assert np.array_equal(old_fahai[:1536],new_fahai[:1536])
-    assert np.array_equal(old_fahai[1536:,:1024],new_fahai[1536:,:1024])
+    assert np.array_equal(old_fahai[1536:,:512],new_fahai[1536:,:512])
     assert np.array_equal(old_fahai[1536:,1536:],new_fahai[1536:,1536:])
-    assert (new_fahai[1600:2026,1272:1288,3]>127).sum()>1000
+    assert not new_fahai[1536:,1024:1536,3].any()
+    assert (new_fahai[1681:2026,760:776,3]>127).sum()>700
+    assert sha(art/report["staff"]["filename"])==report["staff"]["source_sha256"]
     for name in ["xuxian","baisuzhen"]:
         skin=now["characters"][name]
         assert skin["reference_facing"]==old["characters"][name]["reference_facing"]
@@ -86,6 +92,7 @@ def main():
         else:
             assert skin["shoulder_half_width_ratio"]==.055
         assert "lower_body" in skin["parts"]
+        assert all(skin["parts"][side+"_forearm"]["width_scale"]==.72 for side in ["left","right"])
         for field in ["neck_attachment_ratio","head_neck_offset_ratio"]:
             assert len(skin[field])==2 and np.isfinite(skin[field]).all(),(name,field)
         ref=art/skin["reference"]["filename"]
@@ -118,7 +125,8 @@ def main():
         exact_clean_vocal_masters=2,only_duet_pcm_changed=True,opening_and_fahai_unchanged=True,
         new_couple_parts=[len(now["characters"][n]["parts"]) for n in ["baisuzhen","xuxian"]],
         original_rects_and_pivots=True,other_characters_unchanged=True)
-    result.update(neck_source_preserved=True,original_fahai_tiles_unchanged=True,staff_extended_downward=True)
+    result.update(neck_source_preserved=True,fahai_body_tiles_unchanged=True,
+        gold_ring_staff=True,forearm_width_scale=.72,obsolete_staff_extension_removed=True)
     (batch/"audit.json").write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(result))
 

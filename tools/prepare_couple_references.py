@@ -275,11 +275,72 @@ def add_legs(definition, split_x, knee_y, foot_y):
             (edge,foot_y+12),(split_x+sign*-10,foot_y+12)],knee,foot)
 
 
+def prepare_staff(source, assets, skin, atlas):
+    """Cut the supplied gold ring staff and rectify its shaft to stage vertical."""
+    image=Image.open(source).convert("RGB")
+    if image.size!=(92,282):
+        raise ValueError("Unexpected staff reference dimensions")
+    saved=assets/"source/staff-reference-20261022.png"
+    if source.resolve()!=saved.resolve():
+        shutil.copyfile(source,saved)
+    mask=Image.new("L",image.size)
+    pen=ImageDraw.Draw(mask)
+    pen.polygon([(64,39),(71,49),(70,58),(78,64),(83,78),(82,88),
+        (77,97),(83,105),(82,114),(76,122),(65,121),(59,117),
+        (48,117),(40,119),(33,112),(31,104),(35,96),(35,81),
+        (38,69),(45,62),(55,58),(56,50)],fill=255)
+    pen.polygon([(53,112),(62,114),(35,274),(24,274)],fill=255)
+    rgb=np.asarray(image).astype(np.float32)
+    # White backdrop/holes are neutral; warm metallic pixels retain soft edges.
+    alpha=np.clip((rgb[:,:,0]-rgb[:,:,2]-12)/35,0,1)*np.asarray(mask)
+    rgba=np.dstack((rgb,alpha)).astype(np.uint8)
+    rgba[rgba[:,:,3]==0,:3]=0
+    piece=Image.fromarray(rgba)
+    # Fit the unobstructed shaft above the sleeve/feather, rather than its rough crop box.
+    axis_y=[];axis_x=[]
+    for y in range(128,181):
+        row=rgb[y]
+        xs=np.flatnonzero((row[:,0]-row[:,2]>65)&(row[:,0]-row[:,1]>20))
+        xs=xs[(xs>36)&(xs<63)]
+        if len(xs):
+            axis_y.append(y);axis_x.append((xs[0]+xs[-1])*.5)
+    if len(axis_y)<45:
+        raise ValueError("Cannot resolve the staff's unobstructed shaft")
+    slope,intercept=np.polyfit(axis_y,axis_x,1)
+    angle=math.atan(slope)
+    c,s=math.cos(angle),math.sin(angle)
+    origin=(slope*120+intercept,120)
+    scale=1.2
+    inverse=(c/scale,s/scale,origin[0]-(c*256+s*130)/scale,
+        -s/scale,c/scale,origin[1]-(-s*256+c*130)/scale)
+    upright=piece.transform((512,512),Image.Transform.AFFINE,inverse,Image.Resampling.BICUBIC)
+    # Lengthen only the straight shaft; retain the ring-head's proportions.
+    shaft=upright.crop((248,145,264,190)).resize((16,345),Image.Resampling.BICUBIC)
+    upright.paste((0,0,0,0),(0,145,512,512))
+    upright.paste(shaft,(248,145))
+    atlas.paste(upright,(512,1536))
+    # Clear the obsolete ground-piercing extension tile from the previous revision.
+    atlas.paste((0,0,0,0),(1024,1536,1536,2048))
+    skin["parts"].pop("staff_extension",None)
+    skin.pop("staff_down_length_ratio",None)
+    skin["parts"]["staff"]=dict(rect=[512,1536,512,512],pivot=[256,270],
+        axis_pixels=1,opacity=1.0,method="User reference pixels; neutral backdrop removed; upright ring head with lengthened straight shaft")
+    skin["staff_rotation_rad"]=0.0
+    skin["staff_size_ratio"]=1.5
+    return dict(filename="source/"+saved.name,source_sha256=sha(saved),
+        size=list(image.size),rotation_rad=0.0,size_ratio=1.5,
+        source_shaft_fit_x_per_y=[float(slope),float(intercept)],
+        orientation="Gold ring-head staff, vertical in stage axes, follows right wrist; no ground insertion required",
+        method=skin["parts"]["staff"]["method"])
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bai",type=Path,required=True)
     parser.add_argument("--xu",type=Path,required=True)
     parser.add_argument("--batch",type=Path,required=True)
+    parser.add_argument("--staff",type=Path,
+        default=Path(__file__).resolve().parents[1]/"assets/puppets/source/staff-reference-20261022.png")
     parser.add_argument("--rebuild",action="store_true")
     args=parser.parse_args()
     root=Path(__file__).resolve().parents[1]
@@ -362,6 +423,8 @@ def main():
                 reference_outline=outline,reference_axis=[start,end] if end else [start],
                 method="Source pixels with joint overlap; no backdrop keying")
             scales[part]=scale
+            if part.endswith("_forearm"):
+                parts[part]["width_scale"]=.72
         atlas.save(out/"atlas.png",optimize=True)
         skin.update(parts=parts,
             head_size_per_radius=512/(scales["head"]*natural_height*.105),
@@ -393,22 +456,9 @@ def main():
         report["characters"][name]=dict(source_sha256=sha(source_path),atlas_sha256=sha(out/"atlas.png"),parts=len(parts),
             intact_robe=True,original_pivots_retained=True)
     staff=manifest["characters"]["fahai"]
-    # Rotate the source shaft (tip at upper-left) to point straight upward.
-    staff["staff_rotation_rad"]=math.atan2(1109,201)
-    # Extend only below the original grip. Reuse the photographed lower shaft,
-    # leaving all original atlas tiles, the ornament and the grip unchanged.
     fahai=Image.open(before/"fahai.png").convert("RGBA")
-    upright=fahai.crop((512,1536,1024,2048)).rotate(-math.degrees(staff["staff_rotation_rad"]),
-        resample=Image.Resampling.BICUBIC,center=(256,256))
-    extension=Image.new("RGBA",(512,512))
-    extension.paste(upright.crop((248,270,264,310)).resize((16,426),Image.Resampling.BICUBIC),(248,64))
-    fahai.paste(extension,(1024,1536))
+    report["staff"]=prepare_staff(args.staff,assets,staff,fahai)
     fahai.save(assets/"fahai.png",optimize=True)
-    staff["parts"]["staff_extension"]=dict(rect=[1024,1536,512,512],pivot=[256,64],
-        axis_pixels=426,opacity=1.0,method="Lower shaft source pixels stretched downward from grip")
-    staff["staff_down_length_ratio"]=1.1
-    report["staff"]=dict(rotation_rad=staff["staff_rotation_rad"],down_length_ratio=1.1,
-        orientation="Vertical, fixed in stage axes, follows right wrist; lower shaft may enter the ground")
     for name in ["baisuzhen","xuxian"]:
         shutil.copyfile(batch/name/"atlas.png",assets/(name+".png"))
     dump(assets/"puppet_assets.json",manifest)

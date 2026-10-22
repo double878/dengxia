@@ -2,7 +2,7 @@ extends SceneTree
 ## Windows GPU 像素回归：法杖在翻面/弯肘/前倾后仍竖直且跟随实际腕点。
 var checks: int = 0
 var failures: int = 0
-const OUTPUT := "res://builds/reference-revision-20261022"
+const OUTPUT := "res://builds/gait-revision-20261022"
 var board: Image
 
 func _initialize() -> void:
@@ -59,22 +59,31 @@ func _run() -> void:
 			var y: int = roundi(wrist.y - distance)
 			for x in range(roundi(wrist.x)-12,roundi(wrist.x)+13):
 				var color: Color = image.get_pixel(x,y)
-				if color.r < .48 and color.g < .48 and color.b < .4:
+				if color.r > color.b * 1.25 and color.b < .5:
 					xs.append(x)
 			check(not xs.is_empty(), "竖杖实际像素 pose=%d dy=%d" % [pose,distance])
 			if not xs.is_empty():
 				var center: float = (xs[0]+xs[-1])*.5
 				centers.append(center)
-				check(absf(center-wrist.x) <= 3, "杖轴穿过真实持手腕点")
+				check(absf(center-wrist.x) <= 3, "杖轴穿过真实持手腕点 pose=%d dy=%d center=%.2f wrist=%.2f" % [pose,distance,center,wrist.x])
 		if centers.size() == 4:
 			check(absf(centers.max()-centers.min()) <= 2, "杖轴竖直且不随腰部转横")
-		var ground_y: int = roundi(view.stage_to_screen(state.stage_pos).y)
-		for y in [ground_y-12,ground_y,ground_y+12]:
-			var ink: bool = false
-			for x in range(roundi(wrist.x)-4,roundi(wrist.x)+5):
-				var pixel: Color = image.get_pixel(x,y)
-				ink = ink or (pixel.r < .48 and pixel.g < .48 and pixel.b < .4)
-			check(ink, "杖尾延伸并穿过地面 pose=%d y=%d" % [pose,y])
+		var staff_pixels: int = 0
+		var staff_top: int = 640
+		var staff_bottom: int = 0
+		var crown_pixels: int = 0
+		for y in range(640):
+			for x in range(roundi(wrist.x)-40,roundi(wrist.x)+41):
+				var color: Color = image.get_pixel(x,y)
+				if color.r > color.b * 1.25 and color.b < .5:
+					staff_pixels += 1
+					staff_top = mini(staff_top,y)
+					staff_bottom = maxi(staff_bottom,y)
+					if y < wrist.y-150 and absf(x-wrist.x)>8:
+						crown_pixels += 1
+		check(staff_bottom-staff_top > 380*1.2, "整杖足够长")
+		check(crown_pixels > 40, "环首造型存在")
+		check(staff_pixels > 900, "长锡杖实际像素充足")
 		check(image.save_png(OUTPUT + "/staff-%d.png" % pose) == OK, "保存杖像素证据")
 		if pose < 2:
 			board.blit_rect(image,Rect2i(0,0,640,640),Vector2i(1280,pose*640))

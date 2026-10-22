@@ -204,7 +204,9 @@ func _test_drawn_at_holder_wrist(t: ATestBase) -> void:
 		view.lamp_state.distance
 	)
 	var height: float = view.figure_height * scale
-	var half_w: float = height * PlaceholderPuppetScript.HALF_W_RATIO
+	# 正式参考图的肩距已独立于占位身宽；仍独立复算骨链，不调用腕点求解。
+	var skin: Dictionary = PlaceholderPuppetScript.SKIN_MANIFEST.data.characters.xuxian
+	var half_w: float = height * float(skin.get("shoulder_half_width_ratio", PlaceholderPuppetScript.HALF_W_RATIO))
 	var shoulder := Vector2(
 		xuxian.stage_pos.x * 1920.0 + half_w,
 		xuxian.stage_pos.y * 1080.0 - height * PlaceholderPuppetScript.SHOULDER_RATIO

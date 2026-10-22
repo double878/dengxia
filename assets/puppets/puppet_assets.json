@@ -3263,7 +3263,8 @@
               1213
             ]
           ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Source pixels with joint overlap; no backdrop keying",
+          "width_scale": 0.72
         },
         "left_hand": {
           "rect": [
@@ -3552,7 +3553,8 @@
               929
             ]
           ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Source pixels with joint overlap; no backdrop keying",
+          "width_scale": 0.72
         },
         "right_hand": {
           "rect": [
@@ -4757,7 +4759,8 @@
               1060
             ]
           ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Source pixels with joint overlap; no backdrop keying",
+          "width_scale": 0.72
         },
         "left_hand": {
           "rect": [
@@ -5038,7 +5041,8 @@
               960
             ]
           ],
-          "method": "Source pixels with joint overlap; no backdrop keying"
+          "method": "Source pixels with joint overlap; no backdrop keying",
+          "width_scale": 0.72
         },
         "right_hand": {
           "rect": [
@@ -7454,7 +7458,7 @@
       "shoulder_half_width_ratio": 0.075,
       "joint_hex": "#C9A16B",
       "ink_hex": "#5E3F3B",
-      "staff_size_ratio": 1.18,
+      "staff_size_ratio": 1.5,
       "ribbons_size_ratio": 0.25,
       "parts": {
         "head": {
@@ -9235,166 +9239,11 @@
           ],
           "pivot": [
             256,
-            256
+            270
           ],
           "axis_pixels": 1,
           "opacity": 1.0,
-          "inferred": true,
-          "reference_outline": [
-            [
-              171,
-              236
-            ],
-            [
-              181,
-              236
-            ],
-            [
-              208,
-              242
-            ],
-            [
-              218,
-              235
-            ],
-            [
-              228,
-              235
-            ],
-            [
-              236,
-              244
-            ],
-            [
-              249,
-              242
-            ],
-            [
-              267,
-              246
-            ],
-            [
-              287,
-              250
-            ],
-            [
-              302,
-              250
-            ],
-            [
-              310,
-              256
-            ],
-            [
-              326,
-              253
-            ],
-            [
-              338,
-              254
-            ],
-            [
-              348,
-              260
-            ],
-            [
-              380,
-              265
-            ],
-            [
-              400,
-              274
-            ],
-            [
-              1279,
-              440
-            ],
-            [
-              1279,
-              463
-            ],
-            [
-              396,
-              297
-            ],
-            [
-              377,
-              284
-            ],
-            [
-              347,
-              279
-            ],
-            [
-              337,
-              283
-            ],
-            [
-              326,
-              286
-            ],
-            [
-              314,
-              281
-            ],
-            [
-              307,
-              276
-            ],
-            [
-              289,
-              275
-            ],
-            [
-              267,
-              269
-            ],
-            [
-              254,
-              270
-            ],
-            [
-              244,
-              266
-            ],
-            [
-              231,
-              264
-            ],
-            [
-              218,
-              259
-            ],
-            [
-              206,
-              257
-            ],
-            [
-              174,
-              250
-            ]
-          ],
-          "reference_axis": [
-            [
-              1049,
-              402
-            ]
-          ]
-        },
-        "staff_extension": {
-          "rect": [
-            1024,
-            1536,
-            512,
-            512
-          ],
-          "pivot": [
-            256,
-            64
-          ],
-          "axis_pixels": 426,
-          "opacity": 1.0,
-          "method": "Lower shaft source pixels stretched downward from grip"
+          "method": "User reference pixels; neutral backdrop removed; upright ring head with lengthened straight shaft"
         }
       },
       "reference": {
@@ -9424,8 +9273,7 @@
           "staff": 2290
         }
       },
-      "staff_rotation_rad": 1.3914983384126198,
-      "staff_down_length_ratio": 1.1
+      "staff_rotation_rad": 0.0
     }
   }
 }
